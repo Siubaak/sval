@@ -1,0 +1,40 @@
+{
+  "name": "sval",
+  "version": "0.2.1",
+  "description": "A javascript interpreter written in javascript",
+  "main": "index.js",
+  "scripts": {
+    "test": "",
+    "start": "tsc --declaration --watch",
+    "webpack": "webpack --config config/webpack.dev.js --watch --progress",
+    "build": "npm test && tsc --declaration && webpack --config config/webpack.prod.js --progress",
+    "cov": "cat ./coverage/lcov.info | coveralls"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Siubaak/sval.git"
+  },
+  "keywords": [
+    "js",
+    "eval",
+    "interpreter"
+  ],
+  "author": "Siubaak",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Siubaak/sval/issues"
+  },
+  "homepage": "https://github.com/Siubaak/sval#readme",
+  "dependencies": {
+    "acorn": "^5.5.3"
+  },
+  "devDependencies": {
+    "@types/acorn": "^4.0.3",
+    "@types/estree": "0.0.39",
+    "ts-loader": "^3.4.0",
+    "typescript": "^2.7.1",
+    "uglifyjs-webpack-plugin": "^1.1.8",
+    "webpack": "^3.10.0",
+    "webpack-merge": "^4.1.1"
+  }
+}
