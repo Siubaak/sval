@@ -1,4 +1,4 @@
-export type varType = 'var' | 'let' | 'const'
+export type varKind = 'var' | 'let' | 'const'
 
 export interface Variable {
   get(): any,
@@ -6,11 +6,11 @@ export interface Variable {
 }
 
 export class Var implements Variable {
-  private type: varType
+  private readonly kind: varKind
   private value: any
 
-  constructor(type: varType, value: any) {
-    this.type = type
+  constructor(kind: varKind, value: any) {
+    this.kind = kind
     this.value = value
   }
 
@@ -18,8 +18,8 @@ export class Var implements Variable {
     return this.value
   }
 
-  set(value: any): boolean {
-    if (this.type === 'const') {
+  set(value: any) {
+    if (this.kind === 'const') {
       return false
     } else {
       this.value = value
@@ -29,43 +29,24 @@ export class Var implements Variable {
 }
 
 export class Prop implements Variable {
-  private object: any
-  private property: string
-  private descriptor: PropertyDescriptor
+  private readonly object: any
+  private readonly property: string
 
   constructor(object: any, property: string) {
     this.object = object
     this.property = property
-    this.descriptor = Object.getOwnPropertyDescriptor(object, property)
   }
 
-  get(): any {
-    const getter = this.descriptor && this.descriptor.get
-    if (getter) {
-      return getter.call(this.object)
-    } else {
-      return this.object[this.property]
-    }
+  get() {
+    return this.object[this.property]
   }
 
-  set(value: any): boolean {
-    if (this.descriptor && !this.descriptor.writable) {
-      return false
-    }
-    const setter = this.descriptor && this.descriptor.get
-    if (setter) {
-      setter.call(this.object, value)
-    } else {
-      this.object[this.property] = value
-    }
+  set(value: any) {
+    this.object[this.property] = value
     return true
   }
 
-  del(): boolean {
-    if (this.descriptor && !this.descriptor.configurable) {
-      return false
-    } else {
-      return delete this.object[this.property]
-    }
+  del() {
+    return delete this.object[this.property]
   }
 }
