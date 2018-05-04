@@ -3,8 +3,22 @@
   "version": "0.2.1",
   "description": "A javascript interpreter written in javascript",
   "main": "index.js",
+  "jest": {
+    "transform": {
+      "^.+\\.tsx?$": "ts-jest"
+    },
+    "testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js",
+      "jsx",
+      "json",
+      "node"
+    ]
+  },
   "scripts": {
-    "test": "",
+    "test": "jest --colors --coverage",
     "start": "tsc --declaration --watch",
     "webpack": "webpack --config config/webpack.dev.js --watch --progress",
     "build": "npm test && tsc --declaration && webpack --config config/webpack.prod.js --progress",
@@ -31,6 +45,9 @@
   "devDependencies": {
     "@types/acorn": "^4.0.3",
     "@types/estree": "0.0.39",
+    "@types/jest": "^22.2.3",
+    "jest": "^22.4.3",
+    "ts-jest": "^22.4.4",
     "ts-loader": "^3.4.0",
     "typescript": "^2.7.1",
     "uglifyjs-webpack-plugin": "^1.1.8",

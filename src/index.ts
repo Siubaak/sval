@@ -1,7 +1,7 @@
 import { parse, Options } from 'acorn'
 import { Program } from 'estree'
 
-class Interpreter {
+class Sval {
   private options: Options
 
   constructor(options: Options) {
@@ -13,4 +13,8 @@ class Interpreter {
   }
 }
 
-export default Interpreter
+if (window) {
+  ;(window as any).Sval = Sval
+}
+
+export default Sval
