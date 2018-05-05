@@ -1,7 +1,7 @@
 import * as estree from 'estree'
 import Scope from '../scope'
 
-export function Identifier(node: estree.Identifier, scope: Scope) {
+export default function Identifier(node: estree.Identifier, scope: Scope) {
   const name = node.name
   if (name === 'undefined') {
     return undefined

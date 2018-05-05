@@ -44,18 +44,27 @@ export default class Scope {
       scope = scope.parent
     }
 
-    return this.createVar('var', name, value, scope)
+    scope.context[name] = new Var('var', value)
+    return true
   }
 
   let(name: string, value: any) {
-    return this.createVar('let', name, value)
+    const variable = this.context[name]
+    if (!variable) {
+      this.context[name] = new Var('let', value)
+      return true
+    } else {
+      return false
+    }
   }
 
   const(name: string, value: any) {
-    return this.createVar('const', name, value)
-  }
-
-  declare(kind: varKind, name: string, value: any) {
-    return this[kind](name, value)
+    const variable = this.context[name]
+    if (!variable) {
+      this.context[name] = new Var('const', value)
+      return true
+    } else {
+      return false
+    }
   }
 }
