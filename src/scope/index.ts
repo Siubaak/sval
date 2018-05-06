@@ -1,11 +1,11 @@
-import { Variable, varKind, Var } from './variable'
+import { Var, varKind } from './variable'
 
 type scopeType = 'block' | 'switch' | 'loop' | 'function'
 
 export default class Scope {
   readonly type: scopeType
   private parent: Scope | null
-  private context: { [key: string]: Variable } = {}
+  private context: { [key: string]: Var } = {}
   invasived: boolean = false
 
   constructor(type: scopeType, parent: Scope = null, label?: string) {
@@ -13,7 +13,15 @@ export default class Scope {
     this.parent = parent
   }
 
-  find(name: string): Variable | null {
+  global(): Scope {
+    let scope: Scope = this
+    while(scope.parent) {
+      scope = scope.parent
+    }
+    return scope
+  }
+
+  find(name: string): Var | null {
     if (this.context.hasOwnProperty(name)) {
       // The variable locates in the scope
       return this.context[name]

@@ -3,14 +3,19 @@ import { Program } from 'estree'
 import Scope from './scope'
 import { Modules, defModules } from './module'
 import evaluate from './evaluate'
+import defOptions, { GlobalOptions } from './share/option'
 
 class Sval {
-  private options: Options = {}
+  private runOptions: Options = {}
   private scope = new Scope('block')
 
-  constructor(options: any) {
-    const { ecmaVersion = 6, sandBox = true } = options
-    this.options.ecmaVersion = ecmaVersion
+  constructor(options: GlobalOptions) {
+    const { ecmaVer = 6, sandBox = true } = options
+
+    defOptions.ecmaVer = ecmaVer
+    defOptions.sandBox = sandBox
+
+    this.runOptions.ecmaVersion = ecmaVer
 
     if (sandBox) {
       this.scope.let('window', defModules)
@@ -34,7 +39,7 @@ class Sval {
   }
 
   run(input: string) {
-    const ast: Program = parse(input, this.options)
+    const ast: Program = parse(input, this.runOptions)
     evaluate(ast, this.scope)
   }
 }
