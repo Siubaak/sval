@@ -26,16 +26,6 @@ export default class Scope {
     }
   }
 
-  private createVar(kind: varKind, name: string, value: string, scope:Scope = this) {
-    const variable = scope.context[name]
-    if (!variable) {
-      this.context[name] = new Var(kind, value)
-      return true
-    } else {
-      return false
-    }
-  }
-
   var(name: string, value: any) {
     let scope: Scope = this
 
