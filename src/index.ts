@@ -1,19 +1,20 @@
 import { parse, Options } from 'acorn'
 import { Program } from 'estree'
 import Scope from './scope'
-import { Modules, defModules } from './module'
+import { Modules, defModules } from './share/module'
 import evaluate from './evaluate'
-import defOptions, { GlobalOptions } from './share/option'
+
+export interface SvalOptions {
+  ecmaVer?: 3 | 5 | 6 | 7 | 8 | 2015 | 2016 | 2017
+  sandBox?: boolean
+}
 
 class Sval {
   private runOptions: Options = {}
   private scope = new Scope('block')
 
-  constructor(options: GlobalOptions) {
-    const { ecmaVer = 6, sandBox = true } = options
-
-    defOptions.ecmaVer = ecmaVer
-    defOptions.sandBox = sandBox
+  constructor(options: SvalOptions = {}) {
+    const { ecmaVer = 5, sandBox = true } = options
 
     this.runOptions.ecmaVersion = ecmaVer
 
@@ -24,17 +25,13 @@ class Sval {
       this.scope.let('window', window)
       this.scope.let('this', window)
     }
-
-    const names: string[] = Object.getOwnPropertyNames(defModules)
-    for (const name of names) {
-      this.scope.let(name, defModules[name])
-    }
   }
 
   addModules(modules: Modules) {
+    const win = this.scope.global().find('window').get()
     const names: string[] = Object.getOwnPropertyNames(modules)
     for (const name of names) {
-      this.scope.let(name, modules[name])
+      win[name] = modules[name]
     }
   }
 
@@ -42,6 +39,10 @@ class Sval {
     const ast: Program = parse(input, this.runOptions)
     evaluate(ast, this.scope)
   }
+}
+
+if (window) {
+  ;(window as any).Sval = Sval
 }
 
 export default Sval

@@ -1,4 +1,4 @@
-import { Var } from './variable';
+import { Variable } from './variable';
 export declare type scopeType = 'block' | 'switch' | 'loop' | 'function';
 export default class Scope {
     readonly type: scopeType;
@@ -8,7 +8,7 @@ export default class Scope {
     constructor(type: scopeType, parent?: Scope, label?: string);
     invasive(): void;
     global(): Scope;
-    find(name: string): Var | null;
+    find(name: string): Variable;
     var(name: string, value: any): boolean;
     let(name: string, value: any): boolean;
     const(name: string, value: any): boolean;

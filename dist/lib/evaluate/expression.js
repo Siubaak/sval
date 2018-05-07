@@ -298,7 +298,7 @@ function CallExpression(node, scope) {
         return func.apply(object, args);
     }
     else {
-        var thisObject = scope.find('this');
+        var thisObject = scope.find('this').get();
         return func.apply(thisObject, args);
     }
 }

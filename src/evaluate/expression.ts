@@ -297,7 +297,7 @@ export function CallExpression(node: estree.CallExpression, scope: Scope) {
     const object = MemberExpression(node.callee, scope, { getObj: true })
     return func.apply(object, args)
   } else {
-    const thisObject = scope.find('this')
+    const thisObject = scope.find('this').get()
     return func.apply(thisObject, args)
   }
 }

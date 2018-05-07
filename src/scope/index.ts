@@ -1,4 +1,4 @@
-import { Var, varKind } from './variable'
+import { varKind, Variable, Var, Prop } from './variable'
 
 export type scopeType = 'block' | 'switch' | 'loop' | 'function'
 
@@ -25,7 +25,7 @@ export default class Scope {
     return scope
   }
 
-  find(name: string): Var | null {
+  find(name: string): Variable {
     if (this.context.hasOwnProperty(name)) {
       // The variable locates in the scope
       return this.context[name]
@@ -33,8 +33,16 @@ export default class Scope {
       // Find variable along the scope chain
       return this.parent.find(name)
     } else {
-      // Not found
-      return null
+      // If enter this branch, the scope will be the global scope
+      // And the global scope should have window object
+      const win = this.global().find('window').get()
+      if (win.hasOwnProperty(name)) {
+        // Find property in window
+        return new Prop(win, name)
+      } else {
+        // Not found
+        return null
+      }
     }
   }
 

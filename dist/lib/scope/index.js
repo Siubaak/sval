@@ -27,7 +27,13 @@ var Scope = (function () {
             return this.parent.find(name);
         }
         else {
-            return null;
+            var win = this.global().find('window').get();
+            if (win.hasOwnProperty(name)) {
+                return new variable_1.Prop(win, name);
+            }
+            else {
+                return null;
+            }
         }
     };
     Scope.prototype.var = function (name, value) {
