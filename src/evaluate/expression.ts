@@ -2,8 +2,8 @@ import * as estree from 'estree'
 import Scope from '../scope'
 import evaluate from '.'
 import { RETURN } from '../share/const'
-import Identifier from './identifier'
-import Literal from './literal'
+import { Identifier } from './identifier'
+import { Literal } from './literal'
 import { Variable, Prop } from '../scope/variable'
 
 // es5
@@ -17,7 +17,7 @@ export function ArrayExpression(node: estree.ArrayExpression, scope: Scope) {
 
 export function ObjectExpression(node: estree.ObjectExpression, scope: Scope) {
   const object: { [key: string]: any } = {}
-
+  
   for (const property of node.properties) {
     const propKey = property.key
     let key: string
@@ -49,7 +49,7 @@ export function ObjectExpression(node: estree.ObjectExpression, scope: Scope) {
 export function FunctionExpression(node: estree.FunctionExpression, scope: Scope) {
   return function (...args: any[]) {
     const subScope = new Scope('function', scope)
-    subScope.invasived = true
+    subScope.invasive()
     subScope.const('this', this)
     subScope.const('arguments', arguments)
 
@@ -95,8 +95,12 @@ export function UnaryExpression(node: estree.UnaryExpression, scope: Scope) {
       }
     }
   }
-
-  return unaryOps[node.operator]()
+  const handle = unaryOps[node.operator]
+  if (handle) {
+    return handle()
+  } else {
+    throw new SyntaxError(`Unexpected token ${node.operator}`)
+  }
 }
 
 export function UpdateExpression(node: estree.UpdateExpression, scope: Scope) {
@@ -111,38 +115,157 @@ export function UpdateExpression(node: estree.UpdateExpression, scope: Scope) {
     throw new SyntaxError('Unexpected token')
   }
 
-  const updateOps = {
+  const value = variable.get()
+  if (node.operator === '++') {
+    variable.set(value + 1)
+    return node.prefix ? variable.get() : value
+  } else if (node.operator === '--') {
+    variable.set(value - 1)
+    return node.prefix ? variable.get() : value
+  } else {
+    throw new SyntaxError(`Unexpected token ${node.operator}`)
   }
 }
 
 export function BinaryExpression(node: estree.BinaryExpression, scope: Scope) {
+  const left = evaluate(node.left, scope)
+  const right = evaluate(node.right, scope)
 
+  const binaryOps = {
+    '==': () => left == right,
+    '!=': () => left != right,
+    '===': () => left === right,
+    '!==': () => left !== right,
+    '<': () => left < right,
+    '<=': () => left <= right,
+    '>': () => left > right,
+    '>=': () => left >= right,
+    '<<': () => left << right,
+    '>>': () => left >> right,
+    '>>>': () => left >>> right,
+    '+': () => left + right,
+    '-': () => left - right,
+    '*': () => left * right,
+    '**': () => left ** right,
+    '/': () => left / right,
+    '%': () => left % right,
+    '|': () => left | right,
+    '^': () => left ^ right,
+    '&': () => left & right,
+    'in': () => left in right,
+    'instanceof': () => left instanceof right,
+  }
+
+  const handle = binaryOps[node.operator]
+  if (handle) {
+    return handle()
+  } else {
+    throw new SyntaxError(`Unexpected token ${node.operator}`)
+  }
 }
 
 export function AssignmentExpression(node: estree.AssignmentExpression, scope: Scope) {
+  const left = node.left
+  let variable: Variable
+  if (left.type === 'Identifier') {
+    variable = Identifier(left, scope, { getVar: true })
+  } else if (left.type === 'MemberExpression') {
+    variable = MemberExpression(left, scope, { getVar: true })
+  } else {
+    throw new SyntaxError('Unexpected token')
+  }
 
+  const value = evaluate(node.right, scope)
+
+  const assignOps = {
+    '=': () => {
+      variable.set(value)
+      return variable.get()
+    },
+    '+=': () => {
+      variable.set(variable.get() + value)
+      return variable.get()
+    },
+    '-=': () => {
+      variable.set(variable.get() - value)
+      return variable.get()
+    },
+    '*=': () => {
+      variable.set(variable.get() * value)
+      return variable.get()
+    },
+    '/=': () => {
+      variable.set(variable.get() / value)
+      return variable.get()
+    },
+    '%=': () => {
+      variable.set(variable.get() % value)
+      return variable.get()
+    },
+    '**=': () => {
+      variable.set(variable.get() ** value)
+      return variable.get()
+    },
+    '<<=': () => {
+      variable.set(variable.get() << value)
+      return variable.get()
+    },
+    '>>=': () => {
+      variable.set(variable.get() >> value)
+      return variable.get()
+    },
+    '>>>=': () => {
+      variable.set(variable.get() >>> value)
+      return variable.get()
+    },
+    '|=': () => {
+      variable.set(variable.get() | value)
+      return variable.get()
+    },
+    '^=': () => {
+      variable.set(variable.get() ^ value)
+      return variable.get()
+    },
+    '&=': () => {
+      variable.set(variable.get() & value)
+      return variable.get()
+    },
+  }
+  
+  const handle = assignOps[node.operator]
+  if (handle) {
+    return handle()
+  } else {
+    throw new SyntaxError(`Unexpected token ${node.operator}`)
+  }
 }
 
 export function LogicalExpression(node: estree.LogicalExpression, scope: Scope) {
-  const logicalOps = {
-    '||': () => evaluate(node.left, scope) || evaluate(node.right, scope),
-    '&&': () => evaluate(node.left, scope) && evaluate(node.right, scope),
+  if (node.operator === '||') {
+    return evaluate(node.left, scope) || evaluate(node.right, scope)
+  } else if (node.operator === '&&') {
+    return evaluate(node.left, scope) && evaluate(node.right, scope)
+  } else {
+    throw new SyntaxError(`Unexpected token ${node.operator}`)
   }
-
-  return logicalOps[node.operator]()
 }
 
-interface MemberExpressionOptions {
-  getVar: true
+export interface MemberExpressionOptions {
+  getObj?: boolean
+  getVar?: boolean
 }
 
 export function MemberExpression(
   node: estree.MemberExpression,
   scope: Scope,
-  options: MemberExpressionOptions,
+  options?: MemberExpressionOptions,
 ) {
-  const { getVar = false } = options
+  const { getObj = false, getVar = false } = options || {}
   const object = evaluate(node.object, scope)
+
+  if (getObj) {
+    return object
+  }
 
   let key
   if (node.computed) {
@@ -161,17 +284,35 @@ export function MemberExpression(
 }
 
 export function ConditionalExpression(node: estree.ConditionalExpression, scope: Scope) {
-  
+  return evaluate(node.test, scope)
+    ? evaluate(node.consequent, scope)
+    : evaluate(node.alternate, scope)
 }
 
 export function CallExpression(node: estree.CallExpression, scope: Scope) {
-  
+  const func = evaluate(node.callee, scope)
+  const args = node.arguments.map(arg => evaluate(arg, scope))
+
+  if (node.callee.type === 'MemberExpression') {
+    const object = MemberExpression(node.callee, scope, { getObj: true })
+    return func.apply(object, args)
+  } else {
+    const thisObject = scope.find('this')
+    return func.apply(thisObject, args)
+  }
 }
 
 export function NewExpression(node: estree.NewExpression, scope: Scope) {
+  const constructor = evaluate(node.callee, scope)
+  const args = node.arguments.map(arg => evaluate(arg, scope))
+  return new constructor(...args)
   
 }
 
 export function SequenceExpression(node: estree.SequenceExpression, scope: Scope) {
-
+  let result: any
+  for (const expression of node.expressions) {
+    result = evaluate(expression, scope)
+  }
+  return result
 }

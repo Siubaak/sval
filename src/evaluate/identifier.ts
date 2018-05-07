@@ -1,27 +1,26 @@
 import * as estree from 'estree'
 import Scope from '../scope'
 
-interface IdentifierOptions {
+export interface IdentifierOptions {
   getName?: boolean
   getVar?: boolean
   throwErr?: boolean
 }
 
-export default function Identifier(node: estree.Identifier, scope: Scope, options?: IdentifierOptions) {
-  const { getName = false, getVar = false, throwErr = true } = options
-  const name = node.name
+export function Identifier(node: estree.Identifier, scope: Scope, options?: IdentifierOptions) {
+  const { getName = false, getVar = false, throwErr = true } = options || {}
 
   if (getName) {
-    return name
+    return node.name
   }
-  if (name === 'undefined') {
+  if (node.name === 'undefined') {
     return undefined
   }
-  const variable = scope.find(name)
+  const variable = scope.find(node.name)
   if (variable) {
     return getVar ? variable : variable.get()
   } else if (throwErr) {
-    throw new ReferenceError(`${name} is not defined`)
+    throw new ReferenceError(`${node.name} is not defined`)
   } else {
     return undefined
   }

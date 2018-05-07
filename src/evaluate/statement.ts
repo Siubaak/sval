@@ -55,7 +55,28 @@ export function IfStatement(node: estree.IfStatement, scope: Scope) {
   }
 }
 
-export function SwitchStatement() {}
+export function SwitchStatement(node: estree.SwitchStatement, scope: Scope) {
+  const discriminant = evaluate(node.discriminant, scope)
+  const subScope = new Scope('switch', scope)
+  let matched = false
+  for (const eachCase of node.cases) {
+    if (
+      !matched
+      && (
+        !eachCase.test  // default
+        || evaluate(eachCase.test, subScope) === discriminant
+      )
+    ) {
+      matched = true
+    }
+    if (matched) {
+      const result = SwitchCase(eachCase, subScope)
+      if (result === BREAK || result === CONTINUE || result === RETURN) {
+        return result
+      }
+    }
+  }
+}
 
 export function SwitchCase(node: estree.SwitchCase, scope: Scope) {
   for (const statement of node.consequent) {
@@ -77,7 +98,7 @@ export function TryStatement(node: estree.TryStatement, scope: Scope) {
     if (node.handler) {
       const { name } = node.handler.param as estree.Identifier
       const subScope = new Scope('block', scope)
-      subScope.invasived = true
+      subScope.invasive()
       subScope.const(name, err)
       return evaluate(node.handler, subScope)
     } else {
@@ -97,7 +118,7 @@ export function CatchClause(node: estree.CatchClause, scope: Scope) {
 export function WhileStatement(node: estree.WhileStatement, scope: Scope) {
   while (evaluate(node.test, scope)) {
     const subScope = new Scope('loop', scope)
-    subScope.invasived = true
+    subScope.invasive()
     const result = evaluate(node.body, subScope)
 
     if (result === BREAK) {
@@ -113,7 +134,7 @@ export function WhileStatement(node: estree.WhileStatement, scope: Scope) {
 export function DoWhileStatement(node: estree.DoWhileStatement, scope: Scope) {
   do {
     const subScope = new Scope('loop', scope)
-    subScope.invasived = true
+    subScope.invasive()
     const result = evaluate(node.body, subScope)
 
     if (result === BREAK) {
@@ -128,13 +149,10 @@ export function DoWhileStatement(node: estree.DoWhileStatement, scope: Scope) {
 
 export function ForStatement(node: estree.ForStatement, scope: Scope) {
   const subScope = new Scope('loop', scope)
-  const finTest = node.test
-    ? () => evaluate(node.test, subScope)
-    : () => true
   
   for (
     evaluate(node.init, subScope);
-    finTest();
+    node.test ? evaluate(node.test, subScope) : true;
     evaluate(node.update, subScope)
   ) {
     const result = evaluate(node.body, subScope)
@@ -152,13 +170,12 @@ export function ForStatement(node: estree.ForStatement, scope: Scope) {
 
 export function ForInStatement(node: estree.ForInStatement, scope: Scope) {
   const left = node.left as estree.VariableDeclaration
-  const kind = left.kind
   const { name } = left.declarations[0].id as estree.Identifier
 
   for (const value in evaluate(node.right, scope)) {
     const subScope = new Scope('loop', scope)
-    subScope.invasived = true
-    scope[kind](name, value)
+    subScope.invasive()
+    scope[left.kind](name, value)
     const result = evaluate(node.body, subScope)
 
     if (result === BREAK) {

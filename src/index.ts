@@ -44,8 +44,4 @@ class Sval {
   }
 }
 
-if (window) {
-  ;(window as any).Sval = Sval
-}
-
 export default Sval

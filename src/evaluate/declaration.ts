@@ -8,7 +8,7 @@ import { RETURN } from '../share/const'
 export function FunctionDeclaration(node: estree.FunctionDeclaration, scope: Scope) {
   scope.var(node.id.name, function (...args: any[]) {
     const subScope = new Scope('function', scope)
-    subScope.invasived = true
+    subScope.invasive()
     subScope.const('this', this)
     subScope.const('arguments', arguments)
 

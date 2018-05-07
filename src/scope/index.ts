@@ -1,16 +1,20 @@
 import { Var, varKind } from './variable'
 
-type scopeType = 'block' | 'switch' | 'loop' | 'function'
+export type scopeType = 'block' | 'switch' | 'loop' | 'function'
 
 export default class Scope {
   readonly type: scopeType
-  private parent: Scope | null
-  private context: { [key: string]: Var } = {}
+  private readonly parent: Scope | null
+  private readonly context: { [key: string]: Var } = {}
   invasived: boolean = false
 
   constructor(type: scopeType, parent: Scope = null, label?: string) {
     this.type = type
     this.parent = parent
+  }
+
+  invasive() {
+    this.invasived = true
   }
 
   global(): Scope {
