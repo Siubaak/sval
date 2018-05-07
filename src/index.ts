@@ -11,13 +11,14 @@ export interface SvalOptions {
 
 class Sval {
   private runOptions: Options = {}
-  private scope = new Scope('block')
+  private scope = new Scope('function')
 
   constructor(options: SvalOptions = {}) {
     const { ecmaVer = 5, sandBox = true } = options
 
     this.runOptions.ecmaVersion = ecmaVer
 
+    this.scope.invasive()
     if (sandBox) {
       this.scope.let('window', defModules)
       this.scope.let('this', defModules)

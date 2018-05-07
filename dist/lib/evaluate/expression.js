@@ -176,7 +176,11 @@ function AssignmentExpression(node, scope) {
     var left = node.left;
     var variable;
     if (left.type === 'Identifier') {
-        variable = identifier_1.Identifier(left, scope, { getVar: true });
+        variable = identifier_1.Identifier(left, scope, { getVar: true, throwErr: false });
+        if (!variable) {
+            var win = scope.global().find('window').get();
+            variable = new variable_1.Prop(win, left.name);
+        }
     }
     else if (left.type === 'MemberExpression') {
         variable = MemberExpression(left, scope, { getVar: true });

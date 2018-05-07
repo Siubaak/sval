@@ -168,7 +168,11 @@ export function AssignmentExpression(node: estree.AssignmentExpression, scope: S
   const left = node.left
   let variable: Variable
   if (left.type === 'Identifier') {
-    variable = Identifier(left, scope, { getVar: true })
+    variable = Identifier(left, scope, { getVar: true, throwErr: false })
+    if (!variable) {
+      const win = scope.global().find('window').get()
+      variable = new Prop(win, left.name)
+    }
   } else if (left.type === 'MemberExpression') {
     variable = MemberExpression(left, scope, { getVar: true })
   } else {

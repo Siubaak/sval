@@ -8,9 +8,10 @@ var Sval = (function () {
     function Sval(options) {
         if (options === void 0) { options = {}; }
         this.runOptions = {};
-        this.scope = new scope_1.default('block');
+        this.scope = new scope_1.default('function');
         var _a = options.ecmaVer, ecmaVer = _a === void 0 ? 5 : _a, _b = options.sandBox, sandBox = _b === void 0 ? true : _b;
         this.runOptions.ecmaVersion = ecmaVer;
+        this.scope.invasive();
         if (sandBox) {
             this.scope.let('window', module_1.defModules);
             this.scope.let('this', module_1.defModules);
