@@ -25,24 +25,29 @@ export function FunctionDeclaration(node: estree.FunctionDeclaration, scope: Sco
   })
 }
 
-let curVarDeclareKind: varKind = null
-
 export function VariableDeclaration(node: estree.VariableDeclaration, scope: Scope) {
-  curVarDeclareKind = node.kind
   for (const declarator of node.declarations) {
-    evaluate(declarator, scope)
+    VariableDeclarator(declarator, scope, { kind: node.kind })
   }
-  curVarDeclareKind = null
 }
 
-export function VariableDeclarator(node: estree.VariableDeclarator, scope: Scope) {
+export interface VariableDeclaratorOptions {
+  kind?: varKind
+}
+
+export function VariableDeclarator(
+  node: estree.VariableDeclarator,
+  scope: Scope,
+  options: VariableDeclaratorOptions = {},
+) {
+  const { kind = 'var' } = options
   if (
-    curVarDeclareKind === 'var'
-    || curVarDeclareKind === 'let'
-    || curVarDeclareKind === 'const'
+    kind === 'var'
+    || kind === 'let'
+    || kind === 'const'
   ) {
     const { name } = node.id as estree.Identifier
-    if (!scope[curVarDeclareKind](name, evaluate(node.init, scope))) {
+    if (!scope[kind](name, evaluate(node.init, scope))) {
       throw new SyntaxError(`Identifier '${name}' has already been declared`)
     }
   } else {

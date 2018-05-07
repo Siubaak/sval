@@ -106,6 +106,9 @@ const evaluateOps = {
 }
 
 export default function evaluate(node: Node, scope: Scope): any {
+  if (is.null(node)) {
+    return
+  }
   const handle = (evaluateOps as any)[node.type]
   return handle(node, scope)
 }

@@ -25,22 +25,21 @@ function FunctionDeclaration(node, scope) {
     });
 }
 exports.FunctionDeclaration = FunctionDeclaration;
-var curVarDeclareKind = null;
 function VariableDeclaration(node, scope) {
-    curVarDeclareKind = node.kind;
     for (var _i = 0, _a = node.declarations; _i < _a.length; _i++) {
         var declarator = _a[_i];
-        _1.default(declarator, scope);
+        VariableDeclarator(declarator, scope, { kind: node.kind });
     }
-    curVarDeclareKind = null;
 }
 exports.VariableDeclaration = VariableDeclaration;
-function VariableDeclarator(node, scope) {
-    if (curVarDeclareKind === 'var'
-        || curVarDeclareKind === 'let'
-        || curVarDeclareKind === 'const') {
+function VariableDeclarator(node, scope, options) {
+    if (options === void 0) { options = {}; }
+    var _a = options.kind, kind = _a === void 0 ? 'var' : _a;
+    if (kind === 'var'
+        || kind === 'let'
+        || kind === 'const') {
         var name_2 = node.id.name;
-        if (!scope[curVarDeclareKind](name_2, _1.default(node.init, scope))) {
+        if (!scope[kind](name_2, _1.default(node.init, scope))) {
             throw new SyntaxError("Identifier '" + name_2 + "' has already been declared");
         }
     }
