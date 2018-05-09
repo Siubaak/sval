@@ -1,4 +1,5 @@
 import { Variable, Var, Prop, varKind } from './variable'
+import { hasOwn, getOwnNames } from '../share/util'
 
 /**
  * Scope simulation class
@@ -53,7 +54,7 @@ export default class Scope {
    */
   clone(): Scope {
     const cloneScope = new Scope(this.parent, this.isolated)
-    const names = Object.getOwnPropertyNames(this.context)
+    const names = getOwnNames(this.context)
     for (const name of names) {
       const variable = this.context[name]
       cloneScope[variable.kind](name, variable.get())
@@ -66,7 +67,7 @@ export default class Scope {
    * @param name variable identifier name
    */
   find(name: string): Variable {
-    if (this.context.hasOwnProperty(name)) {
+    if (hasOwn(this.context, name)) {
       // The variable locates in the scope
       return this.context[name]
     } else if (this.parent) {
@@ -76,7 +77,7 @@ export default class Scope {
       // If enter this branch, the scope will be the global scope
       // And the global scope should have window object
       const win = this.global().find('window').get()
-      if (win.hasOwnProperty(name)) {
+      if (hasOwn(win, name)) {
         // Find property in window
         return new Prop(win, name)
       } else {

@@ -1,17 +1,18 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-function toString(val) {
-    return Object.prototype.toString.call(val);
+var defineProperty = Object.defineProperty;
+function define(obj, key, descriptor) {
+    return defineProperty(obj, key, descriptor);
 }
-exports.is = {
-    undefined: function (val) { return toString(val) === '[object Undefined]'; },
-    null: function (val) { return toString(val) === '[object Null]'; },
-    number: function (val) { return toString(val) === '[object Number]'; },
-    string: function (val) { return toString(val) === '[object String]'; },
-    boolean: function (val) { return toString(val) === '[object Boolean]'; },
-    symbol: function (val) { return toString(val) === '[object Symbol]'; },
-    object: function (val) { return toString(val) === '[object Object]'; },
-    array: function (val) { return toString(val) === '[object Array]'; },
-    function: function (val) { return toString(val) === '[object Function]'; },
-};
+exports.define = define;
+var hasOwnProperty = Object.prototype.hasOwnProperty;
+function hasOwn(obj, key) {
+    return hasOwnProperty.call(obj, key);
+}
+exports.hasOwn = hasOwn;
+var getOwnPropertyNames = Object.getOwnPropertyNames;
+function getOwnNames(obj) {
+    return getOwnPropertyNames(obj);
+}
+exports.getOwnNames = getOwnNames;
 //# sourceMappingURL=util.js.map

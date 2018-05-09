@@ -5,6 +5,7 @@ var module_1 = require("./share/module");
 var program_1 = require("./evaluate/program");
 var scope_1 = require("./scope");
 var hoisting_1 = require("./share/hoisting");
+var util_1 = require("./share/util");
 var Sval = (function () {
     function Sval(options) {
         if (options === void 0) { options = {}; }
@@ -23,7 +24,7 @@ var Sval = (function () {
     }
     Sval.prototype.addModules = function (modules) {
         var win = this.scope.find('window').get();
-        var names = Object.getOwnPropertyNames(modules);
+        var names = util_1.getOwnNames(modules);
         for (var _i = 0, names_1 = names; _i < names_1.length; _i++) {
             var name_1 = names_1[_i];
             win[name_1] = modules[name_1];

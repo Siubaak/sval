@@ -2,6 +2,7 @@ import * as estree from 'estree'
 import Scope from '../scope'
 import evaluate from '.'
 import hoisting from '../share/hoisting'
+import { define } from '../share/util'
 import { RETURN } from '../share/const'
 
 import { Identifier } from './identifier'
@@ -38,9 +39,9 @@ export function ObjectExpression(node: estree.ObjectExpression, scope: Scope) {
     if (propKind === 'init') {
       object[key] = value
     } else if (propKind === 'get') {
-      Object.defineProperty(object, key, { get: value })
+      define(object, key, { get: value })
     } else if (propKind === 'set') {
-      Object.defineProperty(object, key, { set: value })
+      define(object, key, { set: value })
     } else {
       throw new SyntaxError('Unexpected token')
     }

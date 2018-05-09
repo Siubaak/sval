@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var scope_1 = require("../scope");
 var _1 = require(".");
 var hoisting_1 = require("../share/hoisting");
+var util_1 = require("../share/util");
 var const_1 = require("../share/const");
 var identifier_1 = require("./identifier");
 var literal_1 = require("./literal");
@@ -37,10 +38,10 @@ function ObjectExpression(node, scope) {
             object[key] = value;
         }
         else if (propKind === 'get') {
-            Object.defineProperty(object, key, { get: value });
+            util_1.define(object, key, { get: value });
         }
         else if (propKind === 'set') {
-            Object.defineProperty(object, key, { set: value });
+            util_1.define(object, key, { set: value });
         }
         else {
             throw new SyntaxError('Unexpected token');

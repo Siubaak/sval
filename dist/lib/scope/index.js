@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var variable_1 = require("./variable");
+var util_1 = require("../share/util");
 var Scope = (function () {
     function Scope(parent, isolated) {
         if (parent === void 0) { parent = null; }
@@ -18,7 +19,7 @@ var Scope = (function () {
     };
     Scope.prototype.clone = function () {
         var cloneScope = new Scope(this.parent, this.isolated);
-        var names = Object.getOwnPropertyNames(this.context);
+        var names = util_1.getOwnNames(this.context);
         for (var _i = 0, names_1 = names; _i < names_1.length; _i++) {
             var name_1 = names_1[_i];
             var variable = this.context[name_1];
@@ -27,7 +28,7 @@ var Scope = (function () {
         return cloneScope;
     };
     Scope.prototype.find = function (name) {
-        if (this.context.hasOwnProperty(name)) {
+        if (util_1.hasOwn(this.context, name)) {
             return this.context[name];
         }
         else if (this.parent) {
@@ -35,7 +36,7 @@ var Scope = (function () {
         }
         else {
             var win = this.global().find('window').get();
-            if (win.hasOwnProperty(name)) {
+            if (util_1.hasOwn(win, name)) {
                 return new variable_1.Prop(win, name);
             }
             else {
