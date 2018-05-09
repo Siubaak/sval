@@ -146,15 +146,8 @@ function DoWhileStatement(node, scope) {
 exports.DoWhileStatement = DoWhileStatement;
 function ForStatement(node, scope) {
     var subScope = new scope_1.default(scope);
-    var isFirstLoop = true;
-    for (index_1.default(node.init, subScope); node.test ? index_1.default(node.test, subScope) : true; index_1.default(node.update, subScope)) {
-        if (isFirstLoop) {
-            isFirstLoop = true;
-        }
-        else {
-            subScope = subScope.clone();
-        }
-        var result = index_1.default(node.body, subScope);
+    for (index_1.default(node.init, subScope); node.test ? index_1.default(node.test, subScope) : true; index_1.default(node.update, subScope = subScope.clone())) {
+        var result = index_1.default(node.body, subScope, { invasived: true });
         if (result === const_1.BREAK) {
             break;
         }

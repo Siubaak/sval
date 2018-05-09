@@ -39,15 +39,18 @@ exports.VariableDeclaration = VariableDeclaration;
 function VariableDeclarator(node, scope, options) {
     if (options === void 0) { options = {}; }
     var _a = options.kind, kind = _a === void 0 ? 'var' : _a, _b = options.hoisting, hoisting = _b === void 0 ? false : _b;
-    if (kind === 'var'
+    var name = node.id.name;
+    if (hoisting) {
+        if (kind === 'var') {
+            scope.var(name, undefined);
+        }
+    }
+    else if (kind === 'var'
         || kind === 'let'
         || kind === 'const') {
-        var name_2 = node.id.name;
-        var value = kind === 'var' && hoisting
-            ? undefined
-            : _1.default(node.init, scope);
-        if (!scope[kind](name_2, value)) {
-            throw new SyntaxError("Identifier '" + name_2 + "' has already been declared");
+        var value = _1.default(node.init, scope);
+        if (!scope[kind](name, value)) {
+            throw new SyntaxError("Identifier '" + name + "' has already been declared");
         }
     }
     else {

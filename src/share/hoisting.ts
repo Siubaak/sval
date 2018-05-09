@@ -18,6 +18,7 @@ export default function hoisting(node: estree.Program | estree.BlockStatement, s
       VariableDeclaration(statement, scope, { hoisting: true })
     } else if (statement.type === 'FunctionDeclaration') {
       FunctionDeclaration(statement, scope)
+      // Avoid duplicate declaration
       node.body[i] = null
     } else {
       hoistingRecursion(statement, scope)

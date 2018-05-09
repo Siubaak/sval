@@ -55,18 +55,20 @@ export function VariableDeclarator(
   options: VariableDeclaratorOptions = {},
 ) {
   const { kind = 'var', hoisting = false } = options
+  const { name } = node.id as estree.Identifier
   
-  if (
+  if (hoisting) {
+    // Hoisting the var variable
+    if (kind === 'var') {
+      scope.var(name, undefined)
+    }
+  } else if (
     kind === 'var'
     || kind === 'let'
     || kind === 'const'
   ) {
-    const { name } = node.id as estree.Identifier
-
-    const value = kind === 'var' && hoisting
-      ? undefined
-      : evaluate(node.init, scope)
-
+    // Variable declaration
+    const value = evaluate(node.init, scope)
     if (!scope[kind](name, value)) {
       throw new SyntaxError(`Identifier '${name}' has already been declared`)
     }

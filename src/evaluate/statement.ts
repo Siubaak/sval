@@ -155,20 +155,13 @@ export function DoWhileStatement(node: estree.DoWhileStatement, scope: Scope) {
 
 export function ForStatement(node: estree.ForStatement, scope: Scope) {
   let subScope = new Scope(scope)
-  let isFirstLoop = true
   
   for (
     evaluate(node.init, subScope);
     node.test ? evaluate(node.test, subScope) : true;
-    evaluate(node.update, subScope)
-  ) {
-    if (isFirstLoop) {
-      isFirstLoop = true
-    } else {
-      subScope = subScope.clone()
-    }
-    
-    const result = evaluate(node.body, subScope)
+    evaluate(node.update, subScope = subScope.clone())
+  ) {    
+    const result = evaluate(node.body, subScope, { invasived: true })
 
     if (result === BREAK) {
       break
