@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var util_1 = require("../share/util");
 var identifier_1 = require("./identifier");
 var literal_1 = require("./literal");
 var program_1 = require("./program");
@@ -49,7 +48,7 @@ var evaluateOps = {
     SequenceExpression: expression_1.SequenceExpression,
 };
 function evaluate(node, scope, options) {
-    if (util_1.is.null(node)) {
+    if (!node) {
         return;
     }
     var handler = evaluateOps[node.type];

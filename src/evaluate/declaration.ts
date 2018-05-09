@@ -1,9 +1,10 @@
 import * as estree from 'estree'
 import Scope from '../scope'
 import evaluate from '.'
+import hoisting from '../share/hoisting'
 import { varKind } from '../scope/variable'
 import { RETURN } from '../share/const'
-import hoisting from '../share/hoisting'
+
 import { BlockStatement } from './statement'
 
 // es5

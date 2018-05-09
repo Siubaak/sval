@@ -1,6 +1,5 @@
 import { Node } from 'estree'
 import Scope from '../scope'
-import { is } from '../share/util'
 
 import { Identifier } from './identifier'
 import { Literal } from './literal'
@@ -110,7 +109,7 @@ export default function evaluate(
   scope: Scope,
   options?: any,
 ): any {
-  if (is.null(node)) {
+  if (!node) {
     return
   }
   const handler = (evaluateOps as any)[node.type]

@@ -2,8 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 var scope_1 = require("../scope");
 var _1 = require(".");
-var const_1 = require("../share/const");
 var hoisting_1 = require("../share/hoisting");
+var const_1 = require("../share/const");
 var statement_1 = require("./statement");
 function FunctionDeclaration(node, scope) {
     scope.var(node.id.name, function () {

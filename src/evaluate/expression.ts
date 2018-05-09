@@ -1,12 +1,13 @@
 import * as estree from 'estree'
 import Scope from '../scope'
 import evaluate from '.'
+import hoisting from '../share/hoisting'
 import { RETURN } from '../share/const'
+
 import { Identifier } from './identifier'
 import { Literal } from './literal'
 import { Variable, Prop } from '../scope/variable'
 import { BlockStatement } from './statement'
-import hoisting from '../share/hoisting'
 
 // es5
 export function ThisExpression(node: estree.ThisExpression, scope: Scope) {

@@ -10,13 +10,13 @@ export interface SvalOptions {
 }
 
 class Sval {
-  private runOptions: Options = {}
+  private options: Options = {}
   private scope = new Scope(null, true)
 
   constructor(options: SvalOptions = {}) {
     const { ecmaVer = 5, sandBox = true } = options
 
-    this.runOptions.ecmaVersion = ecmaVer
+    this.options.ecmaVersion = ecmaVer
 
     if (sandBox) {
       this.scope.let('window', defModules)
@@ -28,7 +28,7 @@ class Sval {
   }
 
   addModules(modules: Modules) {
-    const win = this.scope.global().find('window').get()
+    const win = this.scope.find('window').get()
     const names = Object.getOwnPropertyNames(modules)
     for (const name of names) {
       win[name] = modules[name]
@@ -36,7 +36,7 @@ class Sval {
   }
 
   run(input: string) {
-    const ast = parse(input, this.runOptions)
+    const ast = parse(input, this.options)
     hoisting(ast, this.scope)
     Program(ast, this.scope)
   }

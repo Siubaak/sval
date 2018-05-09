@@ -1,4 +1,4 @@
-import { varKind, Variable, Var, Prop } from './variable'
+import { Variable, Var, Prop, varKind } from './variable'
 
 /**
  * Scope simulation class

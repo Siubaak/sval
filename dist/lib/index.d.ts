@@ -4,7 +4,7 @@ export interface SvalOptions {
     sandBox?: boolean;
 }
 declare class Sval {
-    private runOptions;
+    private options;
     private scope;
     constructor(options?: SvalOptions);
     addModules(modules: Modules): void;

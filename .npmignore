@@ -1,5 +1,13 @@
 .DS_Store
 .vscode
-node_modules
+
 dist/dev
+
+config
 coverage
+node_modules
+src
+test
+.gitignore
+.travis.yml
+tsconfig.json

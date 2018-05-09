@@ -49,6 +49,10 @@ var Scope = (function () {
             scope = scope.parent;
         }
         scope.context[name] = new variable_1.Var('var', value);
+        if (!scope.parent) {
+            var win = scope.find('window').get();
+            win[name] = value;
+        }
         return true;
     };
     Scope.prototype.let = function (name, value) {

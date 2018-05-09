@@ -2,12 +2,12 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 var scope_1 = require("../scope");
 var _1 = require(".");
+var hoisting_1 = require("../share/hoisting");
 var const_1 = require("../share/const");
 var identifier_1 = require("./identifier");
 var literal_1 = require("./literal");
 var variable_1 = require("../scope/variable");
 var statement_1 = require("./statement");
-var hoisting_1 = require("../share/hoisting");
 function ThisExpression(node, scope) {
     return scope.find('this').get();
 }
