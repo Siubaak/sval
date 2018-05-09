@@ -3,36 +3,50 @@ import Scope from '../scope'
 import evaluate from '.'
 import { varKind } from '../scope/variable'
 import { RETURN } from '../share/const'
+import hoisting from '../share/hoisting'
+import { BlockStatement } from './statement'
 
 // es5
 export function FunctionDeclaration(node: estree.FunctionDeclaration, scope: Scope) {
   scope.var(node.id.name, function (...args: any[]) {
-    const subScope = new Scope('function', scope)
-    subScope.invasive()
+    const subScope = new Scope(scope, true)
     subScope.const('this', this)
-    subScope.const('arguments', arguments)
+    subScope.let('arguments', arguments)
 
     const params = node.params as estree.Identifier[]
     for (let i = 0; i < params.length; i++) {
       const { name } = params[i]
       subScope.let(name, args[i])
     }
+
+    hoisting(node.body, subScope)
     
-    const result = evaluate(node.body, subScope)
+    const result = BlockStatement(node.body, subScope, { invasived: true })
+
     if (result === RETURN) {
       return result.RES
     }
   })
 }
 
-export function VariableDeclaration(node: estree.VariableDeclaration, scope: Scope) {
+export interface VariableDeclarationOptions {
+  hoisting?: boolean
+}
+
+export function VariableDeclaration(
+  node: estree.VariableDeclaration,
+  scope: Scope,
+  options: VariableDeclarationOptions = {},
+) {
+  const { hoisting = false } = options
   for (const declarator of node.declarations) {
-    VariableDeclarator(declarator, scope, { kind: node.kind })
+    VariableDeclarator(declarator, scope, { kind: node.kind, hoisting })
   }
 }
 
 export interface VariableDeclaratorOptions {
   kind?: varKind
+  hoisting?: boolean
 }
 
 export function VariableDeclarator(
@@ -40,14 +54,20 @@ export function VariableDeclarator(
   scope: Scope,
   options: VariableDeclaratorOptions = {},
 ) {
-  const { kind = 'var' } = options
+  const { kind = 'var', hoisting = false } = options
+  
   if (
     kind === 'var'
     || kind === 'let'
     || kind === 'const'
   ) {
     const { name } = node.id as estree.Identifier
-    if (!scope[kind](name, evaluate(node.init, scope))) {
+
+    const value = kind === 'var' && hoisting
+      ? undefined
+      : evaluate(node.init, scope)
+
+    if (!scope[kind](name, value)) {
       throw new SyntaxError(`Identifier '${name}' has already been declared`)
     }
   } else {

@@ -48,12 +48,12 @@ var evaluateOps = {
     NewExpression: expression_1.NewExpression,
     SequenceExpression: expression_1.SequenceExpression,
 };
-function evaluate(node, scope) {
+function evaluate(node, scope, options) {
     if (util_1.is.null(node)) {
         return;
     }
-    var handle = evaluateOps[node.type];
-    return handle(node, scope);
+    var handler = evaluateOps[node.type];
+    return handler(node, scope, options);
 }
 exports.default = evaluate;
 //# sourceMappingURL=index.js.map

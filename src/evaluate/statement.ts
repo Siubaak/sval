@@ -8,8 +8,19 @@ export function ExpressionStatement(node: estree.ExpressionStatement, scope: Sco
   evaluate(node.expression, scope)
 }
 
-export function BlockStatement(block: estree.BlockStatement, scope: Scope) {
-  const subScope = scope.invasived ? scope : new Scope('block', scope)
+export interface BlockOptions {
+  invasived?: boolean
+}
+
+export function BlockStatement(
+  block: estree.BlockStatement,
+  scope: Scope,
+  options: BlockOptions = {},
+) {
+  const { invasived = false } = options
+
+  const subScope = invasived ? scope : new Scope(scope)
+
   for (const node of block.body) {
     const result = evaluate(node, subScope)
     if (result === BREAK || result === CONTINUE || result === RETURN) {
@@ -57,20 +68,19 @@ export function IfStatement(node: estree.IfStatement, scope: Scope) {
 
 export function SwitchStatement(node: estree.SwitchStatement, scope: Scope) {
   const discriminant = evaluate(node.discriminant, scope)
-  const subScope = new Scope('switch', scope)
   let matched = false
   for (const eachCase of node.cases) {
     if (
       !matched
       && (
         !eachCase.test  // default
-        || evaluate(eachCase.test, subScope) === discriminant
+        || evaluate(eachCase.test, scope) === discriminant
       )
     ) {
       matched = true
     }
     if (matched) {
-      const result = SwitchCase(eachCase, subScope)
+      const result = SwitchCase(eachCase, scope)
       if (result === BREAK || result === CONTINUE || result === RETURN) {
         return result
       }
@@ -93,33 +103,31 @@ export function ThrowStatement(node: estree.ThrowStatement, scope: Scope) {
 
 export function TryStatement(node: estree.TryStatement, scope: Scope) {
   try {
-    return evaluate(node.block, scope)
+    return BlockStatement(node.block, scope)
   } catch (err) {
     if (node.handler) {
       const { name } = node.handler.param as estree.Identifier
-      const subScope = new Scope('block', scope)
-      subScope.invasive()
+      const subScope = new Scope(scope)
       subScope.const(name, err)
-      return evaluate(node.handler, subScope)
+
+      return CatchClause(node.handler, subScope)
     } else {
       throw err
     }
   } finally {
     if (node.finalizer) {
-      return evaluate(node.finalizer, scope)
+      return BlockStatement(node.finalizer, scope)
     }
   }
 }
 
 export function CatchClause(node: estree.CatchClause, scope: Scope) {
-  return evaluate(node.body, scope)
+  return BlockStatement(node.body, scope, { invasived: true })
 }
 
 export function WhileStatement(node: estree.WhileStatement, scope: Scope) {
   while (evaluate(node.test, scope)) {
-    const subScope = new Scope('loop', scope)
-    subScope.invasive()
-    const result = evaluate(node.body, subScope)
+    const result = evaluate(node.body, scope)
 
     if (result === BREAK) {
       break
@@ -133,9 +141,7 @@ export function WhileStatement(node: estree.WhileStatement, scope: Scope) {
 
 export function DoWhileStatement(node: estree.DoWhileStatement, scope: Scope) {
   do {
-    const subScope = new Scope('loop', scope)
-    subScope.invasive()
-    const result = evaluate(node.body, subScope)
+    const result = evaluate(node.body, scope)
 
     if (result === BREAK) {
       break
@@ -148,13 +154,20 @@ export function DoWhileStatement(node: estree.DoWhileStatement, scope: Scope) {
 }
 
 export function ForStatement(node: estree.ForStatement, scope: Scope) {
-  const subScope = new Scope('loop', scope)
+  let subScope = new Scope(scope)
+  let isFirstLoop = true
   
   for (
     evaluate(node.init, subScope);
     node.test ? evaluate(node.test, subScope) : true;
     evaluate(node.update, subScope)
   ) {
+    if (isFirstLoop) {
+      isFirstLoop = true
+    } else {
+      subScope = subScope.clone()
+    }
+    
     const result = evaluate(node.body, subScope)
 
     if (result === BREAK) {
@@ -173,10 +186,10 @@ export function ForInStatement(node: estree.ForInStatement, scope: Scope) {
   const { name } = left.declarations[0].id as estree.Identifier
 
   for (const value in evaluate(node.right, scope)) {
-    const subScope = new Scope('loop', scope)
-    subScope.invasive()
+    const subScope = new Scope(scope)
     scope[left.kind](name, value)
-    const result = evaluate(node.body, subScope)
+
+    const result = evaluate(node.body, subScope, { invasived: true })
 
     if (result === BREAK) {
       break

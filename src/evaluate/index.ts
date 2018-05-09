@@ -105,10 +105,14 @@ const evaluateOps = {
   SequenceExpression,
 }
 
-export default function evaluate(node: Node, scope: Scope): any {
+export default function evaluate(
+  node: Node,
+  scope: Scope,
+  options?: any,
+): any {
   if (is.null(node)) {
     return
   }
-  const handle = (evaluateOps as any)[node.type]
-  return handle(node, scope)
+  const handler = (evaluateOps as any)[node.type]
+  return handler(node, scope, options)
 }

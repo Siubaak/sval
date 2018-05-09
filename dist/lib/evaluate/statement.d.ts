@@ -1,7 +1,10 @@
 import * as estree from 'estree';
 import Scope from '../scope';
 export declare function ExpressionStatement(node: estree.ExpressionStatement, scope: Scope): void;
-export declare function BlockStatement(block: estree.BlockStatement, scope: Scope): any;
+export interface BlockOptions {
+    invasived?: boolean;
+}
+export declare function BlockStatement(block: estree.BlockStatement, scope: Scope, options?: BlockOptions): any;
 export declare function EmptyStatement(node: estree.EmptyStatement, scope: Scope): void;
 export declare function DebuggerStatement(node: estree.DebuggerStatement, scope: Scope): void;
 export declare function WithStatement(node: estree.WithStatement, scope: Scope): void;

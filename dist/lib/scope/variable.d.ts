@@ -4,7 +4,7 @@ export interface Variable {
     set(value: any): boolean;
 }
 export declare class Var implements Variable {
-    private readonly kind;
+    readonly kind: varKind;
     private value;
     constructor(kind: varKind, value: any);
     get(): any;

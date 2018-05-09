@@ -6,6 +6,8 @@ var const_1 = require("../share/const");
 var identifier_1 = require("./identifier");
 var literal_1 = require("./literal");
 var variable_1 = require("../scope/variable");
+var statement_1 = require("./statement");
+var hoisting_1 = require("../share/hoisting");
 function ThisExpression(node, scope) {
     return scope.find('this').get();
 }
@@ -53,16 +55,16 @@ function FunctionExpression(node, scope) {
         for (var _i = 0; _i < arguments.length; _i++) {
             args[_i] = arguments[_i];
         }
-        var subScope = new scope_1.default('function', scope);
-        subScope.invasive();
+        var subScope = new scope_1.default(scope, true);
         subScope.const('this', this);
-        subScope.const('arguments', arguments);
+        subScope.let('arguments', arguments);
         var params = node.params;
         for (var i = 0; i < params.length; i++) {
             var name_1 = params[i].name;
             subScope.let(name_1, args[i]);
         }
-        var result = _1.default(node.body, subScope);
+        hoisting_1.default(node.body, subScope);
+        var result = statement_1.BlockStatement(node.body, subScope, { invasived: true });
         if (result === const_1.RETURN) {
             return result.RES;
         }

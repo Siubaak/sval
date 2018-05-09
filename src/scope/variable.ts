@@ -6,7 +6,7 @@ export interface Variable {
 }
 
 export class Var implements Variable {
-  private readonly kind: varKind
+  readonly kind: varKind
   private value: any
 
   constructor(kind: varKind, value: any) {

@@ -1,22 +1,45 @@
 import { varKind, Variable, Var, Prop } from './variable'
 
-export type scopeType = 'block' | 'switch' | 'loop' | 'function'
-
+/**
+ * Scope simulation class
+ */
 export default class Scope {
-  readonly type: scopeType
+  /**
+   * The parent scope along the scope chain
+   * @private
+   * @readonly
+   */
   private readonly parent: Scope | null
+  /**
+   * To distinguish function scope and block scope
+   * The value is true for function scope or false for block scope
+   * @readonly
+   */
+  readonly isolated: boolean
+
+  /**
+   * Context simulation object
+   * @private
+   * @readonly
+   */
   private readonly context: { [key: string]: Var } = {}
-  invasived: boolean = false
 
-  constructor(type: scopeType, parent: Scope = null, label?: string) {
-    this.type = type
+  /**
+   * Create a simulated scope
+   * @param parent the parent scope along the scope chain (default: null)
+   * @param isolated true for function scope or false for block scope (default: false)
+   */
+  constructor(
+    parent: Scope = null,
+    isolated: boolean = false,
+  ) {
     this.parent = parent
+    this.isolated = isolated
   }
 
-  invasive() {
-    this.invasived = true
-  }
-
+  /**
+   * Get global scope
+   */
   global(): Scope {
     let scope: Scope = this
     while(scope.parent) {
@@ -25,6 +48,23 @@ export default class Scope {
     return scope
   }
 
+  /**
+   * Clone current scope
+   */
+  clone(): Scope {
+    const cloneScope = new Scope(this.parent, this.isolated)
+    const names = Object.getOwnPropertyNames(this.context)
+    for (const name of names) {
+      const variable = this.context[name]
+      cloneScope[variable.kind](name, variable.get())
+    }
+    return cloneScope
+  }
+
+  /**
+   * Find a variable along scope chain
+   * @param name variable identifier name
+   */
   find(name: string): Variable {
     if (this.context.hasOwnProperty(name)) {
       // The variable locates in the scope
@@ -46,11 +86,16 @@ export default class Scope {
     }
   }
 
+  /**
+   * Declare a var variable
+   * @param name variable identifier name
+   * @param value variable value
+   */
   var(name: string, value: any) {
     let scope: Scope = this
 
     // Find the closest function scope
-    while(scope.parent && scope.type !== 'function') {
+    while(scope.parent && !scope.isolated) {
       scope = scope.parent
     }
 
@@ -58,6 +103,11 @@ export default class Scope {
     return true
   }
 
+  /**
+   * Declare a let variable
+   * @param name variable identifier name
+   * @param value variable value
+   */
   let(name: string, value: any) {
     const variable = this.context[name]
     if (!variable) {
@@ -68,6 +118,11 @@ export default class Scope {
     }
   }
 
+  /**
+   * Declare a const variable
+   * @param name variable identifier name
+   * @param value variable value
+   */
   const(name: string, value: any) {
     const variable = this.context[name]
     if (!variable) {

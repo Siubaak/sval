@@ -7,10 +7,12 @@ function ExpressionStatement(node, scope) {
     index_1.default(node.expression, scope);
 }
 exports.ExpressionStatement = ExpressionStatement;
-function BlockStatement(block, scope) {
-    var subScope = scope.invasived ? scope : new scope_1.default('block', scope);
-    for (var _i = 0, _a = block.body; _i < _a.length; _i++) {
-        var node = _a[_i];
+function BlockStatement(block, scope, options) {
+    if (options === void 0) { options = {}; }
+    var _a = options.invasived, invasived = _a === void 0 ? false : _a;
+    var subScope = invasived ? scope : new scope_1.default(scope);
+    for (var _i = 0, _b = block.body; _i < _b.length; _i++) {
+        var node = _b[_i];
         var result = index_1.default(node, subScope);
         if (result === const_1.BREAK || result === const_1.CONTINUE || result === const_1.RETURN) {
             return result;
@@ -55,17 +57,16 @@ function IfStatement(node, scope) {
 exports.IfStatement = IfStatement;
 function SwitchStatement(node, scope) {
     var discriminant = index_1.default(node.discriminant, scope);
-    var subScope = new scope_1.default('switch', scope);
     var matched = false;
     for (var _i = 0, _a = node.cases; _i < _a.length; _i++) {
         var eachCase = _a[_i];
         if (!matched
             && (!eachCase.test
-                || index_1.default(eachCase.test, subScope) === discriminant)) {
+                || index_1.default(eachCase.test, scope) === discriminant)) {
             matched = true;
         }
         if (matched) {
-            var result = SwitchCase(eachCase, subScope);
+            var result = SwitchCase(eachCase, scope);
             if (result === const_1.BREAK || result === const_1.CONTINUE || result === const_1.RETURN) {
                 return result;
             }
@@ -89,15 +90,14 @@ function ThrowStatement(node, scope) {
 exports.ThrowStatement = ThrowStatement;
 function TryStatement(node, scope) {
     try {
-        return index_1.default(node.block, scope);
+        return BlockStatement(node.block, scope);
     }
     catch (err) {
         if (node.handler) {
             var name_1 = node.handler.param.name;
-            var subScope = new scope_1.default('block', scope);
-            subScope.invasive();
+            var subScope = new scope_1.default(scope);
             subScope.const(name_1, err);
-            return index_1.default(node.handler, subScope);
+            return CatchClause(node.handler, subScope);
         }
         else {
             throw err;
@@ -105,20 +105,18 @@ function TryStatement(node, scope) {
     }
     finally {
         if (node.finalizer) {
-            return index_1.default(node.finalizer, scope);
+            return BlockStatement(node.finalizer, scope);
         }
     }
 }
 exports.TryStatement = TryStatement;
 function CatchClause(node, scope) {
-    return index_1.default(node.body, scope);
+    return BlockStatement(node.body, scope, { invasived: true });
 }
 exports.CatchClause = CatchClause;
 function WhileStatement(node, scope) {
     while (index_1.default(node.test, scope)) {
-        var subScope = new scope_1.default('loop', scope);
-        subScope.invasive();
-        var result = index_1.default(node.body, subScope);
+        var result = index_1.default(node.body, scope);
         if (result === const_1.BREAK) {
             break;
         }
@@ -133,9 +131,7 @@ function WhileStatement(node, scope) {
 exports.WhileStatement = WhileStatement;
 function DoWhileStatement(node, scope) {
     do {
-        var subScope = new scope_1.default('loop', scope);
-        subScope.invasive();
-        var result = index_1.default(node.body, subScope);
+        var result = index_1.default(node.body, scope);
         if (result === const_1.BREAK) {
             break;
         }
@@ -149,8 +145,15 @@ function DoWhileStatement(node, scope) {
 }
 exports.DoWhileStatement = DoWhileStatement;
 function ForStatement(node, scope) {
-    var subScope = new scope_1.default('loop', scope);
+    var subScope = new scope_1.default(scope);
+    var isFirstLoop = true;
     for (index_1.default(node.init, subScope); node.test ? index_1.default(node.test, subScope) : true; index_1.default(node.update, subScope)) {
+        if (isFirstLoop) {
+            isFirstLoop = true;
+        }
+        else {
+            subScope = subScope.clone();
+        }
         var result = index_1.default(node.body, subScope);
         if (result === const_1.BREAK) {
             break;
@@ -168,10 +171,9 @@ function ForInStatement(node, scope) {
     var left = node.left;
     var name = left.declarations[0].id.name;
     for (var value in index_1.default(node.right, scope)) {
-        var subScope = new scope_1.default('loop', scope);
-        subScope.invasive();
+        var subScope = new scope_1.default(scope);
         scope[left.kind](name, value);
-        var result = index_1.default(node.body, subScope);
+        var result = index_1.default(node.body, subScope, { invasived: true });
         if (result === const_1.BREAK) {
             break;
         }

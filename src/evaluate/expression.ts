@@ -5,6 +5,8 @@ import { RETURN } from '../share/const'
 import { Identifier } from './identifier'
 import { Literal } from './literal'
 import { Variable, Prop } from '../scope/variable'
+import { BlockStatement } from './statement'
+import hoisting from '../share/hoisting'
 
 // es5
 export function ThisExpression(node: estree.ThisExpression, scope: Scope) {
@@ -48,18 +50,20 @@ export function ObjectExpression(node: estree.ObjectExpression, scope: Scope) {
 
 export function FunctionExpression(node: estree.FunctionExpression, scope: Scope) {
   return function (...args: any[]) {
-    const subScope = new Scope('function', scope)
-    subScope.invasive()
+    const subScope = new Scope(scope, true)
     subScope.const('this', this)
-    subScope.const('arguments', arguments)
+    subScope.let('arguments', arguments)
 
     const params = node.params as estree.Identifier[]
     for (let i = 0; i < params.length; i++) {
       const { name } = params[i]
       subScope.let(name, args[i])
     }
+
+    hoisting(node.body, subScope)
     
-    const result = evaluate(node.body, subScope)
+    const result = BlockStatement(node.body, subScope, { invasived: true })
+    
     if (result === RETURN) {
       return result.RES
     }

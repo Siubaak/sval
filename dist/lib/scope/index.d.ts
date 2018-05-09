@@ -1,13 +1,11 @@
 import { Variable } from './variable';
-export declare type scopeType = 'block' | 'switch' | 'loop' | 'function';
 export default class Scope {
-    readonly type: scopeType;
     private readonly parent;
+    readonly isolated: boolean;
     private readonly context;
-    invasived: boolean;
-    constructor(type: scopeType, parent?: Scope, label?: string);
-    invasive(): void;
+    constructor(parent?: Scope, isolated?: boolean);
     global(): Scope;
+    clone(): Scope;
     find(name: string): Variable;
     var(name: string, value: any): boolean;
     let(name: string, value: any): boolean;

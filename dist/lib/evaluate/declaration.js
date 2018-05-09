@@ -3,43 +3,50 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var scope_1 = require("../scope");
 var _1 = require(".");
 var const_1 = require("../share/const");
+var hoisting_1 = require("../share/hoisting");
+var statement_1 = require("./statement");
 function FunctionDeclaration(node, scope) {
     scope.var(node.id.name, function () {
         var args = [];
         for (var _i = 0; _i < arguments.length; _i++) {
             args[_i] = arguments[_i];
         }
-        var subScope = new scope_1.default('function', scope);
-        subScope.invasive();
+        var subScope = new scope_1.default(scope, true);
         subScope.const('this', this);
-        subScope.const('arguments', arguments);
+        subScope.let('arguments', arguments);
         var params = node.params;
         for (var i = 0; i < params.length; i++) {
             var name_1 = params[i].name;
             subScope.let(name_1, args[i]);
         }
-        var result = _1.default(node.body, subScope);
+        hoisting_1.default(node.body, subScope);
+        var result = statement_1.BlockStatement(node.body, subScope, { invasived: true });
         if (result === const_1.RETURN) {
             return result.RES;
         }
     });
 }
 exports.FunctionDeclaration = FunctionDeclaration;
-function VariableDeclaration(node, scope) {
-    for (var _i = 0, _a = node.declarations; _i < _a.length; _i++) {
-        var declarator = _a[_i];
-        VariableDeclarator(declarator, scope, { kind: node.kind });
+function VariableDeclaration(node, scope, options) {
+    if (options === void 0) { options = {}; }
+    var _a = options.hoisting, hoisting = _a === void 0 ? false : _a;
+    for (var _i = 0, _b = node.declarations; _i < _b.length; _i++) {
+        var declarator = _b[_i];
+        VariableDeclarator(declarator, scope, { kind: node.kind, hoisting: hoisting });
     }
 }
 exports.VariableDeclaration = VariableDeclaration;
 function VariableDeclarator(node, scope, options) {
     if (options === void 0) { options = {}; }
-    var _a = options.kind, kind = _a === void 0 ? 'var' : _a;
+    var _a = options.kind, kind = _a === void 0 ? 'var' : _a, _b = options.hoisting, hoisting = _b === void 0 ? false : _b;
     if (kind === 'var'
         || kind === 'let'
         || kind === 'const') {
         var name_2 = node.id.name;
-        if (!scope[kind](name_2, _1.default(node.init, scope))) {
+        var value = kind === 'var' && hoisting
+            ? undefined
+            : _1.default(node.init, scope);
+        if (!scope[kind](name_2, value)) {
             throw new SyntaxError("Identifier '" + name_2 + "' has already been declared");
         }
     }
