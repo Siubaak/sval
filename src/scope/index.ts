@@ -100,6 +100,12 @@ export default class Scope {
     }
 
     scope.context[name] = new Var('var', value)
+
+    if (!scope.parent) {
+      const win = scope.find('window').get()
+      win[name] = value
+    }
+
     return true
   }
 
