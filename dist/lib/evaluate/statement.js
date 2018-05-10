@@ -181,24 +181,4 @@ function ForInStatement(node, scope) {
     }
 }
 exports.ForInStatement = ForInStatement;
-function ForOfStatement(node, scope) {
-    var left = node.left;
-    var name = left.declarations[0].id.name;
-    for (var _i = 0, _a = index_1.default(node.right, scope); _i < _a.length; _i++) {
-        var value = _a[_i];
-        var subScope = new scope_1.default(scope);
-        scope[left.kind](name, value);
-        var result = index_1.default(node.body, subScope, { invasived: true });
-        if (result === const_1.BREAK) {
-            break;
-        }
-        else if (result === const_1.CONTINUE) {
-            continue;
-        }
-        else if (result === const_1.RETURN) {
-            return result;
-        }
-    }
-}
-exports.ForOfStatement = ForOfStatement;
 //# sourceMappingURL=statement.js.map

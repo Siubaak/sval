@@ -20,4 +20,3 @@ export declare function ConditionalExpression(node: estree.ConditionalExpression
 export declare function CallExpression(node: estree.CallExpression, scope: Scope): any;
 export declare function NewExpression(node: estree.NewExpression, scope: Scope): any;
 export declare function SequenceExpression(node: estree.SequenceExpression, scope: Scope): any;
-export declare function ArrowFunctionExpression(node: estree.ArrowFunctionExpression, scope: Scope): (...args: any[]) => any;
