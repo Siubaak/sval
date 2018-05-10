@@ -1,20 +1,20 @@
 import * as estree from 'estree'
 import Scope from '../scope'
 import evaluate from '.'
-import hoisting from '../share/hoisting'
+import { hoisting } from '../share/hoisting'
 import { varKind } from '../scope/variable'
+import { define } from '../share/util'
 import { RETURN } from '../share/const'
 
 import { BlockStatement } from './statement'
 
-// es5
 export function FunctionDeclaration(node: estree.FunctionDeclaration, scope: Scope) {
-  scope.var(node.id.name, function (...args: any[]) {
+  const params = node.params as estree.Identifier[]
+  const func = function (...args: any[]) {
     const subScope = new Scope(scope, true)
     subScope.const('this', this)
     subScope.let('arguments', arguments)
 
-    const params = node.params as estree.Identifier[]
     for (let i = 0; i < params.length; i++) {
       const { name } = params[i]
       subScope.let(name, args[i])
@@ -23,11 +23,23 @@ export function FunctionDeclaration(node: estree.FunctionDeclaration, scope: Sco
     hoisting(node.body, subScope)
     
     const result = BlockStatement(node.body, subScope, { invasived: true })
-
+    
     if (result === RETURN) {
       return result.RES
     }
+  }
+
+  const name = node.id.name
+  define(func, 'name', {
+    value: name,
+    configurable: true,
   })
+  define(func, 'length', {
+    value: params.length,
+    configurable: true,
+  })
+
+  scope.let(name, func)
 }
 
 export interface VariableDeclarationOptions {

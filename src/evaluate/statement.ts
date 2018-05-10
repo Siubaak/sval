@@ -1,9 +1,9 @@
 import * as estree from 'estree'
 import Scope from '../scope'
 import evaluate from './index'
+import { hoistingFunc } from '../share/hoisting'
 import { BREAK, CONTINUE, RETURN } from '../share/const'
 
-// es5
 export function ExpressionStatement(node: estree.ExpressionStatement, scope: Scope) {
   evaluate(node.expression, scope)
 }
@@ -20,6 +20,8 @@ export function BlockStatement(
   const { invasived = false } = options
 
   const subScope = invasived ? scope : new Scope(scope)
+
+  hoistingFunc(block, subScope)
 
   for (const node of block.body) {
     const result = evaluate(node, subScope)
@@ -194,4 +196,22 @@ export function ForInStatement(node: estree.ForInStatement, scope: Scope) {
   }
 }
 
-// es6
+// export function ForOfStatement(node: estree.ForOfStatement, scope: Scope) {
+//   const left = node.left as estree.VariableDeclaration
+//   const { name } = left.declarations[0].id as estree.Identifier
+
+//   for (const value of evaluate(node.right, scope)) {
+//     const subScope = new Scope(scope)
+//     scope[left.kind](name, value)
+
+//     const result = evaluate(node.body, subScope, { invasived: true })
+
+//     if (result === BREAK) {
+//       break
+//     } else if (result === CONTINUE) {
+//       continue
+//     } else if (result === RETURN) {
+//       return result
+//     }
+//   }
+// }

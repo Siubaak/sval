@@ -1,7 +1,7 @@
 import * as estree from 'estree'
 import Scope from '../scope'
 import evaluate from '.'
-import hoisting from '../share/hoisting'
+import { hoisting } from '../share/hoisting'
 import { define } from '../share/util'
 import { RETURN } from '../share/const'
 
@@ -10,7 +10,6 @@ import { Literal } from './literal'
 import { Variable, Prop } from '../scope/variable'
 import { BlockStatement } from './statement'
 
-// es5
 export function ThisExpression(node: estree.ThisExpression, scope: Scope) {
   return scope.find('this').get()
 }
@@ -51,12 +50,12 @@ export function ObjectExpression(node: estree.ObjectExpression, scope: Scope) {
 }
 
 export function FunctionExpression(node: estree.FunctionExpression, scope: Scope) {
-  return function (...args: any[]) {
+  const params = node.params as estree.Identifier[]
+  const func = function (...args: any[]) {
     const subScope = new Scope(scope, true)
     subScope.const('this', this)
     subScope.let('arguments', arguments)
 
-    const params = node.params as estree.Identifier[]
     for (let i = 0; i < params.length; i++) {
       const { name } = params[i]
       subScope.let(name, args[i])
@@ -70,6 +69,17 @@ export function FunctionExpression(node: estree.FunctionExpression, scope: Scope
       return result.RES
     }
   }
+
+  define(func, 'name', {
+    value: node.id.name,
+    configurable: true,
+  })
+  define(func, 'length', {
+    value: params.length,
+    configurable: true,
+  })
+
+  return func
 }
 
 export function UnaryExpression(node: estree.UnaryExpression, scope: Scope) {
@@ -326,3 +336,28 @@ export function SequenceExpression(node: estree.SequenceExpression, scope: Scope
   }
   return result
 }
+
+// export function ArrowFunctionExpression(node: estree.ArrowFunctionExpression, scope: Scope) {
+//   const params = node.params as estree.Identifier[]
+//   const func = (...args: any[]) => {
+//     const subScope = new Scope(scope)
+
+//     for (let i = 0; i < params.length; i++) {
+//       const { name } = params[i]
+//       subScope.let(name, args[i])
+//     }
+    
+//     const result = evaluate(node.body, subScope, { invasived: true })
+    
+//     if (result === RETURN) {
+//       return result.RES
+//     }
+//   }
+
+//   define(func, 'length', {
+//     value: params.length,
+//     configurable: true,
+//   })
+
+//   return func
+// }

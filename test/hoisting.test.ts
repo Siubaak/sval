@@ -4,9 +4,39 @@ describe('testing src/index.ts', () => {
   it('should hoisting function normally', () => {  
     const interpreter = new Sval()
     interpreter.run(`
-      a()
+      a
       function a() {}
     `)
+  })
+  it('should hoisting function normally in block', () => {  
+    const interpreter = new Sval()
+    interpreter.run(`
+      {
+        a
+        function a() {}
+      }
+    `)
+
+    try {
+      interpreter.run(`
+        a
+      `)
+    } catch (err) {
+      // ReferenceError: a is not defined
+      expect(err).toBeInstanceOf(ReferenceError)
+    }
+
+    try {
+      interpreter.run(`
+        b
+        {
+          function b() {}
+        }
+      `)
+    } catch (err) {
+      // ReferenceError: b is not defined
+      expect(err).toBeInstanceOf(ReferenceError)
+    }
   })
   it('should hoisting var normally', () => {  
     const interpreter = new Sval()
@@ -102,9 +132,6 @@ describe('testing src/index.ts', () => {
       } finally {
         var c = 1
       }
-      console.log(a)
-      console.log(b)
-      console.log(c)
     `)
     expect((window as any).a).toBe(1)
     expect((window as any).b).toBeUndefined()
@@ -112,6 +139,5 @@ describe('testing src/index.ts', () => {
     delete (window as any).a
     delete (window as any).b
     delete (window as any).c
-    console.log(window['e'])
   })
 })

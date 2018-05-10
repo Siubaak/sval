@@ -11,11 +11,15 @@ var Sval = (function () {
         if (options === void 0) { options = {}; }
         this.options = {};
         this.scope = new scope_1.default(null, true);
-        var _a = options.ecmaVer, ecmaVer = _a === void 0 ? 5 : _a, _b = options.sandBox, sandBox = _b === void 0 ? true : _b;
+        var ecmaVer = options.ecmaVer, _a = options.sandBox, sandBox = _a === void 0 ? true : _a;
+        if (ecmaVer !== 5) {
+            ecmaVer = 5;
+        }
         this.options.ecmaVersion = ecmaVer;
         if (sandBox) {
-            this.scope.let('window', module_1.defModules);
-            this.scope.let('this', module_1.defModules);
+            var win = util_1.assign({}, module_1.defModules);
+            this.scope.let('window', win);
+            this.scope.let('this', win);
         }
         else {
             this.scope.let('window', window);
@@ -32,7 +36,7 @@ var Sval = (function () {
     };
     Sval.prototype.run = function (input) {
         var ast = acorn_1.parse(input, this.options);
-        hoisting_1.default(ast, this.scope);
+        hoisting_1.hoisting(ast, this.scope);
         program_1.Program(ast, this.scope);
     };
     return Sval;

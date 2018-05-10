@@ -3,10 +3,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var scope_1 = require("../scope");
 var _1 = require(".");
 var hoisting_1 = require("../share/hoisting");
+var util_1 = require("../share/util");
 var const_1 = require("../share/const");
 var statement_1 = require("./statement");
 function FunctionDeclaration(node, scope) {
-    scope.var(node.id.name, function () {
+    var params = node.params;
+    var func = function () {
         var args = [];
         for (var _i = 0; _i < arguments.length; _i++) {
             args[_i] = arguments[_i];
@@ -14,17 +16,26 @@ function FunctionDeclaration(node, scope) {
         var subScope = new scope_1.default(scope, true);
         subScope.const('this', this);
         subScope.let('arguments', arguments);
-        var params = node.params;
         for (var i = 0; i < params.length; i++) {
             var name_1 = params[i].name;
             subScope.let(name_1, args[i]);
         }
-        hoisting_1.default(node.body, subScope);
+        hoisting_1.hoisting(node.body, subScope);
         var result = statement_1.BlockStatement(node.body, subScope, { invasived: true });
         if (result === const_1.RETURN) {
             return result.RES;
         }
+    };
+    var name = node.id.name;
+    util_1.define(func, 'name', {
+        value: name,
+        configurable: true,
     });
+    util_1.define(func, 'length', {
+        value: params.length,
+        configurable: true,
+    });
+    scope.let(name, func);
 }
 exports.FunctionDeclaration = FunctionDeclaration;
 function VariableDeclaration(node, scope, options) {

@@ -51,7 +51,8 @@ function ObjectExpression(node, scope) {
 }
 exports.ObjectExpression = ObjectExpression;
 function FunctionExpression(node, scope) {
-    return function () {
+    var params = node.params;
+    var func = function () {
         var args = [];
         for (var _i = 0; _i < arguments.length; _i++) {
             args[_i] = arguments[_i];
@@ -59,17 +60,25 @@ function FunctionExpression(node, scope) {
         var subScope = new scope_1.default(scope, true);
         subScope.const('this', this);
         subScope.let('arguments', arguments);
-        var params = node.params;
         for (var i = 0; i < params.length; i++) {
             var name_1 = params[i].name;
             subScope.let(name_1, args[i]);
         }
-        hoisting_1.default(node.body, subScope);
+        hoisting_1.hoisting(node.body, subScope);
         var result = statement_1.BlockStatement(node.body, subScope, { invasived: true });
         if (result === const_1.RETURN) {
             return result.RES;
         }
     };
+    util_1.define(func, 'name', {
+        value: node.id.name,
+        configurable: true,
+    });
+    util_1.define(func, 'length', {
+        value: params.length,
+        configurable: true,
+    });
+    return func;
 }
 exports.FunctionExpression = FunctionExpression;
 function UnaryExpression(node, scope) {
@@ -325,4 +334,28 @@ function SequenceExpression(node, scope) {
     return result;
 }
 exports.SequenceExpression = SequenceExpression;
+function ArrowFunctionExpression(node, scope) {
+    var params = node.params;
+    var func = function () {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
+        }
+        var subScope = new scope_1.default(scope);
+        for (var i = 0; i < params.length; i++) {
+            var name_3 = params[i].name;
+            subScope.let(name_3, args[i]);
+        }
+        var result = _1.default(node.body, subScope, { invasived: true });
+        if (result === const_1.RETURN) {
+            return result.RES;
+        }
+    };
+    util_1.define(func, 'length', {
+        value: params.length,
+        configurable: true,
+    });
+    return func;
+}
+exports.ArrowFunctionExpression = ArrowFunctionExpression;
 //# sourceMappingURL=expression.js.map
