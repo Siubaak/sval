@@ -196,22 +196,22 @@ export function ForInStatement(node: estree.ForInStatement, scope: Scope) {
   }
 }
 
-// export function ForOfStatement(node: estree.ForOfStatement, scope: Scope) {
-//   const left = node.left as estree.VariableDeclaration
-//   const { name } = left.declarations[0].id as estree.Identifier
+export function ForOfStatement(node: estree.ForOfStatement, scope: Scope) {
+  const left = node.left as estree.VariableDeclaration
+  const { name } = left.declarations[0].id as estree.Identifier
 
-//   for (const value of evaluate(node.right, scope)) {
-//     const subScope = new Scope(scope)
-//     scope[left.kind](name, value)
+  for (const value of evaluate(node.right, scope)) {
+    const subScope = new Scope(scope)
+    scope[left.kind](name, value)
 
-//     const result = evaluate(node.body, subScope, { invasived: true })
+    const result = evaluate(node.body, subScope, { invasived: true })
 
-//     if (result === BREAK) {
-//       break
-//     } else if (result === CONTINUE) {
-//       continue
-//     } else if (result === RETURN) {
-//       return result
-//     }
-//   }
-// }
+    if (result === BREAK) {
+      break
+    } else if (result === CONTINUE) {
+      continue
+    } else if (result === RETURN) {
+      return result
+    }
+  }
+}

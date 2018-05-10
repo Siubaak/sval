@@ -30,7 +30,7 @@ const options = {
   // ECMA Version of the code (5 | 6 | 2015)
   ecmaVer: 5,
   // Whether the code runs in a sandbox
-  sandbox: true,
+  sandBox: true,
 }
 
 // Create a interpreter
@@ -48,7 +48,7 @@ interpreter.run(`
 `)
 ```
 
-Sval contructor has options with two fields, **ecmaVer** and **sandbox**.
+Sval contructor has options with two fields, **ecmaVer** and **sandBox**.
 
 - **ecmaVer** is the ECMA version that the code your want to run. Currently, only 5 and 6 (2015) are supported, and the default version is 5 if this field is missing.
 
