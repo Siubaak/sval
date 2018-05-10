@@ -3,7 +3,7 @@ import { Modules, defModules } from './share/module'
 import { Program } from './evaluate/program'
 import Scope from './scope'
 import hoisting from './share/hoisting'
-import { getOwnNames } from './share/util'
+import { getOwnNames, assign } from './share/util'
 
 export interface SvalOptions {
   ecmaVer?: 3 | 5 | 6 | 7 | 8 | 2015 | 2016 | 2017
@@ -15,13 +15,23 @@ class Sval {
   private scope = new Scope(null, true)
 
   constructor(options: SvalOptions = {}) {
-    const { ecmaVer = 5, sandBox = true } = options
+    let { ecmaVer, sandBox = true } = options
+
+    if (
+      ecmaVer !== 5
+      // && ecmaVer !== 6
+      // && ecmaVer !== 2015
+    ) {
+      ecmaVer = 5
+    }
 
     this.options.ecmaVersion = ecmaVer
 
     if (sandBox) {
-      this.scope.let('window', defModules)
-      this.scope.let('this', defModules)
+      // Shallow clone
+      const win = assign({}, defModules)
+      this.scope.let('window', win)
+      this.scope.let('this', win)
     } else {
       this.scope.let('window', window)
       this.scope.let('this', window)

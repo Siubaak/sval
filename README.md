@@ -52,7 +52,7 @@ Sval contructor has options with two fields, **ecmaVer** and **sandbox**.
 
 - **ecmaVer** is the ECMA version that the code your want to run. Currently, only 5 and 6 (2015) are supported, and the default version is 5 if this field is missing.
 
-- **sandbox** is true for sandbox mode or false for invasived mode. Sandbox mode will run code in a isolated sandbox and won't pollute your scope outside. Invasived mode allows you run code in the same scope of your current scope. The default setting is true if this field is missing.
+- **sandBox** is true for sandbox mode or false for invasived mode. Sandbox mode will run code in a isolated sandbox and won't pollute your scope outside. Invasived mode allows you run code in the same scope of your current scope. The default setting is true if this field is missing.
 
 Sval instance has two methods, **addModules** and **run**.
 
