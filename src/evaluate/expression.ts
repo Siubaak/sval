@@ -3,7 +3,7 @@ import Scope from '../scope'
 import evaluate from '.'
 import { hoisting } from '../share/hoisting'
 import { define } from '../share/util'
-import { RETURN } from '../share/const'
+import { RETURN, YIELD } from '../share/const'
 
 import { Identifier } from './identifier'
 import { Literal } from './literal'
@@ -337,27 +337,31 @@ export function SequenceExpression(node: estree.SequenceExpression, scope: Scope
   return result
 }
 
-// export function ArrowFunctionExpression(node: estree.ArrowFunctionExpression, scope: Scope) {
-//   const params = node.params as estree.Identifier[]
-//   const func = (...args: any[]) => {
-//     const subScope = new Scope(scope)
+export function ArrowFunctionExpression(node: estree.ArrowFunctionExpression, scope: Scope) {
+  const params = node.params as estree.Identifier[]
+  const func = function (...args: any[]) {
+    const subScope = new Scope(scope)
 
-//     for (let i = 0; i < params.length; i++) {
-//       const { name } = params[i]
-//       subScope.let(name, args[i])
-//     }
+    for (let i = 0; i < params.length; i++) {
+      const { name } = params[i]
+      subScope.let(name, args[i])
+    }
     
-//     const result = evaluate(node.body, subScope, { invasived: true })
+    const result = evaluate(node.body, subScope, { invasived: true })
     
-//     if (result === RETURN) {
-//       return result.RES
-//     }
-//   }
+    if (result === RETURN) {
+      return result.RES
+    }
+  }
 
-//   define(func, 'length', {
-//     value: params.length,
-//     configurable: true,
-//   })
+  define(func, 'length', {
+    value: params.length,
+    configurable: true,
+  })
 
-//   return func
+  return func
+}
+
+// export function YieldExpression(node: estree.YieldExpression, scope: Scope) {
+//   return YIELD
 // }
