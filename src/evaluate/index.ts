@@ -107,11 +107,10 @@ const evaluateOps = {
 export default function evaluate(
   node: Node,
   scope: Scope,
-  options?: any,
 ): any {
   if (!node) {
     return
   }
   const handler = (evaluateOps as any)[node.type]
-  return handler(node, scope, options)
+  return handler(node, scope)
 }

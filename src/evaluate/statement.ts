@@ -10,6 +10,7 @@ export function ExpressionStatement(node: estree.ExpressionStatement, scope: Sco
 
 export interface BlockOptions {
   invasived?: boolean
+  hoisted?: boolean
 }
 
 export function BlockStatement(
@@ -17,11 +18,13 @@ export function BlockStatement(
   scope: Scope,
   options: BlockOptions = {},
 ) {
-  const { invasived = false } = options
+  const { invasived = false, hoisted = false } = options
 
   const subScope = invasived ? scope : new Scope(scope)
 
-  hoistFunc(block, subScope)
+  if (!hoisted) {
+    hoistFunc(block, subScope)
+  }
 
   for (const node of block.body) {
     const result = evaluate(node, subScope)
@@ -163,7 +166,12 @@ export function ForStatement(node: estree.ForStatement, scope: Scope) {
     node.test ? evaluate(node.test, subScope) : true;
     evaluate(node.update, subScope = subScope.clone())
   ) {    
-    const result = evaluate(node.body, subScope, { invasived: true })
+    let result: any
+    if (node.body.type === 'BlockStatement') {
+      result = BlockStatement(node.body, subScope, { invasived: true })
+    } else {
+      result = evaluate(node.body, subScope)
+    }
 
     if (result === BREAK) {
       break
@@ -184,7 +192,12 @@ export function ForInStatement(node: estree.ForInStatement, scope: Scope) {
     const subScope = new Scope(scope)
     scope[left.kind](name, value)
 
-    const result = evaluate(node.body, subScope, { invasived: true })
+    let result: any
+    if (node.body.type === 'BlockStatement') {
+      result = BlockStatement(node.body, subScope, { invasived: true })
+    } else {
+      result = evaluate(node.body, subScope)
+    }
 
     if (result === BREAK) {
       break
@@ -204,7 +217,12 @@ export function ForOfStatement(node: estree.ForOfStatement, scope: Scope) {
     const subScope = new Scope(scope)
     scope[left.kind](name, value)
 
-    const result = evaluate(node.body, subScope, { invasived: true })
+    let result: any
+    if (node.body.type === 'BlockStatement') {
+      result = BlockStatement(node.body, subScope, { invasived: true })
+    } else {
+      result = evaluate(node.body, subScope)
+    }
 
     if (result === BREAK) {
       break

@@ -22,7 +22,10 @@ export function FunctionDeclaration(node: estree.FunctionDeclaration, scope: Sco
 
     hoist(node.body, subScope)
     
-    const result = BlockStatement(node.body, subScope, { invasived: true })
+    const result = BlockStatement(node.body, subScope, {
+      invasived: true,
+      hoisted: true,
+    })
     
     if (result === RETURN) {
       return result.RES

@@ -63,7 +63,10 @@ export function FunctionExpression(node: estree.FunctionExpression, scope: Scope
 
     hoist(node.body, subScope)
     
-    const result = BlockStatement(node.body, subScope, { invasived: true })
+    const result = BlockStatement(node.body, subScope, {
+      invasived: true,
+      hoisted: true,
+    })
     
     if (result === RETURN) {
       return result.RES
@@ -347,7 +350,15 @@ export function ArrowFunctionExpression(node: estree.ArrowFunctionExpression, sc
       subScope.let(name, args[i])
     }
     
-    const result = evaluate(node.body, subScope, { invasived: true })
+    let result: any
+    if (node.body.type === 'BlockStatement') {
+      result = BlockStatement(node.body, subScope, {
+        invasived: true,
+        hoisted: true,
+      })
+    } else {
+      result = evaluate(node.body, subScope)
+    }
     
     if (result === RETURN) {
       return result.RES
