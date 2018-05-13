@@ -1,8 +1,7 @@
 import { parse, Options } from 'acorn'
-import { Modules, defModules } from './share/module'
 import { Program } from './evaluate/program'
 import Scope from './scope'
-import { hoist } from './share/hoist'
+import { hoist } from './share/helper'
 import { getOwnNames, assign } from './share/util'
 
 export interface SvalOptions {
@@ -28,8 +27,8 @@ class Sval {
     this.options.ecmaVersion = ecmaVer
 
     if (sandBox) {
-      // Shallow clone
-      const win = assign({}, defModules)
+      // Shallow clone to create a sandbox
+      const win = assign({}, window)
       this.scope.let('window', win)
       this.scope.let('this', win)
     } else {
@@ -38,7 +37,7 @@ class Sval {
     }
   }
 
-  addModules(modules: Modules) {
+  addModules(modules: { [name: string]: any }) {
     const win = this.scope.find('window').get()
     const names = getOwnNames(modules)
     for (const name of names) {

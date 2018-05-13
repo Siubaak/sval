@@ -1,7 +1,7 @@
 import * as estree from 'estree'
 import Scope from '../scope'
 import evaluate from './index'
-import { hoistFunc } from '../share/hoist'
+import { hoistFunc } from '../share/helper'
 import { BREAK, CONTINUE, RETURN } from '../share/const'
 
 export function ExpressionStatement(node: estree.ExpressionStatement, scope: Scope) {

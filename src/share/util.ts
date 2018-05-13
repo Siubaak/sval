@@ -32,6 +32,6 @@ function assignPolyfill(...objects: any[]): any {
     return obj
   }
 }
-export const assign = typeof (Object as any).assign === 'function'
-  ? (Object as any).assign
+export const assign = typeof Object.assign === 'function'
+  ? Object.assign
   : assignPolyfill

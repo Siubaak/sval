@@ -1,7 +1,7 @@
 import * as estree from 'estree'
 import Scope from '../scope'
 import evaluate from '.'
-import { hoist } from '../share/hoist'
+import { hoist } from '../share/helper'
 import { varKind } from '../scope/variable'
 import { define } from '../share/util'
 import { RETURN } from '../share/const'
