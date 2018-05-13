@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 var scope_1 = require("../scope");
 var _1 = require(".");
-var hoisting_1 = require("../share/hoisting");
+var hoist_1 = require("../share/hoist");
 var util_1 = require("../share/util");
 var const_1 = require("../share/const");
 var statement_1 = require("./statement");
@@ -20,7 +20,7 @@ function FunctionDeclaration(node, scope) {
             var name_1 = params[i].name;
             subScope.let(name_1, args[i]);
         }
-        hoisting_1.hoisting(node.body, subScope);
+        hoist_1.hoist(node.body, subScope);
         var result = statement_1.BlockStatement(node.body, subScope, { invasived: true });
         if (result === const_1.RETURN) {
             return result.RES;
@@ -40,18 +40,18 @@ function FunctionDeclaration(node, scope) {
 exports.FunctionDeclaration = FunctionDeclaration;
 function VariableDeclaration(node, scope, options) {
     if (options === void 0) { options = {}; }
-    var _a = options.hoisting, hoisting = _a === void 0 ? false : _a;
+    var _a = options.hoist, hoist = _a === void 0 ? false : _a;
     for (var _i = 0, _b = node.declarations; _i < _b.length; _i++) {
         var declarator = _b[_i];
-        VariableDeclarator(declarator, scope, { kind: node.kind, hoisting: hoisting });
+        VariableDeclarator(declarator, scope, { kind: node.kind, hoist: hoist });
     }
 }
 exports.VariableDeclaration = VariableDeclaration;
 function VariableDeclarator(node, scope, options) {
     if (options === void 0) { options = {}; }
-    var _a = options.kind, kind = _a === void 0 ? 'var' : _a, _b = options.hoisting, hoisting = _b === void 0 ? false : _b;
+    var _a = options.kind, kind = _a === void 0 ? 'var' : _a, _b = options.hoist, hoist = _b === void 0 ? false : _b;
     var name = node.id.name;
-    if (hoisting) {
+    if (hoist) {
         if (kind === 'var') {
             scope.var(name, undefined);
         }

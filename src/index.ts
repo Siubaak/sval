@@ -2,7 +2,7 @@ import { parse, Options } from 'acorn'
 import { Modules, defModules } from './share/module'
 import { Program } from './evaluate/program'
 import Scope from './scope'
-import { hoisting } from './share/hoisting'
+import { hoist } from './share/hoist'
 import { getOwnNames, assign } from './share/util'
 
 export interface SvalOptions {
@@ -48,7 +48,7 @@ class Sval {
 
   run(input: string) {
     const ast = parse(input, this.options)
-    hoisting(ast, this.scope)
+    hoist(ast, this.scope)
     Program(ast, this.scope)
   }
 }

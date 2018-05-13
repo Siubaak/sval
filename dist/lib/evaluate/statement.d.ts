@@ -24,3 +24,4 @@ export declare function WhileStatement(node: estree.WhileStatement, scope: Scope
 export declare function DoWhileStatement(node: estree.DoWhileStatement, scope: Scope): any;
 export declare function ForStatement(node: estree.ForStatement, scope: Scope): any;
 export declare function ForInStatement(node: estree.ForInStatement, scope: Scope): any;
+export declare function ForOfStatement(node: estree.ForOfStatement, scope: Scope): any;

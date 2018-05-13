@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 var scope_1 = require("../scope");
 var _1 = require(".");
-var hoisting_1 = require("../share/hoisting");
+var hoist_1 = require("../share/hoist");
 var util_1 = require("../share/util");
 var const_1 = require("../share/const");
 var identifier_1 = require("./identifier");
@@ -64,7 +64,7 @@ function FunctionExpression(node, scope) {
             var name_1 = params[i].name;
             subScope.let(name_1, args[i]);
         }
-        hoisting_1.hoisting(node.body, subScope);
+        hoist_1.hoist(node.body, subScope);
         var result = statement_1.BlockStatement(node.body, subScope, { invasived: true });
         if (result === const_1.RETURN) {
             return result.RES;
@@ -334,4 +334,28 @@ function SequenceExpression(node, scope) {
     return result;
 }
 exports.SequenceExpression = SequenceExpression;
+function ArrowFunctionExpression(node, scope) {
+    var params = node.params;
+    var func = function () {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
+        }
+        var subScope = new scope_1.default(scope);
+        for (var i = 0; i < params.length; i++) {
+            var name_3 = params[i].name;
+            subScope.let(name_3, args[i]);
+        }
+        var result = _1.default(node.body, subScope, { invasived: true });
+        if (result === const_1.RETURN) {
+            return result.RES;
+        }
+    };
+    util_1.define(func, 'length', {
+        value: params.length,
+        configurable: true,
+    });
+    return func;
+}
+exports.ArrowFunctionExpression = ArrowFunctionExpression;
 //# sourceMappingURL=expression.js.map

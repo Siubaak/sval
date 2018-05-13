@@ -1,7 +1,7 @@
 import * as estree from 'estree'
 import Scope from '../scope'
 import evaluate from '.'
-import { hoisting } from '../share/hoisting'
+import { hoist } from '../share/hoist'
 import { varKind } from '../scope/variable'
 import { define } from '../share/util'
 import { RETURN } from '../share/const'
@@ -20,7 +20,7 @@ export function FunctionDeclaration(node: estree.FunctionDeclaration, scope: Sco
       subScope.let(name, args[i])
     }
 
-    hoisting(node.body, subScope)
+    hoist(node.body, subScope)
     
     const result = BlockStatement(node.body, subScope, { invasived: true })
     
@@ -43,7 +43,7 @@ export function FunctionDeclaration(node: estree.FunctionDeclaration, scope: Sco
 }
 
 export interface VariableDeclarationOptions {
-  hoisting?: boolean
+  hoist?: boolean
 }
 
 export function VariableDeclaration(
@@ -51,15 +51,15 @@ export function VariableDeclaration(
   scope: Scope,
   options: VariableDeclarationOptions = {},
 ) {
-  const { hoisting = false } = options
+  const { hoist = false } = options
   for (const declarator of node.declarations) {
-    VariableDeclarator(declarator, scope, { kind: node.kind, hoisting })
+    VariableDeclarator(declarator, scope, { kind: node.kind, hoist })
   }
 }
 
 export interface VariableDeclaratorOptions {
   kind?: varKind
-  hoisting?: boolean
+  hoist?: boolean
 }
 
 export function VariableDeclarator(
@@ -67,11 +67,11 @@ export function VariableDeclarator(
   scope: Scope,
   options: VariableDeclaratorOptions = {},
 ) {
-  const { kind = 'var', hoisting = false } = options
+  const { kind = 'var', hoist = false } = options
   const { name } = node.id as estree.Identifier
   
-  if (hoisting) {
-    // Hoisting the var variable
+  if (hoist) {
+    // hoist the var variable
     if (kind === 'var') {
       scope.var(name, undefined)
     }

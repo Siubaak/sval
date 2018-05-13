@@ -4,7 +4,7 @@ var acorn_1 = require("acorn");
 var module_1 = require("./share/module");
 var program_1 = require("./evaluate/program");
 var scope_1 = require("./scope");
-var hoisting_1 = require("./share/hoisting");
+var hoist_1 = require("./share/hoist");
 var util_1 = require("./share/util");
 var Sval = (function () {
     function Sval(options) {
@@ -36,7 +36,7 @@ var Sval = (function () {
     };
     Sval.prototype.run = function (input) {
         var ast = acorn_1.parse(input, this.options);
-        hoisting_1.hoisting(ast, this.scope);
+        hoist_1.hoist(ast, this.scope);
         program_1.Program(ast, this.scope);
     };
     return Sval;

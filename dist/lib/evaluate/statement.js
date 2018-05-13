@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 var scope_1 = require("../scope");
 var index_1 = require("./index");
-var hoisting_1 = require("../share/hoisting");
+var hoist_1 = require("../share/hoist");
 var const_1 = require("../share/const");
 function ExpressionStatement(node, scope) {
     index_1.default(node.expression, scope);
@@ -12,7 +12,7 @@ function BlockStatement(block, scope, options) {
     if (options === void 0) { options = {}; }
     var _a = options.invasived, invasived = _a === void 0 ? false : _a;
     var subScope = invasived ? scope : new scope_1.default(scope);
-    hoisting_1.hoistingFunc(block, subScope);
+    hoist_1.hoistFunc(block, subScope);
     for (var _i = 0, _b = block.body; _i < _b.length; _i++) {
         var node = _b[_i];
         var result = index_1.default(node, subScope);
@@ -181,4 +181,24 @@ function ForInStatement(node, scope) {
     }
 }
 exports.ForInStatement = ForInStatement;
+function ForOfStatement(node, scope) {
+    var left = node.left;
+    var name = left.declarations[0].id.name;
+    for (var _i = 0, _a = index_1.default(node.right, scope); _i < _a.length; _i++) {
+        var value = _a[_i];
+        var subScope = new scope_1.default(scope);
+        scope[left.kind](name, value);
+        var result = index_1.default(node.body, subScope, { invasived: true });
+        if (result === const_1.BREAK) {
+            break;
+        }
+        else if (result === const_1.CONTINUE) {
+            continue;
+        }
+        else if (result === const_1.RETURN) {
+            return result;
+        }
+    }
+}
+exports.ForOfStatement = ForOfStatement;
 //# sourceMappingURL=statement.js.map

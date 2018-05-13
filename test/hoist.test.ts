@@ -1,14 +1,14 @@
 import Sval from '../src'
 
 describe('testing src/index.ts', () => {
-  it('should hoisting function normally', () => {  
+  it('should hoist function normally', () => {  
     const interpreter = new Sval()
     interpreter.run(`
       a
       function a() {}
     `)
   })
-  it('should hoisting function normally in block', () => {  
+  it('should hoist function normally in block', () => {  
     const interpreter = new Sval()
     interpreter.run(`
       {
@@ -38,14 +38,14 @@ describe('testing src/index.ts', () => {
       expect(err).toBeInstanceOf(ReferenceError)
     }
   })
-  it('should hoisting var normally', () => {  
+  it('should hoist var normally', () => {  
     const interpreter = new Sval()
     interpreter.run(`
       a
       var a = 1
     `)
   })
-  it('should hoisting var normally in block', () => {  
+  it('should hoist var normally in block', () => {  
     const interpreter = new Sval()
     interpreter.run(`
       a
@@ -54,7 +54,7 @@ describe('testing src/index.ts', () => {
       }
     `)
   })
-  it('should hoisting var normally in while', () => {  
+  it('should hoist var normally in while', () => {  
     const interpreter = new Sval()
     interpreter.run(`
       a
@@ -64,7 +64,7 @@ describe('testing src/index.ts', () => {
       }
     `)
   })
-  it('should hoisting var normally in do-while', () => {  
+  it('should hoist var normally in do-while', () => {  
     const interpreter = new Sval()
     interpreter.run(`
       a
@@ -74,7 +74,7 @@ describe('testing src/index.ts', () => {
       } while (--i)
     `)
   })
-  it('should hoisting var normally in for', () => {  
+  it('should hoist var normally in for', () => {  
     const interpreter = new Sval()
     interpreter.run(`
       a
@@ -83,7 +83,7 @@ describe('testing src/index.ts', () => {
       }
     `)
   })
-  it('should hoisting var normally in for-in', () => {  
+  it('should hoist var normally in for-in', () => {  
     const interpreter = new Sval()
     interpreter.run(`
       a
@@ -92,7 +92,7 @@ describe('testing src/index.ts', () => {
       }
     `)
   })
-  it('should hoisting var normally in switch', () => {  
+  it('should hoist var normally in switch', () => {  
     const interpreter = new Sval({ sandBox: false })
     interpreter.run(`
       a
@@ -119,7 +119,7 @@ describe('testing src/index.ts', () => {
     delete (window as any).b
     delete (window as any).c
   })
-  it('should hoisting var normally in try-catch', () => {  
+  it('should hoist var normally in try-catch', () => {  
     const interpreter = new Sval({ sandBox: false })
     interpreter.run(`
       a

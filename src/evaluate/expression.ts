@@ -1,9 +1,9 @@
 import * as estree from 'estree'
 import Scope from '../scope'
 import evaluate from '.'
-import { hoisting } from '../share/hoisting'
+import { hoist } from '../share/hoist'
 import { define } from '../share/util'
-import { RETURN, YIELD } from '../share/const'
+import { RETURN } from '../share/const'
 
 import { Identifier } from './identifier'
 import { Literal } from './literal'
@@ -61,7 +61,7 @@ export function FunctionExpression(node: estree.FunctionExpression, scope: Scope
       subScope.let(name, args[i])
     }
 
-    hoisting(node.body, subScope)
+    hoist(node.body, subScope)
     
     const result = BlockStatement(node.body, subScope, { invasived: true })
     
@@ -361,7 +361,3 @@ export function ArrowFunctionExpression(node: estree.ArrowFunctionExpression, sc
 
   return func
 }
-
-// export function YieldExpression(node: estree.YieldExpression, scope: Scope) {
-//   return YIELD
-// }

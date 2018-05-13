@@ -1,7 +1,7 @@
 import * as estree from 'estree'
 import Scope from '../scope'
 import evaluate from './index'
-import { hoistingFunc } from '../share/hoisting'
+import { hoistFunc } from '../share/hoist'
 import { BREAK, CONTINUE, RETURN } from '../share/const'
 
 export function ExpressionStatement(node: estree.ExpressionStatement, scope: Scope) {
@@ -21,7 +21,7 @@ export function BlockStatement(
 
   const subScope = invasived ? scope : new Scope(scope)
 
-  hoistingFunc(block, subScope)
+  hoistFunc(block, subScope)
 
   for (const node of block.body) {
     const result = evaluate(node, subScope)

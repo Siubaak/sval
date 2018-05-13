@@ -2,7 +2,7 @@ import * as estree from 'estree'
 import Scope from '../scope'
 import { FunctionDeclaration, VariableDeclaration } from '../evaluate/declaration'
 
-export function hoisting(node: estree.Program | estree.BlockStatement, scope: Scope) {
+export function hoist(node: estree.Program | estree.BlockStatement, scope: Scope) {
   for (let i = 0; i < node.body.length; i++) {
     const statement = node.body[i]
     if (
@@ -19,12 +19,12 @@ export function hoisting(node: estree.Program | estree.BlockStatement, scope: Sc
       // Avoid duplicate declaration
       node.body[i] = null
     } else {
-      hoistingVarRecursion(statement, scope)
+      hoistVarRecursion(statement, scope)
     }
   }
 }
 
-export function hoistingFunc(node: estree.BlockStatement, scope: Scope) {
+export function hoistFunc(node: estree.BlockStatement, scope: Scope) {
   for (let i = 0; i < node.body.length; i++) {
     const statement = node.body[i]
     
@@ -36,9 +36,9 @@ export function hoistingFunc(node: estree.BlockStatement, scope: Scope) {
   }
 }
 
-function hoistingVarRecursion(statement: estree.Statement, scope: Scope) {
+function hoistVarRecursion(statement: estree.Statement, scope: Scope) {
   if (statement.type === 'VariableDeclaration') {
-    VariableDeclaration(statement, scope, { hoisting: true })
+    VariableDeclaration(statement, scope, { hoist: true })
   } else if (
     statement.type === 'WhileStatement'
     || statement.type === 'DoWhileStatement'
@@ -46,32 +46,32 @@ function hoistingVarRecursion(statement: estree.Statement, scope: Scope) {
     || statement.type === 'ForInStatement'
     || statement.type === 'ForOfStatement'
   ) {
-    hoistingVarRecursion(statement.body, scope)
+    hoistVarRecursion(statement.body, scope)
   } else if (statement.type === 'BlockStatement') {
     for (const node of statement.body) {
-      hoistingVarRecursion(node, scope)
+      hoistVarRecursion(node, scope)
     }
   } else if (statement.type === 'SwitchStatement') {
     for (const eachCase of statement.cases) {
       for (const node of eachCase.consequent) {
-        hoistingVarRecursion(node, scope)
+        hoistVarRecursion(node, scope)
       }
     }
   } else if (statement.type === 'TryStatement') {
     const tryBlock = statement.block.body
     for (const node of tryBlock) {
-      hoistingVarRecursion(node, scope)
+      hoistVarRecursion(node, scope)
     }
     const catchBlock = statement.handler && statement.handler.body.body
     if (catchBlock) {
       for (const node of catchBlock) {
-        hoistingVarRecursion(node, scope)
+        hoistVarRecursion(node, scope)
       }
     }
     const finalBlock = statement.finalizer && statement.finalizer.body
     if (finalBlock) {
       for (const node of finalBlock) {
-        hoistingVarRecursion(node, scope)
+        hoistVarRecursion(node, scope)
       }
     }
   }
