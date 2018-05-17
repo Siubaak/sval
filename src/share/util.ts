@@ -35,3 +35,6 @@ function assignPolyfill(...objects: any[]): any {
 export const assign = typeof Object.assign === 'function'
   ? Object.assign
   : assignPolyfill
+
+declare function require(module: string): any
+export const walk = require('acorn/dist/walk').simple

@@ -18,8 +18,8 @@ class Sval {
 
     if (
       ecmaVer !== 5
-      // && ecmaVer !== 6
-      // && ecmaVer !== 2015
+      && ecmaVer !== 6
+      && ecmaVer !== 2015
     ) {
       ecmaVer = 5
     }

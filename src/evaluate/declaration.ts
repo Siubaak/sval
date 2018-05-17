@@ -10,28 +10,55 @@ import { BlockStatement } from './statement'
 
 export function FunctionDeclaration(node: estree.FunctionDeclaration, scope: Scope) {
   const params = node.params as estree.Identifier[]
-  const func = function (...args: any[]) {
-    const subScope = new Scope(scope, true)
-    subScope.const('this', this)
-    subScope.let('arguments', arguments)
+  let func: (...args: any[]) => any
+  if (node.generator) {
+    func = function* (...args: any[]) {
+      const subScope = new Scope(scope, true)
+      subScope.const('this', this)
+      subScope.let('arguments', arguments)
+  
+      for (let i = 0; i < params.length; i++) {
+        const { name } = params[i]
+        subScope.let(name, args[i])
+      }
+  
+      hoist(node.body, subScope)
+      
+      const generator = BlockStatement(node.body, subScope, {
+        invasived: true,
+        hoisted: true,
+        generator: true
+      })
+      
+      const result = yield* generator()
 
-    for (let i = 0; i < params.length; i++) {
-      const { name } = params[i]
-      subScope.let(name, args[i])
+      if (result === RETURN) {
+        return result.RES
+      }
     }
-
-    hoist(node.body, subScope)
-    
-    const result = BlockStatement(node.body, subScope, {
-      invasived: true,
-      hoisted: true,
-    })
-    
-    if (result === RETURN) {
-      return result.RES
+  } else {
+    func = function (...args: any[]) {
+      const subScope = new Scope(scope, true)
+      subScope.const('this', this)
+      subScope.let('arguments', arguments)
+  
+      for (let i = 0; i < params.length; i++) {
+        const { name } = params[i]
+        subScope.let(name, args[i])
+      }
+  
+      hoist(node.body, subScope)
+      
+      const result = BlockStatement(node.body, subScope, {
+        invasived: true,
+        hoisted: true,
+      })
+      
+      if (result === RETURN) {
+        return result.RES
+      }
     }
   }
-
   const name = node.id.name
   define(func, 'name', {
     value: name,

@@ -372,3 +372,7 @@ export function ArrowFunctionExpression(node: estree.ArrowFunctionExpression, sc
 
   return func
 }
+
+export function YieldExpression(node: estree.YieldExpression, scope: Scope) {
+  return evaluate(node.argument, scope)
+}

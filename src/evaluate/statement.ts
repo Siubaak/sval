@@ -3,6 +3,7 @@ import Scope from '../scope'
 import evaluate from './index'
 import { hoistFunc } from '../share/helper'
 import { BREAK, CONTINUE, RETURN } from '../share/const'
+import { walk } from '../share/util'
 
 export function ExpressionStatement(node: estree.ExpressionStatement, scope: Scope) {
   evaluate(node.expression, scope)
@@ -11,6 +12,7 @@ export function ExpressionStatement(node: estree.ExpressionStatement, scope: Sco
 export interface BlockOptions {
   invasived?: boolean
   hoisted?: boolean
+  generator?: boolean
 }
 
 export function BlockStatement(
@@ -18,7 +20,11 @@ export function BlockStatement(
   scope: Scope,
   options: BlockOptions = {},
 ) {
-  const { invasived = false, hoisted = false } = options
+  const {
+    invasived = false,
+    hoisted = false,
+    generator = false,
+  } = options
 
   const subScope = invasived ? scope : new Scope(scope)
 
@@ -26,10 +32,32 @@ export function BlockStatement(
     hoistFunc(block, subScope)
   }
 
-  for (const node of block.body) {
-    const result = evaluate(node, subScope)
-    if (result === BREAK || result === CONTINUE || result === RETURN) {
-      return result
+  if (generator) {
+    return function* () {
+      for (const node of block.body) {
+        let isExistYield = false
+        walk(node, {
+          YieldExpression(node: estree.YieldExpression) {
+            isExistYield = true
+          }
+        })
+        let result
+        if (isExistYield) {
+          result = yield evaluate(node, subScope)
+        } else {
+          result = evaluate(node, subScope)
+        }
+        if (result === BREAK || result === CONTINUE || result === RETURN) {
+          return result
+        }
+      }
+    }
+  } else {
+    for (const node of block.body) {
+      const result = evaluate(node, subScope)
+      if (result === BREAK || result === CONTINUE || result === RETURN) {
+        return result
+      }
     }
   }
 }

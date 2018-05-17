@@ -54,6 +54,7 @@ import {
   CallExpression,
   NewExpression,
   SequenceExpression,
+  YieldExpression,
 } from './expression'
 
 const evaluateOps = {
@@ -102,12 +103,10 @@ const evaluateOps = {
   CallExpression,
   NewExpression,
   SequenceExpression,
+  YieldExpression,
 }
 
-export default function evaluate(
-  node: Node,
-  scope: Scope,
-): any {
+export default function evaluate(node: Node, scope: Scope) {
   if (!node) {
     return
   }
