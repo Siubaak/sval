@@ -1,11 +1,6 @@
-const defineProperty = Object.defineProperty
-export function define(
-  obj: any,
-  key: string,
-  descriptor: PropertyDescriptor & ThisType<any>
-): any {
-  return defineProperty(obj, key, descriptor)
-}
+export const freeze = Object.freeze
+
+export const define = Object.defineProperty
 
 const hasOwnProperty = Object.prototype.hasOwnProperty
 export function hasOwn(obj: any, key: string): boolean {

@@ -2,7 +2,7 @@ import * as estree from 'estree'
 import Scope from '../scope'
 import evaluate from '.'
 import { hoist, createFunc } from '../share/helper'
-import { define } from '../share/util'
+import { define, freeze } from '../share/util'
 import { RETURN } from '../share/const'
 
 import { Identifier } from './identifier'
@@ -314,4 +314,44 @@ export function ArrowFunctionExpression(node: estree.ArrowFunctionExpression, sc
 
 export function YieldExpression(node: estree.YieldExpression, scope: Scope) {
   return evaluate(node.argument, scope)
+}
+
+export function TemplateLiteral(node: estree.TemplateLiteral, scope: Scope) {
+  const quasis = node.quasis
+  const expressions = node.expressions
+
+  let result = ''
+  let temEl: estree.TemplateElement
+  let expr: estree.Expression
+
+  while (temEl = quasis.shift()) {
+    result += TemplateElement(temEl, scope)
+    expr = expressions.shift()
+    if (expr) {
+      result += evaluate(expr, scope)
+    }
+  }
+
+  return result
+}
+
+export function TaggedTemplateExpression(node: estree.TaggedTemplateExpression, scope: Scope) {
+  const tagFunc = evaluate(node.tag, scope)
+
+  const quasis = node.quasi.quasis
+  const str = quasis.map(v => v.value.cooked)
+  const raw = quasis.map(v => v.value.raw)
+
+  define(str, 'raw', {
+    value: freeze(raw)
+  })
+
+  const expressions = node.quasi.expressions
+  const args = expressions.map(n => evaluate(n, scope)) || []
+
+  return tagFunc(freeze(str), ...args)
+}
+
+export function TemplateElement(node: estree.TemplateElement, scope: Scope) {
+  return node.value.raw
 }
