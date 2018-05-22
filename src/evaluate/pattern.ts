@@ -3,6 +3,7 @@ import Scope from '../scope'
 import evaluate from '.'
 import { varKind, Var } from '../scope/variable'
 import { Identifier } from './identifier'
+import { pattern } from '../share/helper'
 
 export interface PatternOptions {
   kind?: varKind
@@ -25,7 +26,7 @@ export function AssignmentProperty(node: estree.AssignmentProperty, scope: Scope
         const name = Identifier(value, scope, { getName: true })
         scope.var(name, undefined)
       } else {
-        Pattern(value, scope, { kind, hoist })
+        pattern(value, scope, { kind, hoist })
       }
     }
   } else {
@@ -44,7 +45,7 @@ export function AssignmentProperty(node: estree.AssignmentProperty, scope: Scope
         throw new SyntaxError(`Identifier '${name}' has already been declared`)
       }
     } else {
-      Pattern(value, scope, { kind, feed: feed[key] })
+      pattern(value, scope, { kind, feed: feed[key] })
     }
   }
 }
@@ -59,7 +60,7 @@ export function ArrayPattern(node: estree.ArrayPattern, scope: Scope, options: P
           const name = Identifier(element, scope, { getName: true })
           scope.var(name, undefined)
         } else {
-          Pattern(element, scope, { kind, hoist })
+          pattern(element, scope, { kind, hoist })
         }
       }
     } else {
@@ -74,7 +75,7 @@ export function ArrayPattern(node: estree.ArrayPattern, scope: Scope, options: P
         const variable: Var = Identifier(element, scope, { getVar: true })
         variable.set(feed[i])
       } else {
-        Pattern(element, scope, { kind, feed: feed[i] })
+        pattern(element, scope, { kind, feed: feed[i] })
       }
     }
   }
@@ -89,7 +90,7 @@ export function RestElement(node: estree.RestElement, scope: Scope, options: Pat
         const name = Identifier(arg, scope, { getName: true })
         scope.var(name, undefined)
       } else {
-        Pattern(arg, scope, { kind, hoist })
+        pattern(arg, scope, { kind, hoist })
       }
     }
   } else {
@@ -99,7 +100,7 @@ export function RestElement(node: estree.RestElement, scope: Scope, options: Pat
         throw new SyntaxError(`Identifier '${name}' has already been declared`)
       }
     } else {
-      Pattern(arg, scope, { kind, feed })
+      pattern(arg, scope, { kind, feed })
     }
   }
 }
@@ -110,25 +111,6 @@ export function AssignmentPattern(node: estree.AssignmentPattern, scope: Scope) 
     const name = Identifier(node.left, scope, { getName: true })
     scope.let(name, feed)
   } else {
-    Pattern(node.left, scope, { feed })
-  }
-}
-
-export function Pattern(node: estree.Pattern, scope: Scope, options: PatternOptions = {}) {
-  switch (node.type) {
-    case 'ObjectPattern':
-      ObjectPattern(node, scope, options)
-      break
-    case 'ArrayPattern':
-      ArrayPattern(node, scope, options)
-      break
-    case 'RestElement':
-      RestElement(node, scope, options)
-      break
-    case 'AssignmentPattern':
-      AssignmentPattern(node, scope)
-      break
-    default:
-      throw new SyntaxError('Unexpected token')
+    pattern(node.left, scope, { feed })
   }
 }

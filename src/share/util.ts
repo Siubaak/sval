@@ -31,5 +31,10 @@ export const assign = typeof Object.assign === 'function'
   ? Object.assign
   : assignPolyfill
 
+const win = assign({}, window)
+export function createSandBox() {
+  return assign({}, win)
+}
+
 declare function require(module: string): any
 export const walk = require('acorn/dist/walk').simple

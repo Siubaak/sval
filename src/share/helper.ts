@@ -7,7 +7,13 @@ import { RETURN } from './const'
 import { BlockStatement } from '../evaluate/statement'
 import { FunctionDeclaration, VariableDeclaration } from '../evaluate/declaration'
 import { Identifier } from '../evaluate/identifier'
-import { Pattern } from '../evaluate/pattern'
+import {
+  PatternOptions,
+  ObjectPattern,
+  ArrayPattern,
+  RestElement,
+  AssignmentPattern,
+} from '../evaluate/pattern'
 
 export function hoist(block: estree.Program | estree.BlockStatement, scope: Scope) {
   for (let i = 0; i < block.body.length; i++) {
@@ -89,6 +95,25 @@ function hoistVarRecursion(statement: estree.Statement, scope: Scope) {
   }
 }
 
+export function pattern(node: estree.Pattern, scope: Scope, options: PatternOptions = {}) {
+  switch (node.type) {
+    case 'ObjectPattern':
+      ObjectPattern(node, scope, options)
+      break
+    case 'ArrayPattern':
+      ArrayPattern(node, scope, options)
+      break
+    case 'RestElement':
+      RestElement(node, scope, options)
+      break
+    case 'AssignmentPattern':
+      AssignmentPattern(node, scope)
+      break
+    default:
+      throw new SyntaxError('Unexpected token')
+  }
+}
+
 export function createFunc(
   node: estree.FunctionDeclaration | estree.FunctionExpression | estree.ArrowFunctionExpression,
   scope: Scope
@@ -110,7 +135,7 @@ export function createFunc(
         const name = Identifier(param, scope, { getName: true })
         subScope.let(name, args[i])
       } else {
-        Pattern(param, scope, { feed: args[i] })
+        pattern(param, scope, { feed: args[i] })
       }
       subScope.let(name, args[i])
     }

@@ -6,6 +6,7 @@ import * as declaration from './declaration'
 import * as expression from './expression'
 import * as identifier from './identifier'
 import * as literal from './literal'
+import * as pattern from './pattern'
 import * as program from './program'
 import * as statement from './statement'
 
@@ -15,6 +16,7 @@ const evaluateOps = assign(
   expression,
   identifier,
   literal,
+  pattern,
   program,
   statement,
 )

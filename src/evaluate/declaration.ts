@@ -1,14 +1,13 @@
 import * as estree from 'estree'
 import Scope from '../scope'
 import evaluate from '.'
-import { hoist, createFunc } from '../share/helper'
+import { hoist, createFunc, pattern } from '../share/helper'
 import { varKind } from '../scope/variable'
 import { define } from '../share/util'
 import { RETURN } from '../share/const'
 
 import { BlockStatement } from './statement'
 import { Identifier } from './identifier'
-import { Pattern } from './pattern'
 
 export function FunctionDeclaration(node: estree.FunctionDeclaration, scope: Scope) {
   const params = node.params
@@ -25,7 +24,7 @@ export function FunctionDeclaration(node: estree.FunctionDeclaration, scope: Sco
           const name = Identifier(param, scope, { getName: true })
           subScope.let(name, args[i])
         } else {
-          Pattern(param, scope, { feed: args[i] })
+          pattern(param, scope, { feed: args[i] })
         }
       }
   
@@ -83,38 +82,31 @@ export function VariableDeclarator(
   options: VariableDeclaratorOptions & VariableDeclarationOptions = {},
 ) {
   const { kind = 'let', hoist = false, feed } = options
-  if (node.id.type === 'Identifier') {
-    const name = Identifier(node.id, scope, { getName: true })
-    if (hoist) {
-      // hoist the var variable
-      if (kind === 'var') {
+  if (hoist) {
+    // hoist the var variable
+    if (kind === 'var') {
+      if (node.id.type === 'Identifier') {
+        const name = Identifier(node.id, scope, { getName: true })
         scope.var(name, undefined)
+      } else {
+        pattern(node.id, scope, { kind, hoist })
       }
-    } else if (
-      kind === 'var'
-      || kind === 'let'
-      || kind === 'const'
-    ) {
-      // Variable declaration
-      const value = typeof feed === 'undefined' ? evaluate(node.init, scope) : feed
+    }
+  } else if (
+    kind === 'var'
+    || kind === 'let'
+    || kind === 'const'
+  ) {
+    const value = typeof feed === 'undefined' ? evaluate(node.init, scope) : feed
+    if (node.id.type === 'Identifier') {
+      const name = Identifier(node.id, scope, { getName: true })
       if (!scope[kind](name, value)) {
         throw new SyntaxError(`Identifier '${name}' has already been declared`)
       }
     } else {
-      throw new SyntaxError('Unexpected identifier')
+      pattern(node.id, scope, { kind, feed: value })
     }
   } else {
-    if (hoist) {
-      Pattern(node.id, scope, { kind, hoist })
-    } else if (
-      kind === 'var'
-      || kind === 'let'
-      || kind === 'const'
-    ) {
-      const patternFeed = typeof feed === 'undefined' ? evaluate(node.init, scope) : feed
-      Pattern(node.id, scope, { kind, feed: patternFeed })
-    } else {
-      throw new SyntaxError('Unexpected identifier')
-    }
+    throw new SyntaxError('Unexpected identifier')
   }
 }

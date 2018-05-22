@@ -2,12 +2,11 @@ import * as estree from 'estree'
 import Scope from '../scope'
 import evaluate from './index'
 import { Var } from '../scope/variable'
-import { hoistFunc } from '../share/helper'
+import { hoistFunc, pattern } from '../share/helper'
 import { BREAK, CONTINUE, RETURN } from '../share/const'
 import { walk } from '../share/util'
 import { Identifier } from './identifier'
 import { VariableDeclaration } from './declaration'
-import { Pattern } from './pattern'
 
 export function ExpressionStatement(node: estree.ExpressionStatement, scope: Scope) {
   evaluate(node.expression, scope)
@@ -149,7 +148,7 @@ export function TryStatement(node: estree.TryStatement, scope: Scope) {
         const name = Identifier(param, scope, { getName: true })
         subScope.let(name, err)
       } else {
-        Pattern(param, scope, { feed: err })
+        pattern(param, scope, { feed: err })
       }
       return CatchClause(node.handler, subScope)
     } else {
@@ -230,7 +229,7 @@ export function ForInStatement(node: estree.ForInStatement, scope: Scope) {
       const variable: Var = Identifier(left, scope, { getVar: true })
       variable.set(value)
     } else {
-      Pattern(left, scope, { feed: value })
+      pattern(left, scope, { feed: value })
     }
 
     let result: any
@@ -260,7 +259,7 @@ export function ForOfStatement(node: estree.ForOfStatement, scope: Scope) {
       const variable: Var = Identifier(left, scope, { getVar: true })
       variable.set(value)
     } else {
-      Pattern(left, scope, { feed: value })
+      pattern(left, scope, { feed: value })
     }
 
     let result: any
