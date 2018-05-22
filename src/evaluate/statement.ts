@@ -1,9 +1,12 @@
 import * as estree from 'estree'
 import Scope from '../scope'
 import evaluate from './index'
+import { Var } from '../scope/variable'
 import { hoistFunc } from '../share/helper'
 import { BREAK, CONTINUE, RETURN } from '../share/const'
 import { walk } from '../share/util'
+import { Identifier } from './identifier'
+import { VariableDeclaration } from './declaration'
 
 export function ExpressionStatement(node: estree.ExpressionStatement, scope: Scope) {
   evaluate(node.expression, scope)
@@ -139,10 +142,14 @@ export function TryStatement(node: estree.TryStatement, scope: Scope) {
     return BlockStatement(node.block, scope)
   } catch (err) {
     if (node.handler) {
-      const { name } = node.handler.param as estree.Identifier
       const subScope = new Scope(scope)
-      subScope.const(name, err)
-
+      const param = node.handler.param
+      if (param.type === 'Identifier') {
+        const name = Identifier(param, scope, { getName: true })
+        subScope.let(name, err)
+      } else {
+        // TODO: Implement other patterns
+      }
       return CatchClause(node.handler, subScope)
     } else {
       throw err
@@ -213,12 +220,17 @@ export function ForStatement(node: estree.ForStatement, scope: Scope) {
 }
 
 export function ForInStatement(node: estree.ForInStatement, scope: Scope) {
-  const left = node.left as estree.VariableDeclaration
-  const { name } = left.declarations[0].id as estree.Identifier
-
+  const left = node.left
   for (const value in evaluate(node.right, scope)) {
     const subScope = new Scope(scope)
-    scope[left.kind](name, value)
+    if (left.type === 'VariableDeclaration') {
+      VariableDeclaration(left, scope, { feed: value })
+    } else if (left.type === 'Identifier') {
+      const variable: Var = Identifier(left, scope, { getVar: true })
+      variable.set(value)
+    } else {
+      // TODO: Implement other patterns
+    }
 
     let result: any
     if (node.body.type === 'BlockStatement') {
@@ -238,12 +250,17 @@ export function ForInStatement(node: estree.ForInStatement, scope: Scope) {
 }
 
 export function ForOfStatement(node: estree.ForOfStatement, scope: Scope) {
-  const left = node.left as estree.VariableDeclaration
-  const { name } = left.declarations[0].id as estree.Identifier
-
+  const left = node.left
   for (const value of evaluate(node.right, scope)) {
     const subScope = new Scope(scope)
-    scope[left.kind](name, value)
+    if (left.type === 'VariableDeclaration') {
+      VariableDeclaration(left, scope, { feed: value })
+    } else if (left.type === 'Identifier') {
+      const variable: Var = Identifier(left, scope, { getVar: true })
+      variable.set(value)
+    } else {
+      // TODO: Implement other patterns
+    }
 
     let result: any
     if (node.body.type === 'BlockStatement') {

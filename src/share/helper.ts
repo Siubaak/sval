@@ -6,6 +6,7 @@ import { RETURN } from './const'
 
 import { BlockStatement } from '../evaluate/statement'
 import { FunctionDeclaration, VariableDeclaration } from '../evaluate/declaration'
+import { Identifier } from '../evaluate/identifier'
 
 export function hoist(block: estree.Program | estree.BlockStatement, scope: Scope) {
   for (let i = 0; i < block.body.length; i++) {
@@ -91,7 +92,7 @@ export function createFunc(
   node: estree.FunctionDeclaration | estree.FunctionExpression | estree.ArrowFunctionExpression,
   scope: Scope
 ) {
-  const params = node.params as estree.Identifier[]
+  const params = node.params
   const func = function (...args: any[]) {
     let subScope: Scope
     if (node.type !== 'ArrowFunctionExpression') {
@@ -103,7 +104,13 @@ export function createFunc(
     }
 
     for (let i = 0; i < params.length; i++) {
-      const { name } = params[i]
+      const param = params[i]
+      if (param.type === 'Identifier') {
+        const name = Identifier(param, scope, { getName: true })
+        subScope.let(name, args[i])
+      } else {
+        // TODO: Implement other patterns
+      }
       subScope.let(name, args[i])
     }
 

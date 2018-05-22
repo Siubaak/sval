@@ -7,9 +7,10 @@ import { define } from '../share/util'
 import { RETURN } from '../share/const'
 
 import { BlockStatement } from './statement'
+import { Identifier } from './identifier'
 
 export function FunctionDeclaration(node: estree.FunctionDeclaration, scope: Scope) {
-  const params = node.params as estree.Identifier[]
+  const params = node.params
   let func: (...args: any[]) => any
   if (node.generator) {
     func = function* (...args: any[]) {
@@ -18,8 +19,13 @@ export function FunctionDeclaration(node: estree.FunctionDeclaration, scope: Sco
       subScope.let('arguments', arguments)
   
       for (let i = 0; i < params.length; i++) {
-        const { name } = params[i]
-        subScope.let(name, args[i])
+        const param = params[i]
+        if (param.type === 'Identifier') {
+          const name = Identifier(param, scope, { getName: true })
+          subScope.let(name, args[i])
+        } else {
+          // TODO: Implement other patterns
+        }
       }
   
       hoist(node.body, subScope)
@@ -53,6 +59,7 @@ export function FunctionDeclaration(node: estree.FunctionDeclaration, scope: Sco
 
 export interface VariableDeclarationOptions {
   hoist?: boolean
+  feed?: any
 }
 
 export function VariableDeclaration(
@@ -60,7 +67,7 @@ export function VariableDeclaration(
   scope: Scope,
   options: VariableDeclarationOptions = {},
 ) {
-  const { hoist = false } = options
+  const { hoist = false, feed } = options
   for (const declarator of node.declarations) {
     VariableDeclarator(declarator, scope, { kind: node.kind, hoist })
   }
@@ -69,6 +76,7 @@ export function VariableDeclaration(
 export interface VariableDeclaratorOptions {
   kind?: varKind
   hoist?: boolean
+  feed?: any
 }
 
 export function VariableDeclarator(
@@ -76,25 +84,29 @@ export function VariableDeclarator(
   scope: Scope,
   options: VariableDeclaratorOptions = {},
 ) {
-  const { kind = 'var', hoist = false } = options
-  const { name } = node.id as estree.Identifier
+  const { kind = 'let', hoist = false, feed } = options
+  if (node.id.type === 'Identifier') {
+    const name = Identifier(node.id, scope, { getName: true })
   
-  if (hoist) {
-    // hoist the var variable
-    if (kind === 'var') {
-      scope.var(name, undefined)
-    }
-  } else if (
-    kind === 'var'
-    || kind === 'let'
-    || kind === 'const'
-  ) {
-    // Variable declaration
-    const value = evaluate(node.init, scope)
-    if (!scope[kind](name, value)) {
-      throw new SyntaxError(`Identifier '${name}' has already been declared`)
+    if (hoist) {
+      // hoist the var variable
+      if (kind === 'var') {
+        scope.var(name, undefined)
+      }
+    } else if (
+      kind === 'var'
+      || kind === 'let'
+      || kind === 'const'
+    ) {
+      // Variable declaration
+      const value = typeof feed === 'undefined' ? evaluate(node.init, scope) : feed
+      if (!scope[kind](name, value)) {
+        throw new SyntaxError(`Identifier '${name}' has already been declared`)
+      }
+    } else {
+      throw new SyntaxError('Unexpected identifier')
     }
   } else {
-    throw new SyntaxError('Unexpected identifier')
+
   }
 }
