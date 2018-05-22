@@ -1,7 +1,7 @@
 import * as estree from 'estree'
 import Scope from '../scope'
 import evaluate from '.'
-import { hoist } from '../share/helper'
+import { hoist, createFunc } from '../share/helper'
 import { define } from '../share/util'
 import { RETURN } from '../share/const'
 
@@ -50,39 +50,7 @@ export function ObjectExpression(node: estree.ObjectExpression, scope: Scope) {
 }
 
 export function FunctionExpression(node: estree.FunctionExpression, scope: Scope) {
-  const params = node.params as estree.Identifier[]
-  const func = function (...args: any[]) {
-    const subScope = new Scope(scope, true)
-    subScope.const('this', this)
-    subScope.let('arguments', arguments)
-
-    for (let i = 0; i < params.length; i++) {
-      const { name } = params[i]
-      subScope.let(name, args[i])
-    }
-
-    hoist(node.body, subScope)
-    
-    const result = BlockStatement(node.body, subScope, {
-      invasived: true,
-      hoisted: true,
-    })
-    
-    if (result === RETURN) {
-      return result.RES
-    }
-  }
-
-  define(func, 'name', {
-    value: node.id.name,
-    configurable: true,
-  })
-  define(func, 'length', {
-    value: params.length,
-    configurable: true,
-  })
-
-  return func
+  return createFunc(node, scope)
 }
 
 export function UnaryExpression(node: estree.UnaryExpression, scope: Scope) {
@@ -341,36 +309,7 @@ export function SequenceExpression(node: estree.SequenceExpression, scope: Scope
 }
 
 export function ArrowFunctionExpression(node: estree.ArrowFunctionExpression, scope: Scope) {
-  const params = node.params as estree.Identifier[]
-  const func = function (...args: any[]) {
-    const subScope = new Scope(scope)
-
-    for (let i = 0; i < params.length; i++) {
-      const { name } = params[i]
-      subScope.let(name, args[i])
-    }
-    
-    let result: any
-    if (node.body.type === 'BlockStatement') {
-      result = BlockStatement(node.body, subScope, {
-        invasived: true,
-        hoisted: true,
-      })
-    } else {
-      result = evaluate(node.body, subScope)
-    }
-    
-    if (result === RETURN) {
-      return result.RES
-    }
-  }
-
-  define(func, 'length', {
-    value: params.length,
-    configurable: true,
-  })
-
-  return func
+  return createFunc(node, scope)
 }
 
 export function YieldExpression(node: estree.YieldExpression, scope: Scope) {

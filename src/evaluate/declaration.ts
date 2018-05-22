@@ -1,7 +1,7 @@
 import * as estree from 'estree'
 import Scope from '../scope'
 import evaluate from '.'
-import { hoist } from '../share/helper'
+import { hoist, createFunc } from '../share/helper'
 import { varKind } from '../scope/variable'
 import { define } from '../share/util'
 import { RETURN } from '../share/const'
@@ -36,40 +36,19 @@ export function FunctionDeclaration(node: estree.FunctionDeclaration, scope: Sco
         return result.RES
       }
     }
+    define(func, 'name', {
+      value: node.id.name,
+      configurable: true,
+    })
+    define(func, 'length', {
+      value: params.length,
+      configurable: true,
+    })
   } else {
-    func = function (...args: any[]) {
-      const subScope = new Scope(scope, true)
-      subScope.const('this', this)
-      subScope.let('arguments', arguments)
-  
-      for (let i = 0; i < params.length; i++) {
-        const { name } = params[i]
-        subScope.let(name, args[i])
-      }
-  
-      hoist(node.body, subScope)
-      
-      const result = BlockStatement(node.body, subScope, {
-        invasived: true,
-        hoisted: true,
-      })
-      
-      if (result === RETURN) {
-        return result.RES
-      }
-    }
+    func = createFunc(node, scope)
   }
-  const name = node.id.name
-  define(func, 'name', {
-    value: name,
-    configurable: true,
-  })
-  define(func, 'length', {
-    value: params.length,
-    configurable: true,
-  })
 
-  scope.let(name, func)
+  scope.let(node.id.name, func)
 }
 
 export interface VariableDeclarationOptions {
