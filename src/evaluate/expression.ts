@@ -249,16 +249,16 @@ export interface MemberExpressionOptions {
 export function MemberExpression(
   node: estree.MemberExpression,
   scope: Scope,
-  options?: MemberExpressionOptions,
+  options: MemberExpressionOptions = {},
 ) {
-  const { getObj = false, getVar = false } = options || {}
+  const { getObj = false, getVar = false } = options
   const object = evaluate(node.object, scope)
 
   if (getObj) {
     return object
   }
 
-  let key
+  let key: string
   if (node.computed) {
     key = evaluate(node.property, scope)
   } else if (node.property.type === 'Identifier') {

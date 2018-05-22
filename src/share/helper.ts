@@ -7,6 +7,7 @@ import { RETURN } from './const'
 import { BlockStatement } from '../evaluate/statement'
 import { FunctionDeclaration, VariableDeclaration } from '../evaluate/declaration'
 import { Identifier } from '../evaluate/identifier'
+import { Pattern } from '../evaluate/pattern'
 
 export function hoist(block: estree.Program | estree.BlockStatement, scope: Scope) {
   for (let i = 0; i < block.body.length; i++) {
@@ -109,7 +110,7 @@ export function createFunc(
         const name = Identifier(param, scope, { getName: true })
         subScope.let(name, args[i])
       } else {
-        // TODO: Implement other patterns
+        Pattern(param, scope, { feed: args[i] })
       }
       subScope.let(name, args[i])
     }

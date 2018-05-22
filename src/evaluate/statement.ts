@@ -7,6 +7,7 @@ import { BREAK, CONTINUE, RETURN } from '../share/const'
 import { walk } from '../share/util'
 import { Identifier } from './identifier'
 import { VariableDeclaration } from './declaration'
+import { Pattern } from './pattern'
 
 export function ExpressionStatement(node: estree.ExpressionStatement, scope: Scope) {
   evaluate(node.expression, scope)
@@ -148,7 +149,7 @@ export function TryStatement(node: estree.TryStatement, scope: Scope) {
         const name = Identifier(param, scope, { getName: true })
         subScope.let(name, err)
       } else {
-        // TODO: Implement other patterns
+        Pattern(param, scope, { feed: err })
       }
       return CatchClause(node.handler, subScope)
     } else {
@@ -229,7 +230,7 @@ export function ForInStatement(node: estree.ForInStatement, scope: Scope) {
       const variable: Var = Identifier(left, scope, { getVar: true })
       variable.set(value)
     } else {
-      // TODO: Implement other patterns
+      Pattern(left, scope, { feed: value })
     }
 
     let result: any
@@ -259,7 +260,7 @@ export function ForOfStatement(node: estree.ForOfStatement, scope: Scope) {
       const variable: Var = Identifier(left, scope, { getVar: true })
       variable.set(value)
     } else {
-      // TODO: Implement other patterns
+      Pattern(left, scope, { feed: value })
     }
 
     let result: any

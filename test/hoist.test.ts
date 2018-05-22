@@ -140,4 +140,22 @@ describe('testing src/index.ts', () => {
     delete (window as any).b
     delete (window as any).c
   })
+  it('should hoist var normally in destructure', () => {  
+    const interpreter = new Sval({ ecmaVer: 6 })
+    interpreter.run(`
+      a
+      b
+      c
+      d
+      e
+      f
+      var { a } = { a: 1 }
+      var { u: b } = { u: 1 }
+      var [c] = [1]
+      var [...d] = [1, 2]
+      var { v: { w: e } } = { v: { w: 1 } }
+      var { x: [e] } = { x: [1] }
+      var { x: [...f] } = { x: [1, 2] }
+    `)
+  })
 })

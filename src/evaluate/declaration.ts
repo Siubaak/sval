@@ -8,6 +8,7 @@ import { RETURN } from '../share/const'
 
 import { BlockStatement } from './statement'
 import { Identifier } from './identifier'
+import { Pattern } from './pattern'
 
 export function FunctionDeclaration(node: estree.FunctionDeclaration, scope: Scope) {
   const params = node.params
@@ -24,7 +25,7 @@ export function FunctionDeclaration(node: estree.FunctionDeclaration, scope: Sco
           const name = Identifier(param, scope, { getName: true })
           subScope.let(name, args[i])
         } else {
-          // TODO: Implement other patterns
+          Pattern(param, scope, { feed: args[i] })
         }
       }
   
@@ -67,27 +68,23 @@ export function VariableDeclaration(
   scope: Scope,
   options: VariableDeclarationOptions = {},
 ) {
-  const { hoist = false, feed } = options
   for (const declarator of node.declarations) {
-    VariableDeclarator(declarator, scope, { kind: node.kind, hoist })
+    VariableDeclarator(declarator, scope, { kind: node.kind, ...options })
   }
 }
 
 export interface VariableDeclaratorOptions {
   kind?: varKind
-  hoist?: boolean
-  feed?: any
 }
 
 export function VariableDeclarator(
   node: estree.VariableDeclarator,
   scope: Scope,
-  options: VariableDeclaratorOptions = {},
+  options: VariableDeclaratorOptions & VariableDeclarationOptions = {},
 ) {
   const { kind = 'let', hoist = false, feed } = options
   if (node.id.type === 'Identifier') {
     const name = Identifier(node.id, scope, { getName: true })
-  
     if (hoist) {
       // hoist the var variable
       if (kind === 'var') {
@@ -107,6 +104,17 @@ export function VariableDeclarator(
       throw new SyntaxError('Unexpected identifier')
     }
   } else {
-
+    if (hoist) {
+      Pattern(node.id, scope, { kind, hoist })
+    } else if (
+      kind === 'var'
+      || kind === 'let'
+      || kind === 'const'
+    ) {
+      const patternFeed = typeof feed === 'undefined' ? evaluate(node.init, scope) : feed
+      Pattern(node.id, scope, { kind, feed: patternFeed })
+    } else {
+      throw new SyntaxError('Unexpected identifier')
+    }
   }
 }

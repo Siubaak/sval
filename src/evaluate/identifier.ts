@@ -7,8 +7,8 @@ export interface IdentifierOptions {
   throwErr?: boolean
 }
 
-export function Identifier(node: estree.Identifier, scope: Scope, options?: IdentifierOptions) {
-  const { getName = false, getVar = false, throwErr = true } = options || {}
+export function Identifier(node: estree.Identifier, scope: Scope, options: IdentifierOptions = {}) {
+  const { getName = false, getVar = false, throwErr = true } = options
 
   if (getName) {
     return node.name
