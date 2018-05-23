@@ -21,3 +21,7 @@ export declare function CallExpression(node: estree.CallExpression, scope: Scope
 export declare function NewExpression(node: estree.NewExpression, scope: Scope): any;
 export declare function SequenceExpression(node: estree.SequenceExpression, scope: Scope): any;
 export declare function ArrowFunctionExpression(node: estree.ArrowFunctionExpression, scope: Scope): (...args: any[]) => any;
+export declare function YieldExpression(node: estree.YieldExpression, scope: Scope): any;
+export declare function TemplateLiteral(node: estree.TemplateLiteral, scope: Scope): string;
+export declare function TaggedTemplateExpression(node: estree.TaggedTemplateExpression, scope: Scope): any;
+export declare function TemplateElement(node: estree.TemplateElement, scope: Scope): string;

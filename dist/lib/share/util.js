@@ -1,10 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var defineProperty = Object.defineProperty;
-function define(obj, key, descriptor) {
-    return defineProperty(obj, key, descriptor);
-}
-exports.define = define;
+exports.freeze = Object.freeze;
+exports.define = Object.defineProperty;
 var hasOwnProperty = Object.prototype.hasOwnProperty;
 function hasOwn(obj, key) {
     return hasOwnProperty.call(obj, key);
@@ -38,4 +35,10 @@ function assignPolyfill() {
 exports.assign = typeof Object.assign === 'function'
     ? Object.assign
     : assignPolyfill;
+var win = exports.assign({}, window);
+function createSandBox() {
+    return exports.assign({}, win);
+}
+exports.createSandBox = createSandBox;
+exports.walk = require('acorn/dist/walk').simple;
 //# sourceMappingURL=util.js.map

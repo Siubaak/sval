@@ -1,7 +1,7 @@
 import * as estree from 'estree'
 import Scope from '../scope'
 import evaluate from '.'
-import { hoist, createFunc } from '../share/helper'
+import { hoist, createFunc, pattern } from '../share/helper'
 import { define, freeze } from '../share/util'
 import { RETURN } from '../share/const'
 
@@ -82,9 +82,9 @@ export function UnaryExpression(node: estree.UnaryExpression, scope: Scope) {
       }
     }
   }
-  const handle = unaryOps[node.operator]
-  if (handle) {
-    return handle()
+  const handler = unaryOps[node.operator]
+  if (handler) {
+    return handler()
   } else {
     throw new SyntaxError(`Unexpected token ${node.operator}`)
   }
@@ -143,16 +143,19 @@ export function BinaryExpression(node: estree.BinaryExpression, scope: Scope) {
     'instanceof': () => left instanceof right,
   }
 
-  const handle = binaryOps[node.operator]
-  if (handle) {
-    return handle()
+  const handler = binaryOps[node.operator]
+  if (handler) {
+    return handler()
   } else {
     throw new SyntaxError(`Unexpected token ${node.operator}`)
   }
 }
 
 export function AssignmentExpression(node: estree.AssignmentExpression, scope: Scope) {
+  const value = evaluate(node.right, scope)
+
   const left = node.left
+
   let variable: Variable
   if (left.type === 'Identifier') {
     variable = Identifier(left, scope, { getVar: true, throwErr: false })
@@ -163,10 +166,8 @@ export function AssignmentExpression(node: estree.AssignmentExpression, scope: S
   } else if (left.type === 'MemberExpression') {
     variable = MemberExpression(left, scope, { getVar: true })
   } else {
-    throw new SyntaxError('Unexpected token')
+    return pattern(left, scope, { feed: value })
   }
-
-  const value = evaluate(node.right, scope)
 
   const assignOps = {
     '=': () => {
@@ -223,9 +224,9 @@ export function AssignmentExpression(node: estree.AssignmentExpression, scope: S
     },
   }
   
-  const handle = assignOps[node.operator]
-  if (handle) {
-    return handle()
+  const handler = assignOps[node.operator]
+  if (handler) {
+    return handler()
   } else {
     throw new SyntaxError(`Unexpected token ${node.operator}`)
   }

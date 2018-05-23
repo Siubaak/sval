@@ -52,6 +52,7 @@ export function AssignmentProperty(node: estree.AssignmentProperty, scope: Scope
 
 export function ArrayPattern(node: estree.ArrayPattern, scope: Scope, options: PatternOptions = {}) {
   const { kind, hoist = false, feed = [] } = options
+  const result = []
   for (let i = 0; i < node.elements.length; i++) {
     const element = node.elements[i]
     if (hoist) {
@@ -74,10 +75,14 @@ export function ArrayPattern(node: estree.ArrayPattern, scope: Scope, options: P
         // If kind is undefined, it's a statement
         const variable: Var = Identifier(element, scope, { getVar: true })
         variable.set(feed[i])
+        result.push(variable.get())
       } else {
         pattern(element, scope, { kind, feed: feed[i] })
       }
     }
+  }
+  if (result.length) {
+    return result
   }
 }
 

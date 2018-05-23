@@ -1,7 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 function Identifier(node, scope, options) {
-    var _a = options || {}, _b = _a.getName, getName = _b === void 0 ? false : _b, _c = _a.getVar, getVar = _c === void 0 ? false : _c, _d = _a.throwErr, throwErr = _d === void 0 ? true : _d;
+    if (options === void 0) { options = {}; }
+    var _a = options.getName, getName = _a === void 0 ? false : _a, _b = options.getVar, getVar = _b === void 0 ? false : _b, _c = options.throwErr, throwErr = _c === void 0 ? true : _c;
     if (getName) {
         return node.name;
     }

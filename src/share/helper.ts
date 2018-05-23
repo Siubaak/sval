@@ -98,17 +98,13 @@ function hoistVarRecursion(statement: estree.Statement, scope: Scope) {
 export function pattern(node: estree.Pattern, scope: Scope, options: PatternOptions = {}) {
   switch (node.type) {
     case 'ObjectPattern':
-      ObjectPattern(node, scope, options)
-      break
+      return ObjectPattern(node, scope, options)
     case 'ArrayPattern':
-      ArrayPattern(node, scope, options)
-      break
+      return ArrayPattern(node, scope, options)
     case 'RestElement':
-      RestElement(node, scope, options)
-      break
+      return RestElement(node, scope, options)
     case 'AssignmentPattern':
-      AssignmentPattern(node, scope)
-      break
+      return AssignmentPattern(node, scope)
     default:
       throw new SyntaxError('Unexpected token')
   }

@@ -1,10 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var acorn_1 = require("acorn");
-var module_1 = require("./share/module");
 var program_1 = require("./evaluate/program");
 var scope_1 = require("./scope");
-var hoist_1 = require("./share/hoist");
+var helper_1 = require("./share/helper");
 var util_1 = require("./share/util");
 var Sval = (function () {
     function Sval(options) {
@@ -12,12 +11,14 @@ var Sval = (function () {
         this.options = {};
         this.scope = new scope_1.default(null, true);
         var ecmaVer = options.ecmaVer, _a = options.sandBox, sandBox = _a === void 0 ? true : _a;
-        if (ecmaVer !== 5) {
+        if (ecmaVer !== 5
+            && ecmaVer !== 6
+            && ecmaVer !== 2015) {
             ecmaVer = 5;
         }
         this.options.ecmaVersion = ecmaVer;
         if (sandBox) {
-            var win = util_1.assign({}, module_1.defModules);
+            var win = util_1.createSandBox();
             this.scope.let('window', win);
             this.scope.let('this', win);
         }
@@ -36,7 +37,7 @@ var Sval = (function () {
     };
     Sval.prototype.run = function (input) {
         var ast = acorn_1.parse(input, this.options);
-        hoist_1.hoist(ast, this.scope);
+        helper_1.hoist(ast, this.scope);
         program_1.Program(ast, this.scope);
     };
     return Sval;

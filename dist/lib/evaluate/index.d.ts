@@ -1,3 +1,3 @@
-import { Node } from 'estree';
 import Scope from '../scope';
-export default function evaluate(node: Node, scope: Scope, options?: any): any;
+import { Node } from 'estree';
+export default function evaluate(node: Node, scope: Scope): any;

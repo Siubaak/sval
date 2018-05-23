@@ -3,6 +3,8 @@ import Scope from '../scope';
 export declare function ExpressionStatement(node: estree.ExpressionStatement, scope: Scope): void;
 export interface BlockOptions {
     invasived?: boolean;
+    hoisted?: boolean;
+    generator?: boolean;
 }
 export declare function BlockStatement(block: estree.BlockStatement, scope: Scope, options?: BlockOptions): any;
 export declare function EmptyStatement(node: estree.EmptyStatement, scope: Scope): void;

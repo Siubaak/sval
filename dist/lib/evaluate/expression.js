@@ -1,14 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var scope_1 = require("../scope");
 var _1 = require(".");
-var hoist_1 = require("../share/hoist");
+var helper_1 = require("../share/helper");
 var util_1 = require("../share/util");
-var const_1 = require("../share/const");
 var identifier_1 = require("./identifier");
 var literal_1 = require("./literal");
 var variable_1 = require("../scope/variable");
-var statement_1 = require("./statement");
 function ThisExpression(node, scope) {
     return scope.find('this').get();
 }
@@ -51,34 +48,7 @@ function ObjectExpression(node, scope) {
 }
 exports.ObjectExpression = ObjectExpression;
 function FunctionExpression(node, scope) {
-    var params = node.params;
-    var func = function () {
-        var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i] = arguments[_i];
-        }
-        var subScope = new scope_1.default(scope, true);
-        subScope.const('this', this);
-        subScope.let('arguments', arguments);
-        for (var i = 0; i < params.length; i++) {
-            var name_1 = params[i].name;
-            subScope.let(name_1, args[i]);
-        }
-        hoist_1.hoist(node.body, subScope);
-        var result = statement_1.BlockStatement(node.body, subScope, { invasived: true });
-        if (result === const_1.RETURN) {
-            return result.RES;
-        }
-    };
-    util_1.define(func, 'name', {
-        value: node.id.name,
-        configurable: true,
-    });
-    util_1.define(func, 'length', {
-        value: params.length,
-        configurable: true,
-    });
-    return func;
+    return helper_1.createFunc(node, scope);
 }
 exports.FunctionExpression = FunctionExpression;
 function UnaryExpression(node, scope) {
@@ -104,18 +74,18 @@ function UnaryExpression(node, scope) {
             }
             else if (arg.type === 'Identifier') {
                 var globalScope = scope.global();
-                var name_2 = identifier_1.Identifier(arg, globalScope, { getName: true });
+                var name_1 = identifier_1.Identifier(arg, globalScope, { getName: true });
                 var win = globalScope.find('window').get();
-                return delete win[name_2];
+                return delete win[name_1];
             }
             else {
                 throw new SyntaxError('Unexpected token');
             }
         }
     };
-    var handle = unaryOps[node.operator];
-    if (handle) {
-        return handle();
+    var handler = unaryOps[node.operator];
+    if (handler) {
+        return handler();
     }
     else {
         throw new SyntaxError("Unexpected token " + node.operator);
@@ -175,9 +145,9 @@ function BinaryExpression(node, scope) {
         'in': function () { return left in right; },
         'instanceof': function () { return left instanceof right; },
     };
-    var handle = binaryOps[node.operator];
-    if (handle) {
-        return handle();
+    var handler = binaryOps[node.operator];
+    if (handler) {
+        return handler();
     }
     else {
         throw new SyntaxError("Unexpected token " + node.operator);
@@ -185,6 +155,7 @@ function BinaryExpression(node, scope) {
 }
 exports.BinaryExpression = BinaryExpression;
 function AssignmentExpression(node, scope) {
+    var value = _1.default(node.right, scope);
     var left = node.left;
     var variable;
     if (left.type === 'Identifier') {
@@ -198,9 +169,8 @@ function AssignmentExpression(node, scope) {
         variable = MemberExpression(left, scope, { getVar: true });
     }
     else {
-        throw new SyntaxError('Unexpected token');
+        return helper_1.pattern(left, scope, { feed: value });
     }
-    var value = _1.default(node.right, scope);
     var assignOps = {
         '=': function () {
             variable.set(value);
@@ -255,9 +225,9 @@ function AssignmentExpression(node, scope) {
             return variable.get();
         },
     };
-    var handle = assignOps[node.operator];
-    if (handle) {
-        return handle();
+    var handler = assignOps[node.operator];
+    if (handler) {
+        return handler();
     }
     else {
         throw new SyntaxError("Unexpected token " + node.operator);
@@ -277,7 +247,8 @@ function LogicalExpression(node, scope) {
 }
 exports.LogicalExpression = LogicalExpression;
 function MemberExpression(node, scope, options) {
-    var _a = options || {}, _b = _a.getObj, getObj = _b === void 0 ? false : _b, _c = _a.getVar, getVar = _c === void 0 ? false : _c;
+    if (options === void 0) { options = {}; }
+    var _a = options.getObj, getObj = _a === void 0 ? false : _a, _b = options.getVar, getVar = _b === void 0 ? false : _b;
     var object = _1.default(node.object, scope);
     if (getObj) {
         return object;
@@ -335,27 +306,44 @@ function SequenceExpression(node, scope) {
 }
 exports.SequenceExpression = SequenceExpression;
 function ArrowFunctionExpression(node, scope) {
-    var params = node.params;
-    var func = function () {
-        var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i] = arguments[_i];
-        }
-        var subScope = new scope_1.default(scope);
-        for (var i = 0; i < params.length; i++) {
-            var name_3 = params[i].name;
-            subScope.let(name_3, args[i]);
-        }
-        var result = _1.default(node.body, subScope, { invasived: true });
-        if (result === const_1.RETURN) {
-            return result.RES;
-        }
-    };
-    util_1.define(func, 'length', {
-        value: params.length,
-        configurable: true,
-    });
-    return func;
+    return helper_1.createFunc(node, scope);
 }
 exports.ArrowFunctionExpression = ArrowFunctionExpression;
+function YieldExpression(node, scope) {
+    return _1.default(node.argument, scope);
+}
+exports.YieldExpression = YieldExpression;
+function TemplateLiteral(node, scope) {
+    var quasis = node.quasis;
+    var expressions = node.expressions;
+    var result = '';
+    var temEl;
+    var expr;
+    while (temEl = quasis.shift()) {
+        result += TemplateElement(temEl, scope);
+        expr = expressions.shift();
+        if (expr) {
+            result += _1.default(expr, scope);
+        }
+    }
+    return result;
+}
+exports.TemplateLiteral = TemplateLiteral;
+function TaggedTemplateExpression(node, scope) {
+    var tagFunc = _1.default(node.tag, scope);
+    var quasis = node.quasi.quasis;
+    var str = quasis.map(function (v) { return v.value.cooked; });
+    var raw = quasis.map(function (v) { return v.value.raw; });
+    util_1.define(str, 'raw', {
+        value: util_1.freeze(raw)
+    });
+    var expressions = node.quasi.expressions;
+    var args = expressions.map(function (n) { return _1.default(n, scope); }) || [];
+    return tagFunc.apply(void 0, [util_1.freeze(str)].concat(args));
+}
+exports.TaggedTemplateExpression = TaggedTemplateExpression;
+function TemplateElement(node, scope) {
+    return node.value.raw;
+}
+exports.TemplateElement = TemplateElement;
 //# sourceMappingURL=expression.js.map
