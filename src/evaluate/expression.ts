@@ -1,9 +1,9 @@
 import * as estree from 'estree'
 import Scope from '../scope'
 import evaluate from '.'
-import { hoist, createFunc, pattern } from '../share/helper'
-import { define, freeze } from '../share/util'
-import { RETURN } from '../share/const'
+import { hoist, createFunc, pattern, createClass, createFakeGenerator } from '../share/helper'
+import { define, freeze, getGetter, getSetter } from '../share/util'
+import { RETURN, SUPER, RANSTR } from '../share/const'
 
 import { Identifier } from './identifier'
 import { Literal } from './literal'
@@ -50,7 +50,7 @@ export function ObjectExpression(node: estree.ObjectExpression, scope: Scope) {
 }
 
 export function FunctionExpression(node: estree.FunctionExpression, scope: Scope) {
-  return createFunc(node, scope)
+  return node.generator ? createFakeGenerator(node, scope) : createFunc(node, scope)
 }
 
 export function UnaryExpression(node: estree.UnaryExpression, scope: Scope) {
@@ -253,10 +253,20 @@ export function MemberExpression(
   options: MemberExpressionOptions = {},
 ) {
   const { getObj = false, getVar = false } = options
-  const object = evaluate(node.object, scope)
+
+  let object: any
+  if (node.object.type === 'Super') {
+    object = Super(node.object, scope, { getProto: true })
+  } else {
+    object = evaluate(node.object, scope)
+  }
 
   if (getObj) {
-    return object
+    if (node.object.type === 'Super') {
+      return scope.find('this').get()
+    } else {
+      return object
+    }
   }
 
   let key: string
@@ -269,9 +279,27 @@ export function MemberExpression(
   }
 
   if (getVar) {
-    return new Prop(object, key)
+    // left value
+    const setter = getSetter(object, key)
+    if (node.object.type === 'Super' && setter) {
+      // transfer the setter from super to this with a private key
+      const thisObject = scope.find('this').get()
+      const privateKey = `__${key}_${RANSTR}`
+      define(thisObject, privateKey, { set: setter })
+
+      return new Prop(thisObject, privateKey)
+    } else {
+      return new Prop(object, key)
+    }
   } else {
-    return object[key]
+    // right value
+    const getter = getGetter(object, key)
+    if (node.object.type === 'Super' && getter) {
+      const thisObject = scope.find('this').get()
+      return getter.call(thisObject)
+    } else {
+      return object[key]
+    }
   }
 }
 
@@ -298,7 +326,6 @@ export function NewExpression(node: estree.NewExpression, scope: Scope) {
   const constructor = evaluate(node.callee, scope)
   const args = node.arguments.map(arg => evaluate(arg, scope))
   return new constructor(...args)
-  
 }
 
 export function SequenceExpression(node: estree.SequenceExpression, scope: Scope) {
@@ -355,4 +382,22 @@ export function TaggedTemplateExpression(node: estree.TaggedTemplateExpression, 
 
 export function TemplateElement(node: estree.TemplateElement, scope: Scope) {
   return node.value.raw
+}
+
+export function ClassExpression(node: estree.ClassExpression, scope: Scope) {
+  return createClass(node, scope)
+}
+
+export interface SuperOptions {
+  getProto?: boolean
+}
+
+export function Super(
+  node: estree.Super,
+  scope: Scope,
+  options: SuperOptions = {},
+) {
+  const { getProto = false } = options
+  const superClass = scope.find(SUPER).get()
+  return getProto ? superClass.prototype: superClass
 }

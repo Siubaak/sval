@@ -1,7 +1,7 @@
 import * as estree from 'estree'
 import Scope from '../scope'
 import evaluate from '.'
-import { hoist, createFunc, pattern } from '../share/helper'
+import { hoist, createFunc, pattern, createClass, createFakeGenerator } from '../share/helper'
 import { varKind } from '../scope/variable'
 import { define } from '../share/util'
 import { RETURN } from '../share/const'
@@ -10,50 +10,7 @@ import { BlockStatement } from './statement'
 import { Identifier } from './identifier'
 
 export function FunctionDeclaration(node: estree.FunctionDeclaration, scope: Scope) {
-  const params = node.params
-  let func: (...args: any[]) => any
-  if (node.generator) {
-    func = function* (...args: any[]) {
-      const subScope = new Scope(scope, true)
-      subScope.const('this', this)
-      subScope.let('arguments', arguments)
-  
-      for (let i = 0; i < params.length; i++) {
-        const param = params[i]
-        if (param.type === 'Identifier') {
-          const name = Identifier(param, scope, { getName: true })
-          subScope.let(name, args[i])
-        } else {
-          pattern(param, scope, { feed: args[i] })
-        }
-      }
-  
-      hoist(node.body, subScope)
-      
-      const generator = BlockStatement(node.body, subScope, {
-        invasived: true,
-        hoisted: true,
-        generator: true
-      })
-      
-      const result = yield* generator()
-
-      if (result === RETURN) {
-        return result.RES
-      }
-    }
-    define(func, 'name', {
-      value: node.id.name,
-      configurable: true,
-    })
-    define(func, 'length', {
-      value: params.length,
-      configurable: true,
-    })
-  } else {
-    func = createFunc(node, scope)
-  }
-
+  const func = node.generator ? createFakeGenerator(node, scope) : createFunc(node, scope)
   scope.let(node.id.name, func)
 }
 
@@ -109,4 +66,62 @@ export function VariableDeclarator(
   } else {
     throw new SyntaxError('Unexpected identifier')
   }
+}
+
+export function ClassDeclaration(node: estree.ClassDeclaration, scope: Scope) {
+  scope.let(node.id.name, createClass(node, scope))
+}
+
+export interface ClassOptions {
+  klass?: (...args: any[]) => any
+}
+
+export function ClassBody(node: estree.ClassBody, scope: Scope, options: ClassOptions = {}) {
+  const { klass = function () { } } = options
+
+  for (const method of node.body) {
+    MethodDefinition(method, scope, { klass })
+  }
+}
+
+export function MethodDefinition(node: estree.MethodDefinition, scope: Scope, options: ClassOptions = {}) {
+  const { klass = function () { } } = options
+
+  let key: string
+  if (node.computed) {
+    key = evaluate(node.key, scope)
+  } else if (node.key.type === 'Identifier') {
+    key = Identifier(node.key, scope, { getName: true })
+  } else {
+    throw new SyntaxError('Unexpected token')
+  }
+
+  const obj = node.static ? klass : klass.prototype
+  const value = createFunc(node.value, scope)
+
+  switch (node.kind) {
+    case 'constructor':
+      break
+    case 'method':
+      define(obj, key, {
+        value,
+        writable: true,
+        configurable: true,
+      })
+      break
+    case 'get':
+      define(obj, key, {
+        get: value,
+        configurable: true,
+      })
+      break
+    case 'set':
+      define(obj, key, {
+        set: value,
+        configurable: true,
+      })
+      break
+    default:
+      throw new SyntaxError('Unexpected token')
+  } 
 }

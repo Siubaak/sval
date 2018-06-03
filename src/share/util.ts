@@ -12,6 +12,46 @@ export function getOwnNames(obj: any) {
   return getOwnPropertyNames(obj)
 }
 
+const getPrototypeOf = Object.getPrototypeOf
+export function getProto(obj: any) {
+  return getPrototypeOf ? getPrototypeOf(obj) : obj.__proto__
+}
+
+const getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor
+function getGetterOrSetter(method: 'get' | 'set', obj: any, key: string) {
+  while (obj) {
+    const descriptor = getOwnPropertyDescriptor(obj, key)
+    const value = typeof descriptor !== 'undefined'
+      && typeof descriptor.writable === 'undefined'
+      && typeof descriptor[method] === 'function'
+      && descriptor[method]
+    if (value) {
+      return value
+    } else {
+      obj = getProto(obj)
+    }
+  }
+}
+export function getGetter(obj: any, key: string) {
+  return getGetterOrSetter('get', obj, key)
+}
+export function getSetter(obj: any, key: string) {
+  return getGetterOrSetter('set', obj, key)
+}
+
+const create = Object.create
+export function inherits(
+  subClass: (...args: any[]) => any,
+  superClass: (...args: any[]) => any,
+) {
+  subClass.prototype = create(superClass.prototype, {
+    constructor: {
+      value: subClass,
+      writable: true,
+    }
+  })
+}
+
 function assignPolyfill(...objects: any[]): any {
   if (objects.length === 0) {
     return null

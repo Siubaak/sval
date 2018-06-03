@@ -11,3 +11,9 @@ export interface VariableDeclaratorOptions {
     kind?: varKind;
 }
 export declare function VariableDeclarator(node: estree.VariableDeclarator, scope: Scope, options?: VariableDeclaratorOptions & VariableDeclarationOptions): void;
+export declare function ClassDeclaration(node: estree.ClassDeclaration, scope: Scope): void;
+export interface ClassOptions {
+    klass?: (...args: any[]) => any;
+}
+export declare function ClassBody(node: estree.ClassBody, scope: Scope, options?: ClassOptions): void;
+export declare function MethodDefinition(node: estree.MethodDefinition, scope: Scope, options?: ClassOptions): void;

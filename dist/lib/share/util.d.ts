@@ -9,6 +9,10 @@ export declare const define: {
 };
 export declare function hasOwn(obj: any, key: string): boolean;
 export declare function getOwnNames(obj: any): string[];
+export declare function getProto(obj: any): any;
+export declare function getGetter(obj: any, key: string): (() => any) | ((v: any) => void);
+export declare function getSetter(obj: any, key: string): (() => any) | ((v: any) => void);
+export declare function inherits(subClass: (...args: any[]) => any, superClass: (...args: any[]) => any): void;
 export declare const assign: {
     <T, U>(target: T, source: U): T & U;
     <T, U, V>(target: T, source1: U, source2: V): T & U & V;

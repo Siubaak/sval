@@ -25,3 +25,8 @@ export declare function YieldExpression(node: estree.YieldExpression, scope: Sco
 export declare function TemplateLiteral(node: estree.TemplateLiteral, scope: Scope): string;
 export declare function TaggedTemplateExpression(node: estree.TaggedTemplateExpression, scope: Scope): any;
 export declare function TemplateElement(node: estree.TemplateElement, scope: Scope): string;
+export declare function ClassExpression(node: estree.ClassExpression, scope: Scope): (...args: any[]) => any;
+export interface SuperOptions {
+    getProto?: boolean;
+}
+export declare function Super(node: estree.Super, scope: Scope, options?: SuperOptions): any;

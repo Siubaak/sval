@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var _1 = require(".");
 var helper_1 = require("../share/helper");
 var util_1 = require("../share/util");
+var const_1 = require("../share/const");
 var identifier_1 = require("./identifier");
 var literal_1 = require("./literal");
 var variable_1 = require("../scope/variable");
@@ -48,7 +49,7 @@ function ObjectExpression(node, scope) {
 }
 exports.ObjectExpression = ObjectExpression;
 function FunctionExpression(node, scope) {
-    return helper_1.createFunc(node, scope);
+    return node.generator ? helper_1.createFakeGenerator(node, scope) : helper_1.createFunc(node, scope);
 }
 exports.FunctionExpression = FunctionExpression;
 function UnaryExpression(node, scope) {
@@ -249,9 +250,20 @@ exports.LogicalExpression = LogicalExpression;
 function MemberExpression(node, scope, options) {
     if (options === void 0) { options = {}; }
     var _a = options.getObj, getObj = _a === void 0 ? false : _a, _b = options.getVar, getVar = _b === void 0 ? false : _b;
-    var object = _1.default(node.object, scope);
+    var object;
+    if (node.object.type === 'Super') {
+        object = Super(node.object, scope, { getProto: true });
+    }
+    else {
+        object = _1.default(node.object, scope);
+    }
     if (getObj) {
-        return object;
+        if (node.object.type === 'Super') {
+            return scope.find('this').get();
+        }
+        else {
+            return object;
+        }
     }
     var key;
     if (node.computed) {
@@ -264,10 +276,26 @@ function MemberExpression(node, scope, options) {
         throw new SyntaxError('Unexpected token');
     }
     if (getVar) {
-        return new variable_1.Prop(object, key);
+        var setter = util_1.getSetter(object, key);
+        if (node.object.type === 'Super' && setter) {
+            var thisObject = scope.find('this').get();
+            var privateKey = "__" + key + "_" + const_1.RANSTR;
+            util_1.define(thisObject, privateKey, { set: setter });
+            return new variable_1.Prop(thisObject, privateKey);
+        }
+        else {
+            return new variable_1.Prop(object, key);
+        }
     }
     else {
-        return object[key];
+        var getter = util_1.getGetter(object, key);
+        if (node.object.type === 'Super' && getter) {
+            var thisObject = scope.find('this').get();
+            return getter.call(thisObject);
+        }
+        else {
+            return object[key];
+        }
     }
 }
 exports.MemberExpression = MemberExpression;
@@ -346,4 +374,15 @@ function TemplateElement(node, scope) {
     return node.value.raw;
 }
 exports.TemplateElement = TemplateElement;
+function ClassExpression(node, scope) {
+    return helper_1.createClass(node, scope);
+}
+exports.ClassExpression = ClassExpression;
+function Super(node, scope, options) {
+    if (options === void 0) { options = {}; }
+    var _a = options.getProto, getProto = _a === void 0 ? false : _a;
+    var superClass = scope.find(const_1.SUPER).get();
+    return getProto ? superClass.prototype : superClass;
+}
+exports.Super = Super;
 //# sourceMappingURL=expression.js.map

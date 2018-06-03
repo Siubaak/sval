@@ -12,6 +12,45 @@ function getOwnNames(obj) {
     return getOwnPropertyNames(obj);
 }
 exports.getOwnNames = getOwnNames;
+var getPrototypeOf = Object.getPrototypeOf;
+function getProto(obj) {
+    return getPrototypeOf ? getPrototypeOf(obj) : obj.__proto__;
+}
+exports.getProto = getProto;
+var getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
+function getGetterOrSetter(method, obj, key) {
+    while (obj) {
+        var descriptor = getOwnPropertyDescriptor(obj, key);
+        var value = typeof descriptor !== 'undefined'
+            && typeof descriptor.writable === 'undefined'
+            && typeof descriptor[method] === 'function'
+            && descriptor[method];
+        if (value) {
+            return value;
+        }
+        else {
+            obj = getProto(obj);
+        }
+    }
+}
+function getGetter(obj, key) {
+    return getGetterOrSetter('get', obj, key);
+}
+exports.getGetter = getGetter;
+function getSetter(obj, key) {
+    return getGetterOrSetter('set', obj, key);
+}
+exports.getSetter = getSetter;
+var create = Object.create;
+function inherits(subClass, superClass) {
+    subClass.prototype = create(superClass.prototype, {
+        constructor: {
+            value: subClass,
+            writable: true,
+        }
+    });
+}
+exports.inherits = inherits;
 function assignPolyfill() {
     var objects = [];
     for (var _i = 0; _i < arguments.length; _i++) {
