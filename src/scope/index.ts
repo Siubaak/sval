@@ -66,7 +66,7 @@ export default class Scope {
    * Find a variable along scope chain
    * @param name variable identifier name
    */
-  find(name: string): Variable {
+  find(name: symbol | string): Variable {
     if (hasOwn(this.context, name)) {
       // The variable locates in the scope
       return this.context[name]

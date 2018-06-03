@@ -3,7 +3,7 @@ export const freeze = Object.freeze
 export const define = Object.defineProperty
 
 const hasOwnProperty = Object.prototype.hasOwnProperty
-export function hasOwn(obj: any, key: string): boolean {
+export function hasOwn(obj: any, key: symbol | string): boolean {
   return hasOwnProperty.call(obj, key)
 }
 
@@ -74,6 +74,10 @@ export const assign = typeof Object.assign === 'function'
 const win = assign({}, window)
 export function createSandBox() {
   return assign({}, win)
+}
+
+export function createSymbol(key: string) {
+  return Symbol ? Symbol(key) : `__${key}_${Math.random().toString(36).substring(2)}`
 }
 
 declare function require(module: string): any

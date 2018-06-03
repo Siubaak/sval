@@ -2,8 +2,8 @@ import * as estree from 'estree'
 import Scope from '../scope'
 import evaluate from '.'
 import { hoist, createFunc, pattern, createClass, createFakeGenerator } from '../share/helper'
-import { define, freeze, getGetter, getSetter } from '../share/util'
-import { RETURN, SUPER, RANSTR } from '../share/const'
+import { define, freeze, getGetter, getSetter, createSymbol } from '../share/util'
+import { RETURN, SUPER } from '../share/const'
 
 import { Identifier } from './identifier'
 import { Literal } from './literal'
@@ -284,7 +284,7 @@ export function MemberExpression(
     if (node.object.type === 'Super' && setter) {
       // transfer the setter from super to this with a private key
       const thisObject = scope.find('this').get()
-      const privateKey = `__${key}_${RANSTR}`
+      const privateKey = createSymbol(key)
       define(thisObject, privateKey, { set: setter })
 
       return new Prop(thisObject, privateKey)

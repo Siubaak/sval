@@ -30,9 +30,9 @@ export class Var implements Variable {
 
 export class Prop implements Variable {
   private readonly object: any
-  private readonly property: string
+  private readonly property: symbol | string
 
-  constructor(object: any, property: string) {
+  constructor(object: any, property: symbol | string) {
     this.object = object
     this.property = property
   }
