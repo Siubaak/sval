@@ -3,11 +3,8 @@ export declare const freeze: {
     <T extends Function>(f: T): T;
     <T>(o: T): Readonly<T>;
 };
-export declare const define: {
-    (o: any, p: string, attributes: PropertyDescriptor & ThisType<any>): any;
-    (o: any, propertyKey: PropertyKey, attributes: PropertyDescriptor): any;
-};
-export declare function hasOwn(obj: any, key: string): boolean;
+export declare const define: (o: any, p: string | number | symbol, attributes: PropertyDescriptor & ThisType<any>) => any;
+export declare function hasOwn(obj: any, key: symbol | string): boolean;
 export declare function getOwnNames(obj: any): string[];
 export declare function getProto(obj: any): any;
 export declare function getGetter(obj: any, key: string): (() => any) | ((v: any) => void);
@@ -20,4 +17,5 @@ export declare const assign: {
     (target: object, ...sources: any[]): any;
 };
 export declare function createSandBox(): Window;
+export declare function createSymbol(key: string): string | symbol;
 export declare const walk: any;

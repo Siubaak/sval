@@ -79,5 +79,9 @@ function createSandBox() {
     return exports.assign({}, win);
 }
 exports.createSandBox = createSandBox;
+function createSymbol(key) {
+    return Symbol ? Symbol(key) : "__" + key + "_" + Math.random().toString(36).substring(2);
+}
+exports.createSymbol = createSymbol;
 exports.walk = require('acorn/dist/walk').simple;
 //# sourceMappingURL=util.js.map

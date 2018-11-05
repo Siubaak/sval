@@ -2,7 +2,7 @@ import { parse, Options } from 'acorn'
 import { Program } from './evaluate/program'
 import Scope from './scope'
 import { hoist } from './share/helper'
-import { getOwnNames, assign, createSandBox } from './share/util'
+import { getOwnNames, createSandBox } from './share/util'
 
 export interface SvalOptions {
   ecmaVer?: 3 | 5 | 6 | 7 | 8 | 2015 | 2016 | 2017

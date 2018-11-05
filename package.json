@@ -1,9 +1,10 @@
 {
   "name": "sval",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A javascript interpreter written in javascript",
   "main": "index.js",
   "jest": {
+    "testURL": "http://localhost/",
     "transform": {
       "^.+\\.tsx?$": "ts-jest"
     },

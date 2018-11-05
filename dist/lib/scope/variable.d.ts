@@ -13,7 +13,7 @@ export declare class Var implements Variable {
 export declare class Prop implements Variable {
     private readonly object;
     private readonly property;
-    constructor(object: any, property: string);
+    constructor(object: any, property: symbol | string);
     get(): any;
     set(value: any): boolean;
     del(): boolean;

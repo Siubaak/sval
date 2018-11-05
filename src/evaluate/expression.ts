@@ -1,14 +1,13 @@
 import * as estree from 'estree'
 import Scope from '../scope'
 import evaluate from '.'
-import { hoist, createFunc, pattern, createClass, createFakeGenerator } from '../share/helper'
+import { createFunc, pattern, createClass, createFakeGenerator } from '../share/helper'
 import { define, freeze, getGetter, getSetter, createSymbol } from '../share/util'
-import { RETURN, SUPER } from '../share/const'
+import { SUPER } from '../share/const'
 
 import { Identifier } from './identifier'
 import { Literal } from './literal'
 import { Variable, Prop } from '../scope/variable'
-import { BlockStatement } from './statement'
 
 export function ThisExpression(node: estree.ThisExpression, scope: Scope) {
   return scope.find('this').get()

@@ -69,7 +69,7 @@ export default class Scope {
   find(name: symbol | string): Variable {
     if (hasOwn(this.context, name)) {
       // The variable locates in the scope
-      return this.context[name]
+      return this.context[name as string]
     } else if (this.parent) {
       // Find variable along the scope chain
       return this.parent.find(name)
@@ -92,7 +92,7 @@ export default class Scope {
    * @param name variable identifier name
    * @param value variable value
    */
-  var(name: string, value: any) {
+  var(name: symbol | string, value: any) {
     let scope: Scope = this
 
     // Find the closest function scope
@@ -100,7 +100,7 @@ export default class Scope {
       scope = scope.parent
     }
 
-    scope.context[name] = new Var('var', value)
+    scope.context[name as string] = new Var('var', value)
 
     if (!scope.parent) {
       const win = scope.find('window').get()
@@ -115,10 +115,10 @@ export default class Scope {
    * @param name variable identifier name
    * @param value variable value
    */
-  let(name: string, value: any) {
-    const variable = this.context[name]
+  let(name: symbol | string, value: any) {
+    const variable = this.context[name as string]
     if (!variable) {
-      this.context[name] = new Var('let', value)
+      this.context[name as string] = new Var('let', value)
       return true
     } else {
       return false
@@ -130,10 +130,10 @@ export default class Scope {
    * @param name variable identifier name
    * @param value variable value
    */
-  const(name: string, value: any) {
-    const variable = this.context[name]
+  const(name: symbol | string, value: any) {
+    const variable = this.context[name as string]
     if (!variable) {
-      this.context[name] = new Var('const', value)
+      this.context[name as string] = new Var('const', value)
       return true
     } else {
       return false

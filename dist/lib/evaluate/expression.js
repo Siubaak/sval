@@ -279,7 +279,7 @@ function MemberExpression(node, scope, options) {
         var setter = util_1.getSetter(object, key);
         if (node.object.type === 'Super' && setter) {
             var thisObject = scope.find('this').get();
-            var privateKey = "__" + key + "_" + const_1.RANSTR;
+            var privateKey = util_1.createSymbol(key);
             util_1.define(thisObject, privateKey, { set: setter });
             return new variable_1.Prop(thisObject, privateKey);
         }

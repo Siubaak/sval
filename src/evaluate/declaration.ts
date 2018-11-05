@@ -1,12 +1,10 @@
 import * as estree from 'estree'
 import Scope from '../scope'
 import evaluate from '.'
-import { hoist, createFunc, pattern, createClass, createFakeGenerator } from '../share/helper'
+import { createFunc, pattern, createClass, createFakeGenerator } from '../share/helper'
 import { varKind } from '../scope/variable'
 import { define } from '../share/util'
-import { RETURN } from '../share/const'
 
-import { BlockStatement } from './statement'
 import { Identifier } from './identifier'
 
 export function FunctionDeclaration(node: estree.FunctionDeclaration, scope: Scope) {

@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+var util_1 = require("./util");
 exports.BREAK = {};
 exports.CONTINUE = {};
 exports.RETURN = { RES: undefined };
-exports.RANSTR = Math.random().toString(36).substring(2);
-exports.SUPER = "__super_" + exports.RANSTR;
+exports.SUPER = util_1.createSymbol('super');
 //# sourceMappingURL=const.js.map

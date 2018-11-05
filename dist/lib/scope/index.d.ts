@@ -6,8 +6,8 @@ export default class Scope {
     constructor(parent?: Scope, isolated?: boolean);
     global(): Scope;
     clone(): Scope;
-    find(name: string): Variable;
-    var(name: string, value: any): boolean;
-    let(name: string, value: any): boolean;
-    const(name: string, value: any): boolean;
+    find(name: symbol | string): Variable;
+    var(name: symbol | string, value: any): boolean;
+    let(name: symbol | string, value: any): boolean;
+    const(name: symbol | string, value: any): boolean;
 }
