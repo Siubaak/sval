@@ -285,7 +285,6 @@ export function MemberExpression(
       const thisObject = scope.find('this').get()
       const privateKey = createSymbol(key)
       define(thisObject, privateKey, { set: setter })
-
       return new Prop(thisObject, privateKey)
     } else {
       return new Prop(object, key)
@@ -309,13 +308,35 @@ export function ConditionalExpression(node: estree.ConditionalExpression, scope:
 }
 
 export function CallExpression(node: estree.CallExpression, scope: Scope) {
-  const func = evaluate(node.callee, scope)
-  const args = node.arguments.map(arg => evaluate(arg, scope))
-
   if (node.callee.type === 'MemberExpression') {
     const object = MemberExpression(node.callee, scope, { getObj: true })
+  
+    // get key
+    let key: string
+    if (node.callee.computed) {
+      key = evaluate(node.callee.property, scope)
+    } else if (node.callee.property.type === 'Identifier') {
+      key = Identifier(node.callee.property, scope, { getName: true })
+    } else {
+      throw new SyntaxError('Unexpected token')
+    }
+
+    // right value
+    let func: any
+    const getter = getGetter(object, key)
+    if (node.callee.object.type === 'Super' && getter) {
+      const thisObject = scope.find('this').get()
+      func = getter.call(thisObject)
+    } else {
+      func = object[key]
+    }
+  
+    const args = node.arguments.map(arg => evaluate(arg, scope))
+  
     return func.apply(object, args)
   } else {
+    const func = evaluate(node.callee, scope)
+    const args = node.arguments.map(arg => evaluate(arg, scope))
     const thisObject = scope.find('this').get()
     return func.apply(thisObject, args)
   }

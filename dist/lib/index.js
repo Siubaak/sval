@@ -42,9 +42,10 @@ var Sval = (function () {
     };
     return Sval;
 }());
-if (window) {
-    ;
+try {
     window.Sval = Sval;
+}
+catch (err) {
 }
 exports.default = Sval;
 //# sourceMappingURL=index.js.map

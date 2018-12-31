@@ -52,8 +52,10 @@ class Sval {
   }
 }
 
-if (window) {
-  ;(window as any).Sval = Sval
+try {
+  (window as any).Sval = Sval
+} catch (err) {
+  /* empty */
 }
 
 export default Sval

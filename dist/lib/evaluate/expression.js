@@ -306,13 +306,33 @@ function ConditionalExpression(node, scope) {
 }
 exports.ConditionalExpression = ConditionalExpression;
 function CallExpression(node, scope) {
-    var func = _1.default(node.callee, scope);
-    var args = node.arguments.map(function (arg) { return _1.default(arg, scope); });
     if (node.callee.type === 'MemberExpression') {
         var object = MemberExpression(node.callee, scope, { getObj: true });
+        var key = void 0;
+        if (node.callee.computed) {
+            key = _1.default(node.callee.property, scope);
+        }
+        else if (node.callee.property.type === 'Identifier') {
+            key = identifier_1.Identifier(node.callee.property, scope, { getName: true });
+        }
+        else {
+            throw new SyntaxError('Unexpected token');
+        }
+        var func = void 0;
+        var getter = util_1.getGetter(object, key);
+        if (node.callee.object.type === 'Super' && getter) {
+            var thisObject = scope.find('this').get();
+            func = getter.call(thisObject);
+        }
+        else {
+            func = object[key];
+        }
+        var args = node.arguments.map(function (arg) { return _1.default(arg, scope); });
         return func.apply(object, args);
     }
     else {
+        var func = _1.default(node.callee, scope);
+        var args = node.arguments.map(function (arg) { return _1.default(arg, scope); });
         var thisObject = scope.find('this').get();
         return func.apply(thisObject, args);
     }
