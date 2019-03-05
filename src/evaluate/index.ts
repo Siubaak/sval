@@ -26,5 +26,9 @@ export default function evaluate(node: Node, scope: Scope) {
     return
   }
   const handler = (evaluateOps as any)[node.type]
-  return handler(node, scope)
+  if (handler) {
+    return handler(node, scope)
+  } else {
+    throw new Error(`${node.type} isn't implemented`)
+  }
 }

@@ -1,4 +1,4 @@
-import { Variable, Var, Prop, varKind } from './variable'
+import { Variable, Var, Prop } from './variable'
 import { hasOwn, getOwnNames } from '../share/util'
 
 /**

@@ -1,12 +1,12 @@
 import * as estree from 'estree'
 import Scope from '../scope'
 import evaluate from '.'
-import { varKind, Var } from '../scope/variable'
+import { VarKind, Var } from '../scope/variable'
 import { Identifier } from './identifier'
 import { pattern } from '../share/helper'
 
 export interface PatternOptions {
-  kind?: varKind
+  kind?: VarKind
   hoist?: boolean
   feed?: any
 }

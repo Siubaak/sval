@@ -65,16 +65,12 @@ export function BlockStatement(
   }
 }
 
-export function EmptyStatement(node: estree.EmptyStatement, scope: Scope) {
+export function EmptyStatement() {
   // No operation here
 }
 
-export function DebuggerStatement(node: estree.DebuggerStatement, scope: Scope) {
+export function DebuggerStatement() {
   debugger
-}
-
-export function WithStatement(node: estree.WithStatement, scope: Scope) {
-  
 }
 
 export function ReturnStatement(node: estree.ReturnStatement, scope: Scope) {
@@ -82,15 +78,11 @@ export function ReturnStatement(node: estree.ReturnStatement, scope: Scope) {
   return RETURN
 }
 
-export function LabeledStatement(node: estree.LabeledStatement, scope: Scope) {
-
-}
-
-export function BreakStatement(node: estree.BreakStatement, scope: Scope) {
+export function BreakStatement() {
   return BREAK
 }
 
-export function ContinueStatement(node: estree.ContinueStatement, scope: Scope) {
+export function ContinueStatement() {
   return CONTINUE
 }
 

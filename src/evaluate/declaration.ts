@@ -2,7 +2,7 @@ import * as estree from 'estree'
 import Scope from '../scope'
 import evaluate from '.'
 import { createFunc, pattern, createClass, createFakeGenerator } from '../share/helper'
-import { varKind } from '../scope/variable'
+import { VarKind } from '../scope/variable'
 import { define } from '../share/util'
 
 import { Identifier } from './identifier'
@@ -28,7 +28,7 @@ export function VariableDeclaration(
 }
 
 export interface VariableDeclaratorOptions {
-  kind?: varKind
+  kind?: VarKind
 }
 
 export function VariableDeclarator(

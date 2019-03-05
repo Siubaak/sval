@@ -1,4 +1,4 @@
-export type varKind = 'var' | 'let' | 'const'
+export type VarKind = 'var' | 'let' | 'const'
 
 export interface Variable {
   get(): any,
@@ -6,10 +6,10 @@ export interface Variable {
 }
 
 export class Var implements Variable {
-  readonly kind: varKind
+  readonly kind: VarKind
   private value: any
 
-  constructor(kind: varKind, value: any) {
+  constructor(kind: VarKind, value: any) {
     this.kind = kind
     this.value = value
   }
