@@ -4,13 +4,12 @@
     "target": "es5",
     "lib": [
       "dom",
-      "es6",
-      "dom.iterable",
-      "scripthost"
+      "es6"
     ],
     "sourceMap": true,
     "noImplicitAny": true,
-    "removeComments": true
+    "removeComments": true,
+    "downlevelIteration": true
   },
   "include": [
     "src"

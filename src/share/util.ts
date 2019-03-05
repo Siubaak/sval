@@ -80,5 +80,11 @@ export function createSymbol(key: string) {
   return Symbol ? Symbol(key) : `__${key}_${Math.random().toString(36).substring(2)}`
 }
 
-declare function require(module: string): any
-export const walk = require('acorn/dist/walk').simple
+export function runGenerator(generator: (...args: any[]) => IterableIterator<any>, ...args: any[]) {
+  const iterator = generator(...args)
+  let result = iterator.next()
+  while (!result.done) {
+    result = iterator.next()
+  }
+  return result.value
+}

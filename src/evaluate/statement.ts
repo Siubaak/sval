@@ -4,21 +4,19 @@ import evaluate from './index'
 import { Var } from '../scope/variable'
 import { hoistFunc, pattern } from '../share/helper'
 import { BREAK, CONTINUE, RETURN } from '../share/const'
-import { walk } from '../share/util'
 import { Identifier } from './identifier'
 import { VariableDeclaration } from './declaration'
 
-export function ExpressionStatement(node: estree.ExpressionStatement, scope: Scope) {
-  evaluate(node.expression, scope)
+export function* ExpressionStatement(node: estree.ExpressionStatement, scope: Scope) {
+  yield* evaluate(node.expression, scope)
 }
 
 export interface BlockOptions {
   invasived?: boolean
   hoisted?: boolean
-  generator?: boolean
 }
 
-export function BlockStatement(
+export function* BlockStatement(
   block: estree.BlockStatement,
   scope: Scope,
   options: BlockOptions = {},
@@ -26,140 +24,117 @@ export function BlockStatement(
   const {
     invasived = false,
     hoisted = false,
-    generator = false,
   } = options
 
   const subScope = invasived ? scope : new Scope(scope)
 
   if (!hoisted) {
-    hoistFunc(block, subScope)
+    yield* hoistFunc(block, subScope)
   }
 
-  if (generator) {
-    return function* () {
-      for (const node of block.body) {
-        let isExistYield = false
-        walk(node, {
-          YieldExpression(node: estree.YieldExpression) {
-            isExistYield = true
-          }
-        })
-        let result
-        if (isExistYield) {
-          result = yield evaluate(node, subScope)
-        } else {
-          result = evaluate(node, subScope)
-        }
-        if (result === BREAK || result === CONTINUE || result === RETURN) {
-          return result
-        }
-      }
-    }
-  } else {
-    for (const node of block.body) {
-      const result = evaluate(node, subScope)
-      if (result === BREAK || result === CONTINUE || result === RETURN) {
-        return result
-      }
-    }
-  }
-}
-
-export function EmptyStatement() {
-  // No operation here
-}
-
-export function DebuggerStatement() {
-  debugger
-}
-
-export function ReturnStatement(node: estree.ReturnStatement, scope: Scope) {
-  RETURN.RES = node.argument ? evaluate(node.argument, scope) : undefined
-  return RETURN
-}
-
-export function BreakStatement() {
-  return BREAK
-}
-
-export function ContinueStatement() {
-  return CONTINUE
-}
-
-export function IfStatement(node: estree.IfStatement, scope: Scope) {
-  if (evaluate(node.test, scope)) {
-    return evaluate(node.consequent, scope)
-  } else {
-    return evaluate(node.alternate, scope)
-  }
-}
-
-export function SwitchStatement(node: estree.SwitchStatement, scope: Scope) {
-  const discriminant = evaluate(node.discriminant, scope)
-  let matched = false
-  for (const eachCase of node.cases) {
-    if (
-      !matched
-      && (
-        !eachCase.test  // default
-        || evaluate(eachCase.test, scope) === discriminant
-      )
-    ) {
-      matched = true
-    }
-    if (matched) {
-      const result = SwitchCase(eachCase, scope)
-      if (result === BREAK || result === CONTINUE || result === RETURN) {
-        return result
-      }
-    }
-  }
-}
-
-export function SwitchCase(node: estree.SwitchCase, scope: Scope) {
-  for (const statement of node.consequent) {
-    const result = evaluate(statement, scope)
+  for (const node of block.body) {
+    const result = yield* evaluate(node, subScope)
     if (result === BREAK || result === CONTINUE || result === RETURN) {
       return result
     }
   }
 }
 
-export function ThrowStatement(node: estree.ThrowStatement, scope: Scope) {
-  throw evaluate(node.argument, scope)
+export function* EmptyStatement(): IterableIterator<any> {
+  // No operation here
 }
 
-export function TryStatement(node: estree.TryStatement, scope: Scope) {
+export function* DebuggerStatement(): IterableIterator<any> {
+  debugger
+}
+
+export function* ReturnStatement(node: estree.ReturnStatement, scope: Scope) {
+  RETURN.RES = node.argument ? (yield* evaluate(node.argument, scope)) : undefined
+  return RETURN
+}
+
+export function* BreakStatement() {
+  return BREAK
+}
+
+export function* ContinueStatement() {
+  return CONTINUE
+}
+
+export function* IfStatement(node: estree.IfStatement, scope: Scope) {
+  if (yield* evaluate(node.test, scope)) {
+    return yield* evaluate(node.consequent, scope)
+  } else {
+    return yield* evaluate(node.alternate, scope)
+  }
+}
+
+export function* SwitchStatement(node: estree.SwitchStatement, scope: Scope) {
+  const discriminant = yield* evaluate(node.discriminant, scope)
+  let matched = false
+  for (const eachCase of node.cases) {
+    if (
+      !matched
+      && (
+        !eachCase.test  // default
+        || (yield* evaluate(eachCase.test, scope)) === discriminant
+      )
+    ) {
+      matched = true
+    }
+    if (matched) {
+      const result = yield* SwitchCase(eachCase, scope)
+      if (result === BREAK || result === CONTINUE || result === RETURN) {
+        return result
+      }
+    }
+  }
+}
+
+export function* SwitchCase(node: estree.SwitchCase, scope: Scope) {
+  for (const statement of node.consequent) {
+    const result = yield* evaluate(statement, scope)
+    if (result === BREAK || result === CONTINUE || result === RETURN) {
+      return result
+    }
+  }
+}
+
+export function* ThrowStatement(node: estree.ThrowStatement, scope: Scope) {
+  throw yield* evaluate(node.argument, scope)
+}
+
+export function* TryStatement(node: estree.TryStatement, scope: Scope) {
   try {
-    return BlockStatement(node.block, scope)
+    return yield* BlockStatement(node.block, scope)
   } catch (err) {
     if (node.handler) {
       const subScope = new Scope(scope)
       const param = node.handler.param
       if (param.type === 'Identifier') {
-        const name = Identifier(param, scope, { getName: true })
+        const name = yield* Identifier(param, scope, { getName: true })
         subScope.let(name, err)
       } else {
-        pattern(param, scope, { feed: err })
+        yield* pattern(param, scope, { feed: err })
       }
-      return CatchClause(node.handler, subScope)
+      return yield* CatchClause(node.handler, subScope)
     } else {
       throw err
     }
   } finally {
     if (node.finalizer) {
-      return BlockStatement(node.finalizer, scope)
+      return yield* BlockStatement(node.finalizer, scope)
     }
   }
 }
 
-export function CatchClause(node: estree.CatchClause, scope: Scope) {
-  return BlockStatement(node.body, scope, { invasived: true })
+export function* CatchClause(node: estree.CatchClause, scope: Scope) {
+  return yield* BlockStatement(node.body, scope, { invasived: true })
 }
 
-export function WhileStatement(node: estree.WhileStatement, scope: Scope) {
-  while (evaluate(node.test, scope)) {
-    const result = evaluate(node.body, scope)
+export function* WhileStatement(node: estree.WhileStatement, scope: Scope) {
+  while (yield* evaluate(node.test, scope)) {
+    const result = yield* evaluate(node.body, scope)
 
     if (result === BREAK) {
       break
@@ -171,9 +146,9 @@ export function WhileStatement(node: estree.WhileStatement, scope: Scope) {
   }
 }
 
-export function DoWhileStatement(node: estree.DoWhileStatement, scope: Scope) {
+export function* DoWhileStatement(node: estree.DoWhileStatement, scope: Scope) {
   do {
-    const result = evaluate(node.body, scope)
+    const result = yield* evaluate(node.body, scope)
 
     if (result === BREAK) {
       break
@@ -182,22 +157,22 @@ export function DoWhileStatement(node: estree.DoWhileStatement, scope: Scope) {
     } else if (result === RETURN) {
       return result
     }
-  } while (evaluate(node.test, scope))
+  } while (yield* evaluate(node.test, scope))
 }
 
-export function ForStatement(node: estree.ForStatement, scope: Scope) {
+export function* ForStatement(node: estree.ForStatement, scope: Scope) {
   let subScope = new Scope(scope)
   
   for (
-    evaluate(node.init, subScope);
-    node.test ? evaluate(node.test, subScope) : true;
-    evaluate(node.update, subScope = subScope.clone())
+    yield* evaluate(node.init, subScope);
+    node.test ? (yield* evaluate(node.test, subScope)) : true;
+    yield* evaluate(node.update, subScope = subScope.clone())
   ) {    
     let result: any
     if (node.body.type === 'BlockStatement') {
-      result = BlockStatement(node.body, subScope, { invasived: true })
+      result = yield* BlockStatement(node.body, subScope, { invasived: true })
     } else {
-      result = evaluate(node.body, subScope)
+      result = yield* evaluate(node.body, subScope)
     }
 
     if (result === BREAK) {
@@ -211,24 +186,24 @@ export function ForStatement(node: estree.ForStatement, scope: Scope) {
 
 }
 
-export function ForInStatement(node: estree.ForInStatement, scope: Scope) {
+export function* ForInStatement(node: estree.ForInStatement, scope: Scope) {
   const left = node.left
-  for (const value in evaluate(node.right, scope)) {
+  for (const value in yield* evaluate(node.right, scope)) {
     const subScope = new Scope(scope)
     if (left.type === 'VariableDeclaration') {
-      VariableDeclaration(left, scope, { feed: value })
+      yield* VariableDeclaration(left, scope, { feed: value })
     } else if (left.type === 'Identifier') {
-      const variable: Var = Identifier(left, scope, { getVar: true })
+      const variable: Var = yield* Identifier(left, scope, { getVar: true })
       variable.set(value)
     } else {
-      pattern(left, scope, { feed: value })
+      yield* pattern(left, scope, { feed: value })
     }
 
     let result: any
     if (node.body.type === 'BlockStatement') {
-      result = BlockStatement(node.body, subScope, { invasived: true })
+      result = yield* BlockStatement(node.body, subScope, { invasived: true })
     } else {
-      result = evaluate(node.body, subScope)
+      result = yield* evaluate(node.body, subScope)
     }
 
     if (result === BREAK) {
@@ -241,14 +216,14 @@ export function ForInStatement(node: estree.ForInStatement, scope: Scope) {
   }
 }
 
-export function ForOfStatement(node: estree.ForOfStatement, scope: Scope) {
+export function* ForOfStatement(node: estree.ForOfStatement, scope: Scope) {
   const left = node.left
-  for (const value of evaluate(node.right, scope)) {
+  for (const value of yield* evaluate(node.right, scope)) {
     const subScope = new Scope(scope)
     if (left.type === 'VariableDeclaration') {
-      VariableDeclaration(left, scope, { feed: value })
+      yield* VariableDeclaration(left, scope, { feed: value })
     } else if (left.type === 'Identifier') {
-      const variable: Var = Identifier(left, scope, { getVar: true })
+      const variable: Var = yield* Identifier(left, scope, { getVar: true })
       variable.set(value)
     } else {
       pattern(left, scope, { feed: value })
@@ -256,9 +231,9 @@ export function ForOfStatement(node: estree.ForOfStatement, scope: Scope) {
 
     let result: any
     if (node.body.type === 'BlockStatement') {
-      result = BlockStatement(node.body, subScope, { invasived: true })
+      result = yield* BlockStatement(node.body, subScope, { invasived: true })
     } else {
-      result = evaluate(node.body, subScope)
+      result = yield* evaluate(node.body, subScope)
     }
 
     if (result === BREAK) {

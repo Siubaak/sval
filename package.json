@@ -42,10 +42,10 @@
   },
   "homepage": "https://github.com/Siubaak/sval#readme",
   "dependencies": {
-    "acorn": "^5.5.3"
+    "acorn": "^6.1.1"
   },
   "devDependencies": {
-    "@types/acorn": "^4.0.3",
+    "@types/acorn": "^4.0.5",
     "@types/estree": "0.0.39",
     "@types/jest": "^22.2.3",
     "jest": "^22.4.3",
@@ -54,6 +54,6 @@
     "typescript": "^2.7.1",
     "uglifyjs-webpack-plugin": "^1.1.8",
     "webpack": "^3.10.0",
-    "webpack-merge": "^4.1.1"
+    "webpack-merge": "^4.2.1"
   }
 }

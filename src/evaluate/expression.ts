@@ -1,7 +1,7 @@
 import * as estree from 'estree'
 import Scope from '../scope'
 import evaluate from '.'
-import { createFunc, pattern, createClass, createFakeGenerator } from '../share/helper'
+import { createFunc, pattern, createClass } from '../share/helper'
 import { define, freeze, getGetter, getSetter, createSymbol } from '../share/util'
 import { SUPER } from '../share/const'
 
@@ -9,29 +9,33 @@ import { Identifier } from './identifier'
 import { Literal } from './literal'
 import { Variable, Prop } from '../scope/variable'
 
-export function ThisExpression(node: estree.ThisExpression, scope: Scope) {
+export function* ThisExpression(node: estree.ThisExpression, scope: Scope) {
   return scope.find('this').get()
 }
 
-export function ArrayExpression(node: estree.ArrayExpression, scope: Scope) {
-  return node.elements.map(item => evaluate(item, scope))
+export function* ArrayExpression(node: estree.ArrayExpression, scope: Scope) {
+  const results = []
+  for (const item of node.elements) {
+    results.push(yield* evaluate(item, scope))
+  }
+  return results
 }
 
-export function ObjectExpression(node: estree.ObjectExpression, scope: Scope) {
+export function* ObjectExpression(node: estree.ObjectExpression, scope: Scope) {
   const object: { [key: string]: any } = {}
   
   for (const property of node.properties) {
     const propKey = property.key
     let key: string
     if (propKey.type === 'Identifier') {
-      key = Identifier(propKey, scope, { getName: true })
+      key = yield* Identifier(propKey, scope, { getName: true })
     } else if (propKey.type === 'Literal') {
-      key = '' + Literal(propKey, scope)
+      key = '' + (yield* Literal(propKey, scope))
     } else {
       throw new SyntaxError('Unexpected token')
     }
 
-    const value = evaluate(property.value, scope)
+    const value = yield* evaluate(property.value, scope)
 
     const propKind = property.kind
     if (propKind === 'init') {
@@ -48,55 +52,54 @@ export function ObjectExpression(node: estree.ObjectExpression, scope: Scope) {
   return object
 }
 
-export function FunctionExpression(node: estree.FunctionExpression, scope: Scope) {
-  return node.generator ? createFakeGenerator(node, scope) : createFunc(node, scope)
+export function* FunctionExpression(node: estree.FunctionExpression, scope: Scope) {
+  return createFunc(node, scope)
 }
 
-export function UnaryExpression(node: estree.UnaryExpression, scope: Scope) {
-  const unaryOps = {
-    '+': () => +evaluate(node.argument, scope),
-    '-': () => -evaluate(node.argument, scope),
-    '!': () => !evaluate(node.argument, scope),
-    '~': () => ~evaluate(node.argument, scope),
-    'void': () => void evaluate(node.argument, scope) as any,
-    'typeof': () => {
-      if (node.argument.type === 'Identifier') {
-        return typeof Identifier(node.argument, scope, { throwErr: false })
+export function* UnaryExpression(node: estree.UnaryExpression, scope: Scope) {
+  const arg = node.argument
+  switch (node.operator) {
+    case '+':
+      return +(yield* evaluate(arg, scope))
+    case '-':
+      return -(yield* evaluate(arg, scope))
+    case '!':
+      return !(yield* evaluate(arg, scope))
+    case '~':
+      return ~(yield* evaluate(arg, scope))
+    case 'void':
+      return void (yield* evaluate(arg, scope))
+    case 'typeof':
+      if (arg.type === 'Identifier') {
+        return typeof (yield* Identifier(arg, scope, { throwErr: false }))
       } else {
-        return typeof evaluate(node.argument, scope)
+        return typeof (yield* evaluate(arg, scope))
       }
-    },
-    'delete': () => {
-      const arg = node.argument
+    case 'delete':
       if (arg.type === 'MemberExpression') {
-        const variable: Prop = MemberExpression(arg, scope, { getVar: true })
+        const variable: Prop = yield* MemberExpression(arg, scope, { getVar: true })
         return variable.del()
       } else if (arg.type === 'Identifier') {
         const globalScope = scope.global()
-        const name = Identifier(arg, globalScope, { getName: true })
+        const name = yield* Identifier(arg, globalScope, { getName: true })
         const win = globalScope.find('window').get()
         return delete win[name]
       } else {
         throw new SyntaxError('Unexpected token')
       }
-    }
-  }
-  const handler = unaryOps[node.operator]
-  if (handler) {
-    return handler()
-  } else {
-    throw new SyntaxError(`Unexpected token ${node.operator}`)
+    default:
+      throw new SyntaxError(`Unexpected token ${node.operator}`)
   }
 }
 
-export function UpdateExpression(node: estree.UpdateExpression, scope: Scope) {
+export function* UpdateExpression(node: estree.UpdateExpression, scope: Scope) {
   const arg = node.argument
   
   let variable: Variable
   if (arg.type === 'Identifier') {
-    variable = Identifier(arg, scope, { getVar: true })
+    variable = yield* Identifier(arg, scope, { getVar: true })
   } else if (arg.type === 'MemberExpression') {
-    variable = MemberExpression(arg, scope, { getVar: true })
+    variable = yield* MemberExpression(arg, scope, { getVar: true })
   } else {
     throw new SyntaxError('Unexpected token')
   }
@@ -113,9 +116,9 @@ export function UpdateExpression(node: estree.UpdateExpression, scope: Scope) {
   }
 }
 
-export function BinaryExpression(node: estree.BinaryExpression, scope: Scope) {
-  const left = evaluate(node.left, scope)
-  const right = evaluate(node.right, scope)
+export function* BinaryExpression(node: estree.BinaryExpression, scope: Scope) {
+  const left = yield* evaluate(node.left, scope)
+  const right = yield* evaluate(node.right, scope)
 
   const binaryOps = {
     '==': () => left == right,
@@ -150,22 +153,22 @@ export function BinaryExpression(node: estree.BinaryExpression, scope: Scope) {
   }
 }
 
-export function AssignmentExpression(node: estree.AssignmentExpression, scope: Scope) {
-  const value = evaluate(node.right, scope)
+export function* AssignmentExpression(node: estree.AssignmentExpression, scope: Scope) {
+  const value = yield* evaluate(node.right, scope)
 
   const left = node.left
 
   let variable: Variable
   if (left.type === 'Identifier') {
-    variable = Identifier(left, scope, { getVar: true, throwErr: false })
+    variable = yield* Identifier(left, scope, { getVar: true, throwErr: false })
     if (!variable) {
       const win = scope.global().find('window').get()
       variable = new Prop(win, left.name)
     }
   } else if (left.type === 'MemberExpression') {
-    variable = MemberExpression(left, scope, { getVar: true })
+    variable = yield* MemberExpression(left, scope, { getVar: true })
   } else {
-    return pattern(left, scope, { feed: value })
+    return yield* pattern(left, scope, { feed: value })
   }
 
   const assignOps = {
@@ -231,13 +234,14 @@ export function AssignmentExpression(node: estree.AssignmentExpression, scope: S
   }
 }
 
-export function LogicalExpression(node: estree.LogicalExpression, scope: Scope) {
-  if (node.operator === '||') {
-    return evaluate(node.left, scope) || evaluate(node.right, scope)
-  } else if (node.operator === '&&') {
-    return evaluate(node.left, scope) && evaluate(node.right, scope)
-  } else {
-    throw new SyntaxError(`Unexpected token ${node.operator}`)
+export function* LogicalExpression(node: estree.LogicalExpression, scope: Scope) {
+  switch (node.operator) {
+    case '||':
+      return (yield* evaluate(node.left, scope)) || (yield* evaluate(node.right, scope))
+    case '&&':
+      return (yield* evaluate(node.left, scope)) && (yield* evaluate(node.right, scope))
+    default:
+      throw new SyntaxError(`Unexpected token ${node.operator}`)
   }
 }
 
@@ -246,7 +250,7 @@ export interface MemberExpressionOptions {
   getVar?: boolean
 }
 
-export function MemberExpression(
+export function* MemberExpression(
   node: estree.MemberExpression,
   scope: Scope,
   options: MemberExpressionOptions = {},
@@ -255,9 +259,9 @@ export function MemberExpression(
 
   let object: any
   if (node.object.type === 'Super') {
-    object = Super(node.object, scope, { getProto: true })
+    object = yield* Super(node.object, scope, { getProto: true })
   } else {
-    object = evaluate(node.object, scope)
+    object = yield* evaluate(node.object, scope)
   }
 
   if (getObj) {
@@ -270,9 +274,9 @@ export function MemberExpression(
 
   let key: string
   if (node.computed) {
-    key = evaluate(node.property, scope)
+    key = yield* evaluate(node.property, scope)
   } else if (node.property.type === 'Identifier') {
-    key = Identifier(node.property, scope, { getName: true })
+    key = yield* Identifier(node.property, scope, { getName: true })
   } else {
     throw new SyntaxError('Unexpected token')
   }
@@ -301,22 +305,22 @@ export function MemberExpression(
   }
 }
 
-export function ConditionalExpression(node: estree.ConditionalExpression, scope: Scope) {
-  return evaluate(node.test, scope)
-    ? evaluate(node.consequent, scope)
-    : evaluate(node.alternate, scope)
+export function* ConditionalExpression(node: estree.ConditionalExpression, scope: Scope) {
+  return (yield* evaluate(node.test, scope))
+    ? (yield* evaluate(node.consequent, scope))
+    : (yield* evaluate(node.alternate, scope))
 }
 
-export function CallExpression(node: estree.CallExpression, scope: Scope) {
+export function* CallExpression(node: estree.CallExpression, scope: Scope) {
   if (node.callee.type === 'MemberExpression') {
-    const object = MemberExpression(node.callee, scope, { getObj: true })
+    const object = yield* MemberExpression(node.callee, scope, { getObj: true })
   
     // get key
     let key: string
     if (node.callee.computed) {
-      key = evaluate(node.callee.property, scope)
+      key = yield* evaluate(node.callee.property, scope)
     } else if (node.callee.property.type === 'Identifier') {
-      key = Identifier(node.callee.property, scope, { getName: true })
+      key = yield* Identifier(node.callee.property, scope, { getName: true })
     } else {
       throw new SyntaxError('Unexpected token')
     }
@@ -330,41 +334,54 @@ export function CallExpression(node: estree.CallExpression, scope: Scope) {
     } else {
       func = object[key]
     }
-  
-    const args = node.arguments.map(arg => evaluate(arg, scope))
+    
+    const args = []
+    for (const arg of node.arguments) {
+      args.push(yield* evaluate(arg, scope))
+    }
   
     return func.apply(object, args)
   } else {
-    const func = evaluate(node.callee, scope)
-    const args = node.arguments.map(arg => evaluate(arg, scope))
+    const func = yield* evaluate(node.callee, scope)
+
+    const args = []
+    for (const arg of node.arguments) {
+      args.push(yield* evaluate(arg, scope))
+    }
+
     const thisObject = scope.find('this').get()
     return func.apply(thisObject, args)
   }
 }
 
-export function NewExpression(node: estree.NewExpression, scope: Scope) {
-  const constructor = evaluate(node.callee, scope)
-  const args = node.arguments.map(arg => evaluate(arg, scope))
+export function* NewExpression(node: estree.NewExpression, scope: Scope) {
+  const constructor = yield* evaluate(node.callee, scope)
+  
+  const args = []
+  for (const arg of node.arguments) {
+    args.push(yield* evaluate(arg, scope))
+  }
+
   return new constructor(...args)
 }
 
-export function SequenceExpression(node: estree.SequenceExpression, scope: Scope) {
+export function* SequenceExpression(node: estree.SequenceExpression, scope: Scope) {
   let result: any
   for (const expression of node.expressions) {
-    result = evaluate(expression, scope)
+    result = yield* evaluate(expression, scope)
   }
   return result
 }
 
-export function ArrowFunctionExpression(node: estree.ArrowFunctionExpression, scope: Scope) {
-  return createFunc(node, scope)
+export function* ArrowFunctionExpression(node: estree.ArrowFunctionExpression, scope: Scope) {
+  return yield* createFunc(node, scope)
 }
 
-export function YieldExpression(node: estree.YieldExpression, scope: Scope) {
-  return evaluate(node.argument, scope)
+export function* YieldExpression(node: estree.YieldExpression, scope: Scope) {
+  yield evaluate(node.argument, scope)
 }
 
-export function TemplateLiteral(node: estree.TemplateLiteral, scope: Scope) {
+export function* TemplateLiteral(node: estree.TemplateLiteral, scope: Scope) {
   const quasis = node.quasis
   const expressions = node.expressions
 
@@ -373,18 +390,18 @@ export function TemplateLiteral(node: estree.TemplateLiteral, scope: Scope) {
   let expr: estree.Expression
 
   while (temEl = quasis.shift()) {
-    result += TemplateElement(temEl, scope)
+    result += yield* TemplateElement(temEl, scope)
     expr = expressions.shift()
     if (expr) {
-      result += evaluate(expr, scope)
+      result += yield* evaluate(expr, scope)
     }
   }
 
   return result
 }
 
-export function TaggedTemplateExpression(node: estree.TaggedTemplateExpression, scope: Scope) {
-  const tagFunc = evaluate(node.tag, scope)
+export function* TaggedTemplateExpression(node: estree.TaggedTemplateExpression, scope: Scope) {
+  const tagFunc = yield* evaluate(node.tag, scope)
 
   const quasis = node.quasi.quasis
   const str = quasis.map(v => v.value.cooked)
@@ -395,24 +412,30 @@ export function TaggedTemplateExpression(node: estree.TaggedTemplateExpression, 
   })
 
   const expressions = node.quasi.expressions
-  const args = expressions.map(n => evaluate(n, scope)) || []
+
+  const args = []
+  if (expressions) {
+    for (const n of node.quasi.expressions) {
+      args.push(yield* evaluate(n, scope))
+    }
+  }
 
   return tagFunc(freeze(str), ...args)
 }
 
-export function TemplateElement(node: estree.TemplateElement, scope: Scope) {
+export function* TemplateElement(node: estree.TemplateElement, scope: Scope) {
   return node.value.raw
 }
 
-export function ClassExpression(node: estree.ClassExpression, scope: Scope) {
-  return createClass(node, scope)
+export function* ClassExpression(node: estree.ClassExpression, scope: Scope) {
+  return yield* createClass(node, scope)
 }
 
 export interface SuperOptions {
   getProto?: boolean
 }
 
-export function Super(
+export function* Super(
   node: estree.Super,
   scope: Scope,
   options: SuperOptions = {},
