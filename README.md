@@ -27,8 +27,8 @@ import Sval from 'sval'
 
 // Sval options
 const options = {
-  // ECMA Version of the code (5 | 6 | 2015)
-  ecmaVer: 6,
+  // ECMA Version of the code (5 | 6 | 7 | 8 | 2015 | 2016 | 2017)
+  ecmaVer: 7,
   // Whether the code runs in a sandbox
   sandBox: true,
 }
@@ -38,7 +38,7 @@ const interpreter = new Sval(options)
 
 // Add global modules in interpreter
 interpreter.import('addWhatYouNeedToUse', 'AllKindsOfStuffs')
-// Same as interpreter.import({ addWhatYouNeedToUse: 'AllKindsOfStuffs' })
+// Or interpreter.import({ addWhatYouNeedToUse: 'AllKindsOfStuffs' })
 
 // Parse and run the code
 interpreter.run(`
@@ -53,13 +53,13 @@ console.log(interpreter.exports.msg) // Get 'Hello World'
 
 Sval contructor has options with two fields, **ecmaVer** and **sandBox**.
 
-- **ecmaVer** is the ECMA version that the code your want to run. Currently, only 5 and 6 (2015) are supported, and the default version is 6 if this field is missing.
+- **ecmaVer** is the ECMA version that the code your want to run. Currently, 5, 6(2015), 7(2016) and 8(2017) are supported, and the default version is 7 if this field is missing.
 
 - **sandBox** is true for sandbox mode or false for invasived mode. Sandbox mode will run code in a isolated sandbox and won't pollute your scope outside. Invasived mode allows you run code in the same scope of your current scope. The default setting is true if this field is missing.
 
 Sval instance has two methods, **import** and **run**.
 
-- **import** expects a name and a module as arguments like `import(name: string, mod: any)`, or only a object as argument, and the object contains the modules you need to use in the instance scope, like `import({ [name: string]: any })`. The modules will be automatically declared as global variables. This method is more likely to be used in sandbox mode.
+- **import** expects a name and a module as arguments like `import(name: string, mod: any)`, or only a object as argument, and the object contains the modules you need to use in the instance scope like `import({ [name: string]: any })`. The modules will be automatically declared as global variables. This method is more likely to be used in sandbox mode.
 
 - **run** expects a string as argument like `run(code: string)`, and this string is the code you input to run. If you want to export something, there is a internal global `exports` object and mount what you want on it to export.
 
