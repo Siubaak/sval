@@ -417,6 +417,7 @@ function createFunc(node, scope, options) {
                 }
                 return util_1.runAsync.apply(void 0, __spread([tmpGenerator.bind(this)], args));
             };
+            util_1.define(func, 'async', { value: true });
         }
         else if (node.generator) {
             func = tmpGenerator;

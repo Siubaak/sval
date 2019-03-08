@@ -183,7 +183,6 @@ export function* ForStatement(node: estree.ForStatement, scope: Scope) {
       return result
     }
   }
-
 }
 
 export function* ForInStatement(node: estree.ForInStatement, scope: Scope) {

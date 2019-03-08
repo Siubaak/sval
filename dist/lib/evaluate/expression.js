@@ -175,7 +175,10 @@ function ObjectExpression(node, scope) {
 exports.ObjectExpression = ObjectExpression;
 function FunctionExpression(node, scope) {
     return __generator(this, function (_a) {
-        return [2, helper_1.createFunc(node, scope)];
+        switch (_a.label) {
+            case 0: return [5, __values(helper_1.createFunc(node, scope))];
+            case 1: return [2, _a.sent()];
+        }
     });
 }
 exports.FunctionExpression = FunctionExpression;
@@ -525,30 +528,31 @@ function ConditionalExpression(node, scope) {
     });
 }
 exports.ConditionalExpression = ConditionalExpression;
-function CallExpression(node, scope) {
-    var e_3, _a, e_4, _b, object, key, func, getter, thisObject, args, _c, _d, arg, _e, _f, e_3_1, func, args, _g, _h, arg, _j, _k, e_4_1, thisObject;
-    return __generator(this, function (_l) {
-        switch (_l.label) {
+function CallExpression(node, scope, options) {
+    var e_3, _a, _b, async, func, object, key, getter, thisObject, args, _c, _d, arg, _e, _f, e_3_1;
+    if (options === void 0) { options = {}; }
+    return __generator(this, function (_g) {
+        switch (_g.label) {
             case 0:
-                if (!(node.callee.type === 'MemberExpression')) return [3, 15];
+                _b = options.async, async = _b === void 0 ? false : _b;
+                if (!(node.callee.type === 'MemberExpression')) return [3, 7];
                 return [5, __values(MemberExpression(node.callee, scope, { getObj: true }))];
             case 1:
-                object = _l.sent();
+                object = _g.sent();
                 key = void 0;
                 if (!node.callee.computed) return [3, 3];
                 return [5, __values(_1.default(node.callee.property, scope))];
             case 2:
-                key = _l.sent();
+                key = _g.sent();
                 return [3, 6];
             case 3:
                 if (!(node.callee.property.type === 'Identifier')) return [3, 5];
                 return [5, __values(identifier_1.Identifier(node.callee.property, scope, { getName: true }))];
             case 4:
-                key = _l.sent();
+                key = _g.sent();
                 return [3, 6];
             case 5: throw new SyntaxError('Unexpected token');
             case 6:
-                func = void 0;
                 getter = util_1.getGetter(object, key);
                 if (node.callee.object.type === 'Super' && getter) {
                     thisObject = scope.find('this').get();
@@ -557,75 +561,56 @@ function CallExpression(node, scope) {
                 else {
                     func = object[key];
                 }
-                args = [];
-                _l.label = 7;
+                return [3, 9];
             case 7:
-                _l.trys.push([7, 12, 13, 14]);
-                _c = __values(node.arguments), _d = _c.next();
-                _l.label = 8;
+                object = scope.find('this').get();
+                return [5, __values(_1.default(node.callee, scope))];
             case 8:
-                if (!!_d.done) return [3, 11];
+                func = _g.sent();
+                _g.label = 9;
+            case 9:
+                args = [];
+                _g.label = 10;
+            case 10:
+                _g.trys.push([10, 15, 16, 17]);
+                _c = __values(node.arguments), _d = _c.next();
+                _g.label = 11;
+            case 11:
+                if (!!_d.done) return [3, 14];
                 arg = _d.value;
                 _f = (_e = args).push;
                 return [5, __values(_1.default(arg, scope))];
-            case 9:
-                _f.apply(_e, [_l.sent()]);
-                _l.label = 10;
-            case 10:
-                _d = _c.next();
-                return [3, 8];
-            case 11: return [3, 14];
             case 12:
-                e_3_1 = _l.sent();
-                e_3 = { error: e_3_1 };
-                return [3, 14];
+                _f.apply(_e, [_g.sent()]);
+                _g.label = 13;
             case 13:
+                _d = _c.next();
+                return [3, 11];
+            case 14: return [3, 17];
+            case 15:
+                e_3_1 = _g.sent();
+                e_3 = { error: e_3_1 };
+                return [3, 17];
+            case 16:
                 try {
                     if (_d && !_d.done && (_a = _c.return)) _a.call(_c);
                 }
                 finally { if (e_3) throw e_3.error; }
                 return [7];
-            case 14: return [2, func.apply(object, args)];
-            case 15: return [5, __values(_1.default(node.callee, scope))];
-            case 16:
-                func = _l.sent();
-                args = [];
-                _l.label = 17;
             case 17:
-                _l.trys.push([17, 22, 23, 24]);
-                _g = __values(node.arguments), _h = _g.next();
-                _l.label = 18;
-            case 18:
-                if (!!_h.done) return [3, 21];
-                arg = _h.value;
-                _k = (_j = args).push;
-                return [5, __values(_1.default(arg, scope))];
-            case 19:
-                _k.apply(_j, [_l.sent()]);
-                _l.label = 20;
-            case 20:
-                _h = _g.next();
-                return [3, 18];
-            case 21: return [3, 24];
-            case 22:
-                e_4_1 = _l.sent();
-                e_4 = { error: e_4_1 };
-                return [3, 24];
-            case 23:
-                try {
-                    if (_h && !_h.done && (_b = _g.return)) _b.call(_g);
+                if (func.async && !async) {
+                    return [2, func.apply(object, args).then()];
                 }
-                finally { if (e_4) throw e_4.error; }
-                return [7];
-            case 24:
-                thisObject = scope.find('this').get();
-                return [2, func.apply(thisObject, args)];
+                else {
+                    return [2, func.apply(object, args)];
+                }
+                return [2];
         }
     });
 }
 exports.CallExpression = CallExpression;
 function NewExpression(node, scope) {
-    var e_5, _a, constructor, args, _b, _c, arg, _d, _e, e_5_1;
+    var e_4, _a, constructor, args, _b, _c, arg, _d, _e, e_4_1;
     return __generator(this, function (_f) {
         switch (_f.label) {
             case 0: return [5, __values(_1.default(node.callee, scope))];
@@ -650,14 +635,14 @@ function NewExpression(node, scope) {
                 return [3, 3];
             case 6: return [3, 9];
             case 7:
-                e_5_1 = _f.sent();
-                e_5 = { error: e_5_1 };
+                e_4_1 = _f.sent();
+                e_4 = { error: e_4_1 };
                 return [3, 9];
             case 8:
                 try {
                     if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
                 }
-                finally { if (e_5) throw e_5.error; }
+                finally { if (e_4) throw e_4.error; }
                 return [7];
             case 9: return [2, new (constructor.bind.apply(constructor, __spread([void 0], args)))()];
         }
@@ -665,7 +650,7 @@ function NewExpression(node, scope) {
 }
 exports.NewExpression = NewExpression;
 function SequenceExpression(node, scope) {
-    var e_6, _a, result, _b, _c, expression, e_6_1;
+    var e_5, _a, result, _b, _c, expression, e_5_1;
     return __generator(this, function (_d) {
         switch (_d.label) {
             case 0:
@@ -684,14 +669,14 @@ function SequenceExpression(node, scope) {
                 return [3, 1];
             case 4: return [3, 7];
             case 5:
-                e_6_1 = _d.sent();
-                e_6 = { error: e_6_1 };
+                e_5_1 = _d.sent();
+                e_5 = { error: e_5_1 };
                 return [3, 7];
             case 6:
                 try {
                     if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
                 }
-                finally { if (e_6) throw e_6.error; }
+                finally { if (e_5) throw e_5.error; }
                 return [7];
             case 7: return [2, result];
         }
@@ -730,9 +715,14 @@ exports.YieldExpression = YieldExpression;
 function AwaitExpression(node, scope) {
     return __generator(this, function (_a) {
         switch (_a.label) {
-            case 0: return [5, __values(_1.default(node.argument, scope))];
+            case 0:
+                if (!(node.argument.type === 'CallExpression')) return [3, 3];
+                return [5, __values(CallExpression(node.argument, scope, { async: true }))];
             case 1: return [4, _a.sent()];
             case 2: return [2, _a.sent()];
+            case 3: return [5, __values(_1.default(node.argument, scope))];
+            case 4: return [4, _a.sent()];
+            case 5: return [2, _a.sent()];
         }
     });
 }
@@ -766,7 +756,7 @@ function TemplateLiteral(node, scope) {
 }
 exports.TemplateLiteral = TemplateLiteral;
 function TaggedTemplateExpression(node, scope) {
-    var e_7, _a, tagFunc, quasis, str, raw, expressions, args, _b, _c, n, _d, _e, e_7_1;
+    var e_6, _a, tagFunc, quasis, str, raw, expressions, args, _b, _c, n, _d, _e, e_6_1;
     return __generator(this, function (_f) {
         switch (_f.label) {
             case 0: return [5, __values(_1.default(node.tag, scope))];
@@ -799,14 +789,14 @@ function TaggedTemplateExpression(node, scope) {
                 return [3, 3];
             case 6: return [3, 9];
             case 7:
-                e_7_1 = _f.sent();
-                e_7 = { error: e_7_1 };
+                e_6_1 = _f.sent();
+                e_6 = { error: e_6_1 };
                 return [3, 9];
             case 8:
                 try {
                     if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
                 }
-                finally { if (e_7) throw e_7.error; }
+                finally { if (e_6) throw e_6.error; }
                 return [7];
             case 9: return [2, tagFunc.apply(void 0, __spread([util_1.freeze(str)], args))];
         }

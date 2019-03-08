@@ -167,6 +167,7 @@ export function* createFunc(
     func = function (...args: any[]) {
       return runAsync(tmpGenerator.bind(this), ...args)
     }
+    define(func, 'async', { value: true })
   } else if (node.generator) {
     func = tmpGenerator
   } else {

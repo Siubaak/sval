@@ -3,7 +3,7 @@ import Scope from '../scope';
 export declare function ThisExpression(node: estree.ThisExpression, scope: Scope): IterableIterator<any>;
 export declare function ArrayExpression(node: estree.ArrayExpression, scope: Scope): IterableIterator<any>;
 export declare function ObjectExpression(node: estree.ObjectExpression, scope: Scope): IterableIterator<any>;
-export declare function FunctionExpression(node: estree.FunctionExpression, scope: Scope): IterableIterator<IterableIterator<any>>;
+export declare function FunctionExpression(node: estree.FunctionExpression, scope: Scope): IterableIterator<any>;
 export declare function UnaryExpression(node: estree.UnaryExpression, scope: Scope): IterableIterator<any>;
 export declare function UpdateExpression(node: estree.UpdateExpression, scope: Scope): IterableIterator<any>;
 export declare function BinaryExpression(node: estree.BinaryExpression, scope: Scope): IterableIterator<any>;
@@ -15,7 +15,10 @@ export interface MemberExpressionOptions {
 }
 export declare function MemberExpression(node: estree.MemberExpression, scope: Scope, options?: MemberExpressionOptions): IterableIterator<any>;
 export declare function ConditionalExpression(node: estree.ConditionalExpression, scope: Scope): IterableIterator<any>;
-export declare function CallExpression(node: estree.CallExpression, scope: Scope): IterableIterator<any>;
+export interface CallExpressionOptions {
+    async?: boolean;
+}
+export declare function CallExpression(node: estree.CallExpression, scope: Scope, options?: CallExpressionOptions): IterableIterator<any>;
 export declare function NewExpression(node: estree.NewExpression, scope: Scope): IterableIterator<any>;
 export declare function SequenceExpression(node: estree.SequenceExpression, scope: Scope): IterableIterator<any>;
 export declare function ArrowFunctionExpression(node: estree.ArrowFunctionExpression, scope: Scope): IterableIterator<any>;

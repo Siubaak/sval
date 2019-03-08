@@ -48,6 +48,7 @@
     "@types/acorn": "^4.0.5",
     "@types/estree": "0.0.39",
     "@types/jest": "^22.2.3",
+    "@types/node": "^11.10.5",
     "jest": "^22.4.3",
     "ts-jest": "^22.4.4",
     "ts-loader": "^3.4.0",

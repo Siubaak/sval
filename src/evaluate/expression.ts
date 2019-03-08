@@ -53,7 +53,7 @@ export function* ObjectExpression(node: estree.ObjectExpression, scope: Scope) {
 }
 
 export function* FunctionExpression(node: estree.FunctionExpression, scope: Scope) {
-  return createFunc(node, scope)
+  return yield* createFunc(node, scope)
 }
 
 export function* UnaryExpression(node: estree.UnaryExpression, scope: Scope) {
@@ -311,9 +311,22 @@ export function* ConditionalExpression(node: estree.ConditionalExpression, scope
     : (yield* evaluate(node.alternate, scope))
 }
 
-export function* CallExpression(node: estree.CallExpression, scope: Scope) {
+export interface CallExpressionOptions {
+  async?: boolean
+}
+
+export function* CallExpression(
+  node: estree.CallExpression,
+  scope: Scope,
+  options: CallExpressionOptions = {}
+) {
+  const { async = false } = options
+
+  let func: any
+  let object: any
+
   if (node.callee.type === 'MemberExpression') {
-    const object = yield* MemberExpression(node.callee, scope, { getObj: true })
+    object = yield* MemberExpression(node.callee, scope, { getObj: true })
   
     // get key
     let key: string
@@ -326,7 +339,6 @@ export function* CallExpression(node: estree.CallExpression, scope: Scope) {
     }
 
     // right value
-    let func: any
     const getter = getGetter(object, key)
     if (node.callee.object.type === 'Super' && getter) {
       const thisObject = scope.find('this').get()
@@ -334,23 +346,20 @@ export function* CallExpression(node: estree.CallExpression, scope: Scope) {
     } else {
       func = object[key]
     }
-    
-    const args = []
-    for (const arg of node.arguments) {
-      args.push(yield* evaluate(arg, scope))
-    }
-  
-    return func.apply(object, args)
   } else {
-    const func = yield* evaluate(node.callee, scope)
+    object = scope.find('this').get()
+    func = yield* evaluate(node.callee, scope)
+  }
 
-    const args = []
-    for (const arg of node.arguments) {
-      args.push(yield* evaluate(arg, scope))
-    }
+  const args: any[] = []
+  for (const arg of node.arguments) {
+    args.push(yield* evaluate(arg, scope))
+  }
 
-    const thisObject = scope.find('this').get()
-    return func.apply(thisObject, args)
+  if (func.async && !async) {
+    return func.apply(object, args).then()
+  } else {
+    return func.apply(object, args)
   }
 }
 
@@ -386,7 +395,11 @@ export function* YieldExpression(node: estree.YieldExpression, scope: Scope) {
 }
 
 export function* AwaitExpression(node: estree.AwaitExpression, scope: Scope) {
-  return yield yield* evaluate(node.argument, scope)
+  if (node.argument.type === 'CallExpression') {
+    return yield yield* CallExpression(node.argument, scope, { async: true })
+  } else {
+    return yield yield* evaluate(node.argument, scope)
+  }
 }
 
 export function* TemplateLiteral(node: estree.TemplateLiteral, scope: Scope) {
