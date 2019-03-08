@@ -39,6 +39,12 @@ class Sval {
     }
   }
 
+  // Compatible
+  addModules(modules: { [name: string]: any }) {
+    console.warn('Use import instead. addModules is deprecated and will be removed soon.')
+    this.import(modules)
+  }
+
   import(nameOrModules: string | { [name: string]: any }, mod?: any) {
     const win = this.scope.find('window').get()
 
