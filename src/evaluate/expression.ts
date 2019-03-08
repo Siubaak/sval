@@ -378,7 +378,11 @@ export function* ArrowFunctionExpression(node: estree.ArrowFunctionExpression, s
 }
 
 export function* YieldExpression(node: estree.YieldExpression, scope: Scope) {
-  yield yield* evaluate(node.argument, scope)
+  if (node.delegate) {
+    yield* yield* evaluate(node.argument, scope)
+  } else {
+    yield yield* evaluate(node.argument, scope)
+  }
 }
 
 export function* TemplateLiteral(node: estree.TemplateLiteral, scope: Scope) {

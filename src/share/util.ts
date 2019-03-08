@@ -2,6 +2,8 @@ export const freeze = Object.freeze
 
 export const define = Object.defineProperty
 
+export const getDptor = Object.getOwnPropertyDescriptor
+
 const hasOwnProperty = Object.prototype.hasOwnProperty
 export function hasOwn(obj: any, key: symbol | string): boolean {
   return hasOwnProperty.call(obj, key)

@@ -18,12 +18,8 @@ class Sval {
   constructor(options: SvalOptions = {}) {
     let { ecmaVer, sandBox = true } = options
 
-    if (
-      ecmaVer !== 5
-      && ecmaVer !== 6
-      && ecmaVer !== 2015
-    ) {
-      ecmaVer = 6
+    if ([3, 5, 6, 7, 2015, 2016].indexOf(ecmaVer) === -1) {
+      ecmaVer = 7
     }
 
     this.options.ecmaVersion = ecmaVer

@@ -3,10 +3,14 @@ import Sval from '../src'
 describe('testing src/index.ts', () => {
   it('should create class normally', () => {
     const interpreter = new Sval()
+    interpreter.import({ JSON })
     interpreter.run(`
       class A {
         constructor() {
           this.b = 1
+        }
+        p() {
+          this.b++
         }
         get k() {
           return this.b + 1
@@ -17,9 +21,10 @@ describe('testing src/index.ts', () => {
       }
       exports.inst = new A()
       exports.inst.g = 3
+      exports.inst.p()
     `)
-    expect(interpreter.exports.inst.b).toBe(3)
-    expect(interpreter.exports.inst.k).toBe(4)
+    expect(interpreter.exports.inst.b).toBe(4)
+    expect(interpreter.exports.inst.k).toBe(5)
   })
   it('should extend class normally', () => {
     const interpreter = new Sval()
@@ -56,7 +61,7 @@ describe('testing src/index.ts', () => {
           super.g = 1
         }
       }
-      const k = new c()
+      const k = new C()
       exports.k = k.k
     `)
     expect(interpreter.exports.k).toBe(1)

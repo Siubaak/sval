@@ -3,7 +3,7 @@ import Scope from '../scope'
 import evaluate from '.'
 import { createFunc, pattern, createClass } from '../share/helper'
 import { VarKind } from '../scope/variable'
-import { define } from '../share/util'
+import { define, getDptor } from '../share/util'
 
 import { Identifier } from './identifier'
 
@@ -107,18 +107,24 @@ export function* MethodDefinition(node: estree.MethodDefinition, scope: Scope, o
         configurable: true,
       })
       break
-    case 'get':
+    case 'get': {
+      const oriDptor = getDptor(obj, key)
       define(obj, key, {
         get: value,
+        set: oriDptor && oriDptor.set,
         configurable: true,
       })
       break
-    case 'set':
+    }
+    case 'set': {
+      const oriDptor = getDptor(obj, key)
       define(obj, key, {
+        get: oriDptor && oriDptor.get,
         set: value,
         configurable: true,
       })
       break
+    }
     default:
       throw new SyntaxError('Unexpected token')
   } 

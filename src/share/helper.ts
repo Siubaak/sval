@@ -162,14 +162,9 @@ export function* createFunc(
     }
   }
 
-  let func: any
-  if (node.generator) {
-    func = tmpGenerator
-  } else {
-    func = function (...args: any[]) {
-      runGenerator(tmpGenerator.bind(this), ...args)
-    }
-  }
+  const func: any = node.generator
+    ? tmpGenerator
+    : function (...args: any[]) { return runGenerator(tmpGenerator.bind(this), ...args) }
 
   if (node.type === 'FunctionDeclaration') {
     define(func, 'name', {
