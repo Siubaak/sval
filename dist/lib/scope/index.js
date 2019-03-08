@@ -1,4 +1,14 @@
 "use strict";
+var __values = (this && this.__values) || function (o) {
+    var m = typeof Symbol === "function" && o[Symbol.iterator], i = 0;
+    if (m) return m.call(o);
+    return {
+        next: function () {
+            if (o && i >= o.length) o = void 0;
+            return { value: o && o[i++], done: !o };
+        }
+    };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 var variable_1 = require("./variable");
 var util_1 = require("../share/util");
@@ -18,12 +28,22 @@ var Scope = (function () {
         return scope;
     };
     Scope.prototype.clone = function () {
+        var e_1, _a;
         var cloneScope = new Scope(this.parent, this.isolated);
         var names = util_1.getOwnNames(this.context);
-        for (var _i = 0, names_1 = names; _i < names_1.length; _i++) {
-            var name_1 = names_1[_i];
-            var variable = this.context[name_1];
-            cloneScope[variable.kind](name_1, variable.get());
+        try {
+            for (var names_1 = __values(names), names_1_1 = names_1.next(); !names_1_1.done; names_1_1 = names_1.next()) {
+                var name_1 = names_1_1.value;
+                var variable = this.context[name_1];
+                cloneScope[variable.kind](name_1, variable.get());
+            }
+        }
+        catch (e_1_1) { e_1 = { error: e_1_1 }; }
+        finally {
+            try {
+                if (names_1_1 && !names_1_1.done && (_a = names_1.return)) _a.call(names_1);
+            }
+            finally { if (e_1) throw e_1.error; }
         }
         return cloneScope;
     };

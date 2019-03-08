@@ -4,6 +4,7 @@ export declare const freeze: {
     <T>(o: T): Readonly<T>;
 };
 export declare const define: (o: any, p: string | number | symbol, attributes: PropertyDescriptor & ThisType<any>) => any;
+export declare const getDptor: (o: any, p: string | number | symbol) => PropertyDescriptor;
 export declare function hasOwn(obj: any, key: symbol | string): boolean;
 export declare function getOwnNames(obj: any): string[];
 export declare function getProto(obj: any): any;
@@ -18,4 +19,5 @@ export declare const assign: {
 };
 export declare function createSandBox(): Window;
 export declare function createSymbol(key: string): string | symbol;
-export declare const walk: any;
+export declare function runGenerator(generator: (...args: any[]) => IterableIterator<any>, ...args: any[]): any;
+export declare function runAsync(generator: (...args: any[]) => IterableIterator<any>, ...args: any[]): Promise<any>;

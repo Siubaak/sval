@@ -1,12 +1,12 @@
-export declare type varKind = 'var' | 'let' | 'const';
+export declare type VarKind = 'var' | 'let' | 'const';
 export interface Variable {
     get(): any;
     set(value: any): boolean;
 }
 export declare class Var implements Variable {
-    readonly kind: varKind;
+    readonly kind: VarKind;
     private value;
-    constructor(kind: varKind, value: any);
+    constructor(kind: VarKind, value: any);
     get(): any;
     set(value: any): boolean;
 }

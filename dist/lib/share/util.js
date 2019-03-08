@@ -1,7 +1,28 @@
 "use strict";
+var __read = (this && this.__read) || function (o, n) {
+    var m = typeof Symbol === "function" && o[Symbol.iterator];
+    if (!m) return o;
+    var i = m.call(o), r, ar = [], e;
+    try {
+        while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
+    }
+    catch (error) { e = { error: error }; }
+    finally {
+        try {
+            if (r && !r.done && (m = i["return"])) m.call(i);
+        }
+        finally { if (e) throw e.error; }
+    }
+    return ar;
+};
+var __spread = (this && this.__spread) || function () {
+    for (var ar = [], i = 0; i < arguments.length; i++) ar = ar.concat(__read(arguments[i]));
+    return ar;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.freeze = Object.freeze;
 exports.define = Object.defineProperty;
+exports.getDptor = Object.getOwnPropertyDescriptor;
 var hasOwnProperty = Object.prototype.hasOwnProperty;
 function hasOwn(obj, key) {
     return hasOwnProperty.call(obj, key);
@@ -83,5 +104,57 @@ function createSymbol(key) {
     return Symbol ? Symbol(key) : "__" + key + "_" + Math.random().toString(36).substring(2);
 }
 exports.createSymbol = createSymbol;
-exports.walk = require('acorn/dist/walk').simple;
+function runGenerator(generator) {
+    var args = [];
+    for (var _i = 1; _i < arguments.length; _i++) {
+        args[_i - 1] = arguments[_i];
+    }
+    var iterator = generator.apply(void 0, __spread(args));
+    var result;
+    do {
+        result = iterator.next();
+    } while (!result.done);
+    return result.value;
+}
+exports.runGenerator = runGenerator;
+function runAsync(generator) {
+    var args = [];
+    for (var _i = 1; _i < arguments.length; _i++) {
+        args[_i - 1] = arguments[_i];
+    }
+    return new Promise(function (resolve, reject) {
+        var iterator = generator.apply(void 0, __spread(args));
+        onFulfilled();
+        function onFulfilled(res) {
+            var ret;
+            try {
+                ret = iterator.next(res);
+            }
+            catch (e) {
+                return reject(e);
+            }
+            next(ret);
+            return null;
+        }
+        function onRejected(err) {
+            var ret;
+            try {
+                ret = iterator.throw(err);
+            }
+            catch (e) {
+                return reject(e);
+            }
+            next(ret);
+        }
+        function next(ret) {
+            if (ret.done)
+                return resolve(ret.value);
+            var value = typeof ret.value.then === 'function'
+                ? ret.value
+                : Promise.resolve(ret.value);
+            return value.then(onFulfilled, onRejected);
+        }
+    });
+}
+exports.runAsync = runAsync;
 //# sourceMappingURL=util.js.map

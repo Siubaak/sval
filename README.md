@@ -63,7 +63,7 @@ Sval instance has two methods, **import** and **run**.
 
 - **run** expects a string as argument like `run(code: string)`, and this string is the code you input to run. If you want to export something, there is a internal global `exports` object and mount what you want on it to export.
 
-Sval instance also has a field, **exports**, to get what you exported of the last run.
+Sval instance also has a field, **exports**, to get what you exported from the last run.
 
 ## References
 

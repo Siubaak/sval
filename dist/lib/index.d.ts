@@ -5,10 +5,16 @@ export interface SvalOptions {
 declare class Sval {
     private options;
     private scope;
+    exports: {
+        [name: string]: any;
+    };
     constructor(options?: SvalOptions);
     addModules(modules: {
         [name: string]: any;
     }): void;
+    import(nameOrModules: string | {
+        [name: string]: any;
+    }, mod?: any): void;
     run(input: string): void;
 }
 export default Sval;

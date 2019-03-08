@@ -94,7 +94,6 @@ export function runGenerator(
   return result.value
 }
 
-const isPromise = (pro: any) => typeof pro.then === 'function'
 export function runAsync(
   generator: (...args: any[]) => IterableIterator<any>,
   ...args: any[]
@@ -123,7 +122,9 @@ export function runAsync(
     }
     function next(ret: any) {
       if (ret.done) return resolve(ret.value)
-      const value = isPromise(ret.value) ? ret.value : Promise.resolve(ret.value)
+      const value = typeof ret.value.then === 'function'
+        ? ret.value
+        : Promise.resolve(ret.value)
       return value.then(onFulfilled, onRejected)
     }
   })
