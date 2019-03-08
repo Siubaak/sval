@@ -98,17 +98,13 @@ function* hoistVarRecursion(statement: estree.Statement, scope: Scope): Iterable
 export function* pattern(node: estree.Pattern, scope: Scope, options: PatternOptions = {}): IterableIterator<any> {
   switch (node.type) {
     case 'ObjectPattern':
-      yield* ObjectPattern(node, scope, options)
-      break
+      return yield* ObjectPattern(node, scope, options)
     case 'ArrayPattern':
-      yield* ArrayPattern(node, scope, options)
-      break
+      return yield* ArrayPattern(node, scope, options)
     case 'RestElement':
-      yield* RestElement(node, scope, options)
-      break
+      return yield* RestElement(node, scope, options)
     case 'AssignmentPattern':
-      yield* AssignmentPattern(node, scope)
-      break
+      return yield* AssignmentPattern(node, scope)
     default:
       throw new SyntaxError('Unexpected token')
   }
@@ -170,7 +166,9 @@ export function* createFunc(
   if (node.generator) {
     func = tmpGenerator
   } else {
-    func = (...args: any[])=> runGenerator(tmpGenerator, ...args)
+    func = function (...args: any[]) {
+      runGenerator(tmpGenerator.bind(this), ...args)
+    }
   }
 
   if (node.type === 'FunctionDeclaration') {

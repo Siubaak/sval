@@ -191,7 +191,7 @@ export function* ForInStatement(node: estree.ForInStatement, scope: Scope) {
   for (const value in yield* evaluate(node.right, scope)) {
     const subScope = new Scope(scope)
     if (left.type === 'VariableDeclaration') {
-      yield* VariableDeclaration(left, scope, { feed: value })
+      yield* VariableDeclaration(left, subScope, { feed: value })
     } else if (left.type === 'Identifier') {
       const variable: Var = yield* Identifier(left, scope, { getVar: true })
       variable.set(value)
@@ -221,7 +221,7 @@ export function* ForOfStatement(node: estree.ForOfStatement, scope: Scope) {
   for (const value of yield* evaluate(node.right, scope)) {
     const subScope = new Scope(scope)
     if (left.type === 'VariableDeclaration') {
-      yield* VariableDeclaration(left, scope, { feed: value })
+      yield* VariableDeclaration(left, subScope, { feed: value })
     } else if (left.type === 'Identifier') {
       const variable: Var = yield* Identifier(left, scope, { getVar: true })
       variable.set(value)

@@ -8,17 +8,18 @@ describe('testing src/index.ts', () => {
       private a: number = 0
       constructor() {
         this.a++
-        console.log(this.a)
       }
       then() {
         this.a++
-        console.log(this.a)
+        return this
       }
     }
 
-    interpreter.addModules({ A })
+    interpreter.import({ A })
     interpreter.run(`
-      new A().then()
+      exports.inst = new A().then()
     `)
+
+    expect(interpreter.exports.inst.a).toBe(2)
   })
 })

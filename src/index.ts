@@ -13,6 +13,8 @@ class Sval {
   private options: Options = {}
   private scope = new Scope(null, true)
 
+  exports: { [name: string]: any } = {}
+
   constructor(options: SvalOptions = {}) {
     let { ecmaVer, sandBox = true } = options
 
@@ -21,7 +23,7 @@ class Sval {
       && ecmaVer !== 6
       && ecmaVer !== 2015
     ) {
-      ecmaVer = 5
+      ecmaVer = 6
     }
 
     this.options.ecmaVersion = ecmaVer
@@ -37,15 +39,23 @@ class Sval {
     }
   }
 
-  addModules(modules: { [name: string]: any }) {
+  import(nameOrModules: string | { [name: string]: any }, mod?: any) {
     const win = this.scope.find('window').get()
-    const names = getOwnNames(modules)
+
+    if (typeof nameOrModules === 'string') {
+      nameOrModules = { nameOrModules: mod }
+    }
+
+    if (typeof nameOrModules !== 'object') return
+
+    const names = getOwnNames(nameOrModules)
     for (const name of names) {
-      win[name] = modules[name]
+      win[name] = nameOrModules[name]
     }
   }
 
   run(input: string) {
+    this.scope.let('exports', this.exports = {})
     const ast = parse(input, this.options)
     runGenerator(hoist, ast, this.scope)
     runGenerator(Program, ast, this.scope)

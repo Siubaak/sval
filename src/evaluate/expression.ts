@@ -356,7 +356,7 @@ export function* CallExpression(node: estree.CallExpression, scope: Scope) {
 
 export function* NewExpression(node: estree.NewExpression, scope: Scope) {
   const constructor = yield* evaluate(node.callee, scope)
-  
+
   const args = []
   for (const arg of node.arguments) {
     args.push(yield* evaluate(arg, scope))
@@ -378,7 +378,7 @@ export function* ArrowFunctionExpression(node: estree.ArrowFunctionExpression, s
 }
 
 export function* YieldExpression(node: estree.YieldExpression, scope: Scope) {
-  yield evaluate(node.argument, scope)
+  yield yield* evaluate(node.argument, scope)
 }
 
 export function* TemplateLiteral(node: estree.TemplateLiteral, scope: Scope) {

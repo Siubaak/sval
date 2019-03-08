@@ -82,9 +82,11 @@ export function createSymbol(key: string) {
 
 export function runGenerator(generator: (...args: any[]) => IterableIterator<any>, ...args: any[]) {
   const iterator = generator(...args)
+
   let result = iterator.next()
   while (!result.done) {
     result = iterator.next()
   }
+
   return result.value
 }

@@ -1,20 +1,22 @@
 import Sval from '../src'
 
 describe('testing src/index.ts', () => {
-  it('should hoist function normally', () => {  
-    const interpreter = new Sval({ ecmaVer: 6 })
+  it('should yield generator normally', () => {  
+    const interpreter = new Sval()
     interpreter.run(`
       function* a() {
-        yield console.log(1)
-        yield console.log(2)
-        yield console.log(3)
+        for (const i of [1, 2, 3]) {
+          yield i
+        }
       }
-      const j = a()
-      j.next()
-      console.log(4)
-      j.next()
-      console.log(5)
-      j.next()
+      const f = a()
+      let result = f.next()
+      exports.res = []
+      while (!result.done) {
+        exports.res.push(result.value)
+        result = f.next()
+      }
     `)
+    expect(interpreter.exports.res).toEqual([1, 2, 3])
   })
 })

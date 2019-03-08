@@ -28,7 +28,7 @@ import Sval from 'sval'
 // Sval options
 const options = {
   // ECMA Version of the code (5 | 6 | 2015)
-  ecmaVer: 5,
+  ecmaVer: 6,
   // Whether the code runs in a sandbox
   sandBox: true,
 }
@@ -37,12 +37,11 @@ const options = {
 const interpreter = new Sval(options)
 
 // Add global modules in interpreter
-interpreter.addModules({
-  addWhatYouNeedToUse: 'AllKindsOfStuffs'
-})
+interpreter.import('addWhatYouNeedToUse', 'AllKindsOfStuffs')
+// Same as interpreter.import({ addWhatYouNeedToUse: 'AllKindsOfStuffs' })
 
 interpreter.run(`
-  var msg = 'Hello World'
+  const msg = 'Hello World'
   console.log(msg) // Get 'Hello World'
   console.log(addWhatYouNeedToUse) // Get 'AllKindsOfStuffs'
 `)
@@ -50,17 +49,17 @@ interpreter.run(`
 
 Sval contructor has options with two fields, **ecmaVer** and **sandBox**.
 
-- **ecmaVer** is the ECMA version that the code your want to run. Currently, only 5 and 6 (2015) are supported, and the default version is 5 if this field is missing.
+- **ecmaVer** is the ECMA version that the code your want to run. Currently, only 5 and 6 (2015) are supported, and the default version is 6 if this field is missing.
 
 - **sandBox** is true for sandbox mode or false for invasived mode. Sandbox mode will run code in a isolated sandbox and won't pollute your scope outside. Invasived mode allows you run code in the same scope of your current scope. The default setting is true if this field is missing.
 
-Sval instance has two methods, **addModules** and **run**.
+Sval instance has two methods, **import** and **run**.
 
-- **addModules** expects a object as arguments, and the object contains the modules you need to use in the instance scope. The modules will be automatically declared as global variables. This method is more likely to be used in sandbox mode.
+- **import** expects a name and a module as arguments like `import(name: string, mod: any)`, or only a object as argument, and the object contains the modules you need to use in the instance scope, like `import({ [name: string]: any })`. The modules will be automatically declared as global variables. This method is more likely to be used in sandbox mode.
 
-- **run** expects a string as arguments, and this string is the code you input to run.
+- **run** expects a string as argument like `run(code: string)`, and this string is the code you input to run.
 
-## Reference
+## References
 
 - [ESTree](https://github.com/estree/estree)
 - [Acorn](https://github.com/acornjs/acorn)

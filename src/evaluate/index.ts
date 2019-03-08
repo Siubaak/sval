@@ -22,12 +22,11 @@ const evaluateOps = assign(
 )
 
 export default function* evaluate(node: Node, scope: Scope) {
-  if (!node) {
-    return
-  }
+  if (!node) return
+
   const handler = (evaluateOps as any)[node.type]
   if (handler) {
-    yield* handler(node, scope)
+    return yield* handler(node, scope)
   } else {
     throw new Error(`${node.type} isn't implemented`)
   }

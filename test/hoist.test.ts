@@ -141,7 +141,7 @@ describe('testing src/index.ts', () => {
     delete (window as any).c
   })
   it('should hoist var normally in destructure', () => {  
-    const interpreter = new Sval({ ecmaVer: 6 })
+    const interpreter = new Sval()
     interpreter.run(`
       a
       b

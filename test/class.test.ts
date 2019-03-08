@@ -1,64 +1,64 @@
 import Sval from '../src'
 
 describe('testing src/index.ts', () => {
-  it('should hoist function normally', () => {
-    const interpreter = new Sval({ ecmaVer: 6 })
+  it('should create class normally', () => {
+    const interpreter = new Sval()
     interpreter.run(`
-      class a {
+      class A {
         constructor() {
-            this.b = 1
-        }
-        con() {
-          return this.b
+          this.b = 1
         }
         get k() {
-            return this.b + 1
+          return this.b + 1
         }
-        set g(a) { this.b = a }
+        set g(a) {
+          this.b = a
+        }
       }
-      const k = new a()
-      console.log(k.k)
-      k.g = 3
-      console.log(k.b)
-      console.log(k.k)
+      exports.inst = new A()
+      exports.inst.g = 3
     `)
+    expect(interpreter.exports.inst.b).toBe(3)
+    expect(interpreter.exports.inst.k).toBe(4)
   })
-  it('should hoist function normally', () => {
-    const interpreter = new Sval({ ecmaVer: 6 })
+  it('should extend class normally', () => {
+    const interpreter = new Sval()
     interpreter.run(`
-      class a {
+      class A {
         get g() {
           return this.k + 1
         }
       }
-      class b extends a { }
-      class c extends b {
+      class B extends A { }
+      class C extends B {
         constructor() {
           super()
           this.k = 1
-          console.log(super.g)
+          exports.g = super.g
         }
       }
-      const k = new c()
+      new C()
     `)
+    expect(interpreter.exports.g).toBe(2)
   })
-  it('should hoist function normally', () => {
-    const interpreter = new Sval({ ecmaVer: 6 })
+  it('should get base class normally', () => {
+    const interpreter = new Sval()
     interpreter.run(`
-      class a {
+      class A {
         set g(val) {
           this.k = val
         }
       }
-      class b extends a { }
-      class c extends b {
+      class B extends A { }
+      class C extends B {
         constructor() {
           super()
           super.g = 1
         }
       }
       const k = new c()
-      console.log(k.k)
+      exports.k = k.k
     `)
+    expect(interpreter.exports.k).toBe(1)
   })
 })
