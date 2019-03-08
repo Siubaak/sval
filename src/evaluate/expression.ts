@@ -385,6 +385,10 @@ export function* YieldExpression(node: estree.YieldExpression, scope: Scope) {
   }
 }
 
+export function* AwaitExpression(node: estree.AwaitExpression, scope: Scope) {
+  return yield yield* evaluate(node.argument, scope)
+}
+
 export function* TemplateLiteral(node: estree.TemplateLiteral, scope: Scope) {
   const quasis = node.quasis
   const expressions = node.expressions

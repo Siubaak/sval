@@ -82,13 +82,49 @@ export function createSymbol(key: string) {
   return Symbol ? Symbol(key) : `__${key}_${Math.random().toString(36).substring(2)}`
 }
 
-export function runGenerator(generator: (...args: any[]) => IterableIterator<any>, ...args: any[]) {
+export function runGenerator(
+  generator: (...args: any[]) => IterableIterator<any>,
+  ...args: any[]
+) {
   const iterator = generator(...args)
-
-  let result = iterator.next()
-  while (!result.done) {
+  let result: IteratorResult<any>
+  do {
     result = iterator.next()
-  }
-
+  } while (!result.done)
   return result.value
+}
+
+const isPromise = (pro: any) => typeof pro.then === 'function'
+export function runAsync(
+  generator: (...args: any[]) => IterableIterator<any>,
+  ...args: any[]
+): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const iterator = generator(...args)
+    onFulfilled()
+    function onFulfilled(res?: any) {
+      let ret: any
+      try {
+        ret = iterator.next(res)
+      } catch (e) {
+        return reject(e)
+      }
+      next(ret)
+      return null
+    }
+    function onRejected(err?: any) {
+      let ret: any
+      try {
+        ret = iterator.throw(err)
+      } catch (e) {
+        return reject(e)
+      }
+      next(ret)
+    }
+    function next(ret: any) {
+      if (ret.done) return resolve(ret.value)
+      const value = isPromise(ret.value) ? ret.value : Promise.resolve(ret.value)
+      return value.then(onFulfilled, onRejected)
+    }
+  })
 }

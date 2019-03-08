@@ -3,7 +3,6 @@ import Sval from '../src'
 describe('testing src/index.ts', () => {
   it('should create class normally', () => {
     const interpreter = new Sval()
-    interpreter.import({ JSON })
     interpreter.run(`
       class A {
         constructor() {

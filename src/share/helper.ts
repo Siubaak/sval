@@ -1,7 +1,7 @@
 import * as estree from 'estree'
 import Scope from '../scope'
 import evaluate from '../evaluate'
-import { define, inherits, runGenerator } from './util'
+import { define, inherits, runGenerator, runAsync } from './util'
 import { RETURN, SUPER } from './const'
 
 import { BlockStatement } from '../evaluate/statement'
@@ -162,9 +162,18 @@ export function* createFunc(
     }
   }
 
-  const func: any = node.generator
-    ? tmpGenerator
-    : function (...args: any[]) { return runGenerator(tmpGenerator.bind(this), ...args) }
+  let func: any
+  if (node.async) {
+    func = function (...args: any[]) {
+      return runAsync(tmpGenerator.bind(this), ...args)
+    }
+  } else if (node.generator) {
+    func = tmpGenerator
+  } else {
+    func = function (...args: any[]) {
+      return runGenerator(tmpGenerator.bind(this), ...args)
+    }
+  }
 
   if (node.type === 'FunctionDeclaration') {
     define(func, 'name', {

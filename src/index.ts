@@ -18,7 +18,7 @@ class Sval {
   constructor(options: SvalOptions = {}) {
     let { ecmaVer, sandBox = true } = options
 
-    if ([3, 5, 6, 7, 2015, 2016].indexOf(ecmaVer) === -1) {
+    if ([3, 5, 6, 7, 8, 2015, 2016, 2017].indexOf(ecmaVer) === -1) {
       ecmaVer = 7
     }
 
