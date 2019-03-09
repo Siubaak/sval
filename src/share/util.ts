@@ -2,6 +2,8 @@ export const freeze = Object.freeze
 
 export const define = Object.defineProperty
 
+export const getDptor = Object.getOwnPropertyDescriptor
+
 const hasOwnProperty = Object.prototype.hasOwnProperty
 export function hasOwn(obj: any, key: symbol | string): boolean {
   return hasOwnProperty.call(obj, key)
@@ -71,14 +73,76 @@ export const assign = typeof Object.assign === 'function'
   ? Object.assign
   : assignPolyfill
 
-const win = assign({}, window)
+export let globalObj: any = {}
+let names: string[] = []
+try {
+  // Browser environment
+  names = getOwnNames(globalObj = window)
+} catch (err) {
+  try {
+    // Node environment
+    names = getOwnNames(globalObj = global)
+      .filter(n => n !== 'GLOBAL' && n !== 'root')
+  } catch (err) {
+    // Unknow environment
+  }
+}
 export function createSandBox() {
-  return assign({}, win)
+  const win: any = {}
+  for (const name of names) {
+    win[name] = globalObj[name]
+  }
+  return win
 }
 
 export function createSymbol(key: string) {
-  return Symbol ? Symbol(key) : `__${key}_${Math.random().toString(36).substring(2)}`
+  return key + Math.random().toString(36).substring(2)
 }
 
-declare function require(module: string): any
-export const walk = require('acorn/dist/walk').simple
+export function runGenerator(
+  generator: (...args: any[]) => IterableIterator<any>,
+  ...args: any[]
+) {
+  const iterator = generator(...args)
+  let result: IteratorResult<any>
+  do {
+    result = iterator.next()
+  } while (!result.done)
+  return result.value
+}
+
+export function runAsync(
+  generator: (...args: any[]) => IterableIterator<any>,
+  ...args: any[]
+): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const iterator = generator(...args)
+    onFulfilled()
+    function onFulfilled(res?: any) {
+      let ret: any
+      try {
+        ret = iterator.next(res)
+      } catch (e) {
+        return reject(e)
+      }
+      next(ret)
+      return null
+    }
+    function onRejected(err?: any) {
+      let ret: any
+      try {
+        ret = iterator.throw(err)
+      } catch (e) {
+        return reject(e)
+      }
+      next(ret)
+    }
+    function next(ret: any) {
+      if (ret.done) return resolve(ret.value)
+      const value = typeof ret.value.then === 'function'
+        ? ret.value
+        : Promise.resolve(ret.value)
+      return value.then(onFulfilled, onRejected)
+    }
+  })
+}

@@ -1,18 +1,19 @@
 {
   "compilerOptions": {
-    "outDir": "./dist/lib",
     "target": "es5",
-    "lib": [
-      "dom",
-      "es6",
-      "dom.iterable",
-      "scripthost"
-    ],
-    "sourceMap": true,
+    "lib": ["dom", "es6"],
+    "declaration": true,
     "noImplicitAny": true,
-    "removeComments": true
+    "removeComments": true,
+    "resolveJsonModule": true,
+    "downlevelIteration": true,
+    "declarationDir": "types"
   },
   "include": [
-    "src"
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "**/*.test.ts"
   ]
 }

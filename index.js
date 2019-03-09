@@ -1,4 +1,2 @@
-'use strict'
-
-module.exports = require('./dist/lib/index.js').default;
-module.exports.default = require('./dist/lib/index.js').default;
+'use strict';
+module.exports.default = module.exports = require('./dist/index.js');

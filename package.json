@@ -1,10 +1,51 @@
 {
   "name": "sval",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "description": "A javascript interpreter written in javascript",
+  "types": "types/index.d.ts",
   "main": "index.js",
+  "scripts": {
+    "build": "npm test && rm -rf dist types && rollup -c && npm run move:types",
+    "dev": "rollup -wc",
+    "test": "jest --colors --coverage",
+    "cov": "cat ./coverage/lcov.info | coveralls",
+    "move:types": "mv types/src/* types && rm -rf types/src"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Siubaak/sval.git"
+  },
+  "keywords": [
+    "sval",
+    "js",
+    "javascript",
+    "eval",
+    "interpreter"
+  ],
+  "author": "baakqiu",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Siubaak/sval/issues"
+  },
+  "homepage": "https://github.com/Siubaak/sval#readme",
+  "dependencies": {
+    "acorn": "^6.1.1"
+  },
+  "devDependencies": {
+    "@types/acorn": "^4.0.5",
+    "@types/estree": "0.0.39",
+    "@types/jest": "^24.0.11",
+    "@types/node": "^11.11.0",
+    "jest": "^24.3.1",
+    "rollup": "^1.6.0",
+    "rollup-plugin-json": "^3.1.0",
+    "rollup-plugin-node-resolve": "^4.0.1",
+    "rollup-plugin-typescript2": "^0.19.3",
+    "rollup-plugin-uglify": "^6.0.2",
+    "ts-jest": "^24.0.0",
+    "typescript": "^3.3.3333"
+  },
   "jest": {
-    "testURL": "http://localhost/",
     "transform": {
       "^.+\\.tsx?$": "ts-jest"
     },
@@ -17,43 +58,5 @@
       "json",
       "node"
     ]
-  },
-  "scripts": {
-    "test": "jest --colors --coverage",
-    "start": "tsc --declaration --watch",
-    "webpack": "webpack --config config/webpack.dev.js --watch --progress",
-    "build": "npm test && tsc --declaration && webpack --config config/webpack.prod.js --progress",
-    "cov": "cat ./coverage/lcov.info | coveralls"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Siubaak/sval.git"
-  },
-  "keywords": [
-    "js",
-    "javascript",
-    "eval",
-    "interpreter"
-  ],
-  "author": "Siubaak",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/Siubaak/sval/issues"
-  },
-  "homepage": "https://github.com/Siubaak/sval#readme",
-  "dependencies": {
-    "acorn": "^5.5.3"
-  },
-  "devDependencies": {
-    "@types/acorn": "^4.0.3",
-    "@types/estree": "0.0.39",
-    "@types/jest": "^22.2.3",
-    "jest": "^22.4.3",
-    "ts-jest": "^22.4.4",
-    "ts-loader": "^3.4.0",
-    "typescript": "^2.7.1",
-    "uglifyjs-webpack-plugin": "^1.1.8",
-    "webpack": "^3.10.0",
-    "webpack-merge": "^4.1.1"
   }
 }
