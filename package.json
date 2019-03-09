@@ -1,6 +1,6 @@
 {
   "name": "sval",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "description": "A javascript interpreter written in javascript",
   "types": "types/index.d.ts",
   "main": "index.js",

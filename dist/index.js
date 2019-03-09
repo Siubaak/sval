@@ -5117,24 +5117,39 @@
     var assign = typeof Object.assign === 'function'
         ? Object.assign
         : assignPolyfill;
-    var globalObj;
+    var globalObj = {};
+    var names = [];
     try {
-        globalObj = window;
+        names = getOwnNames(globalObj = window);
     }
     catch (err) {
         try {
-            globalObj = global;
+            names = getOwnNames(globalObj = global)
+                .filter(function (n) { return n !== 'GLOBAL' && n !== 'root'; });
         }
         catch (err) {
-            globalObj = {};
         }
     }
-    var win = assign({}, globalObj);
     function createSandBox() {
-        return assign({}, win);
+        var e_1, _a;
+        var win = {};
+        try {
+            for (var names_1 = __values(names), names_1_1 = names_1.next(); !names_1_1.done; names_1_1 = names_1.next()) {
+                var name_1 = names_1_1.value;
+                win[name_1] = globalObj[name_1];
+            }
+        }
+        catch (e_1_1) { e_1 = { error: e_1_1 }; }
+        finally {
+            try {
+                if (names_1_1 && !names_1_1.done && (_a = names_1.return)) _a.call(names_1);
+            }
+            finally { if (e_1) throw e_1.error; }
+        }
+        return win;
     }
     function createSymbol(key) {
-        return Symbol ? Symbol(key) : "__" + key + "_" + Math.random().toString(36).substring(2);
+        return key + Math.random().toString(36).substring(2);
     }
     function runGenerator(generator) {
         var args = [];
@@ -5268,7 +5283,6 @@
                 return this.parent.find(name);
             }
             else {
-              console.log(name)
                 var win = this.global().find('window').get();
                 if (hasOwn(win, name)) {
                     return new Prop(win, name);
@@ -7543,7 +7557,7 @@
         });
     }
 
-    var version = "0.1.3";
+    var version = "0.2.0";
 
     var Sval = (function () {
         function Sval(options) {
@@ -7565,7 +7579,7 @@
                 this.scope.let('window', globalObj);
                 this.scope.let('this', globalObj);
             }
-            this.scope.let('exports', this.exports = {});
+            this.scope.const('exports', this.exports = {});
         }
         Sval.prototype.addModules = function (modules) {
             console.warn('Use import instead. addModules is deprecated and will be removed soon.');
@@ -7573,7 +7587,6 @@
         };
         Sval.prototype.import = function (nameOrModules, mod) {
             var e_1, _a;
-            var win = this.scope.find('window').get();
             if (typeof nameOrModules === 'string') {
                 nameOrModules = { nameOrModules: mod };
             }
@@ -7583,7 +7596,7 @@
             try {
                 for (var names_1 = __values(names), names_1_1 = names_1.next(); !names_1_1.done; names_1_1 = names_1.next()) {
                     var name_1 = names_1_1.value;
-                    win[name_1] = nameOrModules[name_1];
+                    this.scope.let(name_1, nameOrModules[name_1]);
                 }
             }
             catch (e_1_1) { e_1 = { error: e_1_1 }; }

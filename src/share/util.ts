@@ -73,24 +73,30 @@ export const assign = typeof Object.assign === 'function'
   ? Object.assign
   : assignPolyfill
 
-export let globalObj: any
+export let globalObj: any = {}
+let names: string[] = []
 try {
-  globalObj = window
+  // Browser environment
+  names = getOwnNames(globalObj = window)
 } catch (err) {
   try {
-    globalObj = global
+    // Node environment
+    names = getOwnNames(globalObj = global)
+      .filter(n => n !== 'GLOBAL' && n !== 'root')
   } catch (err) {
-    globalObj = {}
+    // Unknow environment
   }
 }
-
-const win = assign({}, globalObj)
 export function createSandBox() {
-  return assign({}, win)
+  const win: any = {}
+  for (const name of names) {
+    win[name] = globalObj[name]
+  }
+  return win
 }
 
 export function createSymbol(key: string) {
-  return Symbol ? Symbol(key) : `__${key}_${Math.random().toString(36).substring(2)}`
+  return key + Math.random().toString(36).substring(2)
 }
 
 export function runGenerator(

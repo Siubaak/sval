@@ -19,6 +19,6 @@ export declare const assign: {
 };
 export declare let globalObj: any;
 export declare function createSandBox(): any;
-export declare function createSymbol(key: string): string | symbol;
+export declare function createSymbol(key: string): string;
 export declare function runGenerator(generator: (...args: any[]) => IterableIterator<any>, ...args: any[]): any;
 export declare function runAsync(generator: (...args: any[]) => IterableIterator<any>, ...args: any[]): Promise<any>;

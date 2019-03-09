@@ -37,7 +37,7 @@ class Sval {
       this.scope.let('this', globalObj)
     }
     
-    this.scope.let('exports', this.exports = {})
+    this.scope.const('exports', this.exports = {})
   }
 
   // Compatible
@@ -47,8 +47,6 @@ class Sval {
   }
 
   import(nameOrModules: string | { [name: string]: any }, mod?: any) {
-    const win = this.scope.find('window').get()
-
     if (typeof nameOrModules === 'string') {
       nameOrModules = { nameOrModules: mod }
     }
@@ -57,7 +55,7 @@ class Sval {
 
     const names = getOwnNames(nameOrModules)
     for (const name of names) {
-      win[name] = nameOrModules[name]
+      this.scope.let(name, nameOrModules[name])
     }
   }
 
