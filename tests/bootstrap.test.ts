@@ -1,8 +1,15 @@
-import { readFileSync } from 'fs'
+import { readFileSync, existsSync } from 'fs'
 import { resolve } from 'path'
 import Sval from '../src'
 
-const code = readFileSync(resolve(__dirname, '../dist/min/sval.min.js'), 'utf-8')
+let code: string
+
+const codePath = resolve(__dirname, '../dist/sval.min.js')
+if (existsSync(codePath)) {
+  code = readFileSync(codePath, 'utf-8')
+} else {
+  code = "const msg = 'fisrt build'"
+}
 
 describe('testing src/index.ts', () => {
   it('should compile normally', () => {  

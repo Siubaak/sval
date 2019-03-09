@@ -4,3 +4,4 @@ export declare const RETURN: {
     RES: any;
 };
 export declare const SUPER: string | symbol;
+export declare const ASYNC: string | symbol;

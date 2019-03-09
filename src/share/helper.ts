@@ -2,7 +2,7 @@ import * as estree from 'estree'
 import Scope from '../scope'
 import evaluate from '../evaluate'
 import { define, inherits, runGenerator, runAsync } from './util'
-import { RETURN, SUPER } from './const'
+import { RETURN, SUPER, ASYNC } from './const'
 
 import { BlockStatement } from '../evaluate/statement'
 import { FunctionDeclaration, VariableDeclaration, ClassBody } from '../evaluate/declaration'
@@ -167,7 +167,7 @@ export function* createFunc(
     func = function (...args: any[]) {
       return runAsync(tmpGenerator.bind(this), ...args)
     }
-    define(func, 'async', { value: true })
+    define(func, ASYNC, { value: true })
   } else if (node.generator) {
     func = tmpGenerator
   } else {

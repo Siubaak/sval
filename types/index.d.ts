@@ -3,6 +3,7 @@ export interface SvalOptions {
     sandBox?: boolean;
 }
 declare class Sval {
+    static version: string;
     private options;
     private scope;
     exports: {

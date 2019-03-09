@@ -17,7 +17,8 @@ export declare const assign: {
     <T, U, V, W>(target: T, source1: U, source2: V, source3: W): T & U & V & W;
     (target: object, ...sources: any[]): any;
 };
-export declare function createSandBox(): Window;
+export declare let globalObj: any;
+export declare function createSandBox(): any;
 export declare function createSymbol(key: string): string | symbol;
 export declare function runGenerator(generator: (...args: any[]) => IterableIterator<any>, ...args: any[]): any;
 export declare function runAsync(generator: (...args: any[]) => IterableIterator<any>, ...args: any[]): Promise<any>;

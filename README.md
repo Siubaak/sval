@@ -37,18 +37,22 @@ const options = {
 const interpreter = new Sval(options)
 
 // Add global modules in interpreter
-interpreter.import('addWhatYouNeedToUse', 'AllKindsOfStuffs')
-// Or interpreter.import({ addWhatYouNeedToUse: 'AllKindsOfStuffs' })
+interpreter.import('importWhatYouNeed', 'AllKindsOfStuffs')
+// Or interpreter.import({ importWhatYouNeed: 'AllKindsOfStuffs' })
 
 // Parse and run the code
 interpreter.run(`
-  console.log(addWhatYouNeedToUse) // Get 'AllKindsOfStuffs'
   const msg = 'Hello World'
   exports.msg = msg // Export any you want
 `)
 
-// Get exports from the last run
+interpreter.run(`
+  exports.mod = importWhatYouNeed // Export again and merge
+`)
+
+// Get exports from runs
 console.log(interpreter.exports.msg) // Get 'Hello World'
+console.log(interpreter.exports.mod) // Get 'AllKindsOfStuffs'
 ```
 
 Sval contructor has options with two fields, **ecmaVer** and **sandBox**.
@@ -61,9 +65,9 @@ Sval instance has two methods, **import** and **run**.
 
 - **import** expects a name and a module as arguments like `import(name: string, mod: any)`, or only a object as argument, and the object contains the modules you need to use in the instance scope like `import({ [name: string]: any })`. The modules will be automatically declared as global variables. This method is more likely to be used in sandbox mode.
 
-- **run** expects a string as argument like `run(code: string)`, and this string is the code you input to run. If you want to export something, there is a internal global `exports` object and mount what you want on it to export.
+- **run** expects a string as argument like `run(code: string)`, and this string is the code you input to run. If you want to export something, there is a internal global `exports` object for mounting what you want to export.
 
-Sval instance also has a field, **exports**, to get what you exported from the last run.
+Sval instance also has a field, **exports**, to get what you exported from runs, merged if several runs have exports.
 
 ## References
 

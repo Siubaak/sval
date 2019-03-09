@@ -3,7 +3,7 @@ import Scope from '../scope'
 import evaluate from '.'
 import { createFunc, pattern, createClass } from '../share/helper'
 import { define, freeze, getGetter, getSetter, createSymbol } from '../share/util'
-import { SUPER } from '../share/const'
+import { SUPER, ASYNC } from '../share/const'
 
 import { Identifier } from './identifier'
 import { Literal } from './literal'
@@ -356,7 +356,7 @@ export function* CallExpression(
     args.push(yield* evaluate(arg, scope))
   }
 
-  if (func.async && !async) {
+  if (func[ASYNC] && !async) {
     return func.apply(object, args).then()
   } else {
     return func.apply(object, args)

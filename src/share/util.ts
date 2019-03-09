@@ -73,7 +73,18 @@ export const assign = typeof Object.assign === 'function'
   ? Object.assign
   : assignPolyfill
 
-const win = assign({}, window)
+export let globalObj: any
+try {
+  globalObj = window
+} catch (err) {
+  try {
+    globalObj = global
+  } catch (err) {
+    globalObj = {}
+  }
+}
+
+const win = assign({}, globalObj)
 export function createSandBox() {
   return assign({}, win)
 }
