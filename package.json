@@ -1,6 +1,6 @@
 {
   "name": "sval",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "A javascript interpreter written in javascript",
   "types": "types/index.d.ts",
   "main": "index.js",
@@ -9,7 +9,7 @@
     "dev": "rollup -wc",
     "test": "jest --colors --coverage",
     "cov": "cat ./coverage/lcov.info | coveralls",
-    "move:types": "mv types/src/* types && rm -rf types/src"
+    "move:types": "mv types/src/index.d.ts types && rm -rf types/src"
   },
   "repository": {
     "type": "git",

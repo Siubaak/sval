@@ -9,29 +9,37 @@ export default [
     output: {
       name: 'Sval',
       format: 'umd',
-      file: 'dist/index.js'
+      file: 'dist/index.js',
+      globals: {
+        acorn: 'acorn'
+      }
     },
+    external: ['acorn'],
     plugins: [
       typescript({
         useTsconfigDeclarationDir: true
       }),
-      resolve(),
       json()
     ]
   },
   {
-    input: 'dist/index.js',
+    input: 'src/index.ts',
     output: {
       name: 'Sval',
       format: 'umd',
       file: 'dist/sval.min.js'
     },
     plugins: [
+      json(),
+      resolve(),
+      typescript({
+        useTsconfigDeclarationDir: true
+      }),
       uglify({
         compress: {
           drop_debugger: false
         }
       })
     ]
-  }
+  },
 ]
