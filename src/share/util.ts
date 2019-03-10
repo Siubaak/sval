@@ -78,6 +78,7 @@ let names: string[] = []
 try {
   // Browser environment
   names = getOwnNames(globalObj = window)
+    .filter(n => n !== 'webkitStorageInfo')
 } catch (err) {
   try {
     // Node environment
@@ -87,12 +88,16 @@ try {
     // Unknow environment
   }
 }
-export function createSandBox() {
-  const win: any = {}
-  for (const name of names) {
+const win: any = {}
+for (const name of names) {
+  try {
     win[name] = globalObj[name]
+  } catch (err) {
+    /* empty */
   }
-  return win
+}
+export function createSandBox() {
+  return assign({}, win)
 }
 
 export function createSymbol(key: string) {
