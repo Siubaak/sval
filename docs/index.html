@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Sval Playground</title>
+  <style>
+    html, body { height: 100%; }
+    div { height: 100%; }
+    iframe { height: 100% !important; }
+  </style>
+</head>
+<body>
+  <script src="https://embed.runkit.com" data-element-id="code"></script>
+  <div id="code">
+    const Sval = require('sval')
+
+    const interpreter = new Sval({ ecmaVer: 8 })
+
+    interpreter.import({
+      getItem: n => new Promise(resolve => setTimeout(resolve, 1500, n))
+    })
+
+    interpreter.run(`
+      !async function () {
+        for (const i of [1, 2, 3]) {
+          console.log(await getItem(i))
+        }
+      }()
+      exports.end = true
+    `)
+
+    module.exports = 'End: ' + interpreter.exports.end
+  </div>
+</body>
+</html>

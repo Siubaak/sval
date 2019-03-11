@@ -44,7 +44,7 @@ describe('testing src/index.ts', () => {
 
   it('should excute async function normally', done => {  
     const interpreter = new Sval({ ecmaVer: 8 })
-    interpreter.import({ Promise, expect, done })
+    interpreter.import({ expect, done })
     interpreter.run(`
       a()
       async function a() {
@@ -59,7 +59,7 @@ describe('testing src/index.ts', () => {
   })
   it('should excute async function normally', done => {  
     const interpreter = new Sval({ ecmaVer: 8 })
-    interpreter.import({ Promise, getItem, expect, done })
+    interpreter.import({ getItem, expect, done })
     interpreter.run(`
       a()
       async function a() {
