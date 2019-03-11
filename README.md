@@ -4,11 +4,18 @@
 [![travis-ci](https://img.shields.io/travis/Siubaak/sval.svg?style=flat-square)](https://travis-ci.org/Siubaak/sval)
 [![coveralls](https://img.shields.io/coveralls/github/Siubaak/sval.svg?style=flat-square)](https://coveralls.io/github/Siubaak/sval)
 
-This is a javascript interpreter writen in javascript, based on parser [acorn](https://github.com/acornjs/acorn). It's useful for those javascript engine which disable eval function. Both invasived and sandbox modes are supported.
+A JavaScript interpreter writen in JavaScript, based on parser [Acorn](https://github.com/acornjs/acorn).
+
+- **Running on ES5, supporting ES5/6/7/8 full features**
+- **Both invasived and sandbox modes available**
+
+It's useful to evaluate the code of higher ECMAScript editions, or for the environment with disabled `eval` and `new Function`.
+
+[Try Sval on the playground.](https://siubaak.github.io/sval)
 
 ## Installation
 
-The most recommended way to install sval is with [npm](https://www.npmjs.com/package/sval).
+The most recommended way to install Sval is with [npm](https://www.npmjs.com/package/sval).
 
 ```bash
 npm install sval
@@ -69,7 +76,11 @@ Sval instance has two methods, **import** and **run**.
 
 Sval instance also has a field, **exports**, to get what you exported from runs, merged if several runs have exports.
 
-## References
+## Note
+
+**WithStatement** and **LabeledStatement** aren't implemented and recommended. Please avoid to use them. Also, the performance is just average, so don't expect much of it.
+
+## Reference
 
 - [ESTree](https://github.com/estree/estree)
 - [Acorn](https://github.com/acornjs/acorn)
