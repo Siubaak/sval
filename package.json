@@ -1,6 +1,6 @@
 {
   "name": "sval",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "A javascript interpreter written in javascript",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -10,7 +10,7 @@
     "build": "npm test && npm start",
     "start": "npm run before && rollup -c && npm run after",
     "before": "rm -rf dist types",
-    "after": "mv types/src/index.d.ts types && rm -rf types/src && rm src/runtime.ts",
+    "after": "mv types/src/index.d.ts types && rm -rf types/src",
     "test": "jest --colors --coverage",
     "cov": "cat ./coverage/lcov.info | coveralls"
   },

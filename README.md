@@ -82,9 +82,7 @@ Sval instance also has a field, **exports**, to get what you exported from runs,
 
 ## Note
 
-- **WithStatement** and **LabeledStatement** aren't implemented and recommended. Please avoid to use them.
-
-- If you want to skip the parsing of Acorn and directly pass an ESTree node to **run**, the runtime dist ([runtime.js](https://github.com/Siubaak/sval/blob/master/dist/runtime.js) or [sval.runtime.min.js](https://github.com/Siubaak/sval/blob/master/dist/sval.runtime.min.js)) without Acorn bundle is recommended to use instead. In this situation, the option **ecmaVer** will be useless and the Sval instance will always evaluate based on the supported latest ECMAScript edition.
+**WithStatement** and **LabeledStatement** aren't implemented and recommended. Please avoid to use them.
 
 ## Reference
 

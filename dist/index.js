@@ -2610,7 +2610,7 @@
         });
     }
 
-    var version = "0.2.3";
+    var version = "0.2.4";
 
     var Sval = (function () {
         function Sval(options) {
