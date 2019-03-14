@@ -9,7 +9,7 @@ A JavaScript interpreter writen in JavaScript, based on parser [Acorn](https://g
 - **Running on ES5, supporting ES5/6/7/8 full features**
 - **Both invasived and sandbox modes available**
 
-It's useful to evaluate the code of higher ECMAScript editions, or for the environment with disabled `eval` and `new Function`.
+It's useful to evaluate the code of higher ECMAScript editions, or for the environment with disabled `eval`, `setTimeout` and `new Function`.
 
 [Try Sval on the playground.](https://siubaak.github.io/sval)
 
@@ -66,9 +66,9 @@ console.log(interpreter.exports.msg) // Get 'Hello World'
 console.log(interpreter.exports.mod) // Get 'AllKindsOfStuffs'
 ```
 
-Sval contructor has options with two fields, **ecmaVer** and **sandBox**.
+Sval constructor has options with two fields, **ecmaVer** and **sandBox**.
 
-- **ecmaVer** is the ECMAScript edition for Acorn parsing the code string. Currently, 5, 6(2015), 7(2016) and 8(2017) are supported, and the default edition is 7.
+- **ecmaVer** is the ECMAScript edition of the code. Currently, 5, 6(2015), 7(2016) and 8(2017) are supported, and the default edition is 7.
 
 - **sandBox** is true for sandbox mode or false for invasived mode. Sandbox mode will run code in an isolated sandbox and won't pollute your global scope. Invasived mode allows you run code in the same global scope of your current environment. The default setting is true.
 
