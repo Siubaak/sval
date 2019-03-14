@@ -10,12 +10,9 @@ declare class Sval {
         [name: string]: any;
     };
     constructor(options?: SvalOptions);
-    addModules(modules: {
-        [name: string]: any;
-    }): void;
     import(nameOrModules: string | {
         [name: string]: any;
     }, mod?: any): void;
-    run(input: string): void;
+    run(code: string): void;
 }
 export default Sval;

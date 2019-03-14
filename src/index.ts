@@ -1,9 +1,9 @@
 import { parse, Options } from 'acorn'
-import { Program } from './evaluate/program'
 import Scope from './scope'
 import { hoist } from './share/helper'
 import { getOwnNames, createSandBox, runGenerator, globalObj } from './share/util'
 import { version } from '../package.json'
+import evaluate from './evaluate'
 
 export interface SvalOptions {
   ecmaVer?: 3 | 5 | 6 | 7 | 8 | 2015 | 2016 | 2017
@@ -40,12 +40,6 @@ class Sval {
     this.scope.const('exports', this.exports = {})
   }
 
-  // Compatible
-  addModules(modules: { [name: string]: any }) {
-    console.warn('Use import instead. addModules is deprecated and will be removed soon.')
-    this.import(modules)
-  }
-
   import(nameOrModules: string | { [name: string]: any }, mod?: any) {
     if (typeof nameOrModules === 'string') {
       nameOrModules = { nameOrModules: mod }
@@ -59,10 +53,10 @@ class Sval {
     }
   }
 
-  run(input: string) {
-    const ast = parse(input, this.options)
+  run(code: string) {
+    const ast = parse(code, this.options)
     runGenerator(hoist, ast, this.scope)
-    runGenerator(Program, ast, this.scope)
+    runGenerator(evaluate, ast, this.scope)
   }
 }
 

@@ -1,15 +1,18 @@
 {
   "name": "sval",
-  "version": "0.2.1",
+  "version": "0.2.3",
   "description": "A javascript interpreter written in javascript",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "unpkg": "dist/sval.min.js",
   "types": "types/index.d.ts",
-  "main": "index.js",
   "scripts": {
-    "build": "npm test && rm -rf dist types && rollup -c && npm run move:types",
-    "dev": "rollup -wc",
+    "build": "npm test && npm start",
+    "start": "npm run before && rollup -c && npm run after",
+    "before": "rm -rf dist types",
+    "after": "mv types/src/index.d.ts types && rm -rf types/src && rm src/runtime.ts",
     "test": "jest --colors --coverage",
-    "cov": "cat ./coverage/lcov.info | coveralls",
-    "move:types": "mv types/src/index.d.ts types && rm -rf types/src"
+    "cov": "cat ./coverage/lcov.info | coveralls"
   },
   "repository": {
     "type": "git",

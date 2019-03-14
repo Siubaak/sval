@@ -15,16 +15,20 @@ It's useful to evaluate the code of higher ECMAScript editions, or for the envir
 
 ## Installation
 
-The most recommended way to install Sval is with [npm](https://www.npmjs.com/package/sval).
+### Node
+
+Install Sval with [npm](https://www.npmjs.com/package/sval).
 
 ```bash
 npm install sval
 ```
 
-Alternately you can simply download from [releases](https://github.com/Siubaak/sval/releases), get minimized file `sval/dist/min/sval.min.js`, and source at your html page.
+### Browser
+
+Simply source from [unpkg](https://unpkg.com/sval). Or, download from [releases](https://github.com/Siubaak/sval/releases), get minimized file `dist/min/sval.min.js`, and source at your html page. You can access a global variable **Sval** directly.
 
 ```html
-<script type="text/javascript" src="sval.min.js"></script>
+<script type="text/javascript" src="https://unpkg.com/sval"></script>
 ```
 
 ## Usage
@@ -64,21 +68,23 @@ console.log(interpreter.exports.mod) // Get 'AllKindsOfStuffs'
 
 Sval contructor has options with two fields, **ecmaVer** and **sandBox**.
 
-- **ecmaVer** is the ECMA version that the code your want to run. Currently, 5, 6(2015), 7(2016) and 8(2017) are supported, and the default version is 7 if this field is missing.
+- **ecmaVer** is the ECMAScript edition for Acorn parsing the code string. Currently, 5, 6(2015), 7(2016) and 8(2017) are supported, and the default edition is 7.
 
-- **sandBox** is true for sandbox mode or false for invasived mode. Sandbox mode will run code in a isolated sandbox and won't pollute your scope outside. Invasived mode allows you run code in the same scope of your current scope. The default setting is true if this field is missing.
+- **sandBox** is true for sandbox mode or false for invasived mode. Sandbox mode will run code in an isolated sandbox and won't pollute your global scope. Invasived mode allows you run code in the same global scope of your current environment. The default setting is true.
 
 Sval instance has two methods, **import** and **run**.
 
-- **import** expects a name and a module as arguments like `import(name: string, mod: any)`, or only a object as argument, and the object contains the modules you need to use in the instance scope like `import({ [name: string]: any })`. The modules will be automatically declared as global variables. This method is more likely to be used in sandbox mode.
+- **import** is to import modules into your Sval instance scope, expecting a name and a module as arguments like `import(name: string, mod: any)`, or an object which contains the modules as argument like `import({ [name: string]: any })`. The modules will be automatically declared as global variables. This method is more likely to be used in sandbox mode.
 
-- **run** expects a string as argument like `run(code: string)`, and this string is the code you input to run. If you want to export something, there is a internal global `exports` object for mounting what you want to export.
+- **run** is to evaluate the code inputed, expecting a string as argument like `run(code: string)`. If you want to export something, there is a internal global `exports` object for mounting what you want to export.
 
 Sval instance also has a field, **exports**, to get what you exported from runs, merged if several runs have exports.
 
 ## Note
 
-**WithStatement** and **LabeledStatement** aren't implemented and recommended. Please avoid to use them. Also, the performance is just average, so don't expect much of it.
+- **WithStatement** and **LabeledStatement** aren't implemented and recommended. Please avoid to use them.
+
+- If you want to skip the parsing of Acorn and directly pass an ESTree node to **run**, the runtime dist ([runtime.js](https://github.com/Siubaak/sval/blob/master/dist/runtime.js) or [sval.runtime.min.js](https://github.com/Siubaak/sval/blob/master/dist/sval.runtime.min.js)) without Acorn bundle is recommended to use instead. In this situation, the option **ecmaVer** will be useless and the Sval instance will always evaluate based on the supported latest ECMAScript edition.
 
 ## Reference
 

@@ -1,8 +1,8 @@
 (function (global, factory) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('acorn')) :
-    typeof define === 'function' && define.amd ? define(['acorn'], factory) :
-    (global = global || self, global.Sval = factory(global.acorn));
-}(this, function (acorn) { 'use strict';
+    typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
+    typeof define === 'function' && define.amd ? define(factory) :
+    (global = global || self, global.Sval = factory());
+}(this, function () { 'use strict';
 
     /*! *****************************************************************************
     Copyright (c) Microsoft Corporation. All rights reserved.
@@ -2657,7 +2657,7 @@
             }
         };
         Sval.prototype.run = function (code) {
-            var ast = acorn.parse(code, this.options);
+            var ast = code;
             runGenerator(hoist, ast, this.scope);
             runGenerator(evaluate, ast, this.scope);
         };
