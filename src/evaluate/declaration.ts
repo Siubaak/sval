@@ -3,7 +3,7 @@ import Scope from '../scope'
 import evaluate from '.'
 import { createFunc, pattern, createClass } from '../share/helper'
 import { VarKind } from '../scope/variable'
-import { define, getDptor } from '../share/util'
+import { define, getDptor, assign } from '../share/util'
 
 import { Identifier } from './identifier'
 
@@ -23,7 +23,7 @@ export function* VariableDeclaration(
   options: VariableDeclarationOptions = {},
 ) {
   for (const declarator of node.declarations) {
-    yield* VariableDeclarator(declarator, scope, { kind: node.kind, ...options })
+    yield* VariableDeclarator(declarator, scope, assign({ kind: node.kind }, options))
   }
 }
 

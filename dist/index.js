@@ -19,17 +19,6 @@
     and limitations under the License.
     ***************************************************************************** */
 
-    var __assign = function() {
-        __assign = Object.assign || function __assign(t) {
-            for (var s, i = 1, n = arguments.length; i < n; i++) {
-                s = arguments[i];
-                for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
-            }
-            return t;
-        };
-        return __assign.apply(this, arguments);
-    };
-
     function __generator(thisArg, body) {
         var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
         return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
@@ -429,7 +418,7 @@
                 case 1:
                     if (!!_c.done) return [3, 4];
                     declarator = _c.value;
-                    return [5, __values(VariableDeclarator(declarator, scope, __assign({ kind: node.kind }, options)))];
+                    return [5, __values(VariableDeclarator(declarator, scope, assign({ kind: node.kind }, options)))];
                 case 2:
                     _d.sent();
                     _d.label = 3;
@@ -2664,11 +2653,6 @@
         Sval.version = version;
         return Sval;
     }());
-    try {
-        window.Sval = Sval;
-    }
-    catch (err) {
-    }
 
     return Sval;
 
