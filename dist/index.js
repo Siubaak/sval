@@ -165,29 +165,18 @@
             }
         });
     }
-    function assignPolyfill() {
-        var objects = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            objects[_i] = arguments[_i];
-        }
-        if (objects.length === 0) {
-            return null;
-        }
-        else {
-            var obj = objects[0];
-            for (var i = 1; i < objects.length; ++i) {
-                for (var key in objects[i]) {
-                    if (hasOwn(objects[i], key)) {
-                        obj[key] = objects[i][key];
-                    }
+    function _assign(target) {
+        for (var i = 1; i < arguments.length; ++i) {
+            var source = arguments[i];
+            for (var key in source) {
+                if (hasOwn(source, key)) {
+                    target[key] = source[key];
                 }
             }
-            return obj;
         }
+        return target;
     }
-    var assign = typeof Object.assign === 'function'
-        ? Object.assign
-        : assignPolyfill;
+    var assign = Object.assign || _assign;
     var globalObj = {};
     var names = [];
     try {

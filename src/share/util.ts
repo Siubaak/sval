@@ -54,24 +54,18 @@ export function inherits(
   })
 }
 
-function assignPolyfill(...objects: any[]): any {
-  if (objects.length === 0) {
-    return null
-  } else {
-    const obj = objects[0]
-    for (let i = 1; i < objects.length; ++i) {
-      for (const key in objects[i]) {
-        if (hasOwn(objects[i], key)) {
-          obj[key] = objects[i][key]
+function _assign(target: any): any {
+    for (let i = 1; i < arguments.length; ++i) {
+      const source = arguments[i]
+      for (const key in source) {
+        if (hasOwn(source, key)) {
+          target[key] = source[key]
         }
       }
     }
-    return obj
-  }
+    return target
 }
-export const assign = typeof Object.assign === 'function'
-  ? Object.assign
-  : assignPolyfill
+export const assign = Object.assign ||  _assign
 
 export let globalObj: any = {}
 let names: string[] = []
