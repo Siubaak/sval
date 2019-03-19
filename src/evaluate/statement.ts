@@ -161,13 +161,14 @@ export function* DoWhileStatement(node: estree.DoWhileStatement, scope: Scope) {
 }
 
 export function* ForStatement(node: estree.ForStatement, scope: Scope) {
-  let subScope = new Scope(scope)
+  const forScope = new Scope(scope)
   
   for (
-    yield* evaluate(node.init, subScope);
-    node.test ? (yield* evaluate(node.test, subScope)) : true;
-    yield* evaluate(node.update, subScope = subScope.clone())
-  ) {    
+    yield* evaluate(node.init, forScope);
+    node.test ? (yield* evaluate(node.test, forScope)) : true;
+    yield* evaluate(node.update, forScope)
+  ) {
+    const subScope = new Scope(forScope)
     let result: any
     if (node.body.type === 'BlockStatement') {
       result = yield* BlockStatement(node.body, subScope, { invasived: true })

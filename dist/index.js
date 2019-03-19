@@ -1939,18 +1939,18 @@
         });
     }
     function ForStatement(node, scope) {
-        var subScope, _a, result;
+        var forScope, _a, subScope, result;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
-                    subScope = new Scope(scope);
-                    return [5, __values(evaluate(node.init, subScope))];
+                    forScope = new Scope(scope);
+                    return [5, __values(evaluate(node.init, forScope))];
                 case 1:
                     _b.sent();
                     _b.label = 2;
                 case 2:
                     if (!node.test) return [3, 4];
-                    return [5, __values(evaluate(node.test, subScope))];
+                    return [5, __values(evaluate(node.test, forScope))];
                 case 3:
                     _a = (_b.sent());
                     return [3, 5];
@@ -1959,6 +1959,7 @@
                     _b.label = 5;
                 case 5:
                     if (!_a) return [3, 12];
+                    subScope = new Scope(forScope);
                     result = void 0;
                     if (!(node.body.type === 'BlockStatement')) return [3, 7];
                     return [5, __values(BlockStatement(node.body, subScope, { invasived: true }))];
@@ -1980,7 +1981,7 @@
                         return [2, result];
                     }
                     _b.label = 10;
-                case 10: return [5, __values(evaluate(node.update, subScope = subScope.clone()))];
+                case 10: return [5, __values(evaluate(node.update, forScope))];
                 case 11:
                     _b.sent();
                     return [3, 2];
@@ -2588,7 +2589,7 @@
         });
     }
 
-    var version = "0.2.4";
+    var version = "0.2.5";
 
     var Sval = (function () {
         function Sval(options) {
