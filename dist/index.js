@@ -177,13 +177,17 @@
         return target;
     }
     var assign = Object.assign || _assign;
-    var globalObj = {};
     var names = [];
+    var globalObj = {};
     try {
+        if (!window.Object)
+            throw 0;
         names = getOwnNames(globalObj = window).filter(function (n) { return n !== 'webkitStorageInfo'; });
     }
     catch (err) {
         try {
+            if (!global.Object)
+                throw 0;
             names = getOwnNames(globalObj = global).filter(function (n) { return n !== 'GLOBAL' && n !== 'root'; });
         }
         catch (err) {
@@ -2827,7 +2831,7 @@
         });
     }
 
-    var version = "0.2.6";
+    var version = "0.2.7";
 
     var Sval = (function () {
         function Sval(options) {

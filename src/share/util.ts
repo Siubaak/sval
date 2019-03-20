@@ -67,15 +67,17 @@ function _assign(target: any): any {
 }
 export const assign = Object.assign ||  _assign
 
-declare const WebAssembly: any
-export let globalObj: any = {}
+declare let WebAssembly: any // Avoid typescript error
 let names: string[] = []
+export let globalObj: any = {}
 try {
   // Browser environment
+  if (!(window as any).Object) throw 0
   names = getOwnNames(globalObj = window).filter(n => n !== 'webkitStorageInfo')
 } catch (err) {
   try {
     // Node environment
+    if (!global.Object) throw 0
     names = getOwnNames(globalObj = global).filter(n => n !== 'GLOBAL' && n !== 'root')
   } catch (err) {
     // Unknow environment, simulate a global environment
