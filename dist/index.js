@@ -180,15 +180,254 @@
     var globalObj = {};
     var names = [];
     try {
-        names = getOwnNames(globalObj = window)
-            .filter(function (n) { return n !== 'webkitStorageInfo'; });
+        names = getOwnNames(globalObj = window).filter(function (n) { return n !== 'webkitStorageInfo'; });
     }
     catch (err) {
         try {
-            names = getOwnNames(globalObj = global)
-                .filter(function (n) { return n !== 'GLOBAL' && n !== 'root'; });
+            names = getOwnNames(globalObj = global).filter(function (n) { return n !== 'GLOBAL' && n !== 'root'; });
         }
         catch (err) {
+            try {
+                globalObj.Object = Object;
+            }
+            catch (err) { }
+            try {
+                globalObj.Function = Function;
+            }
+            catch (err) { }
+            try {
+                globalObj.Array = Array;
+            }
+            catch (err) { }
+            try {
+                globalObj.Number = Number;
+            }
+            catch (err) { }
+            try {
+                globalObj.parseFloat = parseFloat;
+            }
+            catch (err) { }
+            try {
+                globalObj.parseInt = parseInt;
+            }
+            catch (err) { }
+            try {
+                globalObj.Infinity = Infinity;
+            }
+            catch (err) { }
+            try {
+                globalObj.NaN = NaN;
+            }
+            catch (err) { }
+            try {
+                globalObj.undefined = undefined;
+            }
+            catch (err) { }
+            try {
+                globalObj.Boolean = Boolean;
+            }
+            catch (err) { }
+            try {
+                globalObj.String = String;
+            }
+            catch (err) { }
+            try {
+                globalObj.Symbol = Symbol;
+            }
+            catch (err) { }
+            try {
+                globalObj.Date = Date;
+            }
+            catch (err) { }
+            try {
+                globalObj.Promise = Promise;
+            }
+            catch (err) { }
+            try {
+                globalObj.RegExp = RegExp;
+            }
+            catch (err) { }
+            try {
+                globalObj.Error = Error;
+            }
+            catch (err) { }
+            try {
+                globalObj.EvalError = EvalError;
+            }
+            catch (err) { }
+            try {
+                globalObj.RangeError = RangeError;
+            }
+            catch (err) { }
+            try {
+                globalObj.ReferenceError = ReferenceError;
+            }
+            catch (err) { }
+            try {
+                globalObj.SyntaxError = SyntaxError;
+            }
+            catch (err) { }
+            try {
+                globalObj.TypeError = TypeError;
+            }
+            catch (err) { }
+            try {
+                globalObj.URIError = URIError;
+            }
+            catch (err) { }
+            try {
+                globalObj.JSON = JSON;
+            }
+            catch (err) { }
+            try {
+                globalObj.Math = Math;
+            }
+            catch (err) { }
+            try {
+                globalObj.console = console;
+            }
+            catch (err) { }
+            try {
+                globalObj.Intl = Intl;
+            }
+            catch (err) { }
+            try {
+                globalObj.ArrayBuffer = ArrayBuffer;
+            }
+            catch (err) { }
+            try {
+                globalObj.Uint8Array = Uint8Array;
+            }
+            catch (err) { }
+            try {
+                globalObj.Int8Array = Int8Array;
+            }
+            catch (err) { }
+            try {
+                globalObj.Uint16Array = Uint16Array;
+            }
+            catch (err) { }
+            try {
+                globalObj.Int16Array = Int16Array;
+            }
+            catch (err) { }
+            try {
+                globalObj.Uint32Array = Uint32Array;
+            }
+            catch (err) { }
+            try {
+                globalObj.Int32Array = Int32Array;
+            }
+            catch (err) { }
+            try {
+                globalObj.Float32Array = Float32Array;
+            }
+            catch (err) { }
+            try {
+                globalObj.Float64Array = Float64Array;
+            }
+            catch (err) { }
+            try {
+                globalObj.Uint8ClampedArray = Uint8ClampedArray;
+            }
+            catch (err) { }
+            try {
+                globalObj.DataView = DataView;
+            }
+            catch (err) { }
+            try {
+                globalObj.Map = Map;
+            }
+            catch (err) { }
+            try {
+                globalObj.Set = Set;
+            }
+            catch (err) { }
+            try {
+                globalObj.WeakMap = WeakMap;
+            }
+            catch (err) { }
+            try {
+                globalObj.WeakSet = WeakSet;
+            }
+            catch (err) { }
+            try {
+                globalObj.Proxy = Proxy;
+            }
+            catch (err) { }
+            try {
+                globalObj.Reflect = Reflect;
+            }
+            catch (err) { }
+            try {
+                globalObj.decodeURI = decodeURI;
+            }
+            catch (err) { }
+            try {
+                globalObj.decodeURIComponent = decodeURIComponent;
+            }
+            catch (err) { }
+            try {
+                globalObj.encodeURI = encodeURI;
+            }
+            catch (err) { }
+            try {
+                globalObj.encodeURIComponent = encodeURIComponent;
+            }
+            catch (err) { }
+            try {
+                globalObj.escape = escape;
+            }
+            catch (err) { }
+            try {
+                globalObj.unescape = unescape;
+            }
+            catch (err) { }
+            try {
+                globalObj.eval = eval;
+            }
+            catch (err) { }
+            try {
+                globalObj.isFinite = isFinite;
+            }
+            catch (err) { }
+            try {
+                globalObj.isNaN = isNaN;
+            }
+            catch (err) { }
+            try {
+                globalObj.SharedArrayBuffer = SharedArrayBuffer;
+            }
+            catch (err) { }
+            try {
+                globalObj.Atomics = Atomics;
+            }
+            catch (err) { }
+            try {
+                globalObj.WebAssembly = WebAssembly;
+            }
+            catch (err) { }
+            try {
+                globalObj.clearInterval = clearInterval;
+            }
+            catch (err) { }
+            try {
+                globalObj.clearTimeout = clearTimeout;
+            }
+            catch (err) { }
+            try {
+                globalObj.setInterval = setInterval;
+            }
+            catch (err) { }
+            try {
+                globalObj.setTimeout = setTimeout;
+            }
+            catch (err) { }
+            try {
+                globalObj.crypto = crypto;
+            }
+            catch (err) { }
+            names = getOwnNames(globalObj);
         }
     }
     var win = {};
@@ -198,8 +437,7 @@
             try {
                 win[name_1] = globalObj[name_1];
             }
-            catch (err) {
-            }
+            catch (err) { }
         }
     }
     catch (e_1_1) { e_1 = { error: e_1_1 }; }
@@ -2589,7 +2827,7 @@
         });
     }
 
-    var version = "0.2.5";
+    var version = "0.2.6";
 
     var Sval = (function () {
         function Sval(options) {
