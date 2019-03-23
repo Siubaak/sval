@@ -150,7 +150,7 @@ export function* createFunc(
         const name = yield* Identifier(param, subScope, { getName: true })
         subScope.let(name, args[i])
       } else if (param.type === 'RestElement') {
-        yield* RestElement(param, subScope, { feed: args.slice(i) })
+        yield* RestElement(param, subScope, { kind: 'let', feed: args.slice(i) })
       } else {
         yield* pattern(param, subScope, { feed: args[i] })
       }

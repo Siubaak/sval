@@ -92,7 +92,7 @@ export default class Scope {
    * @param name variable identifier name
    * @param value variable value
    */
-  var(name: symbol | string, value: any) {
+  var(name: string, value: any) {
     let scope: Scope = this
 
     // Find the closest function scope
@@ -106,8 +106,6 @@ export default class Scope {
       const win = scope.find('window').get()
       win[name] = value
     }
-
-    return true
   }
 
   /**
@@ -115,13 +113,12 @@ export default class Scope {
    * @param name variable identifier name
    * @param value variable value
    */
-  let(name: symbol | string, value: any) {
+  let(name: string, value: any) {
     const variable = this.context[name as string]
     if (!variable) {
       this.context[name as string] = new Var('let', value)
-      return true
     } else {
-      return false
+      throw new SyntaxError(`Identifier '${name}' has already been declared`)
     }
   }
 
@@ -130,13 +127,12 @@ export default class Scope {
    * @param name variable identifier name
    * @param value variable value
    */
-  const(name: symbol | string, value: any) {
+  const(name: string, value: any) {
     const variable = this.context[name as string]
     if (!variable) {
       this.context[name as string] = new Var('const', value)
-      return true
     } else {
-      return false
+      throw new SyntaxError(`Identifier '${name}' has already been declared`)
     }
   }
 }

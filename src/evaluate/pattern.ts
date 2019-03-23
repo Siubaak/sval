@@ -41,9 +41,7 @@ export function* AssignmentProperty(node: estree.AssignmentProperty, scope: Scop
     
     if (value.type === 'Identifier') {
       const name = yield* Identifier(value, scope, { getName: true })
-      if (!scope[kind](name, feed[key])) {
-        throw new SyntaxError(`Identifier '${name}' has already been declared`)
-      }
+      scope[kind](name, feed[key])
     } else {
       yield* pattern(value, scope, { kind, feed: feed[key] })
     }
@@ -69,14 +67,12 @@ export function* ArrayPattern(node: estree.ArrayPattern, scope: Scope, options: 
         if (kind) {
           // If kind isn't undefined, it's a declaration
           const name = yield* Identifier(element, scope, { getName: true })
-          if (!scope[kind](name, feed[i])) {
-            throw new SyntaxError(`Identifier '${name}' has already been declared`)
-          }
+          scope[kind](name, feed[i])
         } else {
           // If kind is undefined, it's a statement
-        const variable: Var = yield* Identifier(element, scope, { getVar: true })
-        variable.set(feed[i])
-        result.push(variable.get())
+          const variable: Var = yield* Identifier(element, scope, { getVar: true })
+          variable.set(feed[i])
+          result.push(variable.get())
         }
       } else if (element.type === 'RestElement') {
         yield* RestElement(element, scope, { kind, feed: feed.slice(i) })
@@ -91,7 +87,7 @@ export function* ArrayPattern(node: estree.ArrayPattern, scope: Scope, options: 
 }
 
 export function* RestElement(node: estree.RestElement, scope: Scope, options: PatternOptions = {}) {
-  const { kind = 'let', hoist = false, feed = [] } = options
+  const { kind, hoist = false, feed = [] } = options
   const arg = node.argument
   if (hoist) {
     if (kind === 'var') {
@@ -104,9 +100,14 @@ export function* RestElement(node: estree.RestElement, scope: Scope, options: Pa
     }
   } else {
     if (arg.type === 'Identifier') {
-      const name = yield* Identifier(arg, scope, { getName: true })
-      if (!scope[kind](name, feed)) {
-        throw new SyntaxError(`Identifier '${name}' has already been declared`)
+      if (kind) {
+        // If kind isn't undefined, it's a declaration
+        const name = yield* Identifier(arg, scope, { getName: true })
+        scope[kind](name, feed)
+      } else {
+        // If kind is undefined, it's a statement
+        const variable: Var = yield* Identifier(arg, scope, { getVar: true })
+        variable.set(feed)
       }
     } else {
       yield* pattern(arg, scope, { kind, feed })

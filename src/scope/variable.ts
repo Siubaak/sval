@@ -20,10 +20,9 @@ export class Var implements Variable {
 
   set(value: any) {
     if (this.kind === 'const') {
-      return false
+      throw new TypeError('Assignment to constant variable')
     } else {
-      this.value = value
-      return true
+      return this.value = value
     }
   }
 }

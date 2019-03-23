@@ -55,9 +55,7 @@ export function* VariableDeclarator(
     const value = typeof feed === 'undefined' ? yield* evaluate(node.init, scope) : feed
     if (node.id.type === 'Identifier') {
       const name = yield* Identifier(node.id, scope, { getName: true })
-      if (!scope[kind](name, value)) {
-        throw new SyntaxError(`Identifier '${name}' has already been declared`)
-      }
+      scope[kind](name, value)
     } else {
       yield* pattern(node.id, scope, { kind, feed: value })
     }
