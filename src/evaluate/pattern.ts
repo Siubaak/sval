@@ -65,17 +65,21 @@ export function* ArrayPattern(node: estree.ArrayPattern, scope: Scope, options: 
         }
       }
     } else {
-      if (kind && element.type === 'Identifier') {
-        // If kind isn't undefined, it's a declaration
-        const name = yield* Identifier(element, scope, { getName: true })
-        if (!scope[kind](name, feed[i])) {
-          throw new SyntaxError(`Identifier '${name}' has already been declared`)
-        }
-      } else if (element.type === 'Identifier') {
-        // If kind is undefined, it's a statement
+      if (element.type === 'Identifier') {
+        if (kind) {
+          // If kind isn't undefined, it's a declaration
+          const name = yield* Identifier(element, scope, { getName: true })
+          if (!scope[kind](name, feed[i])) {
+            throw new SyntaxError(`Identifier '${name}' has already been declared`)
+          }
+        } else {
+          // If kind is undefined, it's a statement
         const variable: Var = yield* Identifier(element, scope, { getVar: true })
         variable.set(feed[i])
         result.push(variable.get())
+        }
+      } else if (element.type === 'RestElement') {
+        yield* RestElement(element, scope, { kind, feed: feed.slice(i) })
       } else {
         yield* pattern(element, scope, { kind, feed: feed[i] })
       }

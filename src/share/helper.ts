@@ -118,40 +118,49 @@ export function* createFunc(
   node: estree.FunctionDeclaration | estree.FunctionExpression | estree.ArrowFunctionExpression,
   scope: Scope,
   options: CtorOptions = {}
-) {
+): IterableIterator<any> {
   const { superClass } = options
+
+  let funcScope: Scope
+  if (node.type !== 'ArrowFunctionExpression') {
+    funcScope = new Scope(scope, true)
+    if (superClass) {
+      funcScope.const(SUPER, superClass)
+    }
+  } else {
+    funcScope = new Scope(scope)
+  }
+  if (node.body.type === 'BlockStatement') {
+    yield* hoist(node.body, funcScope)
+  }
 
   const params = node.params
 
   const tmpGenerator = function* (...args: any[]) {
-    let subScope: Scope
+    const subScope: Scope = funcScope.clone()
+
     if (node.type !== 'ArrowFunctionExpression') {
-      subScope = new Scope(scope, true)
       subScope.const('this', this)
       subScope.let('arguments', arguments)
-      if (superClass) {
-        subScope.const(SUPER, superClass)
-      }
-    } else {
-      subScope = new Scope(scope)
     }
 
     for (let i = 0; i < params.length; i++) {
       const param = params[i]
       if (param.type === 'Identifier') {
-        const name = yield* Identifier(param, scope, { getName: true })
+        const name = yield* Identifier(param, subScope, { getName: true })
         subScope.let(name, args[i])
+      } else if (param.type === 'RestElement') {
+        yield* RestElement(param, subScope, { feed: args.slice(i) })
       } else {
-        yield* pattern(param, scope, { feed: args[i] })
+        yield* pattern(param, subScope, { feed: args[i] })
       }
     }
 
     let result: any
     if (node.body.type === 'BlockStatement') {
-      yield* hoist(node.body, subScope)
       result = yield* BlockStatement(node.body, subScope, {
         invasived: true,
-        hoisted: true,
+        hoisted: true
       })
     } else {
       result = yield* evaluate(node.body, subScope)
@@ -179,12 +188,12 @@ export function* createFunc(
   if (node.type === 'FunctionDeclaration') {
     define(func, 'name', {
       value: node.id.name,
-      configurable: true,
+      configurable: true
     })
   }
   define(func, 'length', {
     value: params.length,
-    configurable: true,
+    configurable: true
   })
 
   return func
@@ -212,7 +221,7 @@ export function* createClass(
 
   define(klass, 'name', {
     value: node.id.name,
-    configurable: true,
+    configurable: true
   })
 
   return klass

@@ -226,7 +226,7 @@ export function* ForOfStatement(node: estree.ForOfStatement, scope: Scope) {
       const variable: Var = yield* Identifier(left, scope, { getVar: true })
       variable.set(value)
     } else {
-      pattern(left, scope, { feed: value })
+      yield* pattern(left, scope, { feed: value })
     }
 
     let result: any

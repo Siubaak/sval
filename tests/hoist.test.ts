@@ -38,6 +38,18 @@ describe('testing src/index.ts', () => {
       expect(err).toBeInstanceOf(ReferenceError)
     }
   })
+  it('should hoist function once', () => {  
+    const interpreter = new Sval()
+    interpreter.run(`
+      {
+        a()
+        a()
+        function a() {
+          function b() {}
+        }
+      }
+    `)
+  })
   it('should hoist var normally', () => {  
     const interpreter = new Sval()
     interpreter.run(`
