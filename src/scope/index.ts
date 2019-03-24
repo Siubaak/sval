@@ -23,7 +23,7 @@ export default class Scope {
    * @private
    * @readonly
    */
-  private readonly context: { [key: string]: Var } = {}
+  private readonly context: { [key: string]: Var } = Object.create(null)
 
   /**
    * Create a simulated scope
@@ -66,7 +66,7 @@ export default class Scope {
    * Find a variable along scope chain
    * @param name variable identifier name
    */
-  find(name: symbol | string): Variable {
+  find(name: string): Variable {
     if (hasOwn(this.context, name)) {
       // The variable locates in the scope
       return this.context[name as string]
@@ -100,11 +100,25 @@ export default class Scope {
       scope = scope.parent
     }
 
-    scope.context[name as string] = new Var('var', value)
+    const variable = scope.context[name]
+    if (!variable) {
+      scope.context[name] = new Var('var', value)
+    } else {
+      if (variable.kind === 'var') {
+        if (value !== undefined) {
+          scope.context[name] = new Var('var', value)
+        }
+      } else {
+        console.log(scope)
+        throw new SyntaxError(`Identifier '${name}' has already been declared`)
+      }
+    }
 
     if (!scope.parent) {
       const win = scope.find('window').get()
-      win[name] = value
+      if (value !== undefined) {
+        win[name] = value
+      }
     }
   }
 
@@ -114,9 +128,9 @@ export default class Scope {
    * @param value variable value
    */
   let(name: string, value: any) {
-    const variable = this.context[name as string]
+    const variable = this.context[name]
     if (!variable) {
-      this.context[name as string] = new Var('let', value)
+      this.context[name] = new Var('let', value)
     } else {
       throw new SyntaxError(`Identifier '${name}' has already been declared`)
     }
@@ -128,9 +142,23 @@ export default class Scope {
    * @param value variable value
    */
   const(name: string, value: any) {
-    const variable = this.context[name as string]
+    const variable = this.context[name]
     if (!variable) {
-      this.context[name as string] = new Var('const', value)
+      this.context[name] = new Var('const', value)
+    } else {
+      throw new SyntaxError(`Identifier '${name}' has already been declared`)
+    }
+  }
+
+  /**
+   * Declare a function
+   * @param name function name
+   * @param value function
+   */
+  func(name: string, value: any) {
+    const variable = this.context[name]
+    if (!variable || variable.kind === 'var') {
+      this.context[name] = new Var('var', value)
     } else {
       throw new SyntaxError(`Identifier '${name}' has already been declared`)
     }

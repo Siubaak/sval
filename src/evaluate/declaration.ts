@@ -8,8 +8,7 @@ import { define, getDptor, assign } from '../share/util'
 import { Identifier } from './identifier'
 
 export function* FunctionDeclaration(node: estree.FunctionDeclaration, scope: Scope) {
-  const func = yield* createFunc(node, scope)
-  scope.let(node.id.name, func)
+  scope.func(node.id.name, yield* createFunc(node, scope))
 }
 
 export interface VariableDeclarationOptions {
@@ -65,7 +64,7 @@ export function* VariableDeclarator(
 }
 
 export function* ClassDeclaration(node: estree.ClassDeclaration, scope: Scope): IterableIterator<any> {
-  scope.let(node.id.name, yield* createClass(node, scope))
+  scope.func(node.id.name, yield* createClass(node, scope))
 }
 
 export interface ClassOptions {

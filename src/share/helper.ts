@@ -29,8 +29,6 @@ export function* hoist(block: estree.Program | estree.BlockStatement, scope: Sco
 
     if (statement.type === 'FunctionDeclaration') {
       yield* FunctionDeclaration(statement, scope)
-      // Avoid duplicate declaration
-      block.body[i] = null
     } else {
       yield* hoistVarRecursion(statement, scope)
     }
@@ -43,8 +41,6 @@ export function* hoistFunc(block: estree.BlockStatement, scope: Scope) {
 
     if (statement.type === 'FunctionDeclaration') {
       yield* FunctionDeclaration(statement, scope)
-      // Avoid duplicate declaration
-      block.body[i] = null
     }
   }
 }
@@ -121,27 +117,19 @@ export function* createFunc(
 ): IterableIterator<any> {
   const { superClass } = options
 
-  let funcScope: Scope
-  if (node.type !== 'ArrowFunctionExpression') {
-    funcScope = new Scope(scope, true)
-    if (superClass) {
-      funcScope.const(SUPER, superClass)
-    }
-  } else {
-    funcScope = new Scope(scope)
-  }
-  if (node.body.type === 'BlockStatement') {
-    yield* hoist(node.body, funcScope)
-  }
-
   const params = node.params
 
   const tmpGenerator = function* (...args: any[]) {
-    const subScope: Scope = funcScope.clone()
-
+    let subScope: Scope
     if (node.type !== 'ArrowFunctionExpression') {
+      subScope = new Scope(scope, true)
       subScope.const('this', this)
       subScope.let('arguments', arguments)
+      if (superClass) {
+        subScope.const(SUPER, superClass)
+      }
+    } else {
+      subScope = new Scope(scope)
     }
 
     for (let i = 0; i < params.length; i++) {
@@ -158,6 +146,7 @@ export function* createFunc(
 
     let result: any
     if (node.body.type === 'BlockStatement') {
+      yield* hoist(node.body, subScope)
       result = yield* BlockStatement(node.body, subScope, {
         invasived: true,
         hoisted: true

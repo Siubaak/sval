@@ -5,7 +5,7 @@ export const define = Object.defineProperty
 export const getDptor = Object.getOwnPropertyDescriptor
 
 const hasOwnProperty = Object.prototype.hasOwnProperty
-export function hasOwn(obj: any, key: symbol | string): boolean {
+export function hasOwn(obj: any, key: string): boolean {
   return hasOwnProperty.call(obj, key)
 }
 

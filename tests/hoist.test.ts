@@ -38,7 +38,7 @@ describe('testing src/index.ts', () => {
       expect(err).toBeInstanceOf(ReferenceError)
     }
   })
-  it('should hoist function once', () => {  
+  it('should hoist function normally in function', () => {  
     const interpreter = new Sval()
     interpreter.run(`
       {
