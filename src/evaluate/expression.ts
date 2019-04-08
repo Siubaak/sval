@@ -14,9 +14,13 @@ export function* ThisExpression(node: estree.ThisExpression, scope: Scope) {
 }
 
 export function* ArrayExpression(node: estree.ArrayExpression, scope: Scope) {
-  const results = []
+  let results: any[] = []
   for (const item of node.elements) {
-    results.push(yield* evaluate(item, scope))
+    if (item.type === 'SpreadElement') {
+      results = results.concat(yield* SpreadElement(item, scope))
+    } else {
+      results.push(yield* evaluate(item, scope))
+    }
   }
   return results
 }
@@ -351,9 +355,13 @@ export function* CallExpression(
     func = yield* evaluate(node.callee, scope)
   }
 
-  const args: any[] = []
+  let args: any[] = []
   for (const arg of node.arguments) {
-    args.push(yield* evaluate(arg, scope))
+    if (arg.type === 'SpreadElement') {
+      args = args.concat(yield* SpreadElement(arg, scope))
+    } else {
+      args.push(yield* evaluate(arg, scope))
+    }
   }
 
   if (func[ASYNC] && !async) {
@@ -366,9 +374,13 @@ export function* CallExpression(
 export function* NewExpression(node: estree.NewExpression, scope: Scope) {
   const constructor = yield* evaluate(node.callee, scope)
 
-  const args = []
+  let args: any[] = []
   for (const arg of node.arguments) {
-    args.push(yield* evaluate(arg, scope))
+    if (arg.type === 'SpreadElement') {
+      args = args.concat(yield* SpreadElement(arg, scope))
+    } else {
+      args.push(yield* evaluate(arg, scope))
+    }
   }
 
   return new constructor(...args)
@@ -464,4 +476,8 @@ export function* Super(
   const { getProto = false } = options
   const superClass = scope.find(SUPER).get()
   return getProto ? superClass.prototype: superClass
+}
+
+export function* SpreadElement(node: estree.SpreadElement, scope: Scope) {
+  return yield* evaluate(node.argument, scope)
 }

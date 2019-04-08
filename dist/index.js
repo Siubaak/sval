@@ -886,39 +886,46 @@
         });
     }
     function ArrayExpression(node, scope) {
-        var e_1, _a, results, _b, _c, item, _d, _e, e_1_1;
-        return __generator(this, function (_f) {
-            switch (_f.label) {
+        var e_1, _a, results, _b, _c, item, _d, _e, _f, _g, e_1_1;
+        return __generator(this, function (_h) {
+            switch (_h.label) {
                 case 0:
                     results = [];
-                    _f.label = 1;
+                    _h.label = 1;
                 case 1:
-                    _f.trys.push([1, 6, 7, 8]);
+                    _h.trys.push([1, 8, 9, 10]);
                     _b = __values(node.elements), _c = _b.next();
-                    _f.label = 2;
+                    _h.label = 2;
                 case 2:
-                    if (!!_c.done) return [3, 5];
+                    if (!!_c.done) return [3, 7];
                     item = _c.value;
-                    _e = (_d = results).push;
-                    return [5, __values(evaluate(item, scope))];
+                    if (!(item.type === 'SpreadElement')) return [3, 4];
+                    _e = (_d = results).concat;
+                    return [5, __values(SpreadElement(item, scope))];
                 case 3:
-                    _e.apply(_d, [_f.sent()]);
-                    _f.label = 4;
+                    results = _e.apply(_d, [_h.sent()]);
+                    return [3, 6];
                 case 4:
+                    _g = (_f = results).push;
+                    return [5, __values(evaluate(item, scope))];
+                case 5:
+                    _g.apply(_f, [_h.sent()]);
+                    _h.label = 6;
+                case 6:
                     _c = _b.next();
                     return [3, 2];
-                case 5: return [3, 8];
-                case 6:
-                    e_1_1 = _f.sent();
+                case 7: return [3, 10];
+                case 8:
+                    e_1_1 = _h.sent();
                     e_1 = { error: e_1_1 };
-                    return [3, 8];
-                case 7:
+                    return [3, 10];
+                case 9:
                     try {
                         if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
                     }
                     finally { if (e_1) throw e_1.error; }
                     return [7];
-                case 8: return [2, results];
+                case 10: return [2, results];
             }
         });
     }
@@ -1334,27 +1341,27 @@
         });
     }
     function CallExpression(node, scope, options) {
-        var e_3, _a, _b, async, func, object, key, getter, thisObject, args, _c, _d, arg, _e, _f, e_3_1;
+        var e_3, _a, _b, async, func, object, key, getter, thisObject, args, _c, _d, arg, _e, _f, _g, _h, e_3_1;
         if (options === void 0) { options = {}; }
-        return __generator(this, function (_g) {
-            switch (_g.label) {
+        return __generator(this, function (_j) {
+            switch (_j.label) {
                 case 0:
                     _b = options.async, async = _b === void 0 ? false : _b;
                     if (!(node.callee.type === 'MemberExpression')) return [3, 7];
                     return [5, __values(MemberExpression(node.callee, scope, { getObj: true }))];
                 case 1:
-                    object = _g.sent();
+                    object = _j.sent();
                     key = void 0;
                     if (!node.callee.computed) return [3, 3];
                     return [5, __values(evaluate(node.callee.property, scope))];
                 case 2:
-                    key = _g.sent();
+                    key = _j.sent();
                     return [3, 6];
                 case 3:
                     if (!(node.callee.property.type === 'Identifier')) return [3, 5];
                     return [5, __values(Identifier(node.callee.property, scope, { getName: true }))];
                 case 4:
-                    key = _g.sent();
+                    key = _j.sent();
                     return [3, 6];
                 case 5: throw new SyntaxError('Unexpected token');
                 case 6:
@@ -1371,38 +1378,45 @@
                     object = scope.find('this').get();
                     return [5, __values(evaluate(node.callee, scope))];
                 case 8:
-                    func = _g.sent();
-                    _g.label = 9;
+                    func = _j.sent();
+                    _j.label = 9;
                 case 9:
                     args = [];
-                    _g.label = 10;
+                    _j.label = 10;
                 case 10:
-                    _g.trys.push([10, 15, 16, 17]);
+                    _j.trys.push([10, 17, 18, 19]);
                     _c = __values(node.arguments), _d = _c.next();
-                    _g.label = 11;
+                    _j.label = 11;
                 case 11:
-                    if (!!_d.done) return [3, 14];
+                    if (!!_d.done) return [3, 16];
                     arg = _d.value;
-                    _f = (_e = args).push;
-                    return [5, __values(evaluate(arg, scope))];
+                    if (!(arg.type === 'SpreadElement')) return [3, 13];
+                    _f = (_e = args).concat;
+                    return [5, __values(SpreadElement(arg, scope))];
                 case 12:
-                    _f.apply(_e, [_g.sent()]);
-                    _g.label = 13;
+                    args = _f.apply(_e, [_j.sent()]);
+                    return [3, 15];
                 case 13:
+                    _h = (_g = args).push;
+                    return [5, __values(evaluate(arg, scope))];
+                case 14:
+                    _h.apply(_g, [_j.sent()]);
+                    _j.label = 15;
+                case 15:
                     _d = _c.next();
                     return [3, 11];
-                case 14: return [3, 17];
-                case 15:
-                    e_3_1 = _g.sent();
+                case 16: return [3, 19];
+                case 17:
+                    e_3_1 = _j.sent();
                     e_3 = { error: e_3_1 };
-                    return [3, 17];
-                case 16:
+                    return [3, 19];
+                case 18:
                     try {
                         if (_d && !_d.done && (_a = _c.return)) _a.call(_c);
                     }
                     finally { if (e_3) throw e_3.error; }
                     return [7];
-                case 17:
+                case 19:
                     if (func[ASYNC] && !async) {
                         return [2, func.apply(object, args).then()];
                     }
@@ -1414,41 +1428,48 @@
         });
     }
     function NewExpression(node, scope) {
-        var e_4, _a, constructor, args, _b, _c, arg, _d, _e, e_4_1;
-        return __generator(this, function (_f) {
-            switch (_f.label) {
+        var e_4, _a, constructor, args, _b, _c, arg, _d, _e, _f, _g, e_4_1;
+        return __generator(this, function (_h) {
+            switch (_h.label) {
                 case 0: return [5, __values(evaluate(node.callee, scope))];
                 case 1:
-                    constructor = _f.sent();
+                    constructor = _h.sent();
                     args = [];
-                    _f.label = 2;
+                    _h.label = 2;
                 case 2:
-                    _f.trys.push([2, 7, 8, 9]);
+                    _h.trys.push([2, 9, 10, 11]);
                     _b = __values(node.arguments), _c = _b.next();
-                    _f.label = 3;
+                    _h.label = 3;
                 case 3:
-                    if (!!_c.done) return [3, 6];
+                    if (!!_c.done) return [3, 8];
                     arg = _c.value;
-                    _e = (_d = args).push;
-                    return [5, __values(evaluate(arg, scope))];
+                    if (!(arg.type === 'SpreadElement')) return [3, 5];
+                    _e = (_d = args).concat;
+                    return [5, __values(SpreadElement(arg, scope))];
                 case 4:
-                    _e.apply(_d, [_f.sent()]);
-                    _f.label = 5;
+                    args = _e.apply(_d, [_h.sent()]);
+                    return [3, 7];
                 case 5:
+                    _g = (_f = args).push;
+                    return [5, __values(evaluate(arg, scope))];
+                case 6:
+                    _g.apply(_f, [_h.sent()]);
+                    _h.label = 7;
+                case 7:
                     _c = _b.next();
                     return [3, 3];
-                case 6: return [3, 9];
-                case 7:
-                    e_4_1 = _f.sent();
+                case 8: return [3, 11];
+                case 9:
+                    e_4_1 = _h.sent();
                     e_4 = { error: e_4_1 };
-                    return [3, 9];
-                case 8:
+                    return [3, 11];
+                case 10:
                     try {
                         if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
                     }
                     finally { if (e_4) throw e_4.error; }
                     return [7];
-                case 9: return [2, new (constructor.bind.apply(constructor, __spread([void 0], args)))()];
+                case 11: return [2, new (constructor.bind.apply(constructor, __spread([void 0], args)))()];
             }
         });
     }
@@ -1622,6 +1643,14 @@
             return [2, getProto ? superClass.prototype : superClass];
         });
     }
+    function SpreadElement(node, scope) {
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [5, __values(evaluate(node.argument, scope))];
+                case 1: return [2, _a.sent()];
+            }
+        });
+    }
 
     var expression = /*#__PURE__*/Object.freeze({
         ThisExpression: ThisExpression,
@@ -1645,7 +1674,8 @@
         TaggedTemplateExpression: TaggedTemplateExpression,
         TemplateElement: TemplateElement,
         ClassExpression: ClassExpression,
-        Super: Super
+        Super: Super,
+        SpreadElement: SpreadElement
     });
 
     function ObjectPattern(node, scope, options) {
@@ -2864,7 +2894,7 @@
         });
     }
 
-    var version = "0.2.8";
+    var version = "0.2.9";
 
     var Sval = (function () {
         function Sval(options) {
