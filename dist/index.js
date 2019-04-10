@@ -572,11 +572,10 @@
             else {
                 if (variable.kind === 'var') {
                     if (value !== undefined) {
-                        scope.context[name] = new Var('var', value);
+                        variable.set(value);
                     }
                 }
                 else {
-                    console.log(scope);
                     throw new SyntaxError("Identifier '" + name + "' has already been declared");
                 }
             }
@@ -2894,7 +2893,7 @@
         });
     }
 
-    var version = "0.2.9";
+    var version = "0.3.0";
 
     var Sval = (function () {
         function Sval(options) {
@@ -2919,9 +2918,9 @@
             this.scope.const('exports', this.exports = {});
         }
         Sval.prototype.import = function (nameOrModules, mod) {
-            var e_1, _a;
+            var _a, e_1, _b;
             if (typeof nameOrModules === 'string') {
-                nameOrModules = { nameOrModules: mod };
+                nameOrModules = (_a = {}, _a[nameOrModules] = mod, _a);
             }
             if (typeof nameOrModules !== 'object')
                 return;
@@ -2929,13 +2928,13 @@
             try {
                 for (var names_1 = __values(names), names_1_1 = names_1.next(); !names_1_1.done; names_1_1 = names_1.next()) {
                     var name_1 = names_1_1.value;
-                    this.scope.let(name_1, nameOrModules[name_1]);
+                    this.scope.var(name_1, nameOrModules[name_1]);
                 }
             }
             catch (e_1_1) { e_1 = { error: e_1_1 }; }
             finally {
                 try {
-                    if (names_1_1 && !names_1_1.done && (_a = names_1.return)) _a.call(names_1);
+                    if (names_1_1 && !names_1_1.done && (_b = names_1.return)) _b.call(names_1);
                 }
                 finally { if (e_1) throw e_1.error; }
             }

@@ -42,14 +42,14 @@ class Sval {
 
   import(nameOrModules: string | { [name: string]: any }, mod?: any) {
     if (typeof nameOrModules === 'string') {
-      nameOrModules = { nameOrModules: mod }
+      nameOrModules = { [nameOrModules]: mod }
     }
 
     if (typeof nameOrModules !== 'object') return
 
     const names = getOwnNames(nameOrModules)
     for (const name of names) {
-      this.scope.let(name, nameOrModules[name])
+      this.scope.var(name, nameOrModules[name])
     }
   }
 

@@ -106,10 +106,9 @@ export default class Scope {
     } else {
       if (variable.kind === 'var') {
         if (value !== undefined) {
-          scope.context[name] = new Var('var', value)
+          variable.set(value)
         }
       } else {
-        console.log(scope)
         throw new SyntaxError(`Identifier '${name}' has already been declared`)
       }
     }
