@@ -1,7 +1,7 @@
 import * as estree from 'estree'
 import Scope from '../scope'
 import evaluate from '.'
-import { createFunc, pattern, createClass } from '../share/helper'
+import { createFunc, pattern, createClass } from './helper'
 import { VarKind } from '../scope/variable'
 import { define, getDptor, assign } from '../share/util'
 

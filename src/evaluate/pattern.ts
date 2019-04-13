@@ -3,7 +3,7 @@ import Scope from '../scope'
 import evaluate from '.'
 import { VarKind, Var } from '../scope/variable'
 import { Identifier } from './identifier'
-import { pattern } from '../share/helper'
+import { pattern } from './helper'
 
 export interface PatternOptions {
   kind?: VarKind

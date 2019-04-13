@@ -1,6 +1,6 @@
 import { parse, Options } from 'acorn'
 import Scope from './scope'
-import { hoist } from './share/helper'
+import { hoist } from './evaluate/helper'
 import { getOwnNames, createSandBox, runGenerator, globalObj } from './share/util'
 import { version } from '../package.json'
 import evaluate from './evaluate'

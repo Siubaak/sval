@@ -1,7 +1,7 @@
 import * as estree from 'estree'
 import Scope from '../scope'
 import evaluate from '.'
-import { createFunc, pattern, createClass } from '../share/helper'
+import { createFunc, pattern, createClass } from './helper'
 import { define, freeze, getGetter, getSetter, createSymbol } from '../share/util'
 import { SUPER, ASYNC } from '../share/const'
 

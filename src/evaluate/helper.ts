@@ -1,19 +1,19 @@
 import * as estree from 'estree'
 import Scope from '../scope'
-import evaluate from '../evaluate'
-import { define, inherits, runGenerator, runAsync } from './util'
-import { RETURN, SUPER, ASYNC } from './const'
+import evaluate from '.'
+import { define, inherits, runGenerator, runAsync } from '../share/util'
+import { RETURN, SUPER, ASYNC } from '../share/const'
 
-import { BlockStatement } from '../evaluate/statement'
-import { FunctionDeclaration, VariableDeclaration, ClassBody } from '../evaluate/declaration'
-import { Identifier } from '../evaluate/identifier'
+import { BlockStatement } from './statement'
+import { FunctionDeclaration, VariableDeclaration, ClassBody } from './declaration'
+import { Identifier } from './identifier'
 import {
   PatternOptions,
   ObjectPattern,
   ArrayPattern,
   RestElement,
   AssignmentPattern,
-} from '../evaluate/pattern'
+} from './pattern'
 
 export function* hoist(block: estree.Program | estree.BlockStatement, scope: Scope) {
   for (let i = 0; i < block.body.length; i++) {
