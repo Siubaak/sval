@@ -508,6 +508,13 @@
         });
     }
 
+    var BREAK = {};
+    var CONTINUE = {};
+    var RETURN = { RES: undefined };
+    var SUPER = createSymbol('super');
+    var ASYNC = createSymbol('async');
+    var NOINIT = createSymbol('noinit');
+
     var Scope = (function () {
         function Scope(parent, isolated) {
             if (parent === void 0) { parent = null; }
@@ -567,11 +574,11 @@
             }
             var variable = scope.context[name];
             if (!variable) {
-                scope.context[name] = new Var('var', value);
+                scope.context[name] = new Var('var', value === NOINIT ? undefined : value);
             }
             else {
                 if (variable.kind === 'var') {
-                    if (value !== undefined) {
+                    if (value !== NOINIT) {
                         variable.set(value);
                     }
                 }
@@ -581,7 +588,7 @@
             }
             if (!scope.parent) {
                 var win = scope.find('window').get();
-                if (value !== undefined) {
+                if (value !== NOINIT) {
                     win[name] = value;
                 }
             }
@@ -717,13 +724,12 @@
                     if (!(kind === 'var'
                         || kind === 'let'
                         || kind === 'const')) return [3, 13];
-                    if (!(typeof feed === 'undefined')) return [3, 7];
-                    return [5, __values(evaluate(node.init, scope))];
-                case 6:
-                    _c = _d.sent();
-                    return [3, 8];
-                case 7:
+                    if (!('feed' in options)) return [3, 6];
                     _c = feed;
+                    return [3, 8];
+                case 6: return [5, __values(evaluate(node.init, scope))];
+                case 7:
+                    _c = _d.sent();
                     _d.label = 8;
                 case 8:
                     value = _c;
@@ -731,7 +737,12 @@
                     return [5, __values(Identifier(node.id, scope, { getName: true }))];
                 case 9:
                     name_2 = _d.sent();
-                    scope[kind](name_2, value);
+                    if (kind === 'var' && !node.init) {
+                        scope.var(name_2, NOINIT);
+                    }
+                    else {
+                        scope[kind](name_2, value);
+                    }
                     return [3, 12];
                 case 10: return [5, __values(pattern$1(node.id, scope, { kind: kind, feed: value }))];
                 case 11:
@@ -862,12 +873,6 @@
         ClassBody: ClassBody,
         MethodDefinition: MethodDefinition
     });
-
-    var BREAK = {};
-    var CONTINUE = {};
-    var RETURN = { RES: undefined };
-    var SUPER = createSymbol('super');
-    var ASYNC = createSymbol('async');
 
     function Literal(node, scope) {
         return __generator(this, function (_a) {

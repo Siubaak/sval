@@ -6,6 +6,7 @@ import { VarKind } from '../scope/variable'
 import { define, getDptor, assign } from '../share/util'
 
 import { Identifier } from './identifier'
+import { NOINIT } from '../share/const'
 
 export function* FunctionDeclaration(node: estree.FunctionDeclaration, scope: Scope) {
   scope.func(node.id.name, yield* createFunc(node, scope))
@@ -51,10 +52,14 @@ export function* VariableDeclarator(
     || kind === 'let'
     || kind === 'const'
   ) {
-    const value = typeof feed === 'undefined' ? yield* evaluate(node.init, scope) : feed
+    const value = 'feed' in options ? feed : yield* evaluate(node.init, scope)
     if (node.id.type === 'Identifier') {
       const name = yield* Identifier(node.id, scope, { getName: true })
-      scope[kind](name, value)
+      if (kind === 'var' && !node.init) {
+        scope.var(name, NOINIT)
+      } else {
+        scope[kind](name, value)
+      }
     } else {
       yield* pattern(node.id, scope, { kind, feed: value })
     }

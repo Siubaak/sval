@@ -1,5 +1,6 @@
 import { Variable, Var, Prop } from './variable'
 import { hasOwn, getOwnNames } from '../share/util'
+import { NOINIT } from '../share/const'
 
 /**
  * Scope simulation class
@@ -102,10 +103,10 @@ export default class Scope {
 
     const variable = scope.context[name]
     if (!variable) {
-      scope.context[name] = new Var('var', value)
+      scope.context[name] = new Var('var', value === NOINIT ? undefined : value)
     } else {
       if (variable.kind === 'var') {
-        if (value !== undefined) {
+        if (value !== NOINIT) {
           variable.set(value)
         }
       } else {
@@ -115,7 +116,7 @@ export default class Scope {
 
     if (!scope.parent) {
       const win = scope.find('window').get()
-      if (value !== undefined) {
+      if (value !== NOINIT) {
         win[name] = value
       }
     }

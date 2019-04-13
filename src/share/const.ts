@@ -9,3 +9,5 @@ export const RETURN: { RES: any } = { RES: undefined }
 export const SUPER = createSymbol('super')
 
 export const ASYNC = createSymbol('async')
+
+export const NOINIT = createSymbol('noinit')
