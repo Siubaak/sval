@@ -133,7 +133,7 @@ export function createFunc(
         subScope.const(SUPER, superClass)
       }
     } else {
-      subScope = new Scope(scope)
+      subScope = new Scope(scope, true)
     }
 
     for (let i = 0; i < params.length; i++) {
