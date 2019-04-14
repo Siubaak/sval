@@ -156,18 +156,6 @@ export function createSymbol(key: string) {
   return key + Math.random().toString(36).substring(2)
 }
 
-export function runGenerator(
-  generator: (...args: any[]) => IterableIterator<any>,
-  ...args: any[]
-) {
-  const iterator = generator(...args)
-  let result: IteratorResult<any>
-  do {
-    result = iterator.next()
-  } while (!result.done)
-  return result.value
-}
-
 export function runAsync(
   generator: (...args: any[]) => IterableIterator<any>,
   ...args: any[]

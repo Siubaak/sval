@@ -1,0 +1,1 @@
+module.exports = (_, props) => props.src
