@@ -1,4 +1,4 @@
-import Sval from '../src'
+const Sval = require('../dist/index')
 
 describe('testing src/index.ts', () => {
   it('should hoist function normally', () => {  
@@ -123,13 +123,13 @@ describe('testing src/index.ts', () => {
           var c = 1
       }
     `)
-    expect((window as any).a).toBe(1)
-    expect((window as any).b).toBeUndefined()
-    expect((window as any).c).toBeUndefined()
-    delete (window as any).i
-    delete (window as any).a
-    delete (window as any).b
-    delete (window as any).c
+    expect(window.a).toBe(1)
+    expect(window.b).toBeUndefined()
+    expect(window.c).toBeUndefined()
+    delete window.i
+    delete window.a
+    delete window.b
+    delete window.c
   })
   it('should hoist var normally in try-catch', () => {  
     const interpreter = new Sval({ sandBox: false })
@@ -145,12 +145,12 @@ describe('testing src/index.ts', () => {
         var c = 1
       }
     `)
-    expect((window as any).a).toBe(1)
-    expect((window as any).b).toBeUndefined()
-    expect((window as any).c).toBe(1)
-    delete (window as any).a
-    delete (window as any).b
-    delete (window as any).c
+    expect(window.a).toBe(1)
+    expect(window.b).toBeUndefined()
+    expect(window.c).toBe(1)
+    delete window.a
+    delete window.b
+    delete window.c
   })
   it('should hoist var normally in destructure', () => {  
     const interpreter = new Sval()

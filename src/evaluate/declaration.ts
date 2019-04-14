@@ -70,7 +70,10 @@ export function* VariableDeclarator(
   }
 }
 
-export function* ClassDeclaration(node: estree.ClassDeclaration, scope: Scope): IterableIterator<any> {
+export function* ClassDeclaration(
+  node: estree.ClassDeclaration,
+  scope: Scope
+): IterableIterator<any> {
   scope.func(node.id.name, yield* createClass(node, scope))
 }
 

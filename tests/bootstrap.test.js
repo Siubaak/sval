@@ -1,8 +1,8 @@
-import { readFileSync, existsSync } from 'fs'
-import { resolve } from 'path'
-import Sval from '../src'
+const { readFileSync, existsSync } = require('fs')
+const { resolve } = require('path')
+const Sval = require('../dist/index')
 
-let code: string
+let code
 
 const codePath = resolve(__dirname, '../dist/sval.min.js')
 if (existsSync(codePath)) {

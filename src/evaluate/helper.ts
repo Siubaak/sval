@@ -109,7 +109,7 @@ export interface CtorOptions {
   superClass?: (...args: any[]) => any
 }
 
-import { createFunc as createFuncAnother } from /*<replace src:='../evaluate/helper'>*/'../evaluate_n/helper'/*</replace>*/
+import { createFunc as createAnotherFunc } from /*<replace src:='../evaluate/helper'>*/'../evaluate_n/helper'/*</replace>*/
 export function createFunc(
   node: estree.FunctionDeclaration | estree.FunctionExpression | estree.ArrowFunctionExpression,
   scope: Scope,
@@ -117,23 +117,18 @@ export function createFunc(
 ): any {
   if (
     /*<replace src:=node.generator||node.async>*/!node.generator && !node.async/*</replace>*/
-  ) return createFuncAnother(node, scope, options)
+  ) return createAnotherFunc(node, scope, options)
 
   const { superClass } = options
-
   const params = node.params
-
   const /*<replace src:=func>*/tmpFunc/*</replace>*/ = function* (...args: any[]) {
-    let subScope: Scope
+    const subScope: Scope = new Scope(scope, true)
     if (node.type !== 'ArrowFunctionExpression') {
-      subScope = new Scope(scope, true)
       subScope.const('this', this)
       subScope.let('arguments', arguments)
       if (superClass) {
         subScope.const(SUPER, superClass)
       }
-    } else {
-      subScope = new Scope(scope, true)
     }
 
     for (let i = 0; i < params.length; i++) {

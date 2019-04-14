@@ -1,4 +1,4 @@
-import Sval from '../src'
+const Sval = require('../dist/index')
 
 describe('testing src/index.ts', () => {
   it('should parse object pattern normally', () => {  

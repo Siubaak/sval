@@ -3981,16 +3981,13 @@
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
+                        subScope = new Scope(scope, true);
                         if (node.type !== 'ArrowFunctionExpression') {
-                            subScope = new Scope(scope, true);
                             subScope.const('this', this);
                             subScope.let('arguments', arguments);
                             if (superClass) {
                                 subScope.const(SUPER, superClass);
                             }
-                        }
-                        else {
-                            subScope = new Scope(scope);
                         }
                         i = 0;
                         _a.label = 1;
@@ -4274,17 +4271,13 @@
             for (var _i = 0; _i < arguments.length; _i++) {
                 args[_i] = arguments[_i];
             }
-            var subScope;
+            var subScope = new Scope(scope, true);
             if (node.type !== 'ArrowFunctionExpression') {
-                subScope = new Scope(scope, true);
                 subScope.const('this', this);
                 subScope.let('arguments', arguments);
                 if (superClass) {
                     subScope.const(SUPER, superClass);
                 }
-            }
-            else {
-                subScope = new Scope(scope);
             }
             for (var i = 0; i < params.length; i++) {
                 var param = params[i];

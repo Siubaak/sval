@@ -7,9 +7,10 @@
   "unpkg": "dist/sval.min.js",
   "types": "types/index.d.ts",
   "scripts": {
-    "build": "node scripts && npm test && npm run bundle",
-    "start": "node scripts && npm run bundle",
-    "bundle": "rm -rf dist types && rollup -c && mv types/src/index.d.ts types && rm -rf types/src",
+    "build": "npm start && npm test",
+    "start": "npm run pre && rollup -c && npm run post",
+    "pre": "node scripts && rm -rf dist types",
+    "post": "mv types/src/index.d.ts types && rm -rf types/src",
     "test": "jest --colors --coverage",
     "cov": "cat ./coverage/lcov.info | coveralls"
   },
@@ -36,29 +37,18 @@
   "devDependencies": {
     "@types/acorn": "^4.0.5",
     "@types/estree": "0.0.39",
-    "@types/jest": "^24.0.11",
-    "@types/node": "^11.13.4",
     "jest": "^24.7.1",
     "rollup": "^1.10.0",
     "rollup-plugin-json": "^3.1.0",
     "rollup-plugin-node-resolve": "^4.2.3",
     "rollup-plugin-typescript2": "^0.19.3",
     "rollup-plugin-uglify": "^6.0.2",
-    "ts-jest": "^24.0.2",
     "typescript": "^3.4.3"
   },
   "jest": {
-    "transform": {
-      "^.+\\.tsx?$": "ts-jest"
-    },
-    "testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
+    "testRegex": "\\.test\\.js$",
     "moduleFileExtensions": [
-      "ts",
-      "tsx",
-      "js",
-      "jsx",
-      "json",
-      "node"
+      "js"
     ]
   }
 }
