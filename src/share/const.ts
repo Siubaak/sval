@@ -10,4 +10,6 @@ export const SUPER = createSymbol('super')
 
 export const ASYNC = createSymbol('async')
 
+export const ARROW = createSymbol('arrow')
+
 export const NOINIT = createSymbol('noinit')

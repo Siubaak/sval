@@ -1,13 +1,12 @@
+import { define, freeze, getGetter, getSetter, createSymbol } from '../share/util'
+import { pattern, createFunc, createClass } from './helper'
+import { Variable, Prop } from '../scope/variable'
+import { SUPER, ASYNC, ARROW } from '../share/const'
+import { Identifier } from './identifier'
+import { Literal } from './literal'
 import * as estree from 'estree'
 import Scope from '../scope'
 import evaluate from '.'
-import { createFunc, pattern, createClass } from '../share/helper'
-import { define, freeze, getGetter, getSetter, createSymbol } from '../share/util'
-import { SUPER, ASYNC } from '../share/const'
-
-import { Identifier } from './identifier'
-import { Literal } from './literal'
-import { Variable, Prop } from '../scope/variable'
 
 export function* ThisExpression(node: estree.ThisExpression, scope: Scope) {
   return scope.find('this').get()
@@ -57,7 +56,7 @@ export function* ObjectExpression(node: estree.ObjectExpression, scope: Scope) {
 }
 
 export function* FunctionExpression(node: estree.FunctionExpression, scope: Scope) {
-  return yield* createFunc(node, scope)
+  return createFunc(node, scope)
 }
 
 export function* UnaryExpression(node: estree.UnaryExpression, scope: Scope) {
@@ -374,6 +373,22 @@ export function* CallExpression(
 export function* NewExpression(node: estree.NewExpression, scope: Scope) {
   const constructor = yield* evaluate(node.callee, scope)
 
+  if (typeof constructor !== 'function') {
+    let name: string
+    if (node.callee.type === 'Identifier') {
+      name = yield* Identifier(node.callee, scope, { getName: true })
+    } else {
+      try {
+        name = JSON.stringify(constructor)
+      } catch (err) {
+        name = '' + constructor
+      }
+    }
+    throw new TypeError(`${name} is not a constructor`)
+  } else if (constructor[ARROW]) {
+    throw new TypeError(`${constructor.name || '(intermediate value)'} is not a constructor`)
+  }
+
   let args: any[] = []
   for (const arg of node.arguments) {
     if (arg.type === 'SpreadElement') {
@@ -395,9 +410,10 @@ export function* SequenceExpression(node: estree.SequenceExpression, scope: Scop
 }
 
 export function* ArrowFunctionExpression(node: estree.ArrowFunctionExpression, scope: Scope) {
-  return yield* createFunc(node, scope)
+  return createFunc(node, scope)
 }
 
+/*<remove>*/
 export function* YieldExpression(node: estree.YieldExpression, scope: Scope) {
   if (node.delegate) {
     yield* yield* evaluate(node.argument, scope)
@@ -413,6 +429,7 @@ export function* AwaitExpression(node: estree.AwaitExpression, scope: Scope) {
     return yield yield* evaluate(node.argument, scope)
   }
 }
+/*</remove>*/
 
 export function* TemplateLiteral(node: estree.TemplateLiteral, scope: Scope) {
   const quasis = node.quasis

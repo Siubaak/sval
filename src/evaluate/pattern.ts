@@ -1,9 +1,9 @@
+import { VarKind, Var } from '../scope/variable'
+import { Identifier } from './identifier'
+import { pattern } from './helper'
 import * as estree from 'estree'
 import Scope from '../scope'
 import evaluate from '.'
-import { VarKind, Var } from '../scope/variable'
-import { Identifier } from './identifier'
-import { pattern } from '../share/helper'
 
 export interface PatternOptions {
   kind?: VarKind

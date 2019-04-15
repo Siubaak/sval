@@ -15,9 +15,10 @@ export default class Scope {
   /**
    * To distinguish function scope and block scope
    * The value is true for function scope or false for block scope
+   * @private
    * @readonly
    */
-  readonly isolated: boolean
+  private readonly isolated: boolean
 
   /**
    * Context simulation object

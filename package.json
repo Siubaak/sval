@@ -1,16 +1,15 @@
 {
   "name": "sval",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "A javascript interpreter written in javascript",
   "main": "dist/index.js",
   "module": "dist/index.js",
   "unpkg": "dist/sval.min.js",
   "types": "types/index.d.ts",
   "scripts": {
-    "build": "npm test && npm start",
-    "start": "npm run before && rollup -c && npm run after",
-    "before": "rm -rf dist types",
-    "after": "mv types/src/index.d.ts types && rm -rf types/src",
+    "build": "npm start && npm test",
+    "start": "node scripts && rollup -c && npm run post",
+    "post": "mv types/src/index.d.ts types && rm -rf types/src",
     "test": "jest --colors --coverage",
     "cov": "cat ./coverage/lcov.info | coveralls"
   },
@@ -37,29 +36,18 @@
   "devDependencies": {
     "@types/acorn": "^4.0.5",
     "@types/estree": "0.0.39",
-    "@types/jest": "^24.0.11",
-    "@types/node": "^11.11.0",
-    "jest": "^24.3.1",
-    "rollup": "^1.6.0",
+    "jest": "^24.7.1",
+    "rollup": "^1.10.0",
     "rollup-plugin-json": "^3.1.0",
-    "rollup-plugin-node-resolve": "^4.0.1",
+    "rollup-plugin-node-resolve": "^4.2.3",
     "rollup-plugin-typescript2": "^0.19.3",
     "rollup-plugin-uglify": "^6.0.2",
-    "ts-jest": "^24.0.0",
-    "typescript": "^3.3.3333"
+    "typescript": "^3.4.3"
   },
   "jest": {
-    "transform": {
-      "^.+\\.tsx?$": "ts-jest"
-    },
-    "testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
+    "testRegex": "\\.test\\.js$",
     "moduleFileExtensions": [
-      "ts",
-      "tsx",
-      "js",
-      "jsx",
-      "json",
-      "node"
+      "js"
     ]
   }
 }

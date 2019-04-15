@@ -1,6 +1,6 @@
-import Scope from '../scope'
-import { Node } from 'estree'
 import { assign } from '../share/util'
+import { Node } from 'estree'
+import Scope from '../scope'
 
 import * as declaration from './declaration'
 import * as expression from './expression'

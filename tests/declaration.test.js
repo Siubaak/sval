@@ -1,4 +1,4 @@
-import Sval from '../src'
+const Sval = require('../dist/index')
 
 describe('testing src/index.ts', () => {
   it('should declare var normally', () => {  

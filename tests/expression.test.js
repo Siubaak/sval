@@ -1,13 +1,12 @@
-import Sval from '../src'
+const Sval = require('../dist/index')
 
 describe('testing src/index.ts', () => {
   it('should call expression run normally', () => {  
     const interpreter = new Sval()
 
     class A {
-      private a: number = 0
       constructor() {
-        this.a++
+        this.a = 1
       }
       then() {
         this.a++

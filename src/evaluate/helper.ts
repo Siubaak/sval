@@ -1,19 +1,18 @@
+import { FunctionDeclaration, VariableDeclaration, ClassBody } from './declaration'
+import { define, inherits, runAsync } from '../share/util'
+import { RETURN, SUPER, ASYNC, ARROW } from '../share/const'
+import { BlockStatement } from './statement'
+import { Identifier } from './identifier'
 import * as estree from 'estree'
 import Scope from '../scope'
-import evaluate from '../evaluate'
-import { define, inherits, runGenerator, runAsync } from './util'
-import { RETURN, SUPER, ASYNC } from './const'
-
-import { BlockStatement } from '../evaluate/statement'
-import { FunctionDeclaration, VariableDeclaration, ClassBody } from '../evaluate/declaration'
-import { Identifier } from '../evaluate/identifier'
+import evaluate from '.'
 import {
   PatternOptions,
   ObjectPattern,
   ArrayPattern,
   RestElement,
-  AssignmentPattern,
-} from '../evaluate/pattern'
+  AssignmentPattern
+} from './pattern'
 
 export function* hoist(block: estree.Program | estree.BlockStatement, scope: Scope) {
   for (let i = 0; i < block.body.length; i++) {
@@ -110,33 +109,33 @@ export interface CtorOptions {
   superClass?: (...args: any[]) => any
 }
 
-export function* createFunc(
+import { createFunc as createAnotherFunc } from /*<replace by:='../evaluate/helper'>*/'../evaluate_n/helper'/*</replace>*/
+export function createFunc(
   node: estree.FunctionDeclaration | estree.FunctionExpression | estree.ArrowFunctionExpression,
   scope: Scope,
   options: CtorOptions = {}
-): IterableIterator<any> {
+): any {
+  if (/*<replace by:=node.generator\s||\snode.async>*/!node.generator && !node.async/*</replace>*/) {
+    return createAnotherFunc(node, scope, options)
+  }
+
   const { superClass } = options
-
   const params = node.params
-
-  const tmpGenerator = function* (...args: any[]) {
-    let subScope: Scope
+  const tmpFunc = function* (...args: any[]) {
+    const subScope: Scope = new Scope(scope, true)
     if (node.type !== 'ArrowFunctionExpression') {
-      subScope = new Scope(scope, true)
       subScope.const('this', this)
       subScope.let('arguments', arguments)
       if (superClass) {
         subScope.const(SUPER, superClass)
       }
-    } else {
-      subScope = new Scope(scope)
     }
 
     for (let i = 0; i < params.length; i++) {
       const param = params[i]
       if (param.type === 'Identifier') {
-        const name = yield* Identifier(param, subScope, { getName: true })
-        subScope.let(name, args[i])
+        const argName = yield* Identifier(param, subScope, { getName: true })
+        subScope.let(argName, args[i])
       } else if (param.type === 'RestElement') {
         yield* RestElement(param, subScope, { kind: 'let', feed: args.slice(i) })
       } else {
@@ -160,26 +159,29 @@ export function* createFunc(
     }
   }
 
-  let func: any
+  let func: any /*<add>*//*= tmpFunc*//*</add>*/
+  /*<remove>*/
   if (node.async) {
     func = function (...args: any[]) {
-      return runAsync(tmpGenerator.bind(this), ...args)
+      return runAsync(tmpFunc, ...args)
     }
     define(func, ASYNC, { value: true })
-  } else if (node.generator) {
-    func = tmpGenerator
-  } else {
-    func = function (...args: any[]) {
-      return runGenerator(tmpGenerator.bind(this), ...args)
+  /*</remove>*/
+    if (node.type === 'ArrowFunctionExpression') {
+      define(func, ARROW, { value: true })
     }
+  /*<remove>*/
+  } else {
+    func = tmpFunc
   }
+  /*</remove>*/
 
-  if (node.type === 'FunctionDeclaration') {
-    define(func, 'name', {
-      value: node.id.name,
-      configurable: true
-    })
-  }
+  define(func, 'name', {
+    value: (node as estree.FunctionDeclaration).id
+      && (node as estree.FunctionDeclaration).id.name
+      || '',
+    configurable: true
+  })
   define(func, 'length', {
     value: params.length,
     configurable: true

@@ -1,11 +1,11 @@
+import { BREAK, CONTINUE, RETURN } from '../share/const'
+import { VariableDeclaration } from './declaration'
+import { hoistFunc, pattern } from './helper'
+import { Identifier } from './identifier'
+import { Var } from '../scope/variable'
 import * as estree from 'estree'
 import Scope from '../scope'
-import evaluate from './index'
-import { Var } from '../scope/variable'
-import { hoistFunc, pattern } from '../share/helper'
-import { BREAK, CONTINUE, RETURN } from '../share/const'
-import { Identifier } from './identifier'
-import { VariableDeclaration } from './declaration'
+import evaluate from '.'
 
 export function* ExpressionStatement(node: estree.ExpressionStatement, scope: Scope) {
   yield* evaluate(node.expression, scope)

@@ -1,4 +1,4 @@
-import Sval from '../src'
+const Sval = require('../dist/index')
 
 describe('testing src/index.ts', () => {
   it('should excute function normally', () => {  
@@ -71,7 +71,7 @@ describe('testing src/index.ts', () => {
         done()
       }
     `)
-    function getItem(n: number) {
+    function getItem(n) {
       return new Promise(resolve => setTimeout(resolve, 5, n))
     }
   })

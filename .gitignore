@@ -1,3 +1,6 @@
+# Useless directories
+/src/evaluate_n
+
 # Logs
 logs
 *.log

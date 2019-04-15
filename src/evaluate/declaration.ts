@@ -1,15 +1,17 @@
+import { pattern, createFunc, createClass } from './helper'
+import { define, getDptor, assign } from '../share/util'
+import { VarKind } from '../scope/variable'
+import { Identifier } from './identifier'
+import { NOINIT } from '../share/const'
 import * as estree from 'estree'
 import Scope from '../scope'
 import evaluate from '.'
-import { createFunc, pattern, createClass } from '../share/helper'
-import { VarKind } from '../scope/variable'
-import { define, getDptor, assign } from '../share/util'
 
-import { Identifier } from './identifier'
-import { NOINIT } from '../share/const'
-
-export function* FunctionDeclaration(node: estree.FunctionDeclaration, scope: Scope) {
-  scope.func(node.id.name, yield* createFunc(node, scope))
+export function* FunctionDeclaration(
+  node: estree.FunctionDeclaration,
+  scope: Scope
+): IterableIterator<any> {
+  scope.func(node.id.name, createFunc(node, scope))
 }
 
 export interface VariableDeclarationOptions {
@@ -60,6 +62,19 @@ export function* VariableDeclarator(
       } else {
         scope[kind](name, value)
       }
+      if (
+        node.init &&
+        [
+          'FunctionExpression',
+          'ArrowFunctionExpression'
+        ].indexOf(node.init.type) !== -1
+        && !value.name
+      ) {
+        define(value, 'name', {
+          value: name,
+          configurable: true
+        })
+      }
     } else {
       yield* pattern(node.id, scope, { kind, feed: value })
     }
@@ -68,7 +83,10 @@ export function* VariableDeclarator(
   }
 }
 
-export function* ClassDeclaration(node: estree.ClassDeclaration, scope: Scope): IterableIterator<any> {
+export function* ClassDeclaration(
+  node: estree.ClassDeclaration,
+  scope: Scope
+): IterableIterator<any> {
   scope.func(node.id.name, yield* createClass(node, scope))
 }
 
@@ -97,7 +115,7 @@ export function* MethodDefinition(node: estree.MethodDefinition, scope: Scope, o
   }
 
   const obj = node.static ? klass : klass.prototype
-  const value = yield* createFunc(node.value, scope)
+  const value = createFunc(node.value, scope)
 
   switch (node.kind) {
     case 'constructor':

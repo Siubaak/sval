@@ -1,9 +1,10 @@
+import { getOwnNames, createSandBox, globalObj } from './share/util'
+import { version } from '../package.json'
 import { parse, Options } from 'acorn'
 import Scope from './scope'
-import { hoist } from './share/helper'
-import { getOwnNames, createSandBox, runGenerator, globalObj } from './share/util'
-import { version } from '../package.json'
-import evaluate from './evaluate'
+
+import { hoist } from './evaluate_n/helper'
+import evaluate from './evaluate_n'
 
 export interface SvalOptions {
   ecmaVer?: 3 | 5 | 6 | 7 | 8 | 2015 | 2016 | 2017
@@ -54,9 +55,9 @@ class Sval {
   }
 
   run(code: string) {
-    const ast = parse(code, this.options)
-    runGenerator(hoist, ast, this.scope)
-    runGenerator(evaluate, ast, this.scope)
+    const ast = parse(code, this.options) as any
+    hoist(ast, this.scope)
+    evaluate(ast, this.scope)
   }
 }
 
