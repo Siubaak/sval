@@ -28,14 +28,16 @@ export function* ObjectExpression(node: estree.ObjectExpression, scope: Scope) {
   const object: { [key: string]: any } = {}
   
   for (const property of node.properties) {
-    const propKey = property.key
     let key: string
-    if (propKey.type === 'Identifier') {
-      key = yield* Identifier(propKey, scope, { getName: true })
-    } else if (propKey.type === 'Literal') {
-      key = '' + (yield* Literal(propKey, scope))
+    const propKey = property.key
+    if (property.computed) {
+      key = yield* evaluate(propKey, scope)
     } else {
-      throw new SyntaxError('Unexpected token')
+      if (propKey.type === 'Identifier') {
+        key = yield* Identifier(propKey, scope, { getName: true })
+      } else {
+        key = '' + (yield* Literal(propKey as estree.Literal, scope))
+      }
     }
 
     const value = yield* evaluate(property.value, scope)
@@ -45,10 +47,8 @@ export function* ObjectExpression(node: estree.ObjectExpression, scope: Scope) {
       object[key] = value
     } else if (propKind === 'get') {
       define(object, key, { get: value })
-    } else if (propKind === 'set') {
+    } else { // propKind === 'set'
       define(object, key, { set: value })
-    } else {
-      throw new SyntaxError('Unexpected token')
     }
   }
 

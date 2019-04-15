@@ -827,16 +827,18 @@
         try {
             for (var _b = __values(node.properties), _c = _b.next(); !_c.done; _c = _b.next()) {
                 var property = _c.value;
-                var propKey = property.key;
                 var key = void 0;
-                if (propKey.type === 'Identifier') {
-                    key = Identifier(propKey, scope, { getName: true });
-                }
-                else if (propKey.type === 'Literal') {
-                    key = '' + (Literal(propKey, scope));
+                var propKey = property.key;
+                if (property.computed) {
+                    key = evaluate(propKey, scope);
                 }
                 else {
-                    throw new SyntaxError('Unexpected token');
+                    if (propKey.type === 'Identifier') {
+                        key = Identifier(propKey, scope, { getName: true });
+                    }
+                    else {
+                        key = '' + (Literal(propKey, scope));
+                    }
                 }
                 var value = evaluate(property.value, scope);
                 var propKind = property.kind;
@@ -846,11 +848,8 @@
                 else if (propKind === 'get') {
                     define(object, key, { get: value });
                 }
-                else if (propKind === 'set') {
-                    define(object, key, { set: value });
-                }
                 else {
-                    throw new SyntaxError('Unexpected token');
+                    define(object, key, { set: value });
                 }
             }
         }
@@ -1991,36 +1990,40 @@
         });
     }
     function ObjectExpression$1(node, scope) {
-        var e_2, _a, object, _b, _c, property, propKey, key, _d, value, propKind, e_2_1;
+        var e_2, _a, object, _b, _c, property, key, propKey, _d, value, propKind, e_2_1;
         return __generator(this, function (_e) {
             switch (_e.label) {
                 case 0:
                     object = {};
                     _e.label = 1;
                 case 1:
-                    _e.trys.push([1, 11, 12, 13]);
+                    _e.trys.push([1, 12, 13, 14]);
                     _b = __values(node.properties), _c = _b.next();
                     _e.label = 2;
                 case 2:
-                    if (!!_c.done) return [3, 10];
+                    if (!!_c.done) return [3, 11];
                     property = _c.value;
-                    propKey = property.key;
                     key = void 0;
-                    if (!(propKey.type === 'Identifier')) return [3, 4];
-                    return [5, __values(Identifier$1(propKey, scope, { getName: true }))];
+                    propKey = property.key;
+                    if (!property.computed) return [3, 4];
+                    return [5, __values(evaluate$1(propKey, scope))];
                 case 3:
                     key = _e.sent();
-                    return [3, 7];
+                    return [3, 8];
                 case 4:
-                    if (!(propKey.type === 'Literal')) return [3, 6];
+                    if (!(propKey.type === 'Identifier')) return [3, 6];
+                    return [5, __values(Identifier$1(propKey, scope, { getName: true }))];
+                case 5:
+                    key = _e.sent();
+                    return [3, 8];
+                case 6:
                     _d = '';
                     return [5, __values(Literal$1(propKey, scope))];
-                case 5:
+                case 7:
                     key = _d + (_e.sent());
-                    return [3, 7];
-                case 6: throw new SyntaxError('Unexpected token');
-                case 7: return [5, __values(evaluate$1(property.value, scope))];
-                case 8:
+                    _e.label = 8;
+                case 8: return [5, __values(evaluate$1(property.value, scope))];
+                case 9:
                     value = _e.sent();
                     propKind = property.kind;
                     if (propKind === 'init') {
@@ -2029,28 +2032,25 @@
                     else if (propKind === 'get') {
                         define(object, key, { get: value });
                     }
-                    else if (propKind === 'set') {
+                    else {
                         define(object, key, { set: value });
                     }
-                    else {
-                        throw new SyntaxError('Unexpected token');
-                    }
-                    _e.label = 9;
-                case 9:
+                    _e.label = 10;
+                case 10:
                     _c = _b.next();
                     return [3, 2];
-                case 10: return [3, 13];
-                case 11:
+                case 11: return [3, 14];
+                case 12:
                     e_2_1 = _e.sent();
                     e_2 = { error: e_2_1 };
-                    return [3, 13];
-                case 12:
+                    return [3, 14];
+                case 13:
                     try {
                         if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
                     }
                     finally { if (e_2) throw e_2.error; }
                     return [7];
-                case 13: return [2, object];
+                case 14: return [2, object];
             }
         });
     }
