@@ -2,7 +2,6 @@ import { FunctionDeclaration, VariableDeclaration, ClassBody } from './declarati
 import { define, inherits, runAsync } from '../share/util'
 import { RETURN, SUPER, ASYNC, ARROW } from '../share/const'
 import { BlockStatement } from './statement'
-import { Identifier } from './identifier'
 import * as estree from 'estree'
 import Scope from '../scope'
 import evaluate from '.'
@@ -134,8 +133,7 @@ export function createFunc(
     for (let i = 0; i < params.length; i++) {
       const param = params[i]
       if (param.type === 'Identifier') {
-        const argName = yield* Identifier(param, subScope, { getName: true })
-        subScope.let(argName, args[i])
+        subScope.let(param.name, args[i])
       } else if (param.type === 'RestElement') {
         yield* RestElement(param, subScope, { kind: 'let', feed: args.slice(i) })
       } else {

@@ -4,12 +4,17 @@ describe('testing src/index.ts', () => {
   it('should parse object pattern normally', () => {  
     const interpreter = new Sval()
     interpreter.run(`
-      const { a, b } = { a: 1, b: 2 }
+      const tmp = 'd'
+      const { a, b, c = 3, [tmp]: d } = { a: 1, b: 2, d: 4 }
       exports.a = a
       exports.b = b
+      exports.c = c
+      exports.d = d
     `)
     expect(interpreter.exports.a).toBe(1)
     expect(interpreter.exports.b).toBe(2)
+    expect(interpreter.exports.c).toBe(3)
+    expect(interpreter.exports.d).toBe(4)
   })
   it('should parse assign pattern normally', () => {  
     const interpreter = new Sval()
@@ -57,11 +62,13 @@ describe('testing src/index.ts', () => {
       function a(...b) {
         exports.b = b
       }
-      function c(d, ...e) {
+      function c(d = 4, ...e) {
+        exports.d = d
         exports.e = e
       }
     `)
     expect(interpreter.exports.b).toEqual([1, 2])
     expect(interpreter.exports.e).toEqual([2, 3])
+    expect(interpreter.exports.d).toBe(4)
   })
 })

@@ -26,7 +26,6 @@ export function* ArrayExpression(node: estree.ArrayExpression, scope: Scope) {
 
 export function* ObjectExpression(node: estree.ObjectExpression, scope: Scope) {
   const object: { [key: string]: any } = {}
-  
   for (const property of node.properties) {
     let key: string
     const propKey = property.key
@@ -34,7 +33,7 @@ export function* ObjectExpression(node: estree.ObjectExpression, scope: Scope) {
       key = yield* evaluate(propKey, scope)
     } else {
       if (propKey.type === 'Identifier') {
-        key = yield* Identifier(propKey, scope, { getName: true })
+        key = propKey.name
       } else {
         key = '' + (yield* Literal(propKey as estree.Literal, scope))
       }
@@ -51,7 +50,6 @@ export function* ObjectExpression(node: estree.ObjectExpression, scope: Scope) {
       define(object, key, { set: value })
     }
   }
-
   return object
 }
 
@@ -83,10 +81,8 @@ export function* UnaryExpression(node: estree.UnaryExpression, scope: Scope) {
         const variable: Prop = yield* MemberExpression(arg, scope, { getVar: true })
         return variable.del()
       } else if (arg.type === 'Identifier') {
-        const globalScope = scope.global()
-        const name = yield* Identifier(arg, globalScope, { getName: true })
-        const win = globalScope.find('window').get()
-        return delete win[name]
+        const win = scope.global().find('window').get()
+        return delete win[arg.name]
       } else {
         throw new SyntaxError('Unexpected token')
       }
@@ -278,10 +274,8 @@ export function* MemberExpression(
   let key: string
   if (node.computed) {
     key = yield* evaluate(node.property, scope)
-  } else if (node.property.type === 'Identifier') {
-    key = yield* Identifier(node.property, scope, { getName: true })
   } else {
-    throw new SyntaxError('Unexpected token')
+    key = (node.property as estree.Identifier).name
   }
 
   if (getVar) {
@@ -335,10 +329,8 @@ export function* CallExpression(
     let key: string
     if (node.callee.computed) {
       key = yield* evaluate(node.callee.property, scope)
-    } else if (node.callee.property.type === 'Identifier') {
-      key = yield* Identifier(node.callee.property, scope, { getName: true })
     } else {
-      throw new SyntaxError('Unexpected token')
+      key = (node.callee.property as estree.Identifier).name
     }
 
     // right value
@@ -376,7 +368,7 @@ export function* NewExpression(node: estree.NewExpression, scope: Scope) {
   if (typeof constructor !== 'function') {
     let name: string
     if (node.callee.type === 'Identifier') {
-      name = yield* Identifier(node.callee, scope, { getName: true })
+      name = node.callee.name
     } else {
       try {
         name = JSON.stringify(constructor)

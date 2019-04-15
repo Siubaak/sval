@@ -1,7 +1,6 @@
 import { pattern, createFunc, createClass } from './helper'
 import { define, getDptor, assign } from '../share/util'
 import { VarKind } from '../scope/variable'
-import { Identifier } from './identifier'
 import { NOINIT } from '../share/const'
 import * as estree from 'estree'
 import Scope from '../scope'
@@ -43,8 +42,7 @@ export function* VariableDeclarator(
     // hoist the var variable
     if (kind === 'var') {
       if (node.id.type === 'Identifier') {
-        const name = yield* Identifier(node.id, scope, { getName: true })
-        scope.var(name, undefined)
+        scope.var(node.id.name)
       } else {
         yield* pattern(node.id, scope, { kind, hoist })
       }
@@ -56,7 +54,7 @@ export function* VariableDeclarator(
   ) {
     const value = 'feed' in options ? feed : yield* evaluate(node.init, scope)
     if (node.id.type === 'Identifier') {
-      const name = yield* Identifier(node.id, scope, { getName: true })
+      const name = node.id.name
       if (kind === 'var' && !node.init) {
         scope.var(name, NOINIT)
       } else {
@@ -109,7 +107,7 @@ export function* MethodDefinition(node: estree.MethodDefinition, scope: Scope, o
   if (node.computed) {
     key = yield* evaluate(node.key, scope)
   } else if (node.key.type === 'Identifier') {
-    key = yield* Identifier(node.key, scope, { getName: true })
+    key = node.key.name
   } else {
     throw new SyntaxError('Unexpected token')
   }

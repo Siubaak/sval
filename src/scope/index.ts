@@ -94,7 +94,7 @@ export default class Scope {
    * @param name variable identifier name
    * @param value variable value
    */
-  var(name: string, value: any) {
+  var(name: string, value?: any) {
     let scope: Scope = this
 
     // Find the closest function scope

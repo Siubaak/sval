@@ -152,8 +152,9 @@ export function createSandBox() {
   return assign({}, win)
 }
 
+const seed = Math.random().toString(36).substring(2)
 export function createSymbol(key: string) {
-  return key + Math.random().toString(36).substring(2)
+  return key + seed
 }
 
 export function runAsync(

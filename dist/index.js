@@ -565,8 +565,9 @@
     function createSandBox() {
         return assign({}, win);
     }
+    var seed = Math.random().toString(36).substring(2);
     function createSymbol(key) {
-        return key + Math.random().toString(36).substring(2);
+        return key + seed;
     }
     function runAsync(generator) {
         var args = [];
@@ -608,7 +609,7 @@
         });
     }
 
-    var version = "0.3.1";
+    var version = "0.3.2";
 
     var Var = (function () {
         function Var(kind, value) {
@@ -764,10 +765,7 @@
 
     function Identifier(node, scope, options) {
         if (options === void 0) { options = {}; }
-        var _a = options.getName, getName = _a === void 0 ? false : _a, _b = options.getVar, getVar = _b === void 0 ? false : _b, _c = options.throwErr, throwErr = _c === void 0 ? true : _c;
-        if (getName) {
-            return node.name;
-        }
+        var _a = options.getVar, getVar = _a === void 0 ? false : _a, _b = options.throwErr, throwErr = _b === void 0 ? true : _b;
         if (node.name === 'undefined') {
             return undefined;
         }
@@ -834,7 +832,7 @@
                 }
                 else {
                     if (propKey.type === 'Identifier') {
-                        key = Identifier(propKey, scope, { getName: true });
+                        key = propKey.name;
                     }
                     else {
                         key = '' + (Literal(propKey, scope));
@@ -891,10 +889,8 @@
                     return variable.del();
                 }
                 else if (arg.type === 'Identifier') {
-                    var globalScope = scope.global();
-                    var name_1 = Identifier(arg, globalScope, { getName: true });
-                    var win = globalScope.find('window').get();
-                    return delete win[name_1];
+                    var win = scope.global().find('window').get();
+                    return delete win[arg.name];
                 }
                 else {
                     throw new SyntaxError('Unexpected token');
@@ -1074,11 +1070,8 @@
         if (node.computed) {
             key = evaluate(node.property, scope);
         }
-        else if (node.property.type === 'Identifier') {
-            key = Identifier(node.property, scope, { getName: true });
-        }
         else {
-            throw new SyntaxError('Unexpected token');
+            key = node.property.name;
         }
         if (getVar) {
             var setter = getSetter(object, key);
@@ -1120,11 +1113,8 @@
             if (node.callee.computed) {
                 key = evaluate(node.callee.property, scope);
             }
-            else if (node.callee.property.type === 'Identifier') {
-                key = Identifier(node.callee.property, scope, { getName: true });
-            }
             else {
-                throw new SyntaxError('Unexpected token');
+                key = node.callee.property.name;
             }
             var getter = getGetter(object, key);
             if (node.callee.object.type === 'Super' && getter) {
@@ -1169,19 +1159,19 @@
         var e_4, _a;
         var constructor = evaluate(node.callee, scope);
         if (typeof constructor !== 'function') {
-            var name_2;
+            var name_1;
             if (node.callee.type === 'Identifier') {
-                name_2 = Identifier(node.callee, scope, { getName: true });
+                name_1 = node.callee.name;
             }
             else {
                 try {
-                    name_2 = JSON.stringify(constructor);
+                    name_1 = JSON.stringify(constructor);
                 }
                 catch (err) {
-                    name_2 = '' + constructor;
+                    name_1 = '' + constructor;
                 }
             }
-            throw new TypeError(name_2 + " is not a constructor");
+            throw new TypeError(name_1 + " is not a constructor");
         }
         else if (constructor[ARROW]) {
             throw new TypeError((constructor.name || '(intermediate value)') + " is not a constructor");
@@ -1314,53 +1304,44 @@
     function ObjectPattern(node, scope, options) {
         var e_1, _a;
         if (options === void 0) { options = {}; }
+        var _b = options.kind, kind = _b === void 0 ? 'let' : _b, _c = options.hoist, hoist = _c === void 0 ? false : _c, _d = options.feed, feed = _d === void 0 ? {} : _d;
         try {
-            for (var _b = __values(node.properties), _c = _b.next(); !_c.done; _c = _b.next()) {
-                var property = _c.value;
-                AssignmentProperty(property, scope, options);
+            for (var _e = __values(node.properties), _f = _e.next(); !_f.done; _f = _e.next()) {
+                var property = _f.value;
+                var value = property.value;
+                if (hoist) {
+                    if (kind === 'var') {
+                        if (value.type === 'Identifier') {
+                            scope.var(value.name);
+                        }
+                        else {
+                            pattern$3(value, scope, { kind: kind, hoist: hoist });
+                        }
+                    }
+                }
+                else {
+                    var key = void 0;
+                    if (property.computed) {
+                        key = evaluate(property.key, scope);
+                    }
+                    else {
+                        key = property.key.name;
+                    }
+                    if (value.type === 'Identifier') {
+                        scope[kind](value.name, feed[key]);
+                    }
+                    else {
+                        pattern$3(value, scope, { kind: kind, feed: feed[key] });
+                    }
+                }
             }
         }
         catch (e_1_1) { e_1 = { error: e_1_1 }; }
         finally {
             try {
-                if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
+                if (_f && !_f.done && (_a = _e.return)) _a.call(_e);
             }
             finally { if (e_1) throw e_1.error; }
-        }
-    }
-    function AssignmentProperty(node, scope, options) {
-        if (options === void 0) { options = {}; }
-        var _a = options.kind, kind = _a === void 0 ? 'let' : _a, _b = options.hoist, hoist = _b === void 0 ? false : _b, _c = options.feed, feed = _c === void 0 ? {} : _c;
-        var value = node.value;
-        if (hoist) {
-            if (kind === 'var') {
-                if (value.type === 'Identifier') {
-                    var name_1 = Identifier(value, scope, { getName: true });
-                    scope.var(name_1, undefined);
-                }
-                else {
-                    pattern$3(value, scope, { kind: kind, hoist: hoist });
-                }
-            }
-        }
-        else {
-            var key = void 0;
-            if (node.computed) {
-                key = evaluate(node.key, scope);
-            }
-            else if (node.key.type === 'Identifier') {
-                key = Identifier(node.key, scope, { getName: true });
-            }
-            else {
-                throw new SyntaxError('Unexpected token');
-            }
-            if (value.type === 'Identifier') {
-                var name_2 = Identifier(value, scope, { getName: true });
-                scope[kind](name_2, feed[key]);
-            }
-            else {
-                pattern$3(value, scope, { kind: kind, feed: feed[key] });
-            }
         }
     }
     function ArrayPattern(node, scope, options) {
@@ -1372,8 +1353,7 @@
             if (hoist) {
                 if (kind === 'var') {
                     if (element.type === 'Identifier') {
-                        var name_3 = Identifier(element, scope, { getName: true });
-                        scope.var(name_3, undefined);
+                        scope.var(element.name);
                     }
                     else {
                         pattern$3(element, scope, { kind: kind, hoist: hoist });
@@ -1383,8 +1363,7 @@
             else {
                 if (element.type === 'Identifier') {
                     if (kind) {
-                        var name_4 = Identifier(element, scope, { getName: true });
-                        scope[kind](name_4, feed[i]);
+                        scope[kind](element.name, feed[i]);
                     }
                     else {
                         var variable = Identifier(element, scope, { getVar: true });
@@ -1411,8 +1390,7 @@
         if (hoist) {
             if (kind === 'var') {
                 if (arg.type === 'Identifier') {
-                    var name_5 = Identifier(arg, scope, { getName: true });
-                    scope.var(name_5, undefined);
+                    scope.var(arg.name);
                 }
                 else {
                     pattern$3(arg, scope, { kind: kind, hoist: hoist });
@@ -1422,8 +1400,7 @@
         else {
             if (arg.type === 'Identifier') {
                 if (kind) {
-                    var name_6 = Identifier(arg, scope, { getName: true });
-                    scope[kind](name_6, feed);
+                    scope[kind](arg.name, feed);
                 }
                 else {
                     var variable = Identifier(arg, scope, { getVar: true });
@@ -1438,8 +1415,7 @@
     function AssignmentPattern(node, scope) {
         var feed = evaluate(node.right, scope);
         if (node.left.type === 'Identifier') {
-            var name_7 = Identifier(node.left, scope, { getName: true });
-            scope.let(name_7, feed);
+            scope.let(node.left.name, feed);
         }
         else {
             pattern$3(node.left, scope, { feed: feed });
@@ -1448,7 +1424,6 @@
 
     var pattern = /*#__PURE__*/Object.freeze({
         ObjectPattern: ObjectPattern,
-        AssignmentProperty: AssignmentProperty,
         ArrayPattern: ArrayPattern,
         RestElement: RestElement,
         AssignmentPattern: AssignmentPattern
@@ -1585,7 +1560,7 @@
                 var subScope = new Scope(scope);
                 var param = node.handler.param;
                 if (param.type === 'Identifier') {
-                    var name_1 = Identifier(param, subScope, { getName: true });
+                    var name_1 = param.name;
                     subScope.let(name_1, err);
                 }
                 else {
@@ -1792,8 +1767,7 @@
         if (hoist) {
             if (kind === 'var') {
                 if (node.id.type === 'Identifier') {
-                    var name_1 = Identifier(node.id, scope, { getName: true });
-                    scope.var(name_1, undefined);
+                    scope.var(node.id.name);
                 }
                 else {
                     pattern$3(node.id, scope, { kind: kind, hoist: hoist });
@@ -1805,12 +1779,12 @@
             || kind === 'const') {
             var value = 'feed' in options ? feed : evaluate(node.init, scope);
             if (node.id.type === 'Identifier') {
-                var name_2 = Identifier(node.id, scope, { getName: true });
+                var name_1 = node.id.name;
                 if (kind === 'var' && !node.init) {
-                    scope.var(name_2, NOINIT);
+                    scope.var(name_1, NOINIT);
                 }
                 else {
-                    scope[kind](name_2, value);
+                    scope[kind](name_1, value);
                 }
                 if (node.init &&
                     [
@@ -1819,7 +1793,7 @@
                     ].indexOf(node.init.type) !== -1
                     && !value.name) {
                     define(value, 'name', {
-                        value: name_2,
+                        value: name_1,
                         configurable: true
                     });
                 }
@@ -1861,7 +1835,7 @@
             key = evaluate(node.key, scope);
         }
         else if (node.key.type === 'Identifier') {
-            key = Identifier(node.key, scope, { getName: true });
+            key = node.key.name;
         }
         else {
             throw new SyntaxError('Unexpected token');
@@ -1902,13 +1876,10 @@
     }
 
     function Identifier$1(node, scope, options) {
-        var _a, getName, _b, getVar, _c, throwErr, variable;
+        var _a, getVar, _b, throwErr, variable;
         if (options === void 0) { options = {}; }
-        return __generator(this, function (_d) {
-            _a = options.getName, getName = _a === void 0 ? false : _a, _b = options.getVar, getVar = _b === void 0 ? false : _b, _c = options.throwErr, throwErr = _c === void 0 ? true : _c;
-            if (getName) {
-                return [2, node.name];
-            }
+        return __generator(this, function (_c) {
+            _a = options.getVar, getVar = _a === void 0 ? false : _a, _b = options.throwErr, throwErr = _b === void 0 ? true : _b;
             if (node.name === 'undefined') {
                 return [2, undefined];
             }
@@ -1997,11 +1968,11 @@
                     object = {};
                     _e.label = 1;
                 case 1:
-                    _e.trys.push([1, 12, 13, 14]);
+                    _e.trys.push([1, 11, 12, 13]);
                     _b = __values(node.properties), _c = _b.next();
                     _e.label = 2;
                 case 2:
-                    if (!!_c.done) return [3, 11];
+                    if (!!_c.done) return [3, 10];
                     property = _c.value;
                     key = void 0;
                     propKey = property.key;
@@ -2009,21 +1980,19 @@
                     return [5, __values(evaluate$1(propKey, scope))];
                 case 3:
                     key = _e.sent();
-                    return [3, 8];
+                    return [3, 7];
                 case 4:
-                    if (!(propKey.type === 'Identifier')) return [3, 6];
-                    return [5, __values(Identifier$1(propKey, scope, { getName: true }))];
+                    if (!(propKey.type === 'Identifier')) return [3, 5];
+                    key = propKey.name;
+                    return [3, 7];
                 case 5:
-                    key = _e.sent();
-                    return [3, 8];
-                case 6:
                     _d = '';
                     return [5, __values(Literal$1(propKey, scope))];
-                case 7:
+                case 6:
                     key = _d + (_e.sent());
-                    _e.label = 8;
-                case 8: return [5, __values(evaluate$1(property.value, scope))];
-                case 9:
+                    _e.label = 7;
+                case 7: return [5, __values(evaluate$1(property.value, scope))];
+                case 8:
                     value = _e.sent();
                     propKind = property.kind;
                     if (propKind === 'init') {
@@ -2035,22 +2004,22 @@
                     else {
                         define(object, key, { set: value });
                     }
-                    _e.label = 10;
-                case 10:
+                    _e.label = 9;
+                case 9:
                     _c = _b.next();
                     return [3, 2];
-                case 11: return [3, 14];
-                case 12:
+                case 10: return [3, 13];
+                case 11:
                     e_2_1 = _e.sent();
                     e_2 = { error: e_2_1 };
-                    return [3, 14];
-                case 13:
+                    return [3, 13];
+                case 12:
                     try {
                         if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
                     }
                     finally { if (e_2) throw e_2.error; }
                     return [7];
-                case 14: return [2, object];
+                case 13: return [2, object];
             }
         });
     }
@@ -2060,7 +2029,7 @@
         });
     }
     function UnaryExpression$1(node, scope) {
-        var arg, _a, variable, globalScope, name_1, win;
+        var arg, _a, variable, win;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
@@ -2075,7 +2044,7 @@
                         case 'typeof': return [3, 11];
                         case 'delete': return [3, 15];
                     }
-                    return [3, 20];
+                    return [3, 18];
                 case 1: return [5, __values(evaluate$1(arg, scope))];
                 case 2: return [2, +(_b.sent())];
                 case 3: return [5, __values(evaluate$1(arg, scope))];
@@ -2099,15 +2068,15 @@
                     variable = _b.sent();
                     return [2, variable.del()];
                 case 17:
-                    if (!(arg.type === 'Identifier')) return [3, 19];
-                    globalScope = scope.global();
-                    return [5, __values(Identifier$1(arg, globalScope, { getName: true }))];
-                case 18:
-                    name_1 = _b.sent();
-                    win = globalScope.find('window').get();
-                    return [2, delete win[name_1]];
-                case 19: throw new SyntaxError('Unexpected token');
-                case 20: throw new SyntaxError("Unexpected token " + node.operator);
+                    if (arg.type === 'Identifier') {
+                        win = scope.global().find('window').get();
+                        return [2, delete win[arg.name]];
+                    }
+                    else {
+                        throw new SyntaxError('Unexpected token');
+                    }
+                    _b.label = 18;
+                case 18: throw new SyntaxError("Unexpected token " + node.operator);
             }
         });
     }
@@ -2344,15 +2313,11 @@
                     return [5, __values(evaluate$1(node.property, scope))];
                 case 5:
                     key = _c.sent();
-                    return [3, 9];
+                    return [3, 7];
                 case 6:
-                    if (!(node.property.type === 'Identifier')) return [3, 8];
-                    return [5, __values(Identifier$1(node.property, scope, { getName: true }))];
+                    key = node.property.name;
+                    _c.label = 7;
                 case 7:
-                    key = _c.sent();
-                    return [3, 9];
-                case 8: throw new SyntaxError('Unexpected token');
-                case 9:
                     if (getVar) {
                         setter = getSetter(object, key);
                         if (node.object.type === 'Super' && setter) {
@@ -2405,7 +2370,7 @@
                 case 0:
                     if (options === void 0) { options = {}; }
                     _b = options.async, async = _b === void 0 ? false : _b;
-                    if (!(node.callee.type === 'MemberExpression')) return [3, 7];
+                    if (!(node.callee.type === 'MemberExpression')) return [3, 5];
                     return [5, __values(MemberExpression$1(node.callee, scope, { getObj: true }))];
                 case 1:
                     object = _j.sent();
@@ -2414,15 +2379,11 @@
                     return [5, __values(evaluate$1(node.callee.property, scope))];
                 case 2:
                     key = _j.sent();
-                    return [3, 6];
+                    return [3, 4];
                 case 3:
-                    if (!(node.callee.property.type === 'Identifier')) return [3, 5];
-                    return [5, __values(Identifier$1(node.callee.property, scope, { getName: true }))];
+                    key = node.callee.property.name;
+                    _j.label = 4;
                 case 4:
-                    key = _j.sent();
-                    return [3, 6];
-                case 5: throw new SyntaxError('Unexpected token');
-                case 6:
                     getter = getGetter(object, key);
                     if (node.callee.object.type === 'Super' && getter) {
                         thisObject = scope.find('this').get();
@@ -2431,50 +2392,50 @@
                     else {
                         func = object[key];
                     }
-                    return [3, 9];
-                case 7:
+                    return [3, 7];
+                case 5:
                     object = scope.find('this').get();
                     return [5, __values(evaluate$1(node.callee, scope))];
-                case 8:
+                case 6:
                     func = _j.sent();
+                    _j.label = 7;
+                case 7:
+                    args = [];
+                    _j.label = 8;
+                case 8:
+                    _j.trys.push([8, 15, 16, 17]);
+                    _c = __values(node.arguments), _d = _c.next();
                     _j.label = 9;
                 case 9:
-                    args = [];
-                    _j.label = 10;
-                case 10:
-                    _j.trys.push([10, 17, 18, 19]);
-                    _c = __values(node.arguments), _d = _c.next();
-                    _j.label = 11;
-                case 11:
-                    if (!!_d.done) return [3, 16];
+                    if (!!_d.done) return [3, 14];
                     arg = _d.value;
-                    if (!(arg.type === 'SpreadElement')) return [3, 13];
+                    if (!(arg.type === 'SpreadElement')) return [3, 11];
                     _f = (_e = args).concat;
                     return [5, __values(SpreadElement$1(arg, scope))];
-                case 12:
+                case 10:
                     args = _f.apply(_e, [_j.sent()]);
-                    return [3, 15];
-                case 13:
+                    return [3, 13];
+                case 11:
                     _h = (_g = args).push;
                     return [5, __values(evaluate$1(arg, scope))];
-                case 14:
+                case 12:
                     _h.apply(_g, [_j.sent()]);
-                    _j.label = 15;
-                case 15:
+                    _j.label = 13;
+                case 13:
                     _d = _c.next();
-                    return [3, 11];
-                case 16: return [3, 19];
-                case 17:
+                    return [3, 9];
+                case 14: return [3, 17];
+                case 15:
                     e_3_1 = _j.sent();
                     e_3 = { error: e_3_1 };
-                    return [3, 19];
-                case 18:
+                    return [3, 17];
+                case 16:
                     try {
                         if (_d && !_d.done && (_a = _c.return)) _a.call(_c);
                     }
                     finally { if (e_3) throw e_3.error; }
                     return [7];
-                case 19:
+                case 17:
                     if (func[ASYNC] && !async) {
                         return [2, func.apply(object, args).then()];
                     }
@@ -2486,69 +2447,65 @@
         });
     }
     function NewExpression$1(node, scope) {
-        var e_4, _a, constructor, name_2, args, _b, _c, arg, _d, _e, _f, _g, e_4_1;
+        var e_4, _a, constructor, name_1, args, _b, _c, arg, _d, _e, _f, _g, e_4_1;
         return __generator(this, function (_h) {
             switch (_h.label) {
                 case 0: return [5, __values(evaluate$1(node.callee, scope))];
                 case 1:
                     constructor = _h.sent();
-                    if (!(typeof constructor !== 'function')) return [3, 5];
-                    if (!(node.callee.type === 'Identifier')) return [3, 3];
-                    return [5, __values(Identifier$1(node.callee, scope, { getName: true }))];
-                case 2:
-                    name_2 = _h.sent();
-                    return [3, 4];
-                case 3:
-                    try {
-                        name_2 = JSON.stringify(constructor);
+                    if (typeof constructor !== 'function') {
+                        if (node.callee.type === 'Identifier') {
+                            name_1 = node.callee.name;
+                        }
+                        else {
+                            try {
+                                name_1 = JSON.stringify(constructor);
+                            }
+                            catch (err) {
+                                name_1 = '' + constructor;
+                            }
+                        }
+                        throw new TypeError(name_1 + " is not a constructor");
                     }
-                    catch (err) {
-                        name_2 = '' + constructor;
-                    }
-                    _h.label = 4;
-                case 4: throw new TypeError(name_2 + " is not a constructor");
-                case 5:
-                    if (constructor[ARROW]) {
+                    else if (constructor[ARROW]) {
                         throw new TypeError((constructor.name || '(intermediate value)') + " is not a constructor");
                     }
-                    _h.label = 6;
-                case 6:
                     args = [];
-                    _h.label = 7;
-                case 7:
-                    _h.trys.push([7, 14, 15, 16]);
+                    _h.label = 2;
+                case 2:
+                    _h.trys.push([2, 9, 10, 11]);
                     _b = __values(node.arguments), _c = _b.next();
-                    _h.label = 8;
-                case 8:
-                    if (!!_c.done) return [3, 13];
+                    _h.label = 3;
+                case 3:
+                    if (!!_c.done) return [3, 8];
                     arg = _c.value;
-                    if (!(arg.type === 'SpreadElement')) return [3, 10];
+                    if (!(arg.type === 'SpreadElement')) return [3, 5];
                     _e = (_d = args).concat;
                     return [5, __values(SpreadElement$1(arg, scope))];
-                case 9:
+                case 4:
                     args = _e.apply(_d, [_h.sent()]);
-                    return [3, 12];
-                case 10:
+                    return [3, 7];
+                case 5:
                     _g = (_f = args).push;
                     return [5, __values(evaluate$1(arg, scope))];
-                case 11:
+                case 6:
                     _g.apply(_f, [_h.sent()]);
-                    _h.label = 12;
-                case 12:
+                    _h.label = 7;
+                case 7:
                     _c = _b.next();
-                    return [3, 8];
-                case 13: return [3, 16];
-                case 14:
+                    return [3, 3];
+                case 8: return [3, 11];
+                case 9:
                     e_4_1 = _h.sent();
                     e_4 = { error: e_4_1 };
-                    return [3, 16];
-                case 15:
+                    return [3, 11];
+                case 10:
                     try {
                         if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
                     }
                     finally { if (e_4) throw e_4.error; }
                     return [7];
-                case 16: return [2, new (constructor.bind.apply(constructor, __spread([void 0], args)))()];
+                case 11: return [2, new (constructor.bind.apply(constructor, __spread([void 0], args)))()];
             }
         });
     }
@@ -2755,93 +2712,69 @@
     });
 
     function ObjectPattern$1(node, scope, options) {
-        var e_1, _a, _b, _c, property, e_1_1;
-        return __generator(this, function (_d) {
-            switch (_d.label) {
+        var e_1, _a, _b, kind, _c, hoist, _d, feed, _e, _f, property, value, key, e_1_1;
+        return __generator(this, function (_g) {
+            switch (_g.label) {
                 case 0:
                     if (options === void 0) { options = {}; }
-                    _d.label = 1;
+                    _b = options.kind, kind = _b === void 0 ? 'let' : _b, _c = options.hoist, hoist = _c === void 0 ? false : _c, _d = options.feed, feed = _d === void 0 ? {} : _d;
+                    _g.label = 1;
                 case 1:
-                    _d.trys.push([1, 6, 7, 8]);
-                    _b = __values(node.properties), _c = _b.next();
-                    _d.label = 2;
+                    _g.trys.push([1, 14, 15, 16]);
+                    _e = __values(node.properties), _f = _e.next();
+                    _g.label = 2;
                 case 2:
-                    if (!!_c.done) return [3, 5];
-                    property = _c.value;
-                    return [5, __values(AssignmentProperty$1(property, scope, options))];
-                case 3:
-                    _d.sent();
-                    _d.label = 4;
+                    if (!!_f.done) return [3, 13];
+                    property = _f.value;
+                    value = property.value;
+                    if (!hoist) return [3, 6];
+                    if (!(kind === 'var')) return [3, 5];
+                    if (!(value.type === 'Identifier')) return [3, 3];
+                    scope.var(value.name);
+                    return [3, 5];
+                case 3: return [5, __values(pattern$2(value, scope, { kind: kind, hoist: hoist }))];
                 case 4:
-                    _c = _b.next();
-                    return [3, 2];
-                case 5: return [3, 8];
+                    _g.sent();
+                    _g.label = 5;
+                case 5: return [3, 12];
                 case 6:
-                    e_1_1 = _d.sent();
-                    e_1 = { error: e_1_1 };
-                    return [3, 8];
+                    key = void 0;
+                    if (!property.computed) return [3, 8];
+                    return [5, __values(evaluate$1(property.key, scope))];
                 case 7:
+                    key = _g.sent();
+                    return [3, 9];
+                case 8:
+                    key = property.key.name;
+                    _g.label = 9;
+                case 9:
+                    if (!(value.type === 'Identifier')) return [3, 10];
+                    scope[kind](value.name, feed[key]);
+                    return [3, 12];
+                case 10: return [5, __values(pattern$2(value, scope, { kind: kind, feed: feed[key] }))];
+                case 11:
+                    _g.sent();
+                    _g.label = 12;
+                case 12:
+                    _f = _e.next();
+                    return [3, 2];
+                case 13: return [3, 16];
+                case 14:
+                    e_1_1 = _g.sent();
+                    e_1 = { error: e_1_1 };
+                    return [3, 16];
+                case 15:
                     try {
-                        if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
+                        if (_f && !_f.done && (_a = _e.return)) _a.call(_e);
                     }
                     finally { if (e_1) throw e_1.error; }
                     return [7];
-                case 8: return [2];
-            }
-        });
-    }
-    function AssignmentProperty$1(node, scope, options) {
-        var _a, kind, _b, hoist, _c, feed, value, name_1, key, name_2;
-        if (options === void 0) { options = {}; }
-        return __generator(this, function (_d) {
-            switch (_d.label) {
-                case 0:
-                    _a = options.kind, kind = _a === void 0 ? 'let' : _a, _b = options.hoist, hoist = _b === void 0 ? false : _b, _c = options.feed, feed = _c === void 0 ? {} : _c;
-                    value = node.value;
-                    if (!hoist) return [3, 5];
-                    if (!(kind === 'var')) return [3, 4];
-                    if (!(value.type === 'Identifier')) return [3, 2];
-                    return [5, __values(Identifier$1(value, scope, { getName: true }))];
-                case 1:
-                    name_1 = _d.sent();
-                    scope.var(name_1, undefined);
-                    return [3, 4];
-                case 2: return [5, __values(pattern$2(value, scope, { kind: kind, hoist: hoist }))];
-                case 3:
-                    _d.sent();
-                    _d.label = 4;
-                case 4: return [3, 14];
-                case 5:
-                    key = void 0;
-                    if (!node.computed) return [3, 7];
-                    return [5, __values(evaluate$1(node.key, scope))];
-                case 6:
-                    key = _d.sent();
-                    return [3, 10];
-                case 7:
-                    if (!(node.key.type === 'Identifier')) return [3, 9];
-                    return [5, __values(Identifier$1(node.key, scope, { getName: true }))];
-                case 8:
-                    key = _d.sent();
-                    return [3, 10];
-                case 9: throw new SyntaxError('Unexpected token');
-                case 10:
-                    if (!(value.type === 'Identifier')) return [3, 12];
-                    return [5, __values(Identifier$1(value, scope, { getName: true }))];
-                case 11:
-                    name_2 = _d.sent();
-                    scope[kind](name_2, feed[key]);
-                    return [3, 14];
-                case 12: return [5, __values(pattern$2(value, scope, { kind: kind, feed: feed[key] }))];
-                case 13:
-                    _d.sent();
-                    _d.label = 14;
-                case 14: return [2];
+                case 16: return [2];
             }
         });
     }
     function ArrayPattern$1(node, scope, options) {
-        var kind, _a, hoist, _b, feed, result, i, element, name_3, name_4, variable;
+        var kind, _a, hoist, _b, feed, result, i, element, variable;
         if (options === void 0) { options = {}; }
         return __generator(this, function (_c) {
             switch (_c.label) {
@@ -2851,50 +2784,44 @@
                     i = 0;
                     _c.label = 1;
                 case 1:
-                    if (!(i < node.elements.length)) return [3, 16];
+                    if (!(i < node.elements.length)) return [3, 14];
                     element = node.elements[i];
-                    if (!hoist) return [3, 6];
-                    if (!(kind === 'var')) return [3, 5];
-                    if (!(element.type === 'Identifier')) return [3, 3];
-                    return [5, __values(Identifier$1(element, scope, { getName: true }))];
-                case 2:
-                    name_3 = _c.sent();
-                    scope.var(name_3, undefined);
-                    return [3, 5];
-                case 3: return [5, __values(pattern$2(element, scope, { kind: kind, hoist: hoist }))];
-                case 4:
+                    if (!hoist) return [3, 5];
+                    if (!(kind === 'var')) return [3, 4];
+                    if (!(element.type === 'Identifier')) return [3, 2];
+                    scope.var(element.name);
+                    return [3, 4];
+                case 2: return [5, __values(pattern$2(element, scope, { kind: kind, hoist: hoist }))];
+                case 3:
                     _c.sent();
-                    _c.label = 5;
-                case 5: return [3, 15];
-                case 6:
-                    if (!(element.type === 'Identifier')) return [3, 11];
-                    if (!kind) return [3, 8];
-                    return [5, __values(Identifier$1(element, scope, { getName: true }))];
+                    _c.label = 4;
+                case 4: return [3, 13];
+                case 5:
+                    if (!(element.type === 'Identifier')) return [3, 9];
+                    if (!kind) return [3, 6];
+                    scope[kind](element.name, feed[i]);
+                    return [3, 8];
+                case 6: return [5, __values(Identifier$1(element, scope, { getVar: true }))];
                 case 7:
-                    name_4 = _c.sent();
-                    scope[kind](name_4, feed[i]);
-                    return [3, 10];
-                case 8: return [5, __values(Identifier$1(element, scope, { getVar: true }))];
-                case 9:
                     variable = _c.sent();
                     variable.set(feed[i]);
                     result.push(variable.get());
-                    _c.label = 10;
-                case 10: return [3, 15];
-                case 11:
-                    if (!(element.type === 'RestElement')) return [3, 13];
+                    _c.label = 8;
+                case 8: return [3, 13];
+                case 9:
+                    if (!(element.type === 'RestElement')) return [3, 11];
                     return [5, __values(RestElement$1(element, scope, { kind: kind, feed: feed.slice(i) }))];
+                case 10:
+                    _c.sent();
+                    return [3, 13];
+                case 11: return [5, __values(pattern$2(element, scope, { kind: kind, feed: feed[i] }))];
                 case 12:
                     _c.sent();
-                    return [3, 15];
-                case 13: return [5, __values(pattern$2(element, scope, { kind: kind, feed: feed[i] }))];
-                case 14:
-                    _c.sent();
-                    _c.label = 15;
-                case 15:
+                    _c.label = 13;
+                case 13:
                     i++;
                     return [3, 1];
-                case 16:
+                case 14:
                     if (result.length) {
                         return [2, result];
                     }
@@ -2903,73 +2830,63 @@
         });
     }
     function RestElement$1(node, scope, options) {
-        var kind, _a, hoist, _b, feed, arg, name_5, name_6, variable;
+        var kind, _a, hoist, _b, feed, arg, variable;
         if (options === void 0) { options = {}; }
         return __generator(this, function (_c) {
             switch (_c.label) {
                 case 0:
                     kind = options.kind, _a = options.hoist, hoist = _a === void 0 ? false : _a, _b = options.feed, feed = _b === void 0 ? [] : _b;
                     arg = node.argument;
-                    if (!hoist) return [3, 5];
-                    if (!(kind === 'var')) return [3, 4];
-                    if (!(arg.type === 'Identifier')) return [3, 2];
-                    return [5, __values(Identifier$1(arg, scope, { getName: true }))];
-                case 1:
-                    name_5 = _c.sent();
-                    scope.var(name_5, undefined);
-                    return [3, 4];
-                case 2: return [5, __values(pattern$2(arg, scope, { kind: kind, hoist: hoist }))];
-                case 3:
+                    if (!hoist) return [3, 4];
+                    if (!(kind === 'var')) return [3, 3];
+                    if (!(arg.type === 'Identifier')) return [3, 1];
+                    scope.var(arg.name);
+                    return [3, 3];
+                case 1: return [5, __values(pattern$2(arg, scope, { kind: kind, hoist: hoist }))];
+                case 2:
                     _c.sent();
-                    _c.label = 4;
-                case 4: return [3, 12];
-                case 5:
-                    if (!(arg.type === 'Identifier')) return [3, 10];
-                    if (!kind) return [3, 7];
-                    return [5, __values(Identifier$1(arg, scope, { getName: true }))];
+                    _c.label = 3;
+                case 3: return [3, 10];
+                case 4:
+                    if (!(arg.type === 'Identifier')) return [3, 8];
+                    if (!kind) return [3, 5];
+                    scope[kind](arg.name, feed);
+                    return [3, 7];
+                case 5: return [5, __values(Identifier$1(arg, scope, { getVar: true }))];
                 case 6:
-                    name_6 = _c.sent();
-                    scope[kind](name_6, feed);
-                    return [3, 9];
-                case 7: return [5, __values(Identifier$1(arg, scope, { getVar: true }))];
-                case 8:
                     variable = _c.sent();
                     variable.set(feed);
-                    _c.label = 9;
-                case 9: return [3, 12];
-                case 10: return [5, __values(pattern$2(arg, scope, { kind: kind, feed: feed }))];
-                case 11:
+                    _c.label = 7;
+                case 7: return [3, 10];
+                case 8: return [5, __values(pattern$2(arg, scope, { kind: kind, feed: feed }))];
+                case 9:
                     _c.sent();
-                    _c.label = 12;
-                case 12: return [2];
+                    _c.label = 10;
+                case 10: return [2];
             }
         });
     }
     function AssignmentPattern$1(node, scope) {
-        var feed, name_7;
+        var feed;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0: return [5, __values(evaluate$1(node.right, scope))];
                 case 1:
                     feed = _a.sent();
-                    if (!(node.left.type === 'Identifier')) return [3, 3];
-                    return [5, __values(Identifier$1(node.left, scope, { getName: true }))];
-                case 2:
-                    name_7 = _a.sent();
-                    scope.let(name_7, feed);
-                    return [3, 5];
-                case 3: return [5, __values(pattern$2(node.left, scope, { feed: feed }))];
-                case 4:
+                    if (!(node.left.type === 'Identifier')) return [3, 2];
+                    scope.let(node.left.name, feed);
+                    return [3, 4];
+                case 2: return [5, __values(pattern$2(node.left, scope, { feed: feed }))];
+                case 3:
                     _a.sent();
-                    _a.label = 5;
-                case 5: return [2];
+                    _a.label = 4;
+                case 4: return [2];
             }
         });
     }
 
     var pattern$1 = /*#__PURE__*/Object.freeze({
         ObjectPattern: ObjectPattern$1,
-        AssignmentProperty: AssignmentProperty$1,
         ArrayPattern: ArrayPattern$1,
         RestElement: RestElement$1,
         AssignmentPattern: AssignmentPattern$1
@@ -3228,34 +3145,32 @@
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    _a.trys.push([0, 2, 10, 13]);
+                    _a.trys.push([0, 2, 9, 12]);
                     return [5, __values(BlockStatement$1(node.block, scope))];
                 case 1: return [2, _a.sent()];
                 case 2:
                     err_1 = _a.sent();
-                    if (!node.handler) return [3, 8];
+                    if (!node.handler) return [3, 7];
                     subScope = new Scope(scope);
                     param = node.handler.param;
-                    if (!(param.type === 'Identifier')) return [3, 4];
-                    return [5, __values(Identifier$1(param, subScope, { getName: true }))];
-                case 3:
-                    name_1 = _a.sent();
+                    if (!(param.type === 'Identifier')) return [3, 3];
+                    name_1 = param.name;
                     subScope.let(name_1, err_1);
-                    return [3, 6];
-                case 4: return [5, __values(pattern$2(param, scope, { feed: err_1 }))];
-                case 5:
+                    return [3, 5];
+                case 3: return [5, __values(pattern$2(param, scope, { feed: err_1 }))];
+                case 4:
                     _a.sent();
-                    _a.label = 6;
-                case 6: return [5, __values(CatchClause$1(node.handler, subScope))];
-                case 7: return [2, _a.sent()];
-                case 8: throw err_1;
-                case 9: return [3, 13];
-                case 10:
-                    if (!node.finalizer) return [3, 12];
+                    _a.label = 5;
+                case 5: return [5, __values(CatchClause$1(node.handler, subScope))];
+                case 6: return [2, _a.sent()];
+                case 7: throw err_1;
+                case 8: return [3, 12];
+                case 9:
+                    if (!node.finalizer) return [3, 11];
                     return [5, __values(BlockStatement$1(node.finalizer, scope))];
-                case 11: return [2, _a.sent()];
-                case 12: return [7];
-                case 13: return [2];
+                case 10: return [2, _a.sent()];
+                case 11: return [7];
+                case 12: return [2];
             }
         });
     }
@@ -3584,47 +3499,42 @@
         });
     }
     function VariableDeclarator$1(node, scope, options) {
-        var _a, kind, _b, hoist, feed, name_1, value, _c, name_2;
+        var _a, kind, _b, hoist, feed, value, _c, name_1;
         if (options === void 0) { options = {}; }
         return __generator(this, function (_d) {
             switch (_d.label) {
                 case 0:
                     _a = options.kind, kind = _a === void 0 ? 'let' : _a, _b = options.hoist, hoist = _b === void 0 ? false : _b, feed = options.feed;
-                    if (!hoist) return [3, 5];
-                    if (!(kind === 'var')) return [3, 4];
-                    if (!(node.id.type === 'Identifier')) return [3, 2];
-                    return [5, __values(Identifier$1(node.id, scope, { getName: true }))];
-                case 1:
-                    name_1 = _d.sent();
-                    scope.var(name_1, undefined);
-                    return [3, 4];
-                case 2: return [5, __values(pattern$2(node.id, scope, { kind: kind, hoist: hoist }))];
-                case 3:
+                    if (!hoist) return [3, 4];
+                    if (!(kind === 'var')) return [3, 3];
+                    if (!(node.id.type === 'Identifier')) return [3, 1];
+                    scope.var(node.id.name);
+                    return [3, 3];
+                case 1: return [5, __values(pattern$2(node.id, scope, { kind: kind, hoist: hoist }))];
+                case 2:
                     _d.sent();
-                    _d.label = 4;
-                case 4: return [3, 14];
-                case 5:
+                    _d.label = 3;
+                case 3: return [3, 12];
+                case 4:
                     if (!(kind === 'var'
                         || kind === 'let'
-                        || kind === 'const')) return [3, 13];
-                    if (!('feed' in options)) return [3, 6];
+                        || kind === 'const')) return [3, 11];
+                    if (!('feed' in options)) return [3, 5];
                     _c = feed;
-                    return [3, 8];
-                case 6: return [5, __values(evaluate$1(node.init, scope))];
-                case 7:
+                    return [3, 7];
+                case 5: return [5, __values(evaluate$1(node.init, scope))];
+                case 6:
                     _c = _d.sent();
-                    _d.label = 8;
-                case 8:
+                    _d.label = 7;
+                case 7:
                     value = _c;
-                    if (!(node.id.type === 'Identifier')) return [3, 10];
-                    return [5, __values(Identifier$1(node.id, scope, { getName: true }))];
-                case 9:
-                    name_2 = _d.sent();
+                    if (!(node.id.type === 'Identifier')) return [3, 8];
+                    name_1 = node.id.name;
                     if (kind === 'var' && !node.init) {
-                        scope.var(name_2, NOINIT);
+                        scope.var(name_1, NOINIT);
                     }
                     else {
-                        scope[kind](name_2, value);
+                        scope[kind](name_1, value);
                     }
                     if (node.init &&
                         [
@@ -3633,18 +3543,18 @@
                         ].indexOf(node.init.type) !== -1
                         && !value.name) {
                         define(value, 'name', {
-                            value: name_2,
+                            value: name_1,
                             configurable: true
                         });
                     }
-                    return [3, 12];
-                case 10: return [5, __values(pattern$2(node.id, scope, { kind: kind, feed: value }))];
-                case 11:
+                    return [3, 10];
+                case 8: return [5, __values(pattern$2(node.id, scope, { kind: kind, feed: value }))];
+                case 9:
                     _d.sent();
-                    _d.label = 12;
-                case 12: return [3, 14];
-                case 13: throw new SyntaxError('Unexpected identifier');
-                case 14: return [2];
+                    _d.label = 10;
+                case 10: return [3, 12];
+                case 11: throw new SyntaxError('Unexpected identifier');
+                case 12: return [2];
             }
         });
     }
@@ -3710,15 +3620,16 @@
                     return [5, __values(evaluate$1(node.key, scope))];
                 case 1:
                     key = _b.sent();
-                    return [3, 5];
+                    return [3, 3];
                 case 2:
-                    if (!(node.key.type === 'Identifier')) return [3, 4];
-                    return [5, __values(Identifier$1(node.key, scope, { getName: true }))];
+                    if (node.key.type === 'Identifier') {
+                        key = node.key.name;
+                    }
+                    else {
+                        throw new SyntaxError('Unexpected token');
+                    }
+                    _b.label = 3;
                 case 3:
-                    key = _b.sent();
-                    return [3, 5];
-                case 4: throw new SyntaxError('Unexpected token');
-                case 5:
                     obj = node.static ? klass : klass.prototype;
                     value = createFunc(node.value, scope);
                     switch (node.kind) {
@@ -4036,7 +3947,7 @@
         var superClass = options.superClass;
         var params = node.params;
         var tmpFunc = function () {
-            var _i, subScope, i, param, argName, result;
+            var _i, subScope, i, param, result;
             var args = [];
             for (_i = 0; _i < arguments.length; _i++) {
                 args[_i] = arguments[_i];
@@ -4055,44 +3966,41 @@
                         i = 0;
                         _a.label = 1;
                     case 1:
-                        if (!(i < params.length)) return [3, 8];
+                        if (!(i < params.length)) return [3, 7];
                         param = params[i];
-                        if (!(param.type === 'Identifier')) return [3, 3];
-                        return [5, __values(Identifier$1(param, subScope, { getName: true }))];
+                        if (!(param.type === 'Identifier')) return [3, 2];
+                        subScope.let(param.name, args[i]);
+                        return [3, 6];
                     case 2:
-                        argName = _a.sent();
-                        subScope.let(argName, args[i]);
-                        return [3, 7];
-                    case 3:
-                        if (!(param.type === 'RestElement')) return [3, 5];
+                        if (!(param.type === 'RestElement')) return [3, 4];
                         return [5, __values(RestElement$1(param, subScope, { kind: 'let', feed: args.slice(i) }))];
-                    case 4:
+                    case 3:
                         _a.sent();
-                        return [3, 7];
-                    case 5: return [5, __values(pattern$2(param, subScope, { feed: args[i] }))];
+                        return [3, 6];
+                    case 4: return [5, __values(pattern$2(param, subScope, { feed: args[i] }))];
+                    case 5:
+                        _a.sent();
+                        _a.label = 6;
                     case 6:
-                        _a.sent();
-                        _a.label = 7;
-                    case 7:
                         i++;
                         return [3, 1];
-                    case 8:
-                        if (!(node.body.type === 'BlockStatement')) return [3, 11];
+                    case 7:
+                        if (!(node.body.type === 'BlockStatement')) return [3, 10];
                         return [5, __values(hoist(node.body, subScope))];
-                    case 9:
+                    case 8:
                         _a.sent();
                         return [5, __values(BlockStatement$1(node.body, subScope, {
                                 invasived: true,
                                 hoisted: true
                             }))];
-                    case 10:
+                    case 9:
                         result = _a.sent();
-                        return [3, 13];
-                    case 11: return [5, __values(evaluate$1(node.body, subScope))];
+                        return [3, 12];
+                    case 10: return [5, __values(evaluate$1(node.body, subScope))];
+                    case 11:
+                        result = _a.sent();
+                        _a.label = 12;
                     case 12:
-                        result = _a.sent();
-                        _a.label = 13;
-                    case 13:
                         if (result === RETURN) {
                             return [2, result.RES];
                         }
@@ -4349,8 +4257,7 @@
             for (var i = 0; i < params.length; i++) {
                 var param = params[i];
                 if (param.type === 'Identifier') {
-                    var argName = Identifier(param, subScope, { getName: true });
-                    subScope.let(argName, args[i]);
+                    subScope.let(param.name, args[i]);
                 }
                 else if (param.type === 'RestElement') {
                     RestElement(param, subScope, { kind: 'let', feed: args.slice(i) });

@@ -9,18 +9,14 @@ describe('testing src/index.ts', () => {
       var b = 2
       var b
       var c = 3
-      var c
-      var d = 3
-      var d = undefined
+      var c = undefined
       exports.a = a
       exports.b = b
       exports.c = c
-      exports.d = d
     `)
     expect(interpreter.exports.a).toBe(1)
     expect(interpreter.exports.b).toBe(2)
-    expect(interpreter.exports.c).toBe(3)
-    expect(interpreter.exports.d).toBeUndefined()
+    expect(interpreter.exports.c).toBeUndefined()
   })
   it('should declare let normally', () => {  
     const interpreter = new Sval()
