@@ -1,7 +1,7 @@
 import { define, freeze, getGetter, getSetter, createSymbol } from '../share/util'
 import { pattern, createFunc, createClass } from './helper'
 import { Variable, Prop } from '../scope/variable'
-import { SUPER, ASYNC } from '../share/const'
+import { SUPER, ASYNC, ARROW } from '../share/const'
 import { Identifier } from './identifier'
 import { Literal } from './literal'
 import * as estree from 'estree'
@@ -372,6 +372,22 @@ export function* CallExpression(
 
 export function* NewExpression(node: estree.NewExpression, scope: Scope) {
   const constructor = yield* evaluate(node.callee, scope)
+
+  if (typeof constructor !== 'function') {
+    let name: string
+    if (node.callee.type === 'Identifier') {
+      name = yield* Identifier(node.callee, scope, { getName: true })
+    } else {
+      try {
+        name = JSON.stringify(constructor)
+      } catch (err) {
+        name = '' + constructor
+      }
+    }
+    throw new TypeError(`${name} is not a constructor`)
+  } else if (constructor[ARROW]) {
+    throw new TypeError(`${constructor.name || '(intermediate value)'} is not a constructor`)
+  }
 
   let args: any[] = []
   for (const arg of node.arguments) {

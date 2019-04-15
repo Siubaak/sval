@@ -62,6 +62,19 @@ export function* VariableDeclarator(
       } else {
         scope[kind](name, value)
       }
+      if (
+        node.init &&
+        [
+          'FunctionExpression',
+          'ArrowFunctionExpression'
+        ].indexOf(node.init.type) !== -1
+        && !value.name
+      ) {
+        define(value, 'name', {
+          value: name,
+          configurable: true
+        })
+      }
     } else {
       yield* pattern(node.id, scope, { kind, feed: value })
     }

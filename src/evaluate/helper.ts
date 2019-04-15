@@ -1,6 +1,6 @@
 import { FunctionDeclaration, VariableDeclaration, ClassBody } from './declaration'
 import { define, inherits, runAsync } from '../share/util'
-import { RETURN, SUPER, ASYNC } from '../share/const'
+import { RETURN, SUPER, ASYNC, ARROW } from '../share/const'
 import { BlockStatement } from './statement'
 import { Identifier } from './identifier'
 import * as estree from 'estree'
@@ -109,19 +109,19 @@ export interface CtorOptions {
   superClass?: (...args: any[]) => any
 }
 
-import { createFunc as createAnotherFunc } from /*<replace src:='../evaluate/helper'>*/'../evaluate_n/helper'/*</replace>*/
+import { createFunc as createAnotherFunc } from /*<replace by:='../evaluate/helper'>*/'../evaluate_n/helper'/*</replace>*/
 export function createFunc(
   node: estree.FunctionDeclaration | estree.FunctionExpression | estree.ArrowFunctionExpression,
   scope: Scope,
   options: CtorOptions = {}
 ): any {
-  if (
-    /*<replace src:=node.generator||node.async>*/!node.generator && !node.async/*</replace>*/
-  ) return createAnotherFunc(node, scope, options)
+  if (/*<replace by:=node.generator\s||\snode.async>*/!node.generator && !node.async/*</replace>*/) {
+    return createAnotherFunc(node, scope, options)
+  }
 
   const { superClass } = options
   const params = node.params
-  const /*<replace src:=func>*/tmpFunc/*</replace>*/ = function* (...args: any[]) {
+  const tmpFunc = function* (...args: any[]) {
     const subScope: Scope = new Scope(scope, true)
     if (node.type !== 'ArrowFunctionExpression') {
       subScope.const('this', this)
@@ -134,8 +134,8 @@ export function createFunc(
     for (let i = 0; i < params.length; i++) {
       const param = params[i]
       if (param.type === 'Identifier') {
-        const name = yield* Identifier(param, subScope, { getName: true })
-        subScope.let(name, args[i])
+        const argName = yield* Identifier(param, subScope, { getName: true })
+        subScope.let(argName, args[i])
       } else if (param.type === 'RestElement') {
         yield* RestElement(param, subScope, { kind: 'let', feed: args.slice(i) })
       } else {
@@ -159,24 +159,29 @@ export function createFunc(
     }
   }
 
+  let func: any /*<add>*//*= tmpFunc*//*</add>*/
   /*<remove>*/
-  let func: any
-  if (node.generator) {
-    func = tmpFunc
-  } else {
+  if (node.async) {
     func = function (...args: any[]) {
-      return runAsync(tmpFunc.bind(this), ...args)
+      return runAsync(tmpFunc, ...args)
     }
     define(func, ASYNC, { value: true })
+  /*</remove>*/
+    if (node.type === 'ArrowFunctionExpression') {
+      define(func, ARROW, { value: true })
+    }
+  /*<remove>*/
+  } else {
+    func = tmpFunc
   }
   /*</remove>*/
 
-  if (node.type === 'FunctionDeclaration') {
-    define(func, 'name', {
-      value: node.id.name,
-      configurable: true
-    })
-  }
+  define(func, 'name', {
+    value: (node as estree.FunctionDeclaration).id
+      && (node as estree.FunctionDeclaration).id.name
+      || '',
+    configurable: true
+  })
   define(func, 'length', {
     value: params.length,
     configurable: true

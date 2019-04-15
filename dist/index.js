@@ -608,7 +608,7 @@
         });
     }
 
-    var version = "0.3.0";
+    var version = "0.3.1";
 
     var Var = (function () {
         function Var(kind, value) {
@@ -651,6 +651,7 @@
     var RETURN = { RES: undefined };
     var SUPER = createSymbol('super');
     var ASYNC = createSymbol('async');
+    var ARROW = createSymbol('arrow');
     var NOINIT = createSymbol('noinit');
 
     var Scope = (function () {
@@ -1168,6 +1169,24 @@
     function NewExpression(node, scope) {
         var e_4, _a;
         var constructor = evaluate(node.callee, scope);
+        if (typeof constructor !== 'function') {
+            var name_2;
+            if (node.callee.type === 'Identifier') {
+                name_2 = Identifier(node.callee, scope, { getName: true });
+            }
+            else {
+                try {
+                    name_2 = JSON.stringify(constructor);
+                }
+                catch (err) {
+                    name_2 = '' + constructor;
+                }
+            }
+            throw new TypeError(name_2 + " is not a constructor");
+        }
+        else if (constructor[ARROW]) {
+            throw new TypeError((constructor.name || '(intermediate value)') + " is not a constructor");
+        }
         var args = [];
         try {
             for (var _b = __values(node.arguments), _c = _b.next(); !_c.done; _c = _b.next()) {
@@ -1793,6 +1812,17 @@
                 }
                 else {
                     scope[kind](name_2, value);
+                }
+                if (node.init &&
+                    [
+                        'FunctionExpression',
+                        'ArrowFunctionExpression'
+                    ].indexOf(node.init.type) !== -1
+                    && !value.name) {
+                    define(value, 'name', {
+                        value: name_2,
+                        configurable: true
+                    });
                 }
             }
             else {
@@ -2456,48 +2486,69 @@
         });
     }
     function NewExpression$1(node, scope) {
-        var e_4, _a, constructor, args, _b, _c, arg, _d, _e, _f, _g, e_4_1;
+        var e_4, _a, constructor, name_2, args, _b, _c, arg, _d, _e, _f, _g, e_4_1;
         return __generator(this, function (_h) {
             switch (_h.label) {
                 case 0: return [5, __values(evaluate$1(node.callee, scope))];
                 case 1:
                     constructor = _h.sent();
-                    args = [];
-                    _h.label = 2;
+                    if (!(typeof constructor !== 'function')) return [3, 5];
+                    if (!(node.callee.type === 'Identifier')) return [3, 3];
+                    return [5, __values(Identifier$1(node.callee, scope, { getName: true }))];
                 case 2:
-                    _h.trys.push([2, 9, 10, 11]);
-                    _b = __values(node.arguments), _c = _b.next();
-                    _h.label = 3;
+                    name_2 = _h.sent();
+                    return [3, 4];
                 case 3:
-                    if (!!_c.done) return [3, 8];
-                    arg = _c.value;
-                    if (!(arg.type === 'SpreadElement')) return [3, 5];
-                    _e = (_d = args).concat;
-                    return [5, __values(SpreadElement$1(arg, scope))];
-                case 4:
-                    args = _e.apply(_d, [_h.sent()]);
-                    return [3, 7];
+                    try {
+                        name_2 = JSON.stringify(constructor);
+                    }
+                    catch (err) {
+                        name_2 = '' + constructor;
+                    }
+                    _h.label = 4;
+                case 4: throw new TypeError(name_2 + " is not a constructor");
                 case 5:
-                    _g = (_f = args).push;
-                    return [5, __values(evaluate$1(arg, scope))];
+                    if (constructor[ARROW]) {
+                        throw new TypeError((constructor.name || '(intermediate value)') + " is not a constructor");
+                    }
+                    _h.label = 6;
                 case 6:
-                    _g.apply(_f, [_h.sent()]);
+                    args = [];
                     _h.label = 7;
                 case 7:
-                    _c = _b.next();
-                    return [3, 3];
-                case 8: return [3, 11];
+                    _h.trys.push([7, 14, 15, 16]);
+                    _b = __values(node.arguments), _c = _b.next();
+                    _h.label = 8;
+                case 8:
+                    if (!!_c.done) return [3, 13];
+                    arg = _c.value;
+                    if (!(arg.type === 'SpreadElement')) return [3, 10];
+                    _e = (_d = args).concat;
+                    return [5, __values(SpreadElement$1(arg, scope))];
                 case 9:
+                    args = _e.apply(_d, [_h.sent()]);
+                    return [3, 12];
+                case 10:
+                    _g = (_f = args).push;
+                    return [5, __values(evaluate$1(arg, scope))];
+                case 11:
+                    _g.apply(_f, [_h.sent()]);
+                    _h.label = 12;
+                case 12:
+                    _c = _b.next();
+                    return [3, 8];
+                case 13: return [3, 16];
+                case 14:
                     e_4_1 = _h.sent();
                     e_4 = { error: e_4_1 };
-                    return [3, 11];
-                case 10:
+                    return [3, 16];
+                case 15:
                     try {
                         if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
                     }
                     finally { if (e_4) throw e_4.error; }
                     return [7];
-                case 11: return [2, new (constructor.bind.apply(constructor, __spread([void 0], args)))()];
+                case 16: return [2, new (constructor.bind.apply(constructor, __spread([void 0], args)))()];
             }
         });
     }
@@ -3575,6 +3626,17 @@
                     else {
                         scope[kind](name_2, value);
                     }
+                    if (node.init &&
+                        [
+                            'FunctionExpression',
+                            'ArrowFunctionExpression'
+                        ].indexOf(node.init.type) !== -1
+                        && !value.name) {
+                        define(value, 'name', {
+                            value: name_2,
+                            configurable: true
+                        });
+                    }
                     return [3, 12];
                 case 10: return [5, __values(pattern$2(node.id, scope, { kind: kind, feed: value }))];
                 case 11:
@@ -3968,12 +4030,13 @@
     }
     function createFunc(node, scope, options) {
         if (options === void 0) { options = {}; }
-        if (!node.generator && !node.async)
+        if (!node.generator && !node.async) {
             return createFunc$1(node, scope, options);
+        }
         var superClass = options.superClass;
         var params = node.params;
         var tmpFunc = function () {
-            var _i, subScope, i, param, name_1, result;
+            var _i, subScope, i, param, argName, result;
             var args = [];
             for (_i = 0; _i < arguments.length; _i++) {
                 args[_i] = arguments[_i];
@@ -3997,8 +4060,8 @@
                         if (!(param.type === 'Identifier')) return [3, 3];
                         return [5, __values(Identifier$1(param, subScope, { getName: true }))];
                     case 2:
-                        name_1 = _a.sent();
-                        subScope.let(name_1, args[i]);
+                        argName = _a.sent();
+                        subScope.let(argName, args[i]);
                         return [3, 7];
                     case 3:
                         if (!(param.type === 'RestElement')) return [3, 5];
@@ -4038,25 +4101,28 @@
             });
         };
         var func;
-        if (node.generator) {
-            func = tmpFunc;
-        }
-        else {
+        if (node.async) {
             func = function () {
                 var args = [];
                 for (var _i = 0; _i < arguments.length; _i++) {
                     args[_i] = arguments[_i];
                 }
-                return runAsync.apply(void 0, __spread([tmpFunc.bind(this)], args));
+                return runAsync.apply(void 0, __spread([tmpFunc], args));
             };
             define(func, ASYNC, { value: true });
+            if (node.type === 'ArrowFunctionExpression') {
+                define(func, ARROW, { value: true });
+            }
         }
-        if (node.type === 'FunctionDeclaration') {
-            define(func, 'name', {
-                value: node.id.name,
-                configurable: true
-            });
+        else {
+            func = tmpFunc;
         }
+        define(func, 'name', {
+            value: node.id
+                && node.id.name
+                || '',
+            configurable: true
+        });
         define(func, 'length', {
             value: params.length,
             configurable: true
@@ -4262,11 +4328,12 @@
     }
     function createFunc$1(node, scope, options) {
         if (options === void 0) { options = {}; }
-        if (node.generator || node.async)
+        if (node.generator || node.async) {
             return createFunc(node, scope, options);
+        }
         var superClass = options.superClass;
         var params = node.params;
-        var func = function () {
+        var tmpFunc = function () {
             var args = [];
             for (var _i = 0; _i < arguments.length; _i++) {
                 args[_i] = arguments[_i];
@@ -4282,8 +4349,8 @@
             for (var i = 0; i < params.length; i++) {
                 var param = params[i];
                 if (param.type === 'Identifier') {
-                    var name_1 = Identifier(param, subScope, { getName: true });
-                    subScope.let(name_1, args[i]);
+                    var argName = Identifier(param, subScope, { getName: true });
+                    subScope.let(argName, args[i]);
                 }
                 else if (param.type === 'RestElement') {
                     RestElement(param, subScope, { kind: 'let', feed: args.slice(i) });
@@ -4307,12 +4374,16 @@
                 return result.RES;
             }
         };
-        if (node.type === 'FunctionDeclaration') {
-            define(func, 'name', {
-                value: node.id.name,
-                configurable: true
-            });
+        var func = tmpFunc;
+        if (node.type === 'ArrowFunctionExpression') {
+            define(func, ARROW, { value: true });
         }
+        define(func, 'name', {
+            value: node.id
+                && node.id.name
+                || '',
+            configurable: true
+        });
         define(func, 'length', {
             value: params.length,
             configurable: true

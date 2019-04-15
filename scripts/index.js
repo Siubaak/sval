@@ -1,6 +1,7 @@
 const fs = require('fs')
 const path = require('path')
 const plugins = {
+  add: require('./plugins/add'),
   remove: require('./plugins/remove'),
   replace: require('./plugins/replace')
 }
@@ -14,7 +15,7 @@ for (const name of files) {
     .replace(/:\sIterableIterator<any>/g, ': any')
     .replace(/yield\*\s/g, '')
 
-  code = code.replace(/\/\*<([^>]+)>\*\/([\s\S]*?)\/\*<\/([^>]+)>\*\//g,
+  code = code.replace(/\/\*<([^>]+?)>\*\/([\s\S]*?)\/\*<\/([^>]+?)>\*\//g,
     (origin, start, content, end) => {
       const params = start.split(' ')
       if (params[0] !== end) return origin
@@ -24,7 +25,7 @@ for (const name of files) {
         props[kv[0]] = kv[1] || true
       }
       if (plugins[end]) {
-        console.info(`\x1b[33m[${end}]\x1b[0m ${name}`)
+        console.info(`\x1b[33m[${end.toUpperCase()}]\x1b[0m ${name}`)
         return plugins[end](content, props)
       } else {
         return origin
