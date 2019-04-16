@@ -7,7 +7,7 @@ import { hoist } from './evaluate_n/helper'
 import evaluate from './evaluate_n'
 
 export interface SvalOptions {
-  ecmaVer?: 3 | 5 | 6 | 7 | 8 | 2015 | 2016 | 2017
+  ecmaVer?: 3 | 5 | 6 | 7 | 8 | 9 | 10 | 2015 | 2016 | 2017 | 2018 | 2019
   sandBox?: boolean
 }
 
@@ -22,8 +22,13 @@ class Sval {
   constructor(options: SvalOptions = {}) {
     let { ecmaVer, sandBox = true } = options
 
-    if ([3, 5, 6, 7, 8, 2015, 2016, 2017].indexOf(ecmaVer) === -1) {
-      ecmaVer = 7
+    if (
+      [
+        3, 5, 6, 7, 8, 9, 10,
+        2015, 2016, 2017, 2018, 2019
+      ].indexOf(ecmaVer) === -1
+    ) {
+      ecmaVer = 10
     }
 
     this.options.ecmaVersion = ecmaVer
