@@ -1,5 +1,6 @@
 import { VarKind, Var } from '../scope/variable'
 import { Identifier } from './identifier'
+import { assign } from '../share/util'
 import { pattern } from './helper'
 import * as estree from 'estree'
 import Scope from '../scope'
@@ -13,6 +14,7 @@ export interface PatternOptions {
 
 export function* ObjectPattern(node: estree.ObjectPattern, scope: Scope, options: PatternOptions = {}) {
   const { kind = 'let', hoist = false, feed = {} } = options
+  const fedKeys: string[] = []
   for (const index in node.properties) {
     const property = node.properties[index]
     const value = property.value
@@ -34,9 +36,17 @@ export function* ObjectPattern(node: estree.ObjectPattern, scope: Scope, options
       
       if (value.type === 'Identifier') {
         scope[kind](value.name, feed[key])
+      } else if (value.type === 'RestElement') {
+        const rest = assign({}, feed)
+        for(const index in fedKeys) {
+          delete rest[fedKeys[index]]
+        }
+        yield* RestElement(value, scope, { kind, feed: rest })
       } else {
         yield* pattern(value, scope, { kind, feed: feed[key] })
       }
+
+      fedKeys.push(key)
     }
   }
 }
