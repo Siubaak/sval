@@ -1,4 +1,4 @@
-import { define, freeze, getGetter, getSetter, createSymbol } from '../share/util'
+import { define, freeze, getGetter, getSetter, createSymbol, assign } from '../share/util'
 import { pattern, createFunc, createClass } from './helper'
 import { Variable, Prop } from '../scope/variable'
 import { SUPER, ASYNC, ARROW } from '../share/const'
@@ -28,28 +28,32 @@ export function* ArrayExpression(node: estree.ArrayExpression, scope: Scope) {
 export function* ObjectExpression(node: estree.ObjectExpression, scope: Scope) {
   const object: { [key: string]: any } = {}
   for (const index in node.properties) {
-    let key: string
     const property = node.properties[index]
-    const propKey = property.key
-    if (property.computed) {
-      key = yield* evaluate(propKey, scope)
+    if (property.type as any === 'SpreadElement') {
+      assign(object, yield* SpreadElement(property as any, scope))
     } else {
-      if (propKey.type === 'Identifier') {
-        key = propKey.name
+      let key: string
+      const propKey = property.key
+      if (property.computed) {
+        key = yield* evaluate(propKey, scope)
       } else {
-        key = '' + (yield* Literal(propKey as estree.Literal, scope))
+        if (propKey.type === 'Identifier') {
+          key = propKey.name
+        } else {
+          key = '' + (yield* Literal(propKey as estree.Literal, scope))
+        }
       }
-    }
-
-    const value = yield* evaluate(property.value, scope)
-
-    const propKind = property.kind
-    if (propKind === 'init') {
-      object[key] = value
-    } else if (propKind === 'get') {
-      define(object, key, { get: value })
-    } else { // propKind === 'set'
-      define(object, key, { set: value })
+  
+      const value = yield* evaluate(property.value, scope)
+  
+      const propKind = property.kind
+      if (propKind === 'init') {
+        object[key] = value
+      } else if (propKind === 'get') {
+        define(object, key, { get: value })
+      } else { // propKind === 'set'
+        define(object, key, { set: value })
+      }
     }
   }
   return object
