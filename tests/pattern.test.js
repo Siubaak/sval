@@ -48,11 +48,27 @@ describe('testing src/index.ts', () => {
       exports.b = b
       exports.c = c
       exports.d = d
+      const o = { a: 1, b: 2, c: 3 }
+      let e;
+      { ...e } = o
+      const { ...f } = o
+      const { a: g, ...h } = o
+      const i = { a: 2, ...o, d: 4}
+      exports.e = e
+      exports.f = f
+      exports.g = g
+      exports.h = h
+      exports.i = i
     `)
     expect(interpreter.exports.a).toEqual([1, 2])
     expect(interpreter.exports.b).toEqual([1, 2, 3])
     expect(interpreter.exports.c).toBe(1)
     expect(interpreter.exports.d).toEqual([2, 3])
+    expect(interpreter.exports.e).toEqual({ a: 1, b: 2, c: 3 })
+    expect(interpreter.exports.f).toEqual({ a: 1, b: 2, c: 3 })
+    expect(interpreter.exports.g).toBe(1)
+    expect(interpreter.exports.h).toEqual({ b: 2, c: 3 })
+    expect(interpreter.exports.i).toEqual({ a: 1, b: 2, c: 3, d: 4 })
   })
   it('should parse rest element of function params normally', () => {  
     const interpreter = new Sval()
