@@ -109,11 +109,13 @@ export function* TryStatement(node: estree.TryStatement, scope: Scope) {
     if (node.handler) {
       const subScope = new Scope(scope)
       const param = node.handler.param
-      if (param.type === 'Identifier') {
-        const name = param.name
-        subScope.let(name, err)
-      } else {
-        yield* pattern(param, scope, { feed: err })
+      if (param) {
+        if (param.type === 'Identifier') {
+          const name = param.name
+          subScope.let(name, err)
+        } else {
+          yield* pattern(param, scope, { feed: err })
+        }
       }
       return yield* CatchClause(node.handler, subScope)
     } else {
