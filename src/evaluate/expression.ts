@@ -14,7 +14,8 @@ export function* ThisExpression(node: estree.ThisExpression, scope: Scope) {
 
 export function* ArrayExpression(node: estree.ArrayExpression, scope: Scope) {
   let results: any[] = []
-  for (const item of node.elements) {
+  for (const index in node.elements) {
+    const item = node.elements[index]
     if (item.type === 'SpreadElement') {
       results = results.concat(yield* SpreadElement(item, scope))
     } else {
@@ -26,8 +27,9 @@ export function* ArrayExpression(node: estree.ArrayExpression, scope: Scope) {
 
 export function* ObjectExpression(node: estree.ObjectExpression, scope: Scope) {
   const object: { [key: string]: any } = {}
-  for (const property of node.properties) {
+  for (const index in node.properties) {
     let key: string
+    const property = node.properties[index]
     const propKey = property.key
     if (property.computed) {
       key = yield* evaluate(propKey, scope)
@@ -347,7 +349,8 @@ export function* CallExpression(
   }
 
   let args: any[] = []
-  for (const arg of node.arguments) {
+  for (const index in node.arguments) {
+    const arg = node.arguments[index]
     if (arg.type === 'SpreadElement') {
       args = args.concat(yield* SpreadElement(arg, scope))
     } else {
@@ -382,7 +385,8 @@ export function* NewExpression(node: estree.NewExpression, scope: Scope) {
   }
 
   let args: any[] = []
-  for (const arg of node.arguments) {
+  for (const index in node.arguments) {
+    const arg = node.arguments[index]
     if (arg.type === 'SpreadElement') {
       args = args.concat(yield* SpreadElement(arg, scope))
     } else {
@@ -395,8 +399,8 @@ export function* NewExpression(node: estree.NewExpression, scope: Scope) {
 
 export function* SequenceExpression(node: estree.SequenceExpression, scope: Scope) {
   let result: any
-  for (const expression of node.expressions) {
-    result = yield* evaluate(expression, scope)
+  for (const index in node.expressions) {
+    result = yield* evaluate(node.expressions[index], scope)
   }
   return result
 }
@@ -457,8 +461,8 @@ export function* TaggedTemplateExpression(node: estree.TaggedTemplateExpression,
 
   const args = []
   if (expressions) {
-    for (const n of node.quasi.expressions) {
-      args.push(yield* evaluate(n, scope))
+    for (const index in expressions) {
+      args.push(yield* evaluate(expressions[index], scope))
     }
   }
 

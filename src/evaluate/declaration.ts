@@ -23,8 +23,8 @@ export function* VariableDeclaration(
   scope: Scope,
   options: VariableDeclarationOptions = {},
 ) {
-  for (const declarator of node.declarations) {
-    yield* VariableDeclarator(declarator, scope, assign({ kind: node.kind }, options))
+  for (const index in node.declarations) {
+    yield* VariableDeclarator(node.declarations[index], scope, assign({ kind: node.kind }, options))
   }
 }
 
@@ -95,8 +95,8 @@ export interface ClassOptions {
 export function* ClassBody(node: estree.ClassBody, scope: Scope, options: ClassOptions = {}) {
   const { klass = function () { } } = options
 
-  for (const method of node.body) {
-    yield* MethodDefinition(method, scope, { klass })
+  for (const index in node.body) {
+    yield* MethodDefinition(node.body[index], scope, { klass })
   }
 }
 

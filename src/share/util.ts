@@ -145,7 +145,8 @@ try {
   }
 }
 const win: any = {}
-for (const name of names) {
+for (const index in names) {
+  const name = names[index]
   try { win[name] = globalObj[name] } catch (err) { /* empty */ }
 }
 export function createSandBox() {

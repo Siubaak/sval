@@ -13,7 +13,8 @@ export interface PatternOptions {
 
 export function* ObjectPattern(node: estree.ObjectPattern, scope: Scope, options: PatternOptions = {}) {
   const { kind = 'let', hoist = false, feed = {} } = options
-  for (const property of node.properties) {
+  for (const index in node.properties) {
+    const property = node.properties[index]
     const value = property.value
     if (hoist) {
       if (kind === 'var') {

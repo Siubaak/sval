@@ -32,8 +32,8 @@ export function* BlockStatement(
     yield* hoistFunc(block, subScope)
   }
 
-  for (const node of block.body) {
-    const result = yield* evaluate(node, subScope)
+  for (const index in block.body) {
+    const result = yield* evaluate(block.body[index], subScope)
     if (result === BREAK || result === CONTINUE || result === RETURN) {
       return result
     }
@@ -72,7 +72,8 @@ export function* IfStatement(node: estree.IfStatement, scope: Scope) {
 export function* SwitchStatement(node: estree.SwitchStatement, scope: Scope) {
   const discriminant = yield* evaluate(node.discriminant, scope)
   let matched = false
-  for (const eachCase of node.cases) {
+  for (const index in node.cases) {
+    const eachCase = node.cases[index]
     if (
       !matched
       && (
@@ -92,8 +93,8 @@ export function* SwitchStatement(node: estree.SwitchStatement, scope: Scope) {
 }
 
 export function* SwitchCase(node: estree.SwitchCase, scope: Scope) {
-  for (const statement of node.consequent) {
-    const result = yield* evaluate(statement, scope)
+  for (const index in node.consequent) {
+    const result = yield* evaluate(node.consequent[index], scope)
     if (result === BREAK || result === CONTINUE || result === RETURN) {
       return result
     }

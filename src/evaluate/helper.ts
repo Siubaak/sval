@@ -56,32 +56,32 @@ function* hoistVarRecursion(statement: estree.Statement, scope: Scope): Iterable
       yield* hoistVarRecursion(statement.body, scope)
       break
     case 'BlockStatement':
-      for (const node of statement.body) {
-        yield* hoistVarRecursion(node, scope)
+      for (const index in statement.body) {
+        yield* hoistVarRecursion(statement.body[index], scope)
       }
       break
     case 'SwitchStatement':
-      for (const eachCase of statement.cases) {
-        for (const node of eachCase.consequent) {
-          yield* hoistVarRecursion(node, scope)
+      for (const index in statement.cases) {
+        for (const idx in statement.cases[index].consequent) {
+          yield* hoistVarRecursion(statement.cases[index].consequent[idx], scope)
         }
       }
       break
     case 'TryStatement': {
       const tryBlock = statement.block.body
-      for (const node of tryBlock) {
-        yield* hoistVarRecursion(node, scope)
+      for (const index in tryBlock) {
+        yield* hoistVarRecursion(tryBlock[index], scope)
       }
       const catchBlock = statement.handler && statement.handler.body.body
       if (catchBlock) {
-        for (const node of catchBlock) {
-          yield* hoistVarRecursion(node, scope)
+        for (const index in catchBlock) {
+          yield* hoistVarRecursion(catchBlock[index], scope)
         }
       }
       const finalBlock = statement.finalizer && statement.finalizer.body
       if (finalBlock) {
-        for (const node of finalBlock) {
-          yield* hoistVarRecursion(node, scope)
+        for (const index in finalBlock) {
+          yield* hoistVarRecursion(finalBlock[index], scope)
         }
       }
       break
@@ -195,7 +195,9 @@ export function* createClass(
   const superClass = yield* evaluate(node.superClass, scope)
 
   let klass: (...args: any[]) => any = function () { }
-  for (const method of node.body.body) {
+  const methodBody = node.body.body
+  for (const index in methodBody) {
+    const method = methodBody[index]
     if (method.kind === 'constructor') {
       klass = yield* createFunc(method.value, scope, { superClass })
       break
