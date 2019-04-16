@@ -3914,12 +3914,10 @@
             this.options = {};
             this.scope = new Scope(null, true);
             this.exports = {};
-            var ecmaVer = options.ecmaVer, _a = options.sandBox, sandBox = _a === void 0 ? true : _a;
-            if ([
-                3, 5, 6, 7, 8, 9, 10,
-                2015, 2016, 2017, 2018, 2019
-            ].indexOf(ecmaVer) === -1) {
-                ecmaVer = 10;
+            var _a = options.ecmaVer, ecmaVer = _a === void 0 ? 9 : _a, _b = options.sandBox, sandBox = _b === void 0 ? true : _b;
+            ecmaVer -= ecmaVer < 2015 ? 0 : 2009;
+            if ([3, 5, 6, 7, 8, 9, 10].indexOf(ecmaVer) === -1) {
+                throw new Error("unsupported ecmaVer");
             }
             this.options.ecmaVersion = ecmaVer;
             if (sandBox) {
