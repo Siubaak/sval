@@ -26,27 +26,26 @@ export function* ObjectPattern(node: estree.ObjectPattern, scope: Scope, options
           yield* pattern(value, scope, { kind, hoist })
         }
       }
-    } else {
+    } else if (property.type === 'Property') {
       let key: string
       if (property.computed) {
         key = yield* evaluate(property.key, scope)
       } else {
         key = (property.key as estree.Identifier).name
       }
+      fedKeys.push(key)
       
       if (value.type === 'Identifier') {
         scope[kind](value.name, feed[key])
-      } else if (value.type === 'RestElement') {
-        const rest = assign({}, feed)
-        for(const index in fedKeys) {
-          delete rest[fedKeys[index]]
-        }
-        yield* RestElement(value, scope, { kind, feed: rest })
       } else {
         yield* pattern(value, scope, { kind, feed: feed[key] })
       }
-
-      fedKeys.push(key)
+    } else {
+      const rest = assign({}, feed)
+      for(const index in fedKeys) {
+        delete rest[fedKeys[index]]
+      }
+      yield* RestElement(property as any, scope, { kind, feed: rest })
     }
   }
 }

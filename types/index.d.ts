@@ -1,5 +1,5 @@
 export interface SvalOptions {
-    ecmaVer?: 3 | 5 | 6 | 7 | 8 | 2015 | 2016 | 2017;
+    ecmaVer?: 3 | 5 | 6 | 7 | 8 | 9 | 10 | 2015 | 2016 | 2017 | 2018 | 2019;
     sandBox?: boolean;
 }
 declare class Sval {

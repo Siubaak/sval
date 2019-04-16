@@ -229,7 +229,6 @@
         __importDefault: __importDefault
     });
 
-    var e_1, _a;
     var freeze = Object.freeze;
     var define = Object.defineProperty;
     var getDptor = Object.getOwnPropertyDescriptor;
@@ -546,21 +545,12 @@
         }
     }
     var win = {};
-    try {
-        for (var names_1 = __values(names), names_1_1 = names_1.next(); !names_1_1.done; names_1_1 = names_1.next()) {
-            var name_1 = names_1_1.value;
-            try {
-                win[name_1] = globalObj[name_1];
-            }
-            catch (err) { }
-        }
-    }
-    catch (e_1_1) { e_1 = { error: e_1_1 }; }
-    finally {
+    for (var index in names) {
+        var name_1 = names[index];
         try {
-            if (names_1_1 && !names_1_1.done && (_a = names_1.return)) _a.call(names_1);
+            win[name_1] = globalObj[name_1];
         }
-        finally { if (e_1) throw e_1.error; }
+        catch (err) { }
     }
     function createSandBox() {
         return assign({}, win);
@@ -671,22 +661,12 @@
             return scope;
         };
         Scope.prototype.clone = function () {
-            var e_1, _a;
             var cloneScope = new Scope(this.parent, this.isolated);
             var names = getOwnNames(this.context);
-            try {
-                for (var names_1 = __values(names), names_1_1 = names_1.next(); !names_1_1.done; names_1_1 = names_1.next()) {
-                    var name_1 = names_1_1.value;
-                    var variable = this.context[name_1];
-                    cloneScope[variable.kind](name_1, variable.get());
-                }
-            }
-            catch (e_1_1) { e_1 = { error: e_1_1 }; }
-            finally {
-                try {
-                    if (names_1_1 && !names_1_1.done && (_a = names_1.return)) _a.call(names_1);
-                }
-                finally { if (e_1) throw e_1.error; }
+            for (var index in names) {
+                var name_1 = names[index];
+                var variable = this.context[name_1];
+                cloneScope[variable.kind](name_1, variable.get());
             }
             return cloneScope;
         };
@@ -797,34 +777,26 @@
         return scope.find('this').get();
     }
     function ArrayExpression(node, scope) {
-        var e_1, _a;
         var results = [];
-        try {
-            for (var _b = __values(node.elements), _c = _b.next(); !_c.done; _c = _b.next()) {
-                var item = _c.value;
-                if (item.type === 'SpreadElement') {
-                    results = results.concat(SpreadElement(item, scope));
-                }
-                else {
-                    results.push(evaluate(item, scope));
-                }
+        for (var index in node.elements) {
+            var item = node.elements[index];
+            if (item.type === 'SpreadElement') {
+                results = results.concat(SpreadElement(item, scope));
             }
-        }
-        catch (e_1_1) { e_1 = { error: e_1_1 }; }
-        finally {
-            try {
-                if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
+            else {
+                results.push(evaluate(item, scope));
             }
-            finally { if (e_1) throw e_1.error; }
         }
         return results;
     }
     function ObjectExpression(node, scope) {
-        var e_2, _a;
         var object = {};
-        try {
-            for (var _b = __values(node.properties), _c = _b.next(); !_c.done; _c = _b.next()) {
-                var property = _c.value;
+        for (var index in node.properties) {
+            var property = node.properties[index];
+            if (property.type === 'SpreadElement') {
+                assign(object, SpreadElement(property, scope));
+            }
+            else {
                 var key = void 0;
                 var propKey = property.key;
                 if (property.computed) {
@@ -850,13 +822,6 @@
                     define(object, key, { set: value });
                 }
             }
-        }
-        catch (e_2_1) { e_2 = { error: e_2_1 }; }
-        finally {
-            try {
-                if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
-            }
-            finally { if (e_2) throw e_2.error; }
         }
         return object;
     }
@@ -1102,9 +1067,8 @@
             : (evaluate(node.alternate, scope));
     }
     function CallExpression(node, scope, options) {
-        var e_3, _a;
         if (options === void 0) { options = {}; }
-        var _b = options.async, async = _b === void 0 ? false : _b;
+        var _a = options.async, async = _a === void 0 ? false : _a;
         var func;
         var object;
         if (node.callee.type === 'MemberExpression') {
@@ -1130,23 +1094,14 @@
             func = evaluate(node.callee, scope);
         }
         var args = [];
-        try {
-            for (var _c = __values(node.arguments), _d = _c.next(); !_d.done; _d = _c.next()) {
-                var arg = _d.value;
-                if (arg.type === 'SpreadElement') {
-                    args = args.concat(SpreadElement(arg, scope));
-                }
-                else {
-                    args.push(evaluate(arg, scope));
-                }
+        for (var index in node.arguments) {
+            var arg = node.arguments[index];
+            if (arg.type === 'SpreadElement') {
+                args = args.concat(SpreadElement(arg, scope));
             }
-        }
-        catch (e_3_1) { e_3 = { error: e_3_1 }; }
-        finally {
-            try {
-                if (_d && !_d.done && (_a = _c.return)) _a.call(_c);
+            else {
+                args.push(evaluate(arg, scope));
             }
-            finally { if (e_3) throw e_3.error; }
         }
         if (func[ASYNC] && !async) {
             return func.apply(object, args).then();
@@ -1156,7 +1111,6 @@
         }
     }
     function NewExpression(node, scope) {
-        var e_4, _a;
         var constructor = evaluate(node.callee, scope);
         if (typeof constructor !== 'function') {
             var name_1;
@@ -1177,41 +1131,21 @@
             throw new TypeError((constructor.name || '(intermediate value)') + " is not a constructor");
         }
         var args = [];
-        try {
-            for (var _b = __values(node.arguments), _c = _b.next(); !_c.done; _c = _b.next()) {
-                var arg = _c.value;
-                if (arg.type === 'SpreadElement') {
-                    args = args.concat(SpreadElement(arg, scope));
-                }
-                else {
-                    args.push(evaluate(arg, scope));
-                }
+        for (var index in node.arguments) {
+            var arg = node.arguments[index];
+            if (arg.type === 'SpreadElement') {
+                args = args.concat(SpreadElement(arg, scope));
             }
-        }
-        catch (e_4_1) { e_4 = { error: e_4_1 }; }
-        finally {
-            try {
-                if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
+            else {
+                args.push(evaluate(arg, scope));
             }
-            finally { if (e_4) throw e_4.error; }
         }
         return new (constructor.bind.apply(constructor, __spread([void 0], args)))();
     }
     function SequenceExpression(node, scope) {
-        var e_5, _a;
         var result;
-        try {
-            for (var _b = __values(node.expressions), _c = _b.next(); !_c.done; _c = _b.next()) {
-                var expression = _c.value;
-                result = evaluate(expression, scope);
-            }
-        }
-        catch (e_5_1) { e_5 = { error: e_5_1 }; }
-        finally {
-            try {
-                if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
-            }
-            finally { if (e_5) throw e_5.error; }
+        for (var index in node.expressions) {
+            result = evaluate(node.expressions[index], scope);
         }
         return result;
     }
@@ -1234,7 +1168,6 @@
         return result;
     }
     function TaggedTemplateExpression(node, scope) {
-        var e_6, _a;
         var tagFunc = evaluate(node.tag, scope);
         var quasis = node.quasi.quasis;
         var str = quasis.map(function (v) { return v.value.cooked; });
@@ -1245,18 +1178,8 @@
         var expressions = node.quasi.expressions;
         var args = [];
         if (expressions) {
-            try {
-                for (var _b = __values(node.quasi.expressions), _c = _b.next(); !_c.done; _c = _b.next()) {
-                    var n = _c.value;
-                    args.push(evaluate(n, scope));
-                }
-            }
-            catch (e_6_1) { e_6 = { error: e_6_1 }; }
-            finally {
-                try {
-                    if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
-                }
-                finally { if (e_6) throw e_6.error; }
+            for (var index in expressions) {
+                args.push(evaluate(expressions[index], scope));
             }
         }
         return tagFunc.apply(void 0, __spread([freeze(str)], args));
@@ -1302,46 +1225,45 @@
     });
 
     function ObjectPattern(node, scope, options) {
-        var e_1, _a;
         if (options === void 0) { options = {}; }
-        var _b = options.kind, kind = _b === void 0 ? 'let' : _b, _c = options.hoist, hoist = _c === void 0 ? false : _c, _d = options.feed, feed = _d === void 0 ? {} : _d;
-        try {
-            for (var _e = __values(node.properties), _f = _e.next(); !_f.done; _f = _e.next()) {
-                var property = _f.value;
-                var value = property.value;
-                if (hoist) {
-                    if (kind === 'var') {
-                        if (value.type === 'Identifier') {
-                            scope.var(value.name);
-                        }
-                        else {
-                            pattern$3(value, scope, { kind: kind, hoist: hoist });
-                        }
+        var _a = options.kind, kind = _a === void 0 ? 'let' : _a, _b = options.hoist, hoist = _b === void 0 ? false : _b, _c = options.feed, feed = _c === void 0 ? {} : _c;
+        var fedKeys = [];
+        for (var index in node.properties) {
+            var property = node.properties[index];
+            var value = property.value;
+            if (hoist) {
+                if (kind === 'var') {
+                    if (value.type === 'Identifier') {
+                        scope.var(value.name);
                     }
+                    else {
+                        pattern$3(value, scope, { kind: kind, hoist: hoist });
+                    }
+                }
+            }
+            else if (property.type === 'Property') {
+                var key = void 0;
+                if (property.computed) {
+                    key = evaluate(property.key, scope);
                 }
                 else {
-                    var key = void 0;
-                    if (property.computed) {
-                        key = evaluate(property.key, scope);
-                    }
-                    else {
-                        key = property.key.name;
-                    }
-                    if (value.type === 'Identifier') {
-                        scope[kind](value.name, feed[key]);
-                    }
-                    else {
-                        pattern$3(value, scope, { kind: kind, feed: feed[key] });
-                    }
+                    key = property.key.name;
+                }
+                fedKeys.push(key);
+                if (value.type === 'Identifier') {
+                    scope[kind](value.name, feed[key]);
+                }
+                else {
+                    pattern$3(value, scope, { kind: kind, feed: feed[key] });
                 }
             }
-        }
-        catch (e_1_1) { e_1 = { error: e_1_1 }; }
-        finally {
-            try {
-                if (_f && !_f.done && (_a = _e.return)) _a.call(_e);
+            else {
+                var rest = assign({}, feed);
+                for (var index_1 in fedKeys) {
+                    delete rest[fedKeys[index_1]];
+                }
+                RestElement(property, scope, { kind: kind, feed: rest });
             }
-            finally { if (e_1) throw e_1.error; }
         }
     }
     function ArrayPattern(node, scope, options) {
@@ -1430,19 +1352,8 @@
     });
 
     function Program(program, scope) {
-        var e_1, _a;
-        try {
-            for (var _b = __values(program.body), _c = _b.next(); !_c.done; _c = _b.next()) {
-                var node = _c.value;
-                evaluate(node, scope);
-            }
-        }
-        catch (e_1_1) { e_1 = { error: e_1_1 }; }
-        finally {
-            try {
-                if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
-            }
-            finally { if (e_1) throw e_1.error; }
+        for (var index in program.body) {
+            evaluate(program.body[index], scope);
         }
     }
 
@@ -1454,28 +1365,17 @@
         evaluate(node.expression, scope);
     }
     function BlockStatement(block, scope, options) {
-        var e_1, _a;
         if (options === void 0) { options = {}; }
-        var _b = options.invasived, invasived = _b === void 0 ? false : _b, _c = options.hoisted, hoisted = _c === void 0 ? false : _c;
+        var _a = options.invasived, invasived = _a === void 0 ? false : _a, _b = options.hoisted, hoisted = _b === void 0 ? false : _b;
         var subScope = invasived ? scope : new Scope(scope);
         if (!hoisted) {
             hoistFunc$1(block, subScope);
         }
-        try {
-            for (var _d = __values(block.body), _e = _d.next(); !_e.done; _e = _d.next()) {
-                var node = _e.value;
-                var result = evaluate(node, subScope);
-                if (result === BREAK || result === CONTINUE || result === RETURN) {
-                    return result;
-                }
+        for (var index in block.body) {
+            var result = evaluate(block.body[index], subScope);
+            if (result === BREAK || result === CONTINUE || result === RETURN) {
+                return result;
             }
-        }
-        catch (e_1_1) { e_1 = { error: e_1_1 }; }
-        finally {
-            try {
-                if (_e && !_e.done && (_a = _d.return)) _a.call(_d);
-            }
-            finally { if (e_1) throw e_1.error; }
         }
     }
     function EmptyStatement() {
@@ -1502,50 +1402,29 @@
         }
     }
     function SwitchStatement(node, scope) {
-        var e_2, _a;
         var discriminant = evaluate(node.discriminant, scope);
         var matched = false;
-        try {
-            for (var _b = __values(node.cases), _c = _b.next(); !_c.done; _c = _b.next()) {
-                var eachCase = _c.value;
-                if (!matched
-                    && (!eachCase.test
-                        || (evaluate(eachCase.test, scope)) === discriminant)) {
-                    matched = true;
-                }
-                if (matched) {
-                    var result = SwitchCase(eachCase, scope);
-                    if (result === BREAK || result === CONTINUE || result === RETURN) {
-                        return result;
-                    }
-                }
+        for (var index in node.cases) {
+            var eachCase = node.cases[index];
+            if (!matched
+                && (!eachCase.test
+                    || (evaluate(eachCase.test, scope)) === discriminant)) {
+                matched = true;
             }
-        }
-        catch (e_2_1) { e_2 = { error: e_2_1 }; }
-        finally {
-            try {
-                if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
-            }
-            finally { if (e_2) throw e_2.error; }
-        }
-    }
-    function SwitchCase(node, scope) {
-        var e_3, _a;
-        try {
-            for (var _b = __values(node.consequent), _c = _b.next(); !_c.done; _c = _b.next()) {
-                var statement = _c.value;
-                var result = evaluate(statement, scope);
+            if (matched) {
+                var result = SwitchCase(eachCase, scope);
                 if (result === BREAK || result === CONTINUE || result === RETURN) {
                     return result;
                 }
             }
         }
-        catch (e_3_1) { e_3 = { error: e_3_1 }; }
-        finally {
-            try {
-                if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
+    }
+    function SwitchCase(node, scope) {
+        for (var index in node.consequent) {
+            var result = evaluate(node.consequent[index], scope);
+            if (result === BREAK || result === CONTINUE || result === RETURN) {
+                return result;
             }
-            finally { if (e_3) throw e_3.error; }
         }
     }
     function ThrowStatement(node, scope) {
@@ -1559,12 +1438,14 @@
             if (node.handler) {
                 var subScope = new Scope(scope);
                 var param = node.handler.param;
-                if (param.type === 'Identifier') {
-                    var name_1 = param.name;
-                    subScope.let(name_1, err);
-                }
-                else {
-                    pattern$3(param, scope, { feed: err });
+                if (param) {
+                    if (param.type === 'Identifier') {
+                        var name_1 = param.name;
+                        subScope.let(name_1, err);
+                    }
+                    else {
+                        pattern$3(param, scope, { feed: err });
+                    }
                 }
                 return CatchClause(node.handler, subScope);
             }
@@ -1632,26 +1513,8 @@
         }
     }
     function ForInStatement(node, scope) {
-        var left = node.left;
         for (var value in evaluate(node.right, scope)) {
-            var subScope = new Scope(scope);
-            if (left.type === 'VariableDeclaration') {
-                VariableDeclaration(left, subScope, { feed: value });
-            }
-            else if (left.type === 'Identifier') {
-                var variable = Identifier(left, scope, { getVar: true });
-                variable.set(value);
-            }
-            else {
-                pattern$3(left, scope, { feed: value });
-            }
-            var result = void 0;
-            if (node.body.type === 'BlockStatement') {
-                result = BlockStatement(node.body, subScope, { invasived: true });
-            }
-            else {
-                result = evaluate(node.body, subScope);
-            }
+            var result = ForXHandler$1(node, scope, { value: value });
             if (result === BREAK) {
                 break;
             }
@@ -1664,29 +1527,11 @@
         }
     }
     function ForOfStatement(node, scope) {
-        var e_4, _a;
-        var left = node.left;
+        var e_1, _a;
         try {
             for (var _b = __values(evaluate(node.right, scope)), _c = _b.next(); !_c.done; _c = _b.next()) {
                 var value = _c.value;
-                var subScope = new Scope(scope);
-                if (left.type === 'VariableDeclaration') {
-                    VariableDeclaration(left, subScope, { feed: value });
-                }
-                else if (left.type === 'Identifier') {
-                    var variable = Identifier(left, scope, { getVar: true });
-                    variable.set(value);
-                }
-                else {
-                    pattern$3(left, scope, { feed: value });
-                }
-                var result = void 0;
-                if (node.body.type === 'BlockStatement') {
-                    result = BlockStatement(node.body, subScope, { invasived: true });
-                }
-                else {
-                    result = evaluate(node.body, subScope);
-                }
+                var result = ForXHandler$1(node, scope, { value: value });
                 if (result === BREAK) {
                     break;
                 }
@@ -1698,12 +1543,12 @@
                 }
             }
         }
-        catch (e_4_1) { e_4 = { error: e_4_1 }; }
+        catch (e_1_1) { e_1 = { error: e_1_1 }; }
         finally {
             try {
                 if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
             }
-            finally { if (e_4) throw e_4.error; }
+            finally { if (e_1) throw e_1.error; }
         }
     }
 
@@ -1745,20 +1590,9 @@
         scope.func(node.id.name, createFunc$1(node, scope));
     }
     function VariableDeclaration(node, scope, options) {
-        var e_1, _a;
         if (options === void 0) { options = {}; }
-        try {
-            for (var _b = __values(node.declarations), _c = _b.next(); !_c.done; _c = _b.next()) {
-                var declarator = _c.value;
-                VariableDeclarator(declarator, scope, assign({ kind: node.kind }, options));
-            }
-        }
-        catch (e_1_1) { e_1 = { error: e_1_1 }; }
-        finally {
-            try {
-                if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
-            }
-            finally { if (e_1) throw e_1.error; }
+        for (var index in node.declarations) {
+            VariableDeclarator(node.declarations[index], scope, assign({ kind: node.kind }, options));
         }
     }
     function VariableDeclarator(node, scope, options) {
@@ -1810,21 +1644,10 @@
         scope.func(node.id.name, createClass$1(node, scope));
     }
     function ClassBody(node, scope, options) {
-        var e_2, _a;
         if (options === void 0) { options = {}; }
-        var _b = options.klass, klass = _b === void 0 ? function () { } : _b;
-        try {
-            for (var _c = __values(node.body), _d = _c.next(); !_d.done; _d = _c.next()) {
-                var method = _d.value;
-                MethodDefinition(method, scope, { klass: klass });
-            }
-        }
-        catch (e_2_1) { e_2 = { error: e_2_1 }; }
-        finally {
-            try {
-                if (_d && !_d.done && (_a = _c.return)) _a.call(_c);
-            }
-            finally { if (e_2) throw e_2.error; }
+        var _a = options.klass, klass = _a === void 0 ? function () { } : _a;
+        for (var index in node.body) {
+            MethodDefinition(node.body[index], scope, { klass: klass });
         }
     }
     function MethodDefinition(node, scope, options) {
@@ -1917,83 +1740,82 @@
         });
     }
     function ArrayExpression$1(node, scope) {
-        var e_1, _a, results, _b, _c, item, _d, _e, _f, _g, e_1_1;
-        return __generator(this, function (_h) {
-            switch (_h.label) {
+        var results, _a, _b, _i, index, item, _c, _d, _e, _f;
+        return __generator(this, function (_g) {
+            switch (_g.label) {
                 case 0:
                     results = [];
-                    _h.label = 1;
+                    _a = [];
+                    for (_b in node.elements)
+                        _a.push(_b);
+                    _i = 0;
+                    _g.label = 1;
                 case 1:
-                    _h.trys.push([1, 8, 9, 10]);
-                    _b = __values(node.elements), _c = _b.next();
-                    _h.label = 2;
-                case 2:
-                    if (!!_c.done) return [3, 7];
-                    item = _c.value;
-                    if (!(item.type === 'SpreadElement')) return [3, 4];
-                    _e = (_d = results).concat;
+                    if (!(_i < _a.length)) return [3, 6];
+                    index = _a[_i];
+                    item = node.elements[index];
+                    if (!(item.type === 'SpreadElement')) return [3, 3];
+                    _d = (_c = results).concat;
                     return [5, __values(SpreadElement$1(item, scope))];
+                case 2:
+                    results = _d.apply(_c, [_g.sent()]);
+                    return [3, 5];
                 case 3:
-                    results = _e.apply(_d, [_h.sent()]);
-                    return [3, 6];
-                case 4:
-                    _g = (_f = results).push;
+                    _f = (_e = results).push;
                     return [5, __values(evaluate$1(item, scope))];
+                case 4:
+                    _f.apply(_e, [_g.sent()]);
+                    _g.label = 5;
                 case 5:
-                    _g.apply(_f, [_h.sent()]);
-                    _h.label = 6;
-                case 6:
-                    _c = _b.next();
-                    return [3, 2];
-                case 7: return [3, 10];
-                case 8:
-                    e_1_1 = _h.sent();
-                    e_1 = { error: e_1_1 };
-                    return [3, 10];
-                case 9:
-                    try {
-                        if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
-                    }
-                    finally { if (e_1) throw e_1.error; }
-                    return [7];
-                case 10: return [2, results];
+                    _i++;
+                    return [3, 1];
+                case 6: return [2, results];
             }
         });
     }
     function ObjectExpression$1(node, scope) {
-        var e_2, _a, object, _b, _c, property, key, propKey, _d, value, propKind, e_2_1;
-        return __generator(this, function (_e) {
-            switch (_e.label) {
+        var object, _a, _b, _i, index, property, _c, _d, key, propKey, _e, value, propKind;
+        return __generator(this, function (_f) {
+            switch (_f.label) {
                 case 0:
                     object = {};
-                    _e.label = 1;
+                    _a = [];
+                    for (_b in node.properties)
+                        _a.push(_b);
+                    _i = 0;
+                    _f.label = 1;
                 case 1:
-                    _e.trys.push([1, 11, 12, 13]);
-                    _b = __values(node.properties), _c = _b.next();
-                    _e.label = 2;
+                    if (!(_i < _a.length)) return [3, 11];
+                    index = _a[_i];
+                    property = node.properties[index];
+                    if (!(property.type === 'SpreadElement')) return [3, 3];
+                    _c = assign;
+                    _d = [object];
+                    return [5, __values(SpreadElement$1(property, scope))];
                 case 2:
-                    if (!!_c.done) return [3, 10];
-                    property = _c.value;
+                    _c.apply(void 0, _d.concat([_f.sent()]));
+                    return [3, 10];
+                case 3:
                     key = void 0;
                     propKey = property.key;
-                    if (!property.computed) return [3, 4];
+                    if (!property.computed) return [3, 5];
                     return [5, __values(evaluate$1(propKey, scope))];
-                case 3:
-                    key = _e.sent();
-                    return [3, 7];
                 case 4:
-                    if (!(propKey.type === 'Identifier')) return [3, 5];
-                    key = propKey.name;
-                    return [3, 7];
+                    key = _f.sent();
+                    return [3, 8];
                 case 5:
-                    _d = '';
-                    return [5, __values(Literal$1(propKey, scope))];
+                    if (!(propKey.type === 'Identifier')) return [3, 6];
+                    key = propKey.name;
+                    return [3, 8];
                 case 6:
-                    key = _d + (_e.sent());
-                    _e.label = 7;
-                case 7: return [5, __values(evaluate$1(property.value, scope))];
-                case 8:
-                    value = _e.sent();
+                    _e = '';
+                    return [5, __values(Literal$1(propKey, scope))];
+                case 7:
+                    key = _e + (_f.sent());
+                    _f.label = 8;
+                case 8: return [5, __values(evaluate$1(property.value, scope))];
+                case 9:
+                    value = _f.sent();
                     propKind = property.kind;
                     if (propKind === 'init') {
                         object[key] = value;
@@ -2004,22 +1826,11 @@
                     else {
                         define(object, key, { set: value });
                     }
-                    _e.label = 9;
-                case 9:
-                    _c = _b.next();
-                    return [3, 2];
-                case 10: return [3, 13];
-                case 11:
-                    e_2_1 = _e.sent();
-                    e_2 = { error: e_2_1 };
-                    return [3, 13];
-                case 12:
-                    try {
-                        if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
-                    }
-                    finally { if (e_2) throw e_2.error; }
-                    return [7];
-                case 13: return [2, object];
+                    _f.label = 10;
+                case 10:
+                    _i++;
+                    return [3, 1];
+                case 11: return [2, object];
             }
         });
     }
@@ -2364,25 +2175,25 @@
         });
     }
     function CallExpression$1(node, scope, options) {
-        var e_3, _a, _b, async, func, object, key, getter, thisObject, args, _c, _d, arg, _e, _f, _g, _h, e_3_1;
-        return __generator(this, function (_j) {
-            switch (_j.label) {
+        var _a, async, func, object, key, getter, thisObject, args, _b, _c, _i, index, arg, _d, _e, _f, _g;
+        if (options === void 0) { options = {}; }
+        return __generator(this, function (_h) {
+            switch (_h.label) {
                 case 0:
-                    if (options === void 0) { options = {}; }
-                    _b = options.async, async = _b === void 0 ? false : _b;
+                    _a = options.async, async = _a === void 0 ? false : _a;
                     if (!(node.callee.type === 'MemberExpression')) return [3, 5];
                     return [5, __values(MemberExpression$1(node.callee, scope, { getObj: true }))];
                 case 1:
-                    object = _j.sent();
+                    object = _h.sent();
                     key = void 0;
                     if (!node.callee.computed) return [3, 3];
                     return [5, __values(evaluate$1(node.callee.property, scope))];
                 case 2:
-                    key = _j.sent();
+                    key = _h.sent();
                     return [3, 4];
                 case 3:
                     key = node.callee.property.name;
-                    _j.label = 4;
+                    _h.label = 4;
                 case 4:
                     getter = getGetter(object, key);
                     if (node.callee.object.type === 'Super' && getter) {
@@ -2397,45 +2208,35 @@
                     object = scope.find('this').get();
                     return [5, __values(evaluate$1(node.callee, scope))];
                 case 6:
-                    func = _j.sent();
-                    _j.label = 7;
+                    func = _h.sent();
+                    _h.label = 7;
                 case 7:
                     args = [];
-                    _j.label = 8;
+                    _b = [];
+                    for (_c in node.arguments)
+                        _b.push(_c);
+                    _i = 0;
+                    _h.label = 8;
                 case 8:
-                    _j.trys.push([8, 15, 16, 17]);
-                    _c = __values(node.arguments), _d = _c.next();
-                    _j.label = 9;
-                case 9:
-                    if (!!_d.done) return [3, 14];
-                    arg = _d.value;
-                    if (!(arg.type === 'SpreadElement')) return [3, 11];
-                    _f = (_e = args).concat;
+                    if (!(_i < _b.length)) return [3, 13];
+                    index = _b[_i];
+                    arg = node.arguments[index];
+                    if (!(arg.type === 'SpreadElement')) return [3, 10];
+                    _e = (_d = args).concat;
                     return [5, __values(SpreadElement$1(arg, scope))];
+                case 9:
+                    args = _e.apply(_d, [_h.sent()]);
+                    return [3, 12];
                 case 10:
-                    args = _f.apply(_e, [_j.sent()]);
-                    return [3, 13];
-                case 11:
-                    _h = (_g = args).push;
+                    _g = (_f = args).push;
                     return [5, __values(evaluate$1(arg, scope))];
+                case 11:
+                    _g.apply(_f, [_h.sent()]);
+                    _h.label = 12;
                 case 12:
-                    _h.apply(_g, [_j.sent()]);
-                    _j.label = 13;
+                    _i++;
+                    return [3, 8];
                 case 13:
-                    _d = _c.next();
-                    return [3, 9];
-                case 14: return [3, 17];
-                case 15:
-                    e_3_1 = _j.sent();
-                    e_3 = { error: e_3_1 };
-                    return [3, 17];
-                case 16:
-                    try {
-                        if (_d && !_d.done && (_a = _c.return)) _a.call(_c);
-                    }
-                    finally { if (e_3) throw e_3.error; }
-                    return [7];
-                case 17:
                     if (func[ASYNC] && !async) {
                         return [2, func.apply(object, args).then()];
                     }
@@ -2447,12 +2248,12 @@
         });
     }
     function NewExpression$1(node, scope) {
-        var e_4, _a, constructor, name_1, args, _b, _c, arg, _d, _e, _f, _g, e_4_1;
-        return __generator(this, function (_h) {
-            switch (_h.label) {
+        var constructor, name_1, args, _a, _b, _i, index, arg, _c, _d, _e, _f;
+        return __generator(this, function (_g) {
+            switch (_g.label) {
                 case 0: return [5, __values(evaluate$1(node.callee, scope))];
                 case 1:
-                    constructor = _h.sent();
+                    constructor = _g.sent();
                     if (typeof constructor !== 'function') {
                         if (node.callee.type === 'Identifier') {
                             name_1 = node.callee.name;
@@ -2471,74 +2272,55 @@
                         throw new TypeError((constructor.name || '(intermediate value)') + " is not a constructor");
                     }
                     args = [];
-                    _h.label = 2;
+                    _a = [];
+                    for (_b in node.arguments)
+                        _a.push(_b);
+                    _i = 0;
+                    _g.label = 2;
                 case 2:
-                    _h.trys.push([2, 9, 10, 11]);
-                    _b = __values(node.arguments), _c = _b.next();
-                    _h.label = 3;
-                case 3:
-                    if (!!_c.done) return [3, 8];
-                    arg = _c.value;
-                    if (!(arg.type === 'SpreadElement')) return [3, 5];
-                    _e = (_d = args).concat;
+                    if (!(_i < _a.length)) return [3, 7];
+                    index = _a[_i];
+                    arg = node.arguments[index];
+                    if (!(arg.type === 'SpreadElement')) return [3, 4];
+                    _d = (_c = args).concat;
                     return [5, __values(SpreadElement$1(arg, scope))];
+                case 3:
+                    args = _d.apply(_c, [_g.sent()]);
+                    return [3, 6];
                 case 4:
-                    args = _e.apply(_d, [_h.sent()]);
-                    return [3, 7];
-                case 5:
-                    _g = (_f = args).push;
+                    _f = (_e = args).push;
                     return [5, __values(evaluate$1(arg, scope))];
+                case 5:
+                    _f.apply(_e, [_g.sent()]);
+                    _g.label = 6;
                 case 6:
-                    _g.apply(_f, [_h.sent()]);
-                    _h.label = 7;
-                case 7:
-                    _c = _b.next();
-                    return [3, 3];
-                case 8: return [3, 11];
-                case 9:
-                    e_4_1 = _h.sent();
-                    e_4 = { error: e_4_1 };
-                    return [3, 11];
-                case 10:
-                    try {
-                        if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
-                    }
-                    finally { if (e_4) throw e_4.error; }
-                    return [7];
-                case 11: return [2, new (constructor.bind.apply(constructor, __spread([void 0], args)))()];
+                    _i++;
+                    return [3, 2];
+                case 7: return [2, new (constructor.bind.apply(constructor, __spread([void 0], args)))()];
             }
         });
     }
     function SequenceExpression$1(node, scope) {
-        var e_5, _a, result, _b, _c, expression, e_5_1;
-        return __generator(this, function (_d) {
-            switch (_d.label) {
+        var result, _a, _b, _i, index;
+        return __generator(this, function (_c) {
+            switch (_c.label) {
                 case 0:
-                    _d.trys.push([0, 5, 6, 7]);
-                    _b = __values(node.expressions), _c = _b.next();
-                    _d.label = 1;
+                    _a = [];
+                    for (_b in node.expressions)
+                        _a.push(_b);
+                    _i = 0;
+                    _c.label = 1;
                 case 1:
-                    if (!!_c.done) return [3, 4];
-                    expression = _c.value;
-                    return [5, __values(evaluate$1(expression, scope))];
+                    if (!(_i < _a.length)) return [3, 4];
+                    index = _a[_i];
+                    return [5, __values(evaluate$1(node.expressions[index], scope))];
                 case 2:
-                    result = _d.sent();
-                    _d.label = 3;
+                    result = _c.sent();
+                    _c.label = 3;
                 case 3:
-                    _c = _b.next();
+                    _i++;
                     return [3, 1];
-                case 4: return [3, 7];
-                case 5:
-                    e_5_1 = _d.sent();
-                    e_5 = { error: e_5_1 };
-                    return [3, 7];
-                case 6:
-                    try {
-                        if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
-                    }
-                    finally { if (e_5) throw e_5.error; }
-                    return [7];
-                case 7: return [2, result];
+                case 4: return [2, result];
             }
         });
     }
@@ -2608,12 +2390,12 @@
         });
     }
     function TaggedTemplateExpression$1(node, scope) {
-        var e_6, _a, tagFunc, quasis, str, raw, expressions, args, _b, _c, n, _d, _e, e_6_1;
-        return __generator(this, function (_f) {
-            switch (_f.label) {
+        var tagFunc, quasis, str, raw, expressions, args, _a, _b, _i, index, _c, _d;
+        return __generator(this, function (_e) {
+            switch (_e.label) {
                 case 0: return [5, __values(evaluate$1(node.tag, scope))];
                 case 1:
-                    tagFunc = _f.sent();
+                    tagFunc = _e.sent();
                     quasis = node.quasi.quasis;
                     str = quasis.map(function (v) { return v.value.cooked; });
                     raw = quasis.map(function (v) { return v.value.raw; });
@@ -2622,35 +2404,24 @@
                     });
                     expressions = node.quasi.expressions;
                     args = [];
-                    if (!expressions) return [3, 9];
-                    _f.label = 2;
+                    if (!expressions) return [3, 5];
+                    _a = [];
+                    for (_b in expressions)
+                        _a.push(_b);
+                    _i = 0;
+                    _e.label = 2;
                 case 2:
-                    _f.trys.push([2, 7, 8, 9]);
-                    _b = __values(node.quasi.expressions), _c = _b.next();
-                    _f.label = 3;
+                    if (!(_i < _a.length)) return [3, 5];
+                    index = _a[_i];
+                    _d = (_c = args).push;
+                    return [5, __values(evaluate$1(expressions[index], scope))];
                 case 3:
-                    if (!!_c.done) return [3, 6];
-                    n = _c.value;
-                    _e = (_d = args).push;
-                    return [5, __values(evaluate$1(n, scope))];
+                    _d.apply(_c, [_e.sent()]);
+                    _e.label = 4;
                 case 4:
-                    _e.apply(_d, [_f.sent()]);
-                    _f.label = 5;
-                case 5:
-                    _c = _b.next();
-                    return [3, 3];
-                case 6: return [3, 9];
-                case 7:
-                    e_6_1 = _f.sent();
-                    e_6 = { error: e_6_1 };
-                    return [3, 9];
-                case 8:
-                    try {
-                        if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
-                    }
-                    finally { if (e_6) throw e_6.error; }
-                    return [7];
-                case 9: return [2, tagFunc.apply(void 0, __spread([freeze(str)], args))];
+                    _i++;
+                    return [3, 2];
+                case 5: return [2, tagFunc.apply(void 0, __spread([freeze(str)], args))];
             }
         });
     }
@@ -2712,64 +2483,67 @@
     });
 
     function ObjectPattern$1(node, scope, options) {
-        var e_1, _a, _b, kind, _c, hoist, _d, feed, _e, _f, property, value, key, e_1_1;
-        return __generator(this, function (_g) {
-            switch (_g.label) {
+        var _a, kind, _b, hoist, _c, feed, fedKeys, _d, _e, _i, index, property, value, key, rest, index_1;
+        if (options === void 0) { options = {}; }
+        return __generator(this, function (_f) {
+            switch (_f.label) {
                 case 0:
-                    if (options === void 0) { options = {}; }
-                    _b = options.kind, kind = _b === void 0 ? 'let' : _b, _c = options.hoist, hoist = _c === void 0 ? false : _c, _d = options.feed, feed = _d === void 0 ? {} : _d;
-                    _g.label = 1;
+                    _a = options.kind, kind = _a === void 0 ? 'let' : _a, _b = options.hoist, hoist = _b === void 0 ? false : _b, _c = options.feed, feed = _c === void 0 ? {} : _c;
+                    fedKeys = [];
+                    _d = [];
+                    for (_e in node.properties)
+                        _d.push(_e);
+                    _i = 0;
+                    _f.label = 1;
                 case 1:
-                    _g.trys.push([1, 14, 15, 16]);
-                    _e = __values(node.properties), _f = _e.next();
-                    _g.label = 2;
-                case 2:
-                    if (!!_f.done) return [3, 13];
-                    property = _f.value;
+                    if (!(_i < _d.length)) return [3, 15];
+                    index = _d[_i];
+                    property = node.properties[index];
                     value = property.value;
-                    if (!hoist) return [3, 6];
-                    if (!(kind === 'var')) return [3, 5];
-                    if (!(value.type === 'Identifier')) return [3, 3];
+                    if (!hoist) return [3, 5];
+                    if (!(kind === 'var')) return [3, 4];
+                    if (!(value.type === 'Identifier')) return [3, 2];
                     scope.var(value.name);
-                    return [3, 5];
-                case 3: return [5, __values(pattern$2(value, scope, { kind: kind, hoist: hoist }))];
-                case 4:
-                    _g.sent();
-                    _g.label = 5;
-                case 5: return [3, 12];
-                case 6:
+                    return [3, 4];
+                case 2: return [5, __values(pattern$2(value, scope, { kind: kind, hoist: hoist }))];
+                case 3:
+                    _f.sent();
+                    _f.label = 4;
+                case 4: return [3, 14];
+                case 5:
+                    if (!(property.type === 'Property')) return [3, 12];
                     key = void 0;
-                    if (!property.computed) return [3, 8];
+                    if (!property.computed) return [3, 7];
                     return [5, __values(evaluate$1(property.key, scope))];
+                case 6:
+                    key = _f.sent();
+                    return [3, 8];
                 case 7:
-                    key = _g.sent();
-                    return [3, 9];
-                case 8:
                     key = property.key.name;
-                    _g.label = 9;
-                case 9:
-                    if (!(value.type === 'Identifier')) return [3, 10];
+                    _f.label = 8;
+                case 8:
+                    fedKeys.push(key);
+                    if (!(value.type === 'Identifier')) return [3, 9];
                     scope[kind](value.name, feed[key]);
-                    return [3, 12];
-                case 10: return [5, __values(pattern$2(value, scope, { kind: kind, feed: feed[key] }))];
-                case 11:
-                    _g.sent();
-                    _g.label = 12;
+                    return [3, 11];
+                case 9: return [5, __values(pattern$2(value, scope, { kind: kind, feed: feed[key] }))];
+                case 10:
+                    _f.sent();
+                    _f.label = 11;
+                case 11: return [3, 14];
                 case 12:
-                    _f = _e.next();
-                    return [3, 2];
-                case 13: return [3, 16];
-                case 14:
-                    e_1_1 = _g.sent();
-                    e_1 = { error: e_1_1 };
-                    return [3, 16];
-                case 15:
-                    try {
-                        if (_f && !_f.done && (_a = _e.return)) _a.call(_e);
+                    rest = assign({}, feed);
+                    for (index_1 in fedKeys) {
+                        delete rest[fedKeys[index_1]];
                     }
-                    finally { if (e_1) throw e_1.error; }
-                    return [7];
-                case 16: return [2];
+                    return [5, __values(RestElement$1(property, scope, { kind: kind, feed: rest }))];
+                case 13:
+                    _f.sent();
+                    _f.label = 14;
+                case 14:
+                    _i++;
+                    return [3, 1];
+                case 15: return [2];
             }
         });
     }
@@ -2893,35 +2667,26 @@
     });
 
     function Program$1(program, scope) {
-        var e_1, _a, _b, _c, node, e_1_1;
-        return __generator(this, function (_d) {
-            switch (_d.label) {
+        var _a, _b, _i, index;
+        return __generator(this, function (_c) {
+            switch (_c.label) {
                 case 0:
-                    _d.trys.push([0, 5, 6, 7]);
-                    _b = __values(program.body), _c = _b.next();
-                    _d.label = 1;
+                    _a = [];
+                    for (_b in program.body)
+                        _a.push(_b);
+                    _i = 0;
+                    _c.label = 1;
                 case 1:
-                    if (!!_c.done) return [3, 4];
-                    node = _c.value;
-                    return [5, __values(evaluate$1(node, scope))];
+                    if (!(_i < _a.length)) return [3, 4];
+                    index = _a[_i];
+                    return [5, __values(evaluate$1(program.body[index], scope))];
                 case 2:
-                    _d.sent();
-                    _d.label = 3;
+                    _c.sent();
+                    _c.label = 3;
                 case 3:
-                    _c = _b.next();
+                    _i++;
                     return [3, 1];
-                case 4: return [3, 7];
-                case 5:
-                    e_1_1 = _d.sent();
-                    e_1 = { error: e_1_1 };
-                    return [3, 7];
-                case 6:
-                    try {
-                        if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
-                    }
-                    finally { if (e_1) throw e_1.error; }
-                    return [7];
-                case 7: return [2];
+                case 4: return [2];
             }
         });
     }
@@ -2941,47 +2706,38 @@
         });
     }
     function BlockStatement$1(block, scope, options) {
-        var e_1, _a, _b, invasived, _c, hoisted, subScope, _d, _e, node, result, e_1_1;
-        return __generator(this, function (_f) {
-            switch (_f.label) {
+        var _a, invasived, _b, hoisted, subScope, _c, _d, _i, index, result;
+        if (options === void 0) { options = {}; }
+        return __generator(this, function (_e) {
+            switch (_e.label) {
                 case 0:
-                    if (options === void 0) { options = {}; }
-                    _b = options.invasived, invasived = _b === void 0 ? false : _b, _c = options.hoisted, hoisted = _c === void 0 ? false : _c;
+                    _a = options.invasived, invasived = _a === void 0 ? false : _a, _b = options.hoisted, hoisted = _b === void 0 ? false : _b;
                     subScope = invasived ? scope : new Scope(scope);
                     if (!!hoisted) return [3, 2];
                     return [5, __values(hoistFunc(block, subScope))];
                 case 1:
-                    _f.sent();
-                    _f.label = 2;
+                    _e.sent();
+                    _e.label = 2;
                 case 2:
-                    _f.trys.push([2, 7, 8, 9]);
-                    _d = __values(block.body), _e = _d.next();
-                    _f.label = 3;
+                    _c = [];
+                    for (_d in block.body)
+                        _c.push(_d);
+                    _i = 0;
+                    _e.label = 3;
                 case 3:
-                    if (!!_e.done) return [3, 6];
-                    node = _e.value;
-                    return [5, __values(evaluate$1(node, subScope))];
+                    if (!(_i < _c.length)) return [3, 6];
+                    index = _c[_i];
+                    return [5, __values(evaluate$1(block.body[index], subScope))];
                 case 4:
-                    result = _f.sent();
+                    result = _e.sent();
                     if (result === BREAK || result === CONTINUE || result === RETURN) {
                         return [2, result];
                     }
-                    _f.label = 5;
+                    _e.label = 5;
                 case 5:
-                    _e = _d.next();
+                    _i++;
                     return [3, 3];
-                case 6: return [3, 9];
-                case 7:
-                    e_1_1 = _f.sent();
-                    e_1 = { error: e_1_1 };
-                    return [3, 9];
-                case 8:
-                    try {
-                        if (_e && !_e.done && (_a = _d.return)) _a.call(_d);
-                    }
-                    finally { if (e_1) throw e_1.error; }
-                    return [7];
-                case 9: return [2];
+                case 6: return [2];
             }
         });
     }
@@ -3040,95 +2796,76 @@
         });
     }
     function SwitchStatement$1(node, scope) {
-        var e_2, _a, discriminant, matched, _b, _c, eachCase, _d, _e, result, e_2_1;
-        return __generator(this, function (_f) {
-            switch (_f.label) {
+        var discriminant, matched, _a, _b, _i, index, eachCase, _c, _d, result;
+        return __generator(this, function (_e) {
+            switch (_e.label) {
                 case 0: return [5, __values(evaluate$1(node.discriminant, scope))];
                 case 1:
-                    discriminant = _f.sent();
+                    discriminant = _e.sent();
                     matched = false;
-                    _f.label = 2;
+                    _a = [];
+                    for (_b in node.cases)
+                        _a.push(_b);
+                    _i = 0;
+                    _e.label = 2;
                 case 2:
-                    _f.trys.push([2, 10, 11, 12]);
-                    _b = __values(node.cases), _c = _b.next();
-                    _f.label = 3;
-                case 3:
-                    if (!!_c.done) return [3, 9];
-                    eachCase = _c.value;
-                    _d = !matched;
-                    if (!_d) return [3, 6];
-                    _e = !eachCase.test;
-                    if (_e) return [3, 5];
+                    if (!(_i < _a.length)) return [3, 8];
+                    index = _a[_i];
+                    eachCase = node.cases[index];
+                    _c = !matched;
+                    if (!_c) return [3, 5];
+                    _d = !eachCase.test;
+                    if (_d) return [3, 4];
                     return [5, __values(evaluate$1(eachCase.test, scope))];
+                case 3:
+                    _d = (_e.sent()) === discriminant;
+                    _e.label = 4;
                 case 4:
-                    _e = (_f.sent()) === discriminant;
-                    _f.label = 5;
+                    _c = (_d);
+                    _e.label = 5;
                 case 5:
-                    _d = (_e);
-                    _f.label = 6;
-                case 6:
-                    if (_d) {
+                    if (_c) {
                         matched = true;
                     }
-                    if (!matched) return [3, 8];
+                    if (!matched) return [3, 7];
                     return [5, __values(SwitchCase$1(eachCase, scope))];
-                case 7:
-                    result = _f.sent();
+                case 6:
+                    result = _e.sent();
                     if (result === BREAK || result === CONTINUE || result === RETURN) {
                         return [2, result];
                     }
-                    _f.label = 8;
-                case 8:
-                    _c = _b.next();
-                    return [3, 3];
-                case 9: return [3, 12];
-                case 10:
-                    e_2_1 = _f.sent();
-                    e_2 = { error: e_2_1 };
-                    return [3, 12];
-                case 11:
-                    try {
-                        if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
-                    }
-                    finally { if (e_2) throw e_2.error; }
-                    return [7];
-                case 12: return [2];
+                    _e.label = 7;
+                case 7:
+                    _i++;
+                    return [3, 2];
+                case 8: return [2];
             }
         });
     }
     function SwitchCase$1(node, scope) {
-        var e_3, _a, _b, _c, statement, result, e_3_1;
-        return __generator(this, function (_d) {
-            switch (_d.label) {
+        var _a, _b, _i, index, result;
+        return __generator(this, function (_c) {
+            switch (_c.label) {
                 case 0:
-                    _d.trys.push([0, 5, 6, 7]);
-                    _b = __values(node.consequent), _c = _b.next();
-                    _d.label = 1;
+                    _a = [];
+                    for (_b in node.consequent)
+                        _a.push(_b);
+                    _i = 0;
+                    _c.label = 1;
                 case 1:
-                    if (!!_c.done) return [3, 4];
-                    statement = _c.value;
-                    return [5, __values(evaluate$1(statement, scope))];
+                    if (!(_i < _a.length)) return [3, 4];
+                    index = _a[_i];
+                    return [5, __values(evaluate$1(node.consequent[index], scope))];
                 case 2:
-                    result = _d.sent();
+                    result = _c.sent();
                     if (result === BREAK || result === CONTINUE || result === RETURN) {
                         return [2, result];
                     }
-                    _d.label = 3;
+                    _c.label = 3;
                 case 3:
-                    _c = _b.next();
+                    _i++;
                     return [3, 1];
-                case 4: return [3, 7];
-                case 5:
-                    e_3_1 = _d.sent();
-                    e_3 = { error: e_3_1 };
-                    return [3, 7];
-                case 6:
-                    try {
-                        if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
-                    }
-                    finally { if (e_3) throw e_3.error; }
-                    return [7];
-                case 7: return [2];
+                case 4: return [2];
             }
         });
     }
@@ -3153,6 +2890,7 @@
                     if (!node.handler) return [3, 7];
                     subScope = new Scope(scope);
                     param = node.handler.param;
+                    if (!param) return [3, 5];
                     if (!(param.type === 'Identifier')) return [3, 3];
                     name_1 = param.name;
                     subScope.let(name_1, err_1);
@@ -3283,11 +3021,10 @@
         });
     }
     function ForInStatement$1(node, scope) {
-        var left, _a, _b, _i, value, subScope, variable, result;
+        var _a, _b, _i, value, result;
         return __generator(this, function (_c) {
             switch (_c.label) {
                 case 0:
-                    left = node.left;
                     _a = [];
                     return [5, __values(evaluate$1(node.right, scope))];
                 case 1:
@@ -3296,124 +3033,69 @@
                     _i = 0;
                     _c.label = 2;
                 case 2:
-                    if (!(_i < _a.length)) return [3, 14];
+                    if (!(_i < _a.length)) return [3, 5];
                     value = _a[_i];
-                    subScope = new Scope(scope);
-                    if (!(left.type === 'VariableDeclaration')) return [3, 4];
-                    return [5, __values(VariableDeclaration$1(left, subScope, { feed: value }))];
+                    return [5, __values(ForXHandler(node, scope, { value: value }))];
                 case 3:
-                    _c.sent();
-                    return [3, 8];
-                case 4:
-                    if (!(left.type === 'Identifier')) return [3, 6];
-                    return [5, __values(Identifier$1(left, scope, { getVar: true }))];
-                case 5:
-                    variable = _c.sent();
-                    variable.set(value);
-                    return [3, 8];
-                case 6: return [5, __values(pattern$2(left, scope, { feed: value }))];
-                case 7:
-                    _c.sent();
-                    _c.label = 8;
-                case 8:
-                    result = void 0;
-                    if (!(node.body.type === 'BlockStatement')) return [3, 10];
-                    return [5, __values(BlockStatement$1(node.body, subScope, { invasived: true }))];
-                case 9:
                     result = _c.sent();
-                    return [3, 12];
-                case 10: return [5, __values(evaluate$1(node.body, subScope))];
-                case 11:
-                    result = _c.sent();
-                    _c.label = 12;
-                case 12:
                     if (result === BREAK) {
-                        return [3, 14];
+                        return [3, 5];
                     }
                     else if (result === CONTINUE) {
-                        return [3, 13];
+                        return [3, 4];
                     }
                     else if (result === RETURN) {
                         return [2, result];
                     }
-                    _c.label = 13;
-                case 13:
+                    _c.label = 4;
+                case 4:
                     _i++;
                     return [3, 2];
-                case 14: return [2];
+                case 5: return [2];
             }
         });
     }
     function ForOfStatement$1(node, scope) {
-        var e_4, _a, left, _b, _c, value, subScope, variable, result, e_4_1;
+        var e_1, _a, _b, _c, value, result, e_1_1;
         return __generator(this, function (_d) {
             switch (_d.label) {
                 case 0:
-                    left = node.left;
-                    _d.label = 1;
-                case 1:
-                    _d.trys.push([1, 16, 17, 18]);
+                    _d.trys.push([0, 6, 7, 8]);
                     return [5, __values(evaluate$1(node.right, scope))];
-                case 2:
+                case 1:
                     _b = __values.apply(void 0, [_d.sent()]), _c = _b.next();
-                    _d.label = 3;
-                case 3:
-                    if (!!_c.done) return [3, 15];
+                    _d.label = 2;
+                case 2:
+                    if (!!_c.done) return [3, 5];
                     value = _c.value;
-                    subScope = new Scope(scope);
-                    if (!(left.type === 'VariableDeclaration')) return [3, 5];
-                    return [5, __values(VariableDeclaration$1(left, subScope, { feed: value }))];
-                case 4:
-                    _d.sent();
-                    return [3, 9];
-                case 5:
-                    if (!(left.type === 'Identifier')) return [3, 7];
-                    return [5, __values(Identifier$1(left, scope, { getVar: true }))];
-                case 6:
-                    variable = _d.sent();
-                    variable.set(value);
-                    return [3, 9];
-                case 7: return [5, __values(pattern$2(left, scope, { feed: value }))];
-                case 8:
-                    _d.sent();
-                    _d.label = 9;
-                case 9:
-                    result = void 0;
-                    if (!(node.body.type === 'BlockStatement')) return [3, 11];
-                    return [5, __values(BlockStatement$1(node.body, subScope, { invasived: true }))];
-                case 10:
+                    return [5, __values(ForXHandler(node, scope, { value: value }))];
+                case 3:
                     result = _d.sent();
-                    return [3, 13];
-                case 11: return [5, __values(evaluate$1(node.body, subScope))];
-                case 12:
-                    result = _d.sent();
-                    _d.label = 13;
-                case 13:
                     if (result === BREAK) {
-                        return [3, 15];
+                        return [3, 5];
                     }
                     else if (result === CONTINUE) {
-                        return [3, 14];
+                        return [3, 4];
                     }
                     else if (result === RETURN) {
                         return [2, result];
                     }
-                    _d.label = 14;
-                case 14:
+                    _d.label = 4;
+                case 4:
                     _c = _b.next();
-                    return [3, 3];
-                case 15: return [3, 18];
-                case 16:
-                    e_4_1 = _d.sent();
-                    e_4 = { error: e_4_1 };
-                    return [3, 18];
-                case 17:
+                    return [3, 2];
+                case 5: return [3, 8];
+                case 6:
+                    e_1_1 = _d.sent();
+                    e_1 = { error: e_1_1 };
+                    return [3, 8];
+                case 7:
                     try {
                         if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
                     }
-                    finally { if (e_4) throw e_4.error; }
+                    finally { if (e_1) throw e_1.error; }
                     return [7];
-                case 18: return [2];
+                case 8: return [2];
             }
         });
     }
@@ -3463,38 +3145,27 @@
         });
     }
     function VariableDeclaration$1(node, scope, options) {
-        var e_1, _a, _b, _c, declarator, e_1_1;
-        return __generator(this, function (_d) {
-            switch (_d.label) {
+        var _a, _b, _i, index;
+        if (options === void 0) { options = {}; }
+        return __generator(this, function (_c) {
+            switch (_c.label) {
                 case 0:
-                    if (options === void 0) { options = {}; }
-                    _d.label = 1;
+                    _a = [];
+                    for (_b in node.declarations)
+                        _a.push(_b);
+                    _i = 0;
+                    _c.label = 1;
                 case 1:
-                    _d.trys.push([1, 6, 7, 8]);
-                    _b = __values(node.declarations), _c = _b.next();
-                    _d.label = 2;
+                    if (!(_i < _a.length)) return [3, 4];
+                    index = _a[_i];
+                    return [5, __values(VariableDeclarator$1(node.declarations[index], scope, assign({ kind: node.kind }, options)))];
                 case 2:
-                    if (!!_c.done) return [3, 5];
-                    declarator = _c.value;
-                    return [5, __values(VariableDeclarator$1(declarator, scope, assign({ kind: node.kind }, options)))];
+                    _c.sent();
+                    _c.label = 3;
                 case 3:
-                    _d.sent();
-                    _d.label = 4;
-                case 4:
-                    _c = _b.next();
-                    return [3, 2];
-                case 5: return [3, 8];
-                case 6:
-                    e_1_1 = _d.sent();
-                    e_1 = { error: e_1_1 };
-                    return [3, 8];
-                case 7:
-                    try {
-                        if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
-                    }
-                    finally { if (e_1) throw e_1.error; }
-                    return [7];
-                case 8: return [2];
+                    _i++;
+                    return [3, 1];
+                case 4: return [2];
             }
         });
     }
@@ -3573,39 +3244,28 @@
         });
     }
     function ClassBody$1(node, scope, options) {
-        var e_2, _a, _b, klass, _c, _d, method, e_2_1;
-        return __generator(this, function (_e) {
-            switch (_e.label) {
+        var _a, klass, _b, _c, _i, index;
+        if (options === void 0) { options = {}; }
+        return __generator(this, function (_d) {
+            switch (_d.label) {
                 case 0:
-                    if (options === void 0) { options = {}; }
-                    _b = options.klass, klass = _b === void 0 ? function () { } : _b;
-                    _e.label = 1;
+                    _a = options.klass, klass = _a === void 0 ? function () { } : _a;
+                    _b = [];
+                    for (_c in node.body)
+                        _b.push(_c);
+                    _i = 0;
+                    _d.label = 1;
                 case 1:
-                    _e.trys.push([1, 6, 7, 8]);
-                    _c = __values(node.body), _d = _c.next();
-                    _e.label = 2;
+                    if (!(_i < _b.length)) return [3, 4];
+                    index = _b[_i];
+                    return [5, __values(MethodDefinition$1(node.body[index], scope, { klass: klass }))];
                 case 2:
-                    if (!!_d.done) return [3, 5];
-                    method = _d.value;
-                    return [5, __values(MethodDefinition$1(method, scope, { klass: klass }))];
+                    _d.sent();
+                    _d.label = 3;
                 case 3:
-                    _e.sent();
-                    _e.label = 4;
-                case 4:
-                    _d = _c.next();
-                    return [3, 2];
-                case 5: return [3, 8];
-                case 6:
-                    e_2_1 = _e.sent();
-                    e_2 = { error: e_2_1 };
-                    return [3, 8];
-                case 7:
-                    try {
-                        if (_d && !_d.done && (_a = _c.return)) _a.call(_c);
-                    }
-                    finally { if (e_2) throw e_2.error; }
-                    return [7];
-                case 8: return [2];
+                    _i++;
+                    return [3, 1];
+                case 4: return [2];
             }
         });
     }
@@ -3723,12 +3383,12 @@
         });
     }
     function hoistVarRecursion(statement, scope) {
-        var e_1, _a, e_2, _b, e_3, _c, e_4, _d, e_5, _e, e_6, _f, _g, _h, _j, node, e_1_1, _k, _l, eachCase, _m, _o, node, e_3_1, e_2_1, tryBlock, tryBlock_1, tryBlock_1_1, node, e_4_1, catchBlock, catchBlock_1, catchBlock_1_1, node, e_5_1, finalBlock, finalBlock_1, finalBlock_1_1, node, e_6_1;
-        return __generator(this, function (_p) {
-            switch (_p.label) {
+        var _a, _b, _c, _i, index, _d, _e, _f, index, _g, _h, _j, idx, tryBlock, _k, _l, _m, index, catchBlock, _o, _p, _q, index, finalBlock, _r, _s, _t, index;
+        return __generator(this, function (_u) {
+            switch (_u.label) {
                 case 0:
-                    _g = statement.type;
-                    switch (_g) {
+                    _a = statement.type;
+                    switch (_a) {
                         case 'VariableDeclaration': return [3, 1];
                         case 'WhileStatement': return [3, 3];
                         case 'DoWhileStatement': return [3, 3];
@@ -3736,180 +3396,118 @@
                         case 'ForInStatement': return [3, 3];
                         case 'ForOfStatement': return [3, 3];
                         case 'BlockStatement': return [3, 5];
-                        case 'SwitchStatement': return [3, 13];
-                        case 'TryStatement': return [3, 27];
+                        case 'SwitchStatement': return [3, 10];
+                        case 'TryStatement': return [3, 17];
                     }
-                    return [3, 52];
+                    return [3, 30];
                 case 1: return [5, __values(VariableDeclaration$1(statement, scope, { hoist: true }))];
                 case 2:
-                    _p.sent();
-                    return [3, 52];
+                    _u.sent();
+                    return [3, 30];
                 case 3: return [5, __values(hoistVarRecursion(statement.body, scope))];
                 case 4:
-                    _p.sent();
-                    return [3, 52];
+                    _u.sent();
+                    return [3, 30];
                 case 5:
-                    _p.trys.push([5, 10, 11, 12]);
-                    _h = __values(statement.body), _j = _h.next();
-                    _p.label = 6;
+                    _b = [];
+                    for (_c in statement.body)
+                        _b.push(_c);
+                    _i = 0;
+                    _u.label = 6;
                 case 6:
-                    if (!!_j.done) return [3, 9];
-                    node = _j.value;
-                    return [5, __values(hoistVarRecursion(node, scope))];
+                    if (!(_i < _b.length)) return [3, 9];
+                    index = _b[_i];
+                    return [5, __values(hoistVarRecursion(statement.body[index], scope))];
                 case 7:
-                    _p.sent();
-                    _p.label = 8;
+                    _u.sent();
+                    _u.label = 8;
                 case 8:
-                    _j = _h.next();
+                    _i++;
                     return [3, 6];
-                case 9: return [3, 12];
+                case 9: return [3, 30];
                 case 10:
-                    e_1_1 = _p.sent();
-                    e_1 = { error: e_1_1 };
-                    return [3, 12];
+                    _d = [];
+                    for (_e in statement.cases)
+                        _d.push(_e);
+                    _f = 0;
+                    _u.label = 11;
                 case 11:
-                    try {
-                        if (_j && !_j.done && (_a = _h.return)) _a.call(_h);
-                    }
-                    finally { if (e_1) throw e_1.error; }
-                    return [7];
-                case 12: return [3, 52];
+                    if (!(_f < _d.length)) return [3, 16];
+                    index = _d[_f];
+                    _g = [];
+                    for (_h in statement.cases[index].consequent)
+                        _g.push(_h);
+                    _j = 0;
+                    _u.label = 12;
+                case 12:
+                    if (!(_j < _g.length)) return [3, 15];
+                    idx = _g[_j];
+                    return [5, __values(hoistVarRecursion(statement.cases[index].consequent[idx], scope))];
                 case 13:
-                    _p.trys.push([13, 24, 25, 26]);
-                    _k = __values(statement.cases), _l = _k.next();
-                    _p.label = 14;
+                    _u.sent();
+                    _u.label = 14;
                 case 14:
-                    if (!!_l.done) return [3, 23];
-                    eachCase = _l.value;
-                    _p.label = 15;
+                    _j++;
+                    return [3, 12];
                 case 15:
-                    _p.trys.push([15, 20, 21, 22]);
-                    _m = __values(eachCase.consequent), _o = _m.next();
-                    _p.label = 16;
-                case 16:
-                    if (!!_o.done) return [3, 19];
-                    node = _o.value;
-                    return [5, __values(hoistVarRecursion(node, scope))];
+                    _f++;
+                    return [3, 11];
+                case 16: return [3, 30];
                 case 17:
-                    _p.sent();
-                    _p.label = 18;
-                case 18:
-                    _o = _m.next();
-                    return [3, 16];
-                case 19: return [3, 22];
-                case 20:
-                    e_3_1 = _p.sent();
-                    e_3 = { error: e_3_1 };
-                    return [3, 22];
-                case 21:
-                    try {
-                        if (_o && !_o.done && (_c = _m.return)) _c.call(_m);
-                    }
-                    finally { if (e_3) throw e_3.error; }
-                    return [7];
-                case 22:
-                    _l = _k.next();
-                    return [3, 14];
-                case 23: return [3, 26];
-                case 24:
-                    e_2_1 = _p.sent();
-                    e_2 = { error: e_2_1 };
-                    return [3, 26];
-                case 25:
-                    try {
-                        if (_l && !_l.done && (_b = _k.return)) _b.call(_k);
-                    }
-                    finally { if (e_2) throw e_2.error; }
-                    return [7];
-                case 26: return [3, 52];
-                case 27:
                     tryBlock = statement.block.body;
-                    _p.label = 28;
-                case 28:
-                    _p.trys.push([28, 33, 34, 35]);
-                    tryBlock_1 = __values(tryBlock), tryBlock_1_1 = tryBlock_1.next();
-                    _p.label = 29;
-                case 29:
-                    if (!!tryBlock_1_1.done) return [3, 32];
-                    node = tryBlock_1_1.value;
-                    return [5, __values(hoistVarRecursion(node, scope))];
-                case 30:
-                    _p.sent();
-                    _p.label = 31;
-                case 31:
-                    tryBlock_1_1 = tryBlock_1.next();
-                    return [3, 29];
-                case 32: return [3, 35];
-                case 33:
-                    e_4_1 = _p.sent();
-                    e_4 = { error: e_4_1 };
-                    return [3, 35];
-                case 34:
-                    try {
-                        if (tryBlock_1_1 && !tryBlock_1_1.done && (_d = tryBlock_1.return)) _d.call(tryBlock_1);
-                    }
-                    finally { if (e_4) throw e_4.error; }
-                    return [7];
-                case 35:
+                    _k = [];
+                    for (_l in tryBlock)
+                        _k.push(_l);
+                    _m = 0;
+                    _u.label = 18;
+                case 18:
+                    if (!(_m < _k.length)) return [3, 21];
+                    index = _k[_m];
+                    return [5, __values(hoistVarRecursion(tryBlock[index], scope))];
+                case 19:
+                    _u.sent();
+                    _u.label = 20;
+                case 20:
+                    _m++;
+                    return [3, 18];
+                case 21:
                     catchBlock = statement.handler && statement.handler.body.body;
-                    if (!catchBlock) return [3, 43];
-                    _p.label = 36;
-                case 36:
-                    _p.trys.push([36, 41, 42, 43]);
-                    catchBlock_1 = __values(catchBlock), catchBlock_1_1 = catchBlock_1.next();
-                    _p.label = 37;
-                case 37:
-                    if (!!catchBlock_1_1.done) return [3, 40];
-                    node = catchBlock_1_1.value;
-                    return [5, __values(hoistVarRecursion(node, scope))];
-                case 38:
-                    _p.sent();
-                    _p.label = 39;
-                case 39:
-                    catchBlock_1_1 = catchBlock_1.next();
-                    return [3, 37];
-                case 40: return [3, 43];
-                case 41:
-                    e_5_1 = _p.sent();
-                    e_5 = { error: e_5_1 };
-                    return [3, 43];
-                case 42:
-                    try {
-                        if (catchBlock_1_1 && !catchBlock_1_1.done && (_e = catchBlock_1.return)) _e.call(catchBlock_1);
-                    }
-                    finally { if (e_5) throw e_5.error; }
-                    return [7];
-                case 43:
+                    if (!catchBlock) return [3, 25];
+                    _o = [];
+                    for (_p in catchBlock)
+                        _o.push(_p);
+                    _q = 0;
+                    _u.label = 22;
+                case 22:
+                    if (!(_q < _o.length)) return [3, 25];
+                    index = _o[_q];
+                    return [5, __values(hoistVarRecursion(catchBlock[index], scope))];
+                case 23:
+                    _u.sent();
+                    _u.label = 24;
+                case 24:
+                    _q++;
+                    return [3, 22];
+                case 25:
                     finalBlock = statement.finalizer && statement.finalizer.body;
-                    if (!finalBlock) return [3, 51];
-                    _p.label = 44;
-                case 44:
-                    _p.trys.push([44, 49, 50, 51]);
-                    finalBlock_1 = __values(finalBlock), finalBlock_1_1 = finalBlock_1.next();
-                    _p.label = 45;
-                case 45:
-                    if (!!finalBlock_1_1.done) return [3, 48];
-                    node = finalBlock_1_1.value;
-                    return [5, __values(hoistVarRecursion(node, scope))];
-                case 46:
-                    _p.sent();
-                    _p.label = 47;
-                case 47:
-                    finalBlock_1_1 = finalBlock_1.next();
-                    return [3, 45];
-                case 48: return [3, 51];
-                case 49:
-                    e_6_1 = _p.sent();
-                    e_6 = { error: e_6_1 };
-                    return [3, 51];
-                case 50:
-                    try {
-                        if (finalBlock_1_1 && !finalBlock_1_1.done && (_f = finalBlock_1.return)) _f.call(finalBlock_1);
-                    }
-                    finally { if (e_6) throw e_6.error; }
-                    return [7];
-                case 51: return [3, 52];
-                case 52: return [2];
+                    if (!finalBlock) return [3, 29];
+                    _r = [];
+                    for (_s in finalBlock)
+                        _r.push(_s);
+                    _t = 0;
+                    _u.label = 26;
+                case 26:
+                    if (!(_t < _r.length)) return [3, 29];
+                    index = _r[_t];
+                    return [5, __values(hoistVarRecursion(finalBlock[index], scope))];
+                case 27:
+                    _u.sent();
+                    _u.label = 28;
+                case 28:
+                    _t++;
+                    return [3, 26];
+                case 29: return [3, 30];
+                case 30: return [2];
             }
         });
     }
@@ -4038,52 +3636,81 @@
         return func;
     }
     function createClass(node, scope) {
-        var e_7, _a, superClass, klass, _b, _c, method, e_7_1;
-        return __generator(this, function (_d) {
-            switch (_d.label) {
+        var superClass, klass, methodBody, _a, _b, _i, index, method;
+        return __generator(this, function (_c) {
+            switch (_c.label) {
                 case 0: return [5, __values(evaluate$1(node.superClass, scope))];
                 case 1:
-                    superClass = _d.sent();
+                    superClass = _c.sent();
                     klass = function () { };
-                    _d.label = 2;
+                    methodBody = node.body.body;
+                    _a = [];
+                    for (_b in methodBody)
+                        _a.push(_b);
+                    _i = 0;
+                    _c.label = 2;
                 case 2:
-                    _d.trys.push([2, 7, 8, 9]);
-                    _b = __values(node.body.body), _c = _b.next();
-                    _d.label = 3;
-                case 3:
-                    if (!!_c.done) return [3, 6];
-                    method = _c.value;
-                    if (!(method.kind === 'constructor')) return [3, 5];
+                    if (!(_i < _a.length)) return [3, 5];
+                    index = _a[_i];
+                    method = methodBody[index];
+                    if (!(method.kind === 'constructor')) return [3, 4];
                     return [5, __values(createFunc(method.value, scope, { superClass: superClass }))];
+                case 3:
+                    klass = _c.sent();
+                    return [3, 5];
                 case 4:
-                    klass = _d.sent();
-                    return [3, 6];
+                    _i++;
+                    return [3, 2];
                 case 5:
-                    _c = _b.next();
-                    return [3, 3];
-                case 6: return [3, 9];
-                case 7:
-                    e_7_1 = _d.sent();
-                    e_7 = { error: e_7_1 };
-                    return [3, 9];
-                case 8:
-                    try {
-                        if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
-                    }
-                    finally { if (e_7) throw e_7.error; }
-                    return [7];
-                case 9:
                     if (superClass) {
                         inherits(klass, superClass);
                     }
                     return [5, __values(ClassBody$1(node.body, scope, { klass: klass }))];
-                case 10:
-                    _d.sent();
+                case 6:
+                    _c.sent();
                     define(klass, 'name', {
                         value: node.id.name,
                         configurable: true
                     });
                     return [2, klass];
+            }
+        });
+    }
+    function ForXHandler(node, scope, options) {
+        var value, left, subScope, variable, result;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    value = options.value;
+                    left = node.left;
+                    subScope = new Scope(scope);
+                    if (!(left.type === 'VariableDeclaration')) return [3, 2];
+                    return [5, __values(VariableDeclaration$1(left, subScope, { feed: value }))];
+                case 1:
+                    _a.sent();
+                    return [3, 6];
+                case 2:
+                    if (!(left.type === 'Identifier')) return [3, 4];
+                    return [5, __values(Identifier(left, scope, { getVar: true }))];
+                case 3:
+                    variable = _a.sent();
+                    variable.set(value);
+                    return [3, 6];
+                case 4: return [5, __values(pattern$2(left, scope, { feed: value }))];
+                case 5:
+                    _a.sent();
+                    _a.label = 6;
+                case 6:
+                    if (!(node.body.type === 'BlockStatement')) return [3, 8];
+                    return [5, __values(BlockStatement$1(node.body, subScope, { invasived: true }))];
+                case 7:
+                    result = _a.sent();
+                    return [3, 10];
+                case 8: return [5, __values(evaluate$1(node.body, subScope))];
+                case 9:
+                    result = _a.sent();
+                    _a.label = 10;
+                case 10: return [2, result];
             }
         });
     }
@@ -4114,7 +3741,6 @@
         }
     }
     function hoistVarRecursion$1(statement, scope) {
-        var e_1, _a, e_2, _b, e_3, _c, e_4, _d, e_5, _e, e_6, _f;
         switch (statement.type) {
             case 'VariableDeclaration':
                 VariableDeclaration(statement, scope, { hoist: true });
@@ -4127,92 +3753,32 @@
                 hoistVarRecursion$1(statement.body, scope);
                 break;
             case 'BlockStatement':
-                try {
-                    for (var _g = __values(statement.body), _h = _g.next(); !_h.done; _h = _g.next()) {
-                        var node = _h.value;
-                        hoistVarRecursion$1(node, scope);
-                    }
-                }
-                catch (e_1_1) { e_1 = { error: e_1_1 }; }
-                finally {
-                    try {
-                        if (_h && !_h.done && (_a = _g.return)) _a.call(_g);
-                    }
-                    finally { if (e_1) throw e_1.error; }
+                for (var index in statement.body) {
+                    hoistVarRecursion$1(statement.body[index], scope);
                 }
                 break;
             case 'SwitchStatement':
-                try {
-                    for (var _j = __values(statement.cases), _k = _j.next(); !_k.done; _k = _j.next()) {
-                        var eachCase = _k.value;
-                        try {
-                            for (var _l = __values(eachCase.consequent), _m = _l.next(); !_m.done; _m = _l.next()) {
-                                var node = _m.value;
-                                hoistVarRecursion$1(node, scope);
-                            }
-                        }
-                        catch (e_3_1) { e_3 = { error: e_3_1 }; }
-                        finally {
-                            try {
-                                if (_m && !_m.done && (_c = _l.return)) _c.call(_l);
-                            }
-                            finally { if (e_3) throw e_3.error; }
-                        }
+                for (var index in statement.cases) {
+                    for (var idx in statement.cases[index].consequent) {
+                        hoistVarRecursion$1(statement.cases[index].consequent[idx], scope);
                     }
-                }
-                catch (e_2_1) { e_2 = { error: e_2_1 }; }
-                finally {
-                    try {
-                        if (_k && !_k.done && (_b = _j.return)) _b.call(_j);
-                    }
-                    finally { if (e_2) throw e_2.error; }
                 }
                 break;
             case 'TryStatement': {
                 var tryBlock = statement.block.body;
-                try {
-                    for (var tryBlock_1 = __values(tryBlock), tryBlock_1_1 = tryBlock_1.next(); !tryBlock_1_1.done; tryBlock_1_1 = tryBlock_1.next()) {
-                        var node = tryBlock_1_1.value;
-                        hoistVarRecursion$1(node, scope);
-                    }
-                }
-                catch (e_4_1) { e_4 = { error: e_4_1 }; }
-                finally {
-                    try {
-                        if (tryBlock_1_1 && !tryBlock_1_1.done && (_d = tryBlock_1.return)) _d.call(tryBlock_1);
-                    }
-                    finally { if (e_4) throw e_4.error; }
+                for (var index in tryBlock) {
+                    hoistVarRecursion$1(tryBlock[index], scope);
                 }
                 var catchBlock = statement.handler && statement.handler.body.body;
                 if (catchBlock) {
-                    try {
-                        for (var catchBlock_1 = __values(catchBlock), catchBlock_1_1 = catchBlock_1.next(); !catchBlock_1_1.done; catchBlock_1_1 = catchBlock_1.next()) {
-                            var node = catchBlock_1_1.value;
-                            hoistVarRecursion$1(node, scope);
-                        }
-                    }
-                    catch (e_5_1) { e_5 = { error: e_5_1 }; }
-                    finally {
-                        try {
-                            if (catchBlock_1_1 && !catchBlock_1_1.done && (_e = catchBlock_1.return)) _e.call(catchBlock_1);
-                        }
-                        finally { if (e_5) throw e_5.error; }
+                    for (var index in catchBlock) {
+                        hoistVarRecursion$1(catchBlock[index], scope);
                     }
                 }
                 var finalBlock = statement.finalizer && statement.finalizer.body;
                 if (finalBlock) {
-                    try {
-                        for (var finalBlock_1 = __values(finalBlock), finalBlock_1_1 = finalBlock_1.next(); !finalBlock_1_1.done; finalBlock_1_1 = finalBlock_1.next()) {
-                            var node = finalBlock_1_1.value;
-                            hoistVarRecursion$1(node, scope);
-                        }
-                    }
-                    catch (e_6_1) { e_6 = { error: e_6_1 }; }
-                    finally {
-                        try {
-                            if (finalBlock_1_1 && !finalBlock_1_1.done && (_f = finalBlock_1.return)) _f.call(finalBlock_1);
-                        }
-                        finally { if (e_6) throw e_6.error; }
+                    for (var index in finalBlock) {
+                        hoistVarRecursion$1(finalBlock[index], scope);
                     }
                 }
                 break;
@@ -4298,24 +3864,15 @@
         return func;
     }
     function createClass$1(node, scope) {
-        var e_7, _a;
         var superClass = evaluate(node.superClass, scope);
         var klass = function () { };
-        try {
-            for (var _b = __values(node.body.body), _c = _b.next(); !_c.done; _c = _b.next()) {
-                var method = _c.value;
-                if (method.kind === 'constructor') {
-                    klass = createFunc$1(method.value, scope, { superClass: superClass });
-                    break;
-                }
+        var methodBody = node.body.body;
+        for (var index in methodBody) {
+            var method = methodBody[index];
+            if (method.kind === 'constructor') {
+                klass = createFunc$1(method.value, scope, { superClass: superClass });
+                break;
             }
-        }
-        catch (e_7_1) { e_7 = { error: e_7_1 }; }
-        finally {
-            try {
-                if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
-            }
-            finally { if (e_7) throw e_7.error; }
         }
         if (superClass) {
             inherits(klass, superClass);
@@ -4327,6 +3884,29 @@
         });
         return klass;
     }
+    function ForXHandler$1(node, scope, options) {
+        var value = options.value;
+        var left = node.left;
+        var subScope = new Scope(scope);
+        if (left.type === 'VariableDeclaration') {
+            VariableDeclaration(left, subScope, { feed: value });
+        }
+        else if (left.type === 'Identifier') {
+            var variable = Identifier(left, scope, { getVar: true });
+            variable.set(value);
+        }
+        else {
+            pattern$3(left, scope, { feed: value });
+        }
+        var result;
+        if (node.body.type === 'BlockStatement') {
+            result = BlockStatement(node.body, subScope, { invasived: true });
+        }
+        else {
+            result = evaluate(node.body, subScope);
+        }
+        return result;
+    }
 
     var Sval = (function () {
         function Sval(options) {
@@ -4335,8 +3915,11 @@
             this.scope = new Scope(null, true);
             this.exports = {};
             var ecmaVer = options.ecmaVer, _a = options.sandBox, sandBox = _a === void 0 ? true : _a;
-            if ([3, 5, 6, 7, 8, 2015, 2016, 2017].indexOf(ecmaVer) === -1) {
-                ecmaVer = 7;
+            if ([
+                3, 5, 6, 7, 8, 9, 10,
+                2015, 2016, 2017, 2018, 2019
+            ].indexOf(ecmaVer) === -1) {
+                ecmaVer = 10;
             }
             this.options.ecmaVersion = ecmaVer;
             if (sandBox) {
@@ -4351,25 +3934,16 @@
             this.scope.const('exports', this.exports = {});
         }
         Sval.prototype.import = function (nameOrModules, mod) {
-            var _a, e_1, _b;
+            var _a;
             if (typeof nameOrModules === 'string') {
                 nameOrModules = (_a = {}, _a[nameOrModules] = mod, _a);
             }
             if (typeof nameOrModules !== 'object')
                 return;
             var names = getOwnNames(nameOrModules);
-            try {
-                for (var names_1 = __values(names), names_1_1 = names_1.next(); !names_1_1.done; names_1_1 = names_1.next()) {
-                    var name_1 = names_1_1.value;
-                    this.scope.var(name_1, nameOrModules[name_1]);
-                }
-            }
-            catch (e_1_1) { e_1 = { error: e_1_1 }; }
-            finally {
-                try {
-                    if (names_1_1 && !names_1_1.done && (_b = names_1.return)) _b.call(names_1);
-                }
-                finally { if (e_1) throw e_1.error; }
+            for (var index in names) {
+                var name_1 = names[index];
+                this.scope.var(name_1, nameOrModules[name_1]);
             }
         };
         Sval.prototype.run = function (code) {
