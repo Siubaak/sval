@@ -1,10 +1,13 @@
 import { FunctionDeclaration, VariableDeclaration, ClassBody } from './declaration'
-import { define, inherits, runAsync } from '../share/util'
 import { RETURN, SUPER, ASYNC, ARROW } from '../share/const'
+import { define, inherits, runAsync } from '../share/util'
+import { Identifier } from '../evaluate_n/identifier'
 import { BlockStatement } from './statement'
+import { Var } from '../scope/variable'
 import * as estree from 'estree'
 import Scope from '../scope'
 import evaluate from '.'
+
 import {
   PatternOptions,
   ObjectPattern,
@@ -216,4 +219,35 @@ export function* createClass(
   })
 
   return klass
+}
+
+export interface ForXHandlerOptions {
+  value: any
+}
+
+export function* ForXHandler(
+  node: estree.ForInStatement | estree.ForOfStatement,
+  scope: Scope,
+  options: ForXHandlerOptions
+) {
+  const { value } = options
+  const left = node.left
+
+  const subScope = new Scope(scope)
+  if (left.type === 'VariableDeclaration') {
+    yield* VariableDeclaration(left, subScope, { feed: value })
+  } else if (left.type === 'Identifier') {
+    const variable: Var = yield* Identifier(left, scope, { getVar: true })
+    variable.set(value)
+  } else {
+    yield* pattern(left, scope, { feed: value })
+  }
+
+  let result: any
+  if (node.body.type === 'BlockStatement') {
+    result = yield* BlockStatement(node.body, subScope, { invasived: true })
+  } else {
+    result = yield* evaluate(node.body, subScope)
+  }
+  return result
 }

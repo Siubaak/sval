@@ -1,6 +1,6 @@
 import { BREAK, CONTINUE, RETURN } from '../share/const'
 import { VariableDeclaration } from './declaration'
-import { hoistFunc, pattern } from './helper'
+import { hoistFunc, pattern, ForXHandler } from './helper'
 import { Identifier } from './identifier'
 import { Var } from '../scope/variable'
 import * as estree from 'estree'
@@ -188,25 +188,8 @@ export function* ForStatement(node: estree.ForStatement, scope: Scope) {
 }
 
 export function* ForInStatement(node: estree.ForInStatement, scope: Scope) {
-  const left = node.left
   for (const value in yield* evaluate(node.right, scope)) {
-    const subScope = new Scope(scope)
-    if (left.type === 'VariableDeclaration') {
-      yield* VariableDeclaration(left, subScope, { feed: value })
-    } else if (left.type === 'Identifier') {
-      const variable: Var = yield* Identifier(left, scope, { getVar: true })
-      variable.set(value)
-    } else {
-      yield* pattern(left, scope, { feed: value })
-    }
-
-    let result: any
-    if (node.body.type === 'BlockStatement') {
-      result = yield* BlockStatement(node.body, subScope, { invasived: true })
-    } else {
-      result = yield* evaluate(node.body, subScope)
-    }
-
+    const result = yield* ForXHandler(node, scope, { value })
     if (result === BREAK) {
       break
     } else if (result === CONTINUE) {
@@ -218,25 +201,8 @@ export function* ForInStatement(node: estree.ForInStatement, scope: Scope) {
 }
 
 export function* ForOfStatement(node: estree.ForOfStatement, scope: Scope) {
-  const left = node.left
   for (const value of yield* evaluate(node.right, scope)) {
-    const subScope = new Scope(scope)
-    if (left.type === 'VariableDeclaration') {
-      yield* VariableDeclaration(left, subScope, { feed: value })
-    } else if (left.type === 'Identifier') {
-      const variable: Var = yield* Identifier(left, scope, { getVar: true })
-      variable.set(value)
-    } else {
-      yield* pattern(left, scope, { feed: value })
-    }
-
-    let result: any
-    if (node.body.type === 'BlockStatement') {
-      result = yield* BlockStatement(node.body, subScope, { invasived: true })
-    } else {
-      result = yield* evaluate(node.body, subScope)
-    }
-
+    const result = yield* ForXHandler(node, scope, { value })
     if (result === BREAK) {
       break
     } else if (result === CONTINUE) {
