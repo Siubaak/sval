@@ -1,3 +1,5 @@
+import { AWAIT } from './const'
+
 export const freeze = Object.freeze
 
 export const define = Object.defineProperty
@@ -153,17 +155,12 @@ export function createSandBox() {
   return assign({}, win)
 }
 
-const seed = Math.random().toString(36).substring(2)
 export function createSymbol(key: string) {
-  return key + seed
+  return key + Math.random().toString(36).substring(2)
 }
 
-export function runAsync(
-  generator: (...args: any[]) => IterableIterator<any>,
-  ...args: any[]
-): Promise<any> {
+export function runAsync(iterator: IterableIterator<any>) {
   return new Promise((resolve, reject) => {
-    const iterator = generator(...args)
     onFulfilled()
     function onFulfilled(res?: any) {
       let ret: any
@@ -186,9 +183,9 @@ export function runAsync(
     }
     function next(ret: any) {
       if (ret.done) return resolve(ret.value)
-      const value = typeof ret.value.then === 'function'
-        ? ret.value
-        : Promise.resolve(ret.value)
+      const awaitValue = ret.value.RES
+      const value = awaitValue && awaitValue.then === 'function'
+        ? awaitValue : Promise.resolve(awaitValue)
       return value.then(onFulfilled, onRejected)
     }
   })

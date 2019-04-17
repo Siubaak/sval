@@ -1,6 +1,6 @@
 import { FunctionDeclaration, VariableDeclaration, ClassBody } from './declaration'
-import { RETURN, SUPER, ASYNC, ARROW } from '../share/const'
-import { define, inherits, runAsync } from '../share/util'
+import { define, inherits, runAsync} from '../share/util'
+import { RETURN, SUPER, ARROW } from '../share/const'
 import { Identifier } from '../evaluate_n/identifier'
 import { BlockStatement } from './statement'
 import { Var } from '../scope/variable'
@@ -162,11 +162,11 @@ export function createFunc(
 
   let func: any /*<add>*//*= tmpFunc*//*</add>*/
   /*<remove>*/
-  if (node.async) {
+  if (node.async && node.generator) {
+  } else if (node.async) {
     func = function (...args: any[]) {
-      return runAsync(tmpFunc, ...args)
+      return runAsync(tmpFunc(args))
     }
-    define(func, ASYNC, { value: true })
   /*</remove>*/
     if (node.type === 'ArrowFunctionExpression') {
       define(func, ARROW, { value: true })
