@@ -171,7 +171,7 @@ export function createFunc(
       const iterator = tmpFunc(args)
       let last: Promise<any> = Promise.resolve()
       const run = (opts: runAsyncOptions) =>
-        last = last.then(() => runAsync(iterator, assign({ full: true }, opts)))
+        last = last.then(() => runAsync(iterator, assign({ fullRet: true }, opts)))
       const asyncIterator: AsyncIterator<any> = {
         next: (res?: any) => run({ res }),
         throw: (err?: any) => run({ err }),

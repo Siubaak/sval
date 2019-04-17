@@ -163,14 +163,14 @@ export interface runAsyncOptions {
   res?: any
   err?: any
   ret?: any
-  full?: boolean
+  fullRet?: boolean
 }
 
 export function runAsync(
   iterator: IterableIterator<any>,
   options: runAsyncOptions = {}
 ): Promise<any> {
-  const { res, err, ret, full } = options
+  const { res, err, ret, fullRet } = options
   return new Promise((resolve, reject) => {
     if (hasOwn(options, 'ret')) {
       return resolve(iterator.return(ret))
@@ -200,7 +200,7 @@ export function runAsync(
       next(ret)
     }
     function next(ret: any) {
-      if (ret.done) return resolve(full ? ret : ret.value)
+      if (ret.done) return resolve(fullRet ? ret : ret.value)
       if (ret.value !== AWAIT) return resolve(ret)
       const awaitValue = ret.value.RES
       const value = awaitValue && awaitValue.then === 'function'
