@@ -1,4 +1,4 @@
-const Sval = require('../dist/index')
+const Sval = require('../dist/sval')
 
 describe('testing src/index.ts', () => {
   it('should declare var normally', () => {  

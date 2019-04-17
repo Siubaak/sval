@@ -1,14 +1,14 @@
 import { createSymbol } from './util'
 
-export const BREAK = {}
-
-export const CONTINUE = {}
+export const AWAIT: { RES: any } = { RES: undefined }
 
 export const RETURN: { RES: any } = { RES: undefined }
 
-export const SUPER = createSymbol('super')
+export const CONTINUE = createSymbol('continue')
 
-export const ASYNC = createSymbol('async')
+export const BREAK = createSymbol('break')
+
+export const SUPER = createSymbol('super')
 
 export const ARROW = createSymbol('arrow')
 

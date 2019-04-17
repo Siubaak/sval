@@ -1,5 +1,5 @@
+import { define, getDptor, assign, hasOwn } from '../share/util'
 import { pattern, createFunc, createClass } from './helper'
-import { define, getDptor, assign } from '../share/util'
 import { VarKind } from '../scope/variable'
 import { NOINIT } from '../share/const'
 import * as estree from 'estree'
@@ -23,8 +23,8 @@ export function* VariableDeclaration(
   scope: Scope,
   options: VariableDeclarationOptions = {},
 ) {
-  for (const declarator of node.declarations) {
-    yield* VariableDeclarator(declarator, scope, assign({ kind: node.kind }, options))
+  for (const index in node.declarations) {
+    yield* VariableDeclarator(node.declarations[index], scope, assign({ kind: node.kind }, options))
   }
 }
 
@@ -52,7 +52,7 @@ export function* VariableDeclarator(
     || kind === 'let'
     || kind === 'const'
   ) {
-    const value = 'feed' in options ? feed : yield* evaluate(node.init, scope)
+    const value = hasOwn(options, 'feed') ? feed : yield* evaluate(node.init, scope)
     if (node.id.type === 'Identifier') {
       const name = node.id.name
       if (kind === 'var' && !node.init) {
@@ -95,8 +95,8 @@ export interface ClassOptions {
 export function* ClassBody(node: estree.ClassBody, scope: Scope, options: ClassOptions = {}) {
   const { klass = function () { } } = options
 
-  for (const method of node.body) {
-    yield* MethodDefinition(method, scope, { klass })
+  for (const index in node.body) {
+    yield* MethodDefinition(node.body[index], scope, { klass })
   }
 }
 

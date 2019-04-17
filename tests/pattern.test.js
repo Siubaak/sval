@@ -1,4 +1,4 @@
-const Sval = require('../dist/index')
+const Sval = require('../dist/sval')
 
 describe('testing src/index.ts', () => {
   it('should parse object pattern normally', () => {  
@@ -48,11 +48,23 @@ describe('testing src/index.ts', () => {
       exports.b = b
       exports.c = c
       exports.d = d
+      const o = { a: 1, b: 2, c: 3 }
+      const { ...e } = o
+      const { a: f, ...g } = o
+      const h = { a: 2, ...o, d: 4}
+      exports.e = e
+      exports.f = f
+      exports.g = g
+      exports.h = h
     `)
     expect(interpreter.exports.a).toEqual([1, 2])
     expect(interpreter.exports.b).toEqual([1, 2, 3])
     expect(interpreter.exports.c).toBe(1)
     expect(interpreter.exports.d).toEqual([2, 3])
+    expect(interpreter.exports.e).toEqual({ a: 1, b: 2, c: 3 })
+    expect(interpreter.exports.f).toBe(1)
+    expect(interpreter.exports.g).toEqual({ b: 2, c: 3 })
+    expect(interpreter.exports.h).toEqual({ a: 1, b: 2, c: 3, d: 4 })
   })
   it('should parse rest element of function params normally', () => {  
     const interpreter = new Sval()

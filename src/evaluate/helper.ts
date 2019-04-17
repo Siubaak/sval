@@ -1,10 +1,13 @@
 import { FunctionDeclaration, VariableDeclaration, ClassBody } from './declaration'
-import { define, inherits, runAsync } from '../share/util'
-import { RETURN, SUPER, ASYNC, ARROW } from '../share/const'
+import { define, inherits, runAsync, runAsyncOptions, assign } from '../share/util'
+import { RETURN, SUPER, ARROW } from '../share/const'
+import { Identifier } from '../evaluate_n/identifier'
 import { BlockStatement } from './statement'
+import { Var } from '../scope/variable'
 import * as estree from 'estree'
 import Scope from '../scope'
 import evaluate from '.'
+
 import {
   PatternOptions,
   ObjectPattern,
@@ -56,32 +59,32 @@ function* hoistVarRecursion(statement: estree.Statement, scope: Scope): Iterable
       yield* hoistVarRecursion(statement.body, scope)
       break
     case 'BlockStatement':
-      for (const node of statement.body) {
-        yield* hoistVarRecursion(node, scope)
+      for (const index in statement.body) {
+        yield* hoistVarRecursion(statement.body[index], scope)
       }
       break
     case 'SwitchStatement':
-      for (const eachCase of statement.cases) {
-        for (const node of eachCase.consequent) {
-          yield* hoistVarRecursion(node, scope)
+      for (const index in statement.cases) {
+        for (const idx in statement.cases[index].consequent) {
+          yield* hoistVarRecursion(statement.cases[index].consequent[idx], scope)
         }
       }
       break
     case 'TryStatement': {
       const tryBlock = statement.block.body
-      for (const node of tryBlock) {
-        yield* hoistVarRecursion(node, scope)
+      for (const index in tryBlock) {
+        yield* hoistVarRecursion(tryBlock[index], scope)
       }
       const catchBlock = statement.handler && statement.handler.body.body
       if (catchBlock) {
-        for (const node of catchBlock) {
-          yield* hoistVarRecursion(node, scope)
+        for (const index in catchBlock) {
+          yield* hoistVarRecursion(catchBlock[index], scope)
         }
       }
       const finalBlock = statement.finalizer && statement.finalizer.body
       if (finalBlock) {
-        for (const node of finalBlock) {
-          yield* hoistVarRecursion(node, scope)
+        for (const index in finalBlock) {
+          yield* hoistVarRecursion(finalBlock[index], scope)
         }
       }
       break
@@ -150,6 +153,10 @@ export function createFunc(
       })
     } else {
       result = yield* evaluate(node.body, subScope)
+      if (node.type === 'ArrowFunctionExpression') {
+        RETURN.RES = result
+        result = RETURN
+      }
     }
 
     if (result === RETURN) {
@@ -159,11 +166,24 @@ export function createFunc(
 
   let func: any /*<add>*//*= tmpFunc*//*</add>*/
   /*<remove>*/
-  if (node.async) {
-    func = function (...args: any[]) {
-      return runAsync(tmpFunc, ...args)
+  if (node.async && node.generator) {
+    func = function (...args: any[]): AsyncIterator<any> {
+      const iterator = tmpFunc(args)
+      let last: Promise<any> = Promise.resolve()
+      const run = (opts: runAsyncOptions) =>
+        last = last.then(() => runAsync(iterator, assign({ full: true }, opts)))
+      const asyncIterator: AsyncIterator<any> = {
+        next: (res?: any) => run({ res }),
+        throw: (err?: any) => run({ err }),
+        return: (ret?: any) => run({ ret })
+      }
+      if (typeof Symbol === 'function') {
+        (asyncIterator as any)[Symbol.iterator] = function () { return this }
+      }
+      return asyncIterator
     }
-    define(func, ASYNC, { value: true })
+  } else if (node.async) {
+    func = (...args: any[]) => runAsync(tmpFunc(args))
   /*</remove>*/
     if (node.type === 'ArrowFunctionExpression') {
       define(func, ARROW, { value: true })
@@ -195,7 +215,9 @@ export function* createClass(
   const superClass = yield* evaluate(node.superClass, scope)
 
   let klass: (...args: any[]) => any = function () { }
-  for (const method of node.body.body) {
+  const methodBody = node.body.body
+  for (const index in methodBody) {
+    const method = methodBody[index]
     if (method.kind === 'constructor') {
       klass = yield* createFunc(method.value, scope, { superClass })
       break
@@ -214,4 +236,35 @@ export function* createClass(
   })
 
   return klass
+}
+
+export interface ForXHandlerOptions {
+  value: any
+}
+
+export function* ForXHandler(
+  node: estree.ForInStatement | estree.ForOfStatement,
+  scope: Scope,
+  options: ForXHandlerOptions
+) {
+  const { value } = options
+  const left = node.left
+
+  const subScope = new Scope(scope)
+  if (left.type === 'VariableDeclaration') {
+    yield* VariableDeclaration(left, subScope, { feed: value })
+  } else if (left.type === 'Identifier') {
+    const variable: Var = yield* Identifier(left, scope, { getVar: true })
+    variable.set(value)
+  } else {
+    yield* pattern(left, scope, { feed: value })
+  }
+
+  let result: any
+  if (node.body.type === 'BlockStatement') {
+    result = yield* BlockStatement(node.body, subScope, { invasived: true })
+  } else {
+    result = yield* evaluate(node.body, subScope)
+  }
+  return result
 }

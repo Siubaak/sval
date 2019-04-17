@@ -7,7 +7,7 @@ import { hoist } from './evaluate_n/helper'
 import evaluate from './evaluate_n'
 
 export interface SvalOptions {
-  ecmaVer?: 3 | 5 | 6 | 7 | 8 | 2015 | 2016 | 2017
+  ecmaVer?: 3 | 5 | 6 | 7 | 8 | 9 | 10 | 2015 | 2016 | 2017 | 2018 | 2019
   sandBox?: boolean
 }
 
@@ -20,13 +20,15 @@ class Sval {
   exports: { [name: string]: any } = {}
 
   constructor(options: SvalOptions = {}) {
-    let { ecmaVer, sandBox = true } = options
+    let { ecmaVer = 9, sandBox = true } = options
 
-    if ([3, 5, 6, 7, 8, 2015, 2016, 2017].indexOf(ecmaVer) === -1) {
-      ecmaVer = 7
+    ecmaVer -= ecmaVer < 2015 ? 0 : 2009 // format ecma edition
+
+    if ([3, 5, 6, 7, 8, 9, 10].indexOf(ecmaVer) === -1) {
+      throw new Error(`unsupported ecmaVer`)
     }
 
-    this.options.ecmaVersion = ecmaVer
+    this.options.ecmaVersion = ecmaVer as Options['ecmaVersion']
 
     if (sandBox) {
       // Shallow clone to create a sandbox
@@ -49,7 +51,8 @@ class Sval {
     if (typeof nameOrModules !== 'object') return
 
     const names = getOwnNames(nameOrModules)
-    for (const name of names) {
+    for (const index in names) {
+      const name = names[index]
       this.scope.var(name, nameOrModules[name])
     }
   }

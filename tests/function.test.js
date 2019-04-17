@@ -1,4 +1,4 @@
-const Sval = require('../dist/index')
+const Sval = require('../dist/sval')
 
 describe('testing src/index.ts', () => {
   it('should excute function normally', () => {  
@@ -43,7 +43,7 @@ describe('testing src/index.ts', () => {
   })
 
   it('should excute async function normally', done => {  
-    const interpreter = new Sval({ ecmaVer: 8 })
+    const interpreter = new Sval()
     interpreter.import({ expect, done })
     interpreter.run(`
       a()
@@ -58,7 +58,7 @@ describe('testing src/index.ts', () => {
     `)
   })
   it('should excute async function normally', done => {  
-    const interpreter = new Sval({ ecmaVer: 8 })
+    const interpreter = new Sval()
     interpreter.import({ getItem, expect, done })
     interpreter.run(`
       a()
@@ -70,6 +70,30 @@ describe('testing src/index.ts', () => {
         expect(res).toEqual([1, 2, 3])
         done()
       }
+    `)
+    function getItem(n) {
+      return new Promise(resolve => setTimeout(resolve, 5, n))
+    }
+  })
+
+  it('should excute async generator normally', done => {  
+    const interpreter = new Sval()
+    interpreter.import({ getItem, expect, done })
+    interpreter.run(`
+      const res = []
+      async function* a() {
+        for (const i of [1, 2, 3]) {
+          res.push(yield await getItem(i))
+        }
+      }
+      const g = a()
+      g.next()
+      g.next(2)
+      g.next(4)
+      g.next(6).then(() => {
+        expect(res).toEqual([2, 4, 6])
+        done()
+      })
     `)
     function getItem(n) {
       return new Promise(resolve => setTimeout(resolve, 5, n))
