@@ -1,6 +1,6 @@
 import { FunctionDeclaration, VariableDeclaration, ClassBody } from './declaration'
 import { define, inherits, runAsync, runAsyncOptions, assign } from '../share/util'
-import { RETURN, SUPER, ARROW } from '../share/const'
+import { RETURN, SUPER, NOCTOR } from '../share/const'
 import { Identifier } from '../evaluate_n/identifier'
 import { BlockStatement } from './statement'
 import { Var } from '../scope/variable'
@@ -184,15 +184,16 @@ export function createFunc(
     }
   } else if (node.async) {
     func = (...args: any[]) => runAsync(tmpFunc(args))
-  /*</remove>*/
-    if (node.type === 'ArrowFunctionExpression') {
-      define(func, ARROW, { value: true })
-    }
-  /*<remove>*/
   } else {
     func = tmpFunc
   }
+  define(func, NOCTOR, { value: true })
   /*</remove>*/
+  /*<add>*//*
+  if (node.type === 'ArrowFunctionExpression') {
+    define(func, NOCTOR, { value: true })
+  }
+  *//*</add>*/
 
   define(func, 'name', {
     value: (node as estree.FunctionDeclaration).id

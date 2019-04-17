@@ -10,6 +10,6 @@ export const BREAK = createSymbol('break')
 
 export const SUPER = createSymbol('super')
 
-export const ARROW = createSymbol('arrow')
+export const NOCTOR = createSymbol('noctor') // not constructor
 
 export const NOINIT = createSymbol('noinit')

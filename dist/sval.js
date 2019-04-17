@@ -26,7 +26,7 @@
   var CONTINUE = createSymbol('continue');
   var BREAK = createSymbol('break');
   var SUPER = createSymbol('super');
-  var ARROW = createSymbol('arrow');
+  var NOCTOR = createSymbol('noctor');
   var NOINIT = createSymbol('noinit');
 
   var freeze = Object.freeze;
@@ -425,7 +425,7 @@
       }
   }
 
-  var version = "0.4.0";
+  var version = "0.4.1";
 
   var Var = (function () {
       function Var(kind, value) {
@@ -1164,7 +1164,7 @@
           }
           throw new TypeError(name_2 + " is not a constructor");
       }
-      else if (constructor[ARROW]) {
+      else if (constructor[NOCTOR]) {
           throw new TypeError((constructor.name || '(intermediate value)') + " is not a constructor");
       }
       var args = [];
@@ -2314,7 +2314,7 @@
                       }
                       throw new TypeError(name_2 + " is not a constructor");
                   }
-                  else if (constructor[ARROW]) {
+                  else if (constructor[NOCTOR]) {
                       throw new TypeError((constructor.name || '(intermediate value)') + " is not a constructor");
                   }
                   args = [];
@@ -3719,13 +3719,11 @@
               }
               return runAsync(tmpFunc(args));
           };
-          if (node.type === 'ArrowFunctionExpression') {
-              define(func, ARROW, { value: true });
-          }
       }
       else {
           func = tmpFunc;
       }
+      define(func, NOCTOR, { value: true });
       define(func, 'name', {
           value: node.id
               && node.id.name
@@ -3956,7 +3954,7 @@
       };
       var func = tmpFunc;
       if (node.type === 'ArrowFunctionExpression') {
-          define(func, ARROW, { value: true });
+          define(func, NOCTOR, { value: true });
       }
       define(func, 'name', {
           value: node.id

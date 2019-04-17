@@ -1,6 +1,6 @@
 import { define, freeze, getGetter, getSetter, createSymbol, assign } from '../share/util'
 import { pattern, createFunc, createClass } from './helper'
-import { SUPER, ARROW, AWAIT } from '../share/const'
+import { SUPER, NOCTOR, AWAIT } from '../share/const'
 import { Variable, Prop } from '../scope/variable'
 import { Identifier } from './identifier'
 import { Literal } from './literal'
@@ -387,7 +387,7 @@ export function* NewExpression(node: estree.NewExpression, scope: Scope) {
       }
     }
     throw new TypeError(`${name} is not a constructor`)
-  } else if (constructor[ARROW]) {
+  } else if (constructor[NOCTOR]) {
     throw new TypeError(`${constructor.name || '(intermediate value)'} is not a constructor`)
   }
 
