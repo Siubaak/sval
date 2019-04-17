@@ -896,10 +896,28 @@
           else {
               func = object[key];
           }
+          if (typeof func !== 'function') {
+              throw new TypeError(`${key} is not a function`);
+          }
       }
       else {
           object = scope.find('this').get();
           func = evaluate(node.callee, scope);
+          if (typeof func !== 'function') {
+              let name;
+              if (node.callee.type === 'Identifier') {
+                  name = node.callee.name;
+              }
+              else {
+                  try {
+                      name = JSON.stringify(func);
+                  }
+                  catch (err) {
+                      name = '' + func;
+                  }
+              }
+              throw new TypeError(`${name} is not a function`);
+          }
       }
       let args = [];
       for (const index in node.arguments) {
@@ -910,9 +928,6 @@
           else {
               args.push(evaluate(arg, scope));
           }
-      }
-      if (!func.apply) {
-          throw new TypeError(`${func && func.name || func} is not a function`);
       }
       return func.apply(object, args);
   }
@@ -1826,10 +1841,28 @@
           else {
               func = object[key];
           }
+          if (typeof func !== 'function') {
+              throw new TypeError(`${key} is not a function`);
+          }
       }
       else {
           object = scope.find('this').get();
           func = yield* evaluate$1(node.callee, scope);
+          if (typeof func !== 'function') {
+              let name;
+              if (node.callee.type === 'Identifier') {
+                  name = node.callee.name;
+              }
+              else {
+                  try {
+                      name = JSON.stringify(func);
+                  }
+                  catch (err) {
+                      name = '' + func;
+                  }
+              }
+              throw new TypeError(`${name} is not a function`);
+          }
       }
       let args = [];
       for (const index in node.arguments) {
@@ -1840,9 +1873,6 @@
           else {
               args.push(yield* evaluate$1(arg, scope));
           }
-      }
-      if (!func.apply) {
-          throw new TypeError(`${func && func.name || func} is not a function`);
       }
       return func.apply(object, args);
   }

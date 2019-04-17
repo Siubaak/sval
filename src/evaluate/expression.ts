@@ -337,9 +337,26 @@ export function* CallExpression(node: estree.CallExpression, scope: Scope) {
     } else {
       func = object[key]
     }
+
+    if (typeof func !== 'function') {
+      throw new TypeError(`${key} is not a function`)
+    }
   } else {
     object = scope.find('this').get()
     func = yield* evaluate(node.callee, scope)
+    if (typeof func !== 'function') {
+      let name: string
+      if (node.callee.type === 'Identifier') {
+        name = node.callee.name
+      } else {
+        try {
+          name = JSON.stringify(func)
+        } catch (err) {
+          name = '' + func
+        }
+      }
+      throw new TypeError(`${name} is not a function`)
+    }
   }
 
   let args: any[] = []
@@ -350,10 +367,6 @@ export function* CallExpression(node: estree.CallExpression, scope: Scope) {
     } else {
       args.push(yield* evaluate(arg, scope))
     }
-  }
-
-  if (!func.apply) {
-    throw new TypeError(`${func && func.name || func} is not a function`)
   }
 
   return func.apply(object, args)

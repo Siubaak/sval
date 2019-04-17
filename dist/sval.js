@@ -1112,10 +1112,28 @@
           else {
               func = object[key];
           }
+          if (typeof func !== 'function') {
+              throw new TypeError(key + " is not a function");
+          }
       }
       else {
           object = scope.find('this').get();
           func = evaluate(node.callee, scope);
+          if (typeof func !== 'function') {
+              var name_1;
+              if (node.callee.type === 'Identifier') {
+                  name_1 = node.callee.name;
+              }
+              else {
+                  try {
+                      name_1 = JSON.stringify(func);
+                  }
+                  catch (err) {
+                      name_1 = '' + func;
+                  }
+              }
+              throw new TypeError(name_1 + " is not a function");
+          }
       }
       var args = [];
       for (var index in node.arguments) {
@@ -1127,27 +1145,24 @@
               args.push(evaluate(arg, scope));
           }
       }
-      if (!func.apply) {
-          throw new TypeError((func && func.name || func) + " is not a function");
-      }
       return func.apply(object, args);
   }
   function NewExpression(node, scope) {
       var constructor = evaluate(node.callee, scope);
       if (typeof constructor !== 'function') {
-          var name_1;
+          var name_2;
           if (node.callee.type === 'Identifier') {
-              name_1 = node.callee.name;
+              name_2 = node.callee.name;
           }
           else {
               try {
-                  name_1 = JSON.stringify(constructor);
+                  name_2 = JSON.stringify(constructor);
               }
               catch (err) {
-                  name_1 = '' + constructor;
+                  name_2 = '' + constructor;
               }
           }
-          throw new TypeError(name_1 + " is not a constructor");
+          throw new TypeError(name_2 + " is not a constructor");
       }
       else if (constructor[ARROW]) {
           throw new TypeError((constructor.name || '(intermediate value)') + " is not a constructor");
@@ -2198,7 +2213,7 @@
       });
   }
   function CallExpression$1(node, scope) {
-      var func, object, key, getter, thisObject, args, _a, _b, _i, index, arg, _c, _d, _e, _f;
+      var func, object, key, getter, thisObject, name_1, args, _a, _b, _i, index, arg, _c, _d, _e, _f;
       return __generator(this, function (_g) {
           switch (_g.label) {
               case 0:
@@ -2224,12 +2239,29 @@
                   else {
                       func = object[key];
                   }
+                  if (typeof func !== 'function') {
+                      throw new TypeError(key + " is not a function");
+                  }
                   return [3, 7];
               case 5:
                   object = scope.find('this').get();
                   return [5, __values(evaluate$1(node.callee, scope))];
               case 6:
                   func = _g.sent();
+                  if (typeof func !== 'function') {
+                      if (node.callee.type === 'Identifier') {
+                          name_1 = node.callee.name;
+                      }
+                      else {
+                          try {
+                              name_1 = JSON.stringify(func);
+                          }
+                          catch (err) {
+                              name_1 = '' + func;
+                          }
+                      }
+                      throw new TypeError(name_1 + " is not a function");
+                  }
                   _g.label = 7;
               case 7:
                   args = [];
@@ -2257,16 +2289,12 @@
               case 12:
                   _i++;
                   return [3, 8];
-              case 13:
-                  if (!func.apply) {
-                      throw new TypeError((func && func.name || func) + " is not a function");
-                  }
-                  return [2, func.apply(object, args)];
+              case 13: return [2, func.apply(object, args)];
           }
       });
   }
   function NewExpression$1(node, scope) {
-      var constructor, name_1, args, _a, _b, _i, index, arg, _c, _d, _e, _f;
+      var constructor, name_2, args, _a, _b, _i, index, arg, _c, _d, _e, _f;
       return __generator(this, function (_g) {
           switch (_g.label) {
               case 0: return [5, __values(evaluate$1(node.callee, scope))];
@@ -2274,17 +2302,17 @@
                   constructor = _g.sent();
                   if (typeof constructor !== 'function') {
                       if (node.callee.type === 'Identifier') {
-                          name_1 = node.callee.name;
+                          name_2 = node.callee.name;
                       }
                       else {
                           try {
-                              name_1 = JSON.stringify(constructor);
+                              name_2 = JSON.stringify(constructor);
                           }
                           catch (err) {
-                              name_1 = '' + constructor;
+                              name_2 = '' + constructor;
                           }
                       }
-                      throw new TypeError(name_1 + " is not a constructor");
+                      throw new TypeError(name_2 + " is not a constructor");
                   }
                   else if (constructor[ARROW]) {
                       throw new TypeError((constructor.name || '(intermediate value)') + " is not a constructor");
