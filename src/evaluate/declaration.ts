@@ -1,5 +1,5 @@
+import { define, getDptor, assign, hasOwn } from '../share/util'
 import { pattern, createFunc, createClass } from './helper'
-import { define, getDptor, assign } from '../share/util'
 import { VarKind } from '../scope/variable'
 import { NOINIT } from '../share/const'
 import * as estree from 'estree'
@@ -52,7 +52,7 @@ export function* VariableDeclarator(
     || kind === 'let'
     || kind === 'const'
   ) {
-    const value = 'feed' in options ? feed : yield* evaluate(node.init, scope)
+    const value = hasOwn(options, 'feed') ? feed : yield* evaluate(node.init, scope)
     if (node.id.type === 'Identifier') {
       const name = node.id.name
       if (kind === 'var' && !node.init) {

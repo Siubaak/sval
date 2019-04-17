@@ -9,7 +9,7 @@ export default [
     output: {
       name: 'Sval',
       format: 'umd',
-      file: 'dist/index.js',
+      file: 'dist/sval.js',
       globals: {
         acorn: 'acorn'
       }
@@ -19,6 +19,29 @@ export default [
       json(),
       typescript({
         useTsconfigDeclarationDir: true
+      })
+    ]
+  },
+  {
+    input: 'src/index.ts',
+    output: {
+      name: 'Sval',
+      format: 'umd',
+      file: 'dist/sval.es6.js',
+      globals: {
+        acorn: 'acorn'
+      }
+    },
+    external: ['acorn'],
+    plugins: [
+      json(),
+      typescript({
+        useTsconfigDeclarationDir: true,
+        tsconfigOverride: {
+          compilerOptions: {
+            target: 'es6'
+          }
+        }
       })
     ]
   },

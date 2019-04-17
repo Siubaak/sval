@@ -1,4 +1,4 @@
-const Sval = require('../dist/index')
+const Sval = require('../dist/sval')
 
 describe('testing src/index.ts', () => {
   it('should for statement run normally', () => {  
@@ -29,9 +29,32 @@ describe('testing src/index.ts', () => {
     `)
     expect(interpreter.exports.a).toEqual([1, 2, 3])
   })
+  it('should for-await-of statement run normally', done => {  
+    const interpreter = new Sval()
+    interpreter.import({ getItem, expect, done })
+    interpreter.run(`
+      b()
+      async function* a() {
+        for (const i of [1, 2, 3]) {
+          yield await getItem(i)
+        }
+      }
+      async function b() {
+        const res = []
+        for await (const i of a()) {
+          res.push(i)
+        }
+        expect(res).toEqual([1, 2, 3])
+        done()
+      }
+    `)
+    function getItem(n) {
+      return new Promise(resolve => setTimeout(resolve, 5, n))
+    }
+  })
   
   it('should try statement run normally', () => {  
-    const interpreter = new Sval()
+    const interpreter = new Sval({ ecmaVer: 10 })
     interpreter.run(`
       try {
         throw 1

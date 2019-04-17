@@ -1,6 +1,6 @@
 const { readFileSync, existsSync } = require('fs')
 const { resolve } = require('path')
-const Sval = require('../dist/index')
+const Sval = require('../dist/sval')
 
 let code
 

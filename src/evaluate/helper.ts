@@ -1,5 +1,5 @@
 import { FunctionDeclaration, VariableDeclaration, ClassBody } from './declaration'
-import { define, inherits, runAsync} from '../share/util'
+import { define, inherits, runAsync, runAsyncOptions, assign } from '../share/util'
 import { RETURN, SUPER, ARROW } from '../share/const'
 import { Identifier } from '../evaluate_n/identifier'
 import { BlockStatement } from './statement'
@@ -153,6 +153,10 @@ export function createFunc(
       })
     } else {
       result = yield* evaluate(node.body, subScope)
+      if (node.type === 'ArrowFunctionExpression') {
+        RETURN.RES = result
+        result = RETURN
+      }
     }
 
     if (result === RETURN) {
@@ -163,10 +167,23 @@ export function createFunc(
   let func: any /*<add>*//*= tmpFunc*//*</add>*/
   /*<remove>*/
   if (node.async && node.generator) {
-  } else if (node.async) {
-    func = function (...args: any[]) {
-      return runAsync(tmpFunc(args))
+    func = function (...args: any[]): AsyncIterator<any> {
+      const iterator = tmpFunc(args)
+      let last: Promise<any> = Promise.resolve()
+      const run = (opts: runAsyncOptions) =>
+        last = last.then(() => runAsync(iterator, assign({ full: true }, opts)))
+      const asyncIterator: AsyncIterator<any> = {
+        next: (res?: any) => run({ res }),
+        throw: (err?: any) => run({ err }),
+        return: (ret?: any) => run({ ret })
+      }
+      if (typeof Symbol === 'function') {
+        (asyncIterator as any)[Symbol.iterator] = function () { return this }
+      }
+      return asyncIterator
     }
+  } else if (node.async) {
+    func = (...args: any[]) => runAsync(tmpFunc(args))
   /*</remove>*/
     if (node.type === 'ArrowFunctionExpression') {
       define(func, ARROW, { value: true })

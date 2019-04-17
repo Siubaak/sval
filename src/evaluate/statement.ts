@@ -1,5 +1,6 @@
+import { BREAK, CONTINUE, RETURN, AWAIT } from '../share/const'
 import { hoistFunc, pattern, ForXHandler } from './helper'
-import { BREAK, CONTINUE, RETURN } from '../share/const'
+import { getIterator } from '../share/util'
 import * as estree from 'estree'
 import Scope from '../scope'
 import evaluate from '.'
@@ -200,14 +201,38 @@ export function* ForInStatement(node: estree.ForInStatement, scope: Scope) {
 }
 
 export function* ForOfStatement(node: estree.ForOfStatement, scope: Scope) {
-  for (const value of yield* evaluate(node.right, scope)) {
-    const result = yield* ForXHandler(node, scope, { value })
-    if (result === BREAK) {
-      break
-    } else if (result === CONTINUE) {
-      continue
-    } else if (result === RETURN) {
-      return result
+  const right = yield* evaluate(node.right, scope)
+  /*<remove>*/
+  if ((node as any).await) {
+    const iterator = getIterator(right)
+    let ret: any
+    for (
+      AWAIT.RES = iterator.next(), ret = yield AWAIT;
+      !ret.done;
+      AWAIT.RES = iterator.next(), ret = yield AWAIT
+    ) {
+      const result = yield* ForXHandler(node, scope, { value: ret.value })
+      if (result === BREAK) {
+        break
+      } else if (result === CONTINUE) {
+        continue
+      } else if (result === RETURN) {
+        return result
+      }
     }
+  } else {
+  /*</remove>*/
+    for (const value of right) {
+      const result = yield* ForXHandler(node, scope, { value })
+      if (result === BREAK) {
+        break
+      } else if (result === CONTINUE) {
+        continue
+      } else if (result === RETURN) {
+        return result
+      }
+    }
+  /*<remove>*/
   }
+  /*</remove>*/
 }
