@@ -34,4 +34,28 @@ describe('testing src/index.ts', () => {
     `)
     expect(interpreter.exports.a).toBe(1)
   })
+
+  it('should declare var in global env normally', () => {  
+    const interpreter = new Sval()
+    interpreter.import({ expect })
+    interpreter.run(`
+      var a = 1
+
+      expect(Object.getOwnPropertyDescriptor(window, 'a')).toEqual({
+        value: 1,
+        writable: true,
+        enumerable: true,
+        configurable: false
+      })
+      expect('a' in window).toBeTruthy()
+
+      expect(window.a).toBe(1)
+      try {
+        delete window.a
+      } catch (err) {
+        expect(err).toBeInstanceOf(TypeError)
+      }
+      expect(window.a).toBe(1)
+    `)
+  })
 })

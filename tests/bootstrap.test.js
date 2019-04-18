@@ -16,4 +16,9 @@ describe('testing src/index.ts', () => {
     const interpreter = new Sval()
     interpreter.run(code)
   })
+
+  it('should compile normally in generator env', () => {  
+    const interpreter = new Sval()
+    interpreter.run(`!async function(){${code}}()`)
+  })
 })

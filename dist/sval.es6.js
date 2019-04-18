@@ -359,7 +359,7 @@
       return key + Math.random().toString(36).substring(2);
   }
   function runAsync(iterator, options = {}) {
-      const { res, err, ret, full } = options;
+      const { res, err, ret, fullRet } = options;
       return new Promise((resolve, reject) => {
           if (hasOwn(options, 'ret')) {
               return resolve(iterator.return(ret));
@@ -393,7 +393,7 @@
           }
           function next(ret) {
               if (ret.done)
-                  return resolve(full ? ret : ret.value);
+                  return resolve(fullRet ? ret : ret.value);
               if (ret.value !== AWAIT)
                   return resolve(ret);
               const awaitValue = ret.value.RES;
@@ -522,7 +522,7 @@
           if (!scope.parent) {
               const win = scope.find('window').get();
               if (value !== NOINIT) {
-                  win[name] = value;
+                  define(win, name, { value, writable: true, enumerable: true });
               }
           }
       }
@@ -2608,7 +2608,7 @@
           func = function (...args) {
               const iterator = tmpFunc(args);
               let last = Promise.resolve();
-              const run = (opts) => last = last.then(() => runAsync(iterator, assign({ full: true }, opts)));
+              const run = (opts) => last = last.then(() => runAsync(iterator, assign({ fullRet: true }, opts)));
               const asyncIterator = {
                   next: (res) => run({ res }),
                   throw: (err) => run({ err }),

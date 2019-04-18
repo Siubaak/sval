@@ -360,7 +360,7 @@
   }
   function runAsync(iterator, options) {
       if (options === void 0) { options = {}; }
-      var res = options.res, err = options.err, ret = options.ret, full = options.full;
+      var res = options.res, err = options.err, ret = options.ret, fullRet = options.fullRet;
       return new Promise(function (resolve, reject) {
           if (hasOwn(options, 'ret')) {
               return resolve(iterator.return(ret));
@@ -394,7 +394,7 @@
           }
           function next(ret) {
               if (ret.done)
-                  return resolve(full ? ret : ret.value);
+                  return resolve(fullRet ? ret : ret.value);
               if (ret.value !== AWAIT)
                   return resolve(ret);
               var awaitValue = ret.value.RES;
@@ -527,7 +527,7 @@
           if (!scope.parent) {
               var win = scope.find('window').get();
               if (value !== NOINIT) {
-                  win[name] = value;
+                  define(win, name, { value: value, writable: true, enumerable: true });
               }
           }
       };
@@ -3698,7 +3698,7 @@
               var iterator = tmpFunc(args);
               var last = Promise.resolve();
               var run = function (opts) {
-                  return last = last.then(function () { return runAsync(iterator, assign({ full: true }, opts)); });
+                  return last = last.then(function () { return runAsync(iterator, assign({ fullRet: true }, opts)); });
               };
               var asyncIterator = {
                   next: function (res) { return run({ res: res }); },

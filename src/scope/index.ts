@@ -1,5 +1,5 @@
+import { hasOwn, getOwnNames, define } from '../share/util'
 import { Variable, Var, Prop } from './variable'
-import { hasOwn, getOwnNames } from '../share/util'
 import { NOINIT } from '../share/const'
 
 /**
@@ -119,7 +119,7 @@ export default class Scope {
     if (!scope.parent) {
       const win = scope.find('window').get()
       if (value !== NOINIT) {
-        win[name] = value
+        define(win, name, { value, writable: true, enumerable: true })
       }
     }
   }
