@@ -41,4 +41,18 @@ describe('testing src/index.ts', () => {
     expect(interpreter.exports.c).toBe(1)
     expect(interpreter.exports.d).toBe(2)
   })
+  it('should parse regular expression normally', () => {  
+    const interpreter = new Sval()
+    interpreter.import({ expect })
+    interpreter.run(`
+      const re = /\\/\\*<([^>]+?)>\\*\\/([\\s\\S]*?)\\/\\*<\\/([^>]+?)>\\*\\//g
+      exports.a = '/*<add>*//*hello*//*</add>*/ /*<add>*//*world*//*</add>*/'
+        .replace(re, (_, start, content, end) => {
+          expect(start).toBe('add')
+          expect(end).toBe('add')
+          return content.match(/\\/\\*([\\s\\S]*)\\*\\//)[1]
+        })
+    `)
+    expect(interpreter.exports.a).toBe('hello world')
+  })
 })
