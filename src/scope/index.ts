@@ -57,8 +57,8 @@ export default class Scope {
   clone(): Scope {
     const cloneScope = new Scope(this.parent, this.isolated)
     const names = getOwnNames(this.context)
-    for (const index in names) {
-      const name = names[index]
+    for (let i = 0; i < names.length; i++) {
+      const name = names[i]
       const variable = this.context[name]
       cloneScope[variable.kind](name, variable.get())
     }

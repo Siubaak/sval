@@ -59,32 +59,32 @@ function* hoistVarRecursion(statement: estree.Statement, scope: Scope): Iterable
       yield* hoistVarRecursion(statement.body, scope)
       break
     case 'BlockStatement':
-      for (const index in statement.body) {
-        yield* hoistVarRecursion(statement.body[index], scope)
+      for (let i = 0; i < statement.body.length; i++) {
+        yield* hoistVarRecursion(statement.body[i], scope)
       }
       break
     case 'SwitchStatement':
-      for (const index in statement.cases) {
-        for (const idx in statement.cases[index].consequent) {
-          yield* hoistVarRecursion(statement.cases[index].consequent[idx], scope)
+      for (let i = 0; i < statement.cases.length; i++) {
+        for (let j = 0; j < statement.cases[i].consequent.length; j++) {
+          yield* hoistVarRecursion(statement.cases[i].consequent[j], scope)
         }
       }
       break
     case 'TryStatement': {
       const tryBlock = statement.block.body
-      for (const index in tryBlock) {
-        yield* hoistVarRecursion(tryBlock[index], scope)
+      for (let i = 0; i < tryBlock.length; i++) {
+        yield* hoistVarRecursion(tryBlock[i], scope)
       }
       const catchBlock = statement.handler && statement.handler.body.body
       if (catchBlock) {
-        for (const index in catchBlock) {
-          yield* hoistVarRecursion(catchBlock[index], scope)
+        for (let i = 0; i < catchBlock.length; i++) {
+          yield* hoistVarRecursion(catchBlock[i], scope)
         }
       }
       const finalBlock = statement.finalizer && statement.finalizer.body
       if (finalBlock) {
-        for (const index in finalBlock) {
-          yield* hoistVarRecursion(finalBlock[index], scope)
+        for (let i = 0; i < finalBlock.length; i++) {
+          yield* hoistVarRecursion(finalBlock[i], scope)
         }
       }
       break
@@ -217,8 +217,8 @@ export function* createClass(
 
   let klass = function () { }
   const methodBody = node.body.body
-  for (const index in methodBody) {
-    const method = methodBody[index]
+  for (let i = 0; i < methodBody.length; i++) {
+    const method = methodBody[i]
     if (method.kind === 'constructor') {
       klass = createFunc(method.value, scope, { superClass })
       break

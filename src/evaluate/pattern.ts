@@ -15,8 +15,8 @@ export interface PatternOptions {
 export function* ObjectPattern(node: estree.ObjectPattern, scope: Scope, options: PatternOptions = {}) {
   const { kind = 'let', hoist = false, feed = {} } = options
   const fedKeys: string[] = []
-  for (const index in node.properties) {
-    const property = node.properties[index]
+  for (let i = 0; i < node.properties.length; i++) {
+    const property = node.properties[i]
     const value = property.value
     if (hoist) {
       if (kind === 'var') {
@@ -42,9 +42,7 @@ export function* ObjectPattern(node: estree.ObjectPattern, scope: Scope, options
       }
     } else {
       const rest = assign({}, feed)
-      for(const index in fedKeys) {
-        delete rest[fedKeys[index]]
-      }
+      for (let i = 0; i < fedKeys.length; i++) delete rest[fedKeys[i]]
       yield* RestElement(property as any, scope, { kind, feed: rest })
     }
   }

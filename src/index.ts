@@ -51,8 +51,9 @@ class Sval {
     if (typeof nameOrModules !== 'object') return
 
     const names = getOwnNames(nameOrModules)
-    for (const index in names) {
-      const name = names[index]
+    
+    for (let i = 0; i < names.length; i++) {
+      const name = names[i]
       this.scope.var(name, nameOrModules[name])
     }
   }
