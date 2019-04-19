@@ -52,10 +52,11 @@ export function* VariableDeclarator(
     || kind === 'let'
     || kind === 'const'
   ) {
-    const value = hasOwn(options, 'feed') ? feed : yield* evaluate(node.init, scope)
+    const hasFeed = hasOwn(options, 'feed')
+    const value = hasFeed ? feed : yield* evaluate(node.init, scope)
     if (node.id.type === 'Identifier') {
       const name = node.id.name
-      if (kind === 'var' && !node.init) {
+      if (kind === 'var' && !node.init && !hasFeed) {
         scope.var(name, NOINIT)
       } else {
         scope[kind](name, value)
