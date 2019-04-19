@@ -90,19 +90,20 @@ export function* ClassDeclaration(
 }
 
 export interface ClassOptions {
-  klass?: (...args: any[]) => any
+  klass?: (...args: any[]) => void,
+  superClass?: (...args: any[]) => void
 }
 
 export function* ClassBody(node: estree.ClassBody, scope: Scope, options: ClassOptions = {}) {
-  const { klass = function () { } } = options
+  const { klass, superClass } = options
 
   for (const index in node.body) {
-    yield* MethodDefinition(node.body[index], scope, { klass })
+    yield* MethodDefinition(node.body[index], scope, { klass, superClass })
   }
 }
 
 export function* MethodDefinition(node: estree.MethodDefinition, scope: Scope, options: ClassOptions = {}) {
-  const { klass = function () { } } = options
+  const { klass, superClass } = options
 
   let key: string
   if (node.computed) {
@@ -114,7 +115,7 @@ export function* MethodDefinition(node: estree.MethodDefinition, scope: Scope, o
   }
 
   const obj = node.static ? klass : klass.prototype
-  const value = createFunc(node.value, scope)
+  const value = createFunc(node.value, scope, { superClass })
 
   switch (node.kind) {
     case 'constructor':

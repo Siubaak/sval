@@ -215,12 +215,12 @@ export function* createClass(
 ) {
   const superClass = yield* evaluate(node.superClass, scope)
 
-  let klass: (...args: any[]) => any = function () { }
+  let klass = function () { }
   const methodBody = node.body.body
   for (const index in methodBody) {
     const method = methodBody[index]
     if (method.kind === 'constructor') {
-      klass = yield* createFunc(method.value, scope, { superClass })
+      klass = createFunc(method.value, scope, { superClass })
       break
     }
   }
@@ -229,10 +229,10 @@ export function* createClass(
     inherits(klass, superClass)
   }
 
-  yield* ClassBody(node.body, scope, { klass })
+  yield* ClassBody(node.body, scope, { klass, superClass })
 
   define(klass, 'name', {
-    value: node.id.name,
+    value: node.id && node.id.name || '',
     configurable: true
   })
 

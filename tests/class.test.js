@@ -65,4 +65,26 @@ describe('testing src/index.ts', () => {
     `)
     expect(interpreter.exports.k).toBe(1)
   })
+  it('should call base class method normally', () => {
+    const interpreter = new Sval()
+    interpreter.run(`
+      class A {
+        assign() {
+          exports.a = 1
+        }
+      }
+    
+      class B extends A {
+        assign() {
+          super.assign()
+          exports.b = 2
+        }
+      }
+    
+      const a = new B()
+      a.assign()
+    `)
+    expect(interpreter.exports.a).toBe(1)
+    expect(interpreter.exports.b).toBe(2)
+  })
 })

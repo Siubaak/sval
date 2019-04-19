@@ -269,13 +269,7 @@ export function* MemberExpression(
     object = yield* evaluate(node.object, scope)
   }
 
-  if (getObj) {
-    if (node.object.type === 'Super') {
-      return scope.find('this').get()
-    } else {
-      return object
-    }
-  }
+  if (getObj) return object
 
   let key: string
   if (node.computed) {
