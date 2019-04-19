@@ -11,7 +11,7 @@ A JavaScript interpreter writen in JavaScript, based on parser [Acorn](https://g
 
 It's useful to evaluate the code of higher ECMAScript editions, or for the environment with disabled `eval`, `setTimeout` and `new Function`.
 
-[Try Sval on the playground.](https://siubaak.github.io/sval)
+[Try Sval on the playground.](https://jsbin.com/kehahiqono/edit?js,console)
 
 ## Installation
 
