@@ -58,16 +58,36 @@ describe('testing src/index.ts', () => {
     interpreter.run(`
       try {
         throw 1
-      } catch (a) {
-        exports.a = a
+      } catch (err) {
+        exports.a = err
       }
       try {
         throw 1
       } catch {
         exports.b = 2
       }
+      exports.c = c()
+      function c() {
+        try {
+          return 1
+        } catch {
+          return 2
+        } finally {
+          return 3
+        }
+      }
+      for (const i of [4, 5, 6]) {
+        try {
+          exports.d = i
+          continue
+        } finally {
+          break
+        }
+      }
     `)
     expect(interpreter.exports.a).toBe(1)
     expect(interpreter.exports.b).toBe(2)
+    expect(interpreter.exports.c).toBe(3)
+    expect(interpreter.exports.d).toBe(4)
   })
 })

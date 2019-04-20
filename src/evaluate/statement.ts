@@ -124,7 +124,10 @@ export function* TryStatement(node: estree.TryStatement, scope: Scope) {
     }
   } finally {
     if (node.finalizer) {
-      return yield* BlockStatement(node.finalizer, scope)
+      const result = yield* BlockStatement(node.finalizer, scope)
+      if (result === BREAK || result === CONTINUE || result === RETURN) {
+        return result
+      }
     }
   }
 }
