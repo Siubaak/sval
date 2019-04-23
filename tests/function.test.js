@@ -6,6 +6,15 @@ describe('testing src/index.ts', () => {
     interpreter.run('!function(){exports.a=1}()')
     expect(interpreter.exports.a).toBe(1)
   })
+  it('should get function inside by its name', () => {
+    const interpreter = new Sval()
+    interpreter.run(`
+      const a = function b() { exports.x = a === b }
+      a()
+    `)
+
+    expect(interpreter.exports.x).toBeTruthy()
+  })
 
   it('should yield generator normally', () => {  
     const interpreter = new Sval()
@@ -57,7 +66,7 @@ describe('testing src/index.ts', () => {
       }
     `)
   })
-  it('should excute async function normally', done => {  
+  it('should excute async function normally 2', done => {  
     const interpreter = new Sval()
     interpreter.import({ getItem, expect, done })
     interpreter.run(`

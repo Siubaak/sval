@@ -16,6 +16,15 @@ export function getOwnNames(obj: any) {
   return getOwnPropertyNames(obj)
 }
 
+const setPrototypeOf = Object.setPrototypeOf
+export function setProto(obj: any, proto: any) {
+  if (setPrototypeOf) {
+    setPrototypeOf(obj, proto)
+  } else {
+    obj.__proto__ = proto
+  }
+}
+
 const getPrototypeOf = Object.getPrototypeOf
 export function getProto(obj: any) {
   return getPrototypeOf ? getPrototypeOf(obj) : obj.__proto__
@@ -48,6 +57,7 @@ export function inherits(
   subClass: (...args: any[]) => any,
   superClass: (...args: any[]) => any,
 ) {
+  setProto(subClass, superClass)
   subClass.prototype = create(superClass.prototype, {
     constructor: {
       value: subClass,

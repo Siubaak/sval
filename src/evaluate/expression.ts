@@ -1,6 +1,6 @@
 import { define, freeze, getGetter, getSetter, createSymbol, assign } from '../share/util'
+import { SUPER, NOCTOR, AWAIT, CLSCTOR, NEWTARGET, SUPERCALL } from '../share/const'
 import { pattern, createFunc, createClass } from './helper'
-import { SUPER, NOCTOR, AWAIT } from '../share/const'
 import { Variable, Prop } from '../scope/variable'
 import { Identifier } from './identifier'
 import { Literal } from './literal'
@@ -9,7 +9,13 @@ import Scope from '../scope'
 import evaluate from '.'
 
 export function* ThisExpression(node: estree.ThisExpression, scope: Scope) {
-  return scope.find('this').get()
+  const superCall = scope.find(SUPERCALL)
+  if (superCall && !superCall.get()) {
+    throw new ReferenceError('Must call super constructor in derived class'
+      + 'before accessing \'this\' or returning from derived constructor')
+  } else {
+    return scope.find('this').get()
+  }
 }
 
 export function* ArrayExpression(node: estree.ArrayExpression, scope: Scope) {
@@ -334,11 +340,13 @@ export function* CallExpression(node: estree.CallExpression, scope: Scope) {
 
     if (typeof func !== 'function') {
       throw new TypeError(`${key} is not a function`)
+    } else if (func[CLSCTOR]) {
+      throw new TypeError(`Class constructor ${key} cannot be invoked without 'new'`)
     }
   } else {
     object = scope.find('this').get()
     func = yield* evaluate(node.callee, scope)
-    if (typeof func !== 'function') {
+    if (typeof func !== 'function' || node.callee.type !== 'Super' && func[CLSCTOR]) {
       let name: string
       if (node.callee.type === 'Identifier') {
         name = node.callee.name
@@ -349,7 +357,11 @@ export function* CallExpression(node: estree.CallExpression, scope: Scope) {
           name = '' + func
         }
       }
-      throw new TypeError(`${name} is not a function`)
+      if (typeof func !== 'function') {
+        throw new TypeError(`${name} is not a function`)
+      } else {
+        throw new TypeError(`Class constructor ${name} cannot be invoked without 'new'`)
+      }
     }
   }
 
@@ -360,6 +372,15 @@ export function* CallExpression(node: estree.CallExpression, scope: Scope) {
       args = args.concat(yield* SpreadElement(arg, scope))
     } else {
       args.push(yield* evaluate(arg, scope))
+    }
+  }
+
+  if (node.callee.type === 'Super') {
+    const superCall = scope.find(SUPERCALL)
+    if (superCall.get()) {
+      throw new ReferenceError('Super constructor may only be called once')
+    } else {
+      scope.find(SUPERCALL).set(true)
     }
   }
 
@@ -396,6 +417,10 @@ export function* NewExpression(node: estree.NewExpression, scope: Scope) {
   }
 
   return new constructor(...args)
+}
+
+export function* MetaProperty(node: estree.MetaProperty, scope: Scope) {
+  return scope.find(NEWTARGET).get()
 }
 
 export function* SequenceExpression(node: estree.SequenceExpression, scope: Scope) {

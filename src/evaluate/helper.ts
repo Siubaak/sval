@@ -1,6 +1,6 @@
+import { RETURN, SUPER, NOCTOR, CLSCTOR, NEWTARGET, SUPERCALL } from '../share/const'
 import { FunctionDeclaration, VariableDeclaration, ClassBody } from './declaration'
 import { define, inherits, runAsync, runAsyncOptions, assign } from '../share/util'
-import { RETURN, SUPER, NOCTOR } from '../share/const'
 import { Identifier } from '../evaluate_n/identifier'
 import { BlockStatement } from './statement'
 import { Var } from '../scope/variable'
@@ -128,8 +128,10 @@ export function createFunc(
     if (node.type !== 'ArrowFunctionExpression') {
       subScope.const('this', this)
       subScope.let('arguments', arguments)
+      subScope.const(NEWTARGET, new.target)
       if (superClass) {
         subScope.const(SUPER, superClass)
+        subScope.let(SUPERCALL, false)
       }
     }
 
@@ -215,7 +217,11 @@ export function* createClass(
 ) {
   const superClass = yield* evaluate(node.superClass, scope)
 
-  let klass = function () { }
+  let klass = function () {
+    if (superClass) {
+      superClass.apply(this)
+    }
+  }
   const methodBody = node.body.body
   for (let i = 0; i < methodBody.length; i++) {
     const method = methodBody[i]
@@ -231,6 +237,7 @@ export function* createClass(
 
   yield* ClassBody(node.body, scope, { klass, superClass })
 
+  define(klass, CLSCTOR, { value: true })
   define(klass, 'name', {
     value: node.id && node.id.name || '',
     configurable: true
