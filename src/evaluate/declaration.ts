@@ -53,26 +53,7 @@ export function* VariableDeclarator(
     || kind === 'const'
   ) {
     const hasFeed = hasOwn(options, 'feed')
-    let value: any
-    if (hasFeed) {
-      value = feed
-    } else if (
-      node.init
-      && (
-        node.init.type === 'FunctionExpression'
-        || node.init.type === 'ClassExpression'
-      )
-      && node.init.id
-      && node.init.id.name
-    ) {
-      // it's for accessing function or class expression by its name inside
-      // e.g. const a = function b() { console.log(b) }
-      const tmpScope = new Scope(scope)
-      value = yield* evaluate(node.init, tmpScope)
-      tmpScope.const(node.init.id.name, value)
-    } else {
-      value = yield* evaluate(node.init, scope)
-    }
+    const value = hasFeed ? feed : yield* evaluate(node.init, scope)
     if (node.id.type === 'Identifier') {
       const name = node.id.name
       if (kind === 'var' && !node.init && !hasFeed) {

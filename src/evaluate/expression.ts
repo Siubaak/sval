@@ -66,7 +66,16 @@ export function* ObjectExpression(node: estree.ObjectExpression, scope: Scope) {
 }
 
 export function* FunctionExpression(node: estree.FunctionExpression, scope: Scope) {
-  return createFunc(node, scope)
+  if (node.id && node.id.name) {
+    // it's for accessing function expression by its name inside
+    // e.g. const a = function b() { console.log(b) }
+    const tmpScope = new Scope(scope)
+    const func = createFunc(node, tmpScope)
+    tmpScope.const(node.id.name, func)
+    return func
+  } else {
+    return createFunc(node, scope)
+  }
 }
 
 export function* UnaryExpression(node: estree.UnaryExpression, scope: Scope) {
@@ -482,7 +491,16 @@ export function* TemplateElement(node: estree.TemplateElement, scope: Scope) {
 }
 
 export function* ClassExpression(node: estree.ClassExpression, scope: Scope) {
-  return yield* createClass(node, scope)
+  if (node.id && node.id.name) {
+    // it's for accessing class expression by its name inside
+    // e.g. const a = class b { log() { console.log(b) } }
+    const tmpScope = new Scope(scope)
+    const klass = yield* createClass(node, tmpScope)
+    tmpScope.const(node.id.name, klass)
+    return klass
+  } else {
+    return yield* createClass(node, scope)
+  }
 }
 
 export interface SuperOptions {

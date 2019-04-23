@@ -186,8 +186,8 @@ describe('testing src/index.ts', () => {
 
     interpreter.run(`
       var a = 1, b, c = function() { return 3 }
-      let la = 1, lb, lc = function() { return 3}
-      const ca = 1, cb = function() { return 3}
+      let la = 1, lb, lc = function() { return 3 }
+      const ca = 1, cb = function() { return 3 }
 
       exports.a = a
       exports.b = b
@@ -267,7 +267,7 @@ describe('testing src/index.ts', () => {
       const b = 5
       var c = 5; // ';' should be kept
       
-      (function(){
+      (function () {
         let a = 6
         const b = 6
         var c = 6
@@ -293,15 +293,15 @@ describe('testing src/index.ts', () => {
     const interpreter = new Sval()
 
     interpreter.run(`
-      (function x(){
+      (function x() {
         exports.func = x
       })()
 
-      exports.exist = typeof x === 'undefined';
+      exports.exist = typeof x === 'undefined'
     `)
 
     // does't exist outside
-    expect(interpreter.exports.exist).toBe(true)
+    expect(interpreter.exports.exist).toBeTruthy()
 
     // can be visited in function itself
     expect(typeof interpreter.exports.func).toBe('function')
