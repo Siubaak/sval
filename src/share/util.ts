@@ -18,11 +18,7 @@ export function getOwnNames(obj: any) {
 
 const setPrototypeOf = Object.setPrototypeOf
 export function setProto(obj: any, proto: any) {
-  if (setPrototypeOf) {
-    setPrototypeOf(obj, proto)
-  } else {
-    obj.__proto__ = proto
-  }
+  setPrototypeOf ? setPrototypeOf(obj, proto) : obj.__proto__ = proto
 }
 
 const getPrototypeOf = Object.getPrototypeOf
@@ -57,7 +53,7 @@ export function inherits(
   subClass: (...args: any[]) => any,
   superClass: (...args: any[]) => any,
 ) {
-  setProto(subClass, superClass)
+  setProto(subClass, superClass) // allow to access static methods from derived class
   subClass.prototype = create(superClass.prototype, {
     constructor: {
       value: subClass,

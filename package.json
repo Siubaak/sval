@@ -1,6 +1,6 @@
 {
   "name": "sval",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "A javascript interpreter written in javascript",
   "main": "dist/sval.js",
   "module": "dist/sval.js",
@@ -37,12 +37,12 @@
     "@types/acorn": "^4.0.5",
     "@types/estree": "0.0.39",
     "jest": "^24.7.1",
-    "rollup": "^1.10.0",
+    "rollup": "^1.10.1",
     "rollup-plugin-json": "^3.1.0",
     "rollup-plugin-node-resolve": "^4.2.3",
     "rollup-plugin-typescript2": "^0.19.3",
     "rollup-plugin-uglify": "^6.0.2",
-    "typescript": "^3.4.3"
+    "typescript": "^3.4.4"
   },
   "jest": {
     "testRegex": "\\.test\\.js$",

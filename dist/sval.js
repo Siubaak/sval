@@ -26,7 +26,10 @@
   var CONTINUE = createSymbol('continue');
   var BREAK = createSymbol('break');
   var SUPER = createSymbol('super');
+  var SUPERCALL = createSymbol('supercall');
   var NOCTOR = createSymbol('noctor');
+  var CLSCTOR = createSymbol('clsctor');
+  var NEWTARGET = createSymbol('newtarget');
   var NOINIT = createSymbol('noinit');
 
   var freeze = Object.freeze;
@@ -39,6 +42,10 @@
   var getOwnPropertyNames = Object.getOwnPropertyNames;
   function getOwnNames(obj) {
       return getOwnPropertyNames(obj);
+  }
+  var setPrototypeOf = Object.setPrototypeOf;
+  function setProto(obj, proto) {
+      setPrototypeOf ? setPrototypeOf(obj, proto) : obj.__proto__ = proto;
   }
   var getPrototypeOf = Object.getPrototypeOf;
   function getProto(obj) {
@@ -68,6 +75,7 @@
   }
   var create = Object.create;
   function inherits(subClass, superClass) {
+      setProto(subClass, superClass);
       subClass.prototype = create(superClass.prototype, {
           constructor: {
               value: subClass,
@@ -345,8 +353,8 @@
       }
   }
   var win = {};
-  for (var index in names) {
-      var name_1 = names[index];
+  for (var i = 0; i < names.length; i++) {
+      var name_1 = names[i];
       try {
           win[name_1] = globalObj[name_1];
       }
@@ -425,7 +433,7 @@
       }
   }
 
-  var version = "0.4.1";
+  var version = "0.4.2";
 
   var Var = (function () {
       function Var(kind, value) {
@@ -481,8 +489,8 @@
       Scope.prototype.clone = function () {
           var cloneScope = new Scope(this.parent, this.isolated);
           var names = getOwnNames(this.context);
-          for (var index in names) {
-              var name_1 = names[index];
+          for (var i = 0; i < names.length; i++) {
+              var name_1 = names[i];
               var variable = this.context[name_1];
               cloneScope[variable.kind](name_1, variable.get());
           }
@@ -800,12 +808,19 @@
   });
 
   function ThisExpression(node, scope) {
-      return scope.find('this').get();
+      var superCall = scope.find(SUPERCALL);
+      if (superCall && !superCall.get()) {
+          throw new ReferenceError('Must call super constructor in derived class'
+              + 'before accessing \'this\' or returning from derived constructor');
+      }
+      else {
+          return scope.find('this').get();
+      }
   }
   function ArrayExpression(node, scope) {
       var results = [];
-      for (var index in node.elements) {
-          var item = node.elements[index];
+      for (var i = 0; i < node.elements.length; i++) {
+          var item = node.elements[i];
           if (item.type === 'SpreadElement') {
               results = results.concat(SpreadElement(item, scope));
           }
@@ -817,8 +832,8 @@
   }
   function ObjectExpression(node, scope) {
       var object = {};
-      for (var index in node.properties) {
-          var property = node.properties[index];
+      for (var i = 0; i < node.properties.length; i++) {
+          var property = node.properties[i];
           if (property.type === 'SpreadElement') {
               assign(object, SpreadElement(property, scope));
           }
@@ -1049,14 +1064,8 @@
       else {
           object = evaluate(node.object, scope);
       }
-      if (getObj) {
-          if (node.object.type === 'Super') {
-              return scope.find('this').get();
-          }
-          else {
-              return object;
-          }
-      }
+      if (getObj)
+          return object;
       var key;
       if (node.computed) {
           key = evaluate(node.property, scope);
@@ -1115,11 +1124,14 @@
           if (typeof func !== 'function') {
               throw new TypeError(key + " is not a function");
           }
+          else if (func[CLSCTOR]) {
+              throw new TypeError("Class constructor " + key + " cannot be invoked without 'new'");
+          }
       }
       else {
           object = scope.find('this').get();
           func = evaluate(node.callee, scope);
-          if (typeof func !== 'function') {
+          if (typeof func !== 'function' || node.callee.type !== 'Super' && func[CLSCTOR]) {
               var name_1;
               if (node.callee.type === 'Identifier') {
                   name_1 = node.callee.name;
@@ -1132,17 +1144,31 @@
                       name_1 = '' + func;
                   }
               }
-              throw new TypeError(name_1 + " is not a function");
+              if (typeof func !== 'function') {
+                  throw new TypeError(name_1 + " is not a function");
+              }
+              else {
+                  throw new TypeError("Class constructor " + name_1 + " cannot be invoked without 'new'");
+              }
           }
       }
       var args = [];
-      for (var index in node.arguments) {
-          var arg = node.arguments[index];
+      for (var i = 0; i < node.arguments.length; i++) {
+          var arg = node.arguments[i];
           if (arg.type === 'SpreadElement') {
               args = args.concat(SpreadElement(arg, scope));
           }
           else {
               args.push(evaluate(arg, scope));
+          }
+      }
+      if (node.callee.type === 'Super') {
+          var superCall = scope.find(SUPERCALL);
+          if (superCall.get()) {
+              throw new ReferenceError('Super constructor may only be called once');
+          }
+          else {
+              scope.find(SUPERCALL).set(true);
           }
       }
       return func.apply(object, args);
@@ -1168,8 +1194,8 @@
           throw new TypeError((constructor.name || '(intermediate value)') + " is not a constructor");
       }
       var args = [];
-      for (var index in node.arguments) {
-          var arg = node.arguments[index];
+      for (var i = 0; i < node.arguments.length; i++) {
+          var arg = node.arguments[i];
           if (arg.type === 'SpreadElement') {
               args = args.concat(SpreadElement(arg, scope));
           }
@@ -1179,10 +1205,13 @@
       }
       return new (constructor.bind.apply(constructor, __spread([void 0], args)))();
   }
+  function MetaProperty(node, scope) {
+      return scope.find(NEWTARGET).get();
+  }
   function SequenceExpression(node, scope) {
       var result;
-      for (var index in node.expressions) {
-          result = evaluate(node.expressions[index], scope);
+      for (var i = 0; i < node.expressions.length; i++) {
+          result = evaluate(node.expressions[i], scope);
       }
       return result;
   }
@@ -1215,8 +1244,8 @@
       var expressions = node.quasi.expressions;
       var args = [];
       if (expressions) {
-          for (var index in expressions) {
-              args.push(evaluate(expressions[index], scope));
+          for (var i = 0; i < expressions.length; i++) {
+              args.push(evaluate(expressions[i], scope));
           }
       }
       return tagFunc.apply(void 0, __spread([freeze(str)], args));
@@ -1251,6 +1280,7 @@
     ConditionalExpression: ConditionalExpression,
     CallExpression: CallExpression,
     NewExpression: NewExpression,
+    MetaProperty: MetaProperty,
     SequenceExpression: SequenceExpression,
     ArrowFunctionExpression: ArrowFunctionExpression,
     TemplateLiteral: TemplateLiteral,
@@ -1265,8 +1295,8 @@
       if (options === void 0) { options = {}; }
       var _a = options.kind, kind = _a === void 0 ? 'let' : _a, _b = options.hoist, hoist = _b === void 0 ? false : _b, _c = options.feed, feed = _c === void 0 ? {} : _c;
       var fedKeys = [];
-      for (var index in node.properties) {
-          var property = node.properties[index];
+      for (var i = 0; i < node.properties.length; i++) {
+          var property = node.properties[i];
           var value = property.value;
           if (hoist) {
               if (kind === 'var') {
@@ -1296,9 +1326,8 @@
           }
           else {
               var rest = assign({}, feed);
-              for (var index_1 in fedKeys) {
-                  delete rest[fedKeys[index_1]];
-              }
+              for (var i_1 = 0; i_1 < fedKeys.length; i_1++)
+                  delete rest[fedKeys[i_1]];
               RestElement(property, scope, { kind: kind, feed: rest });
           }
       }
@@ -1389,8 +1418,8 @@
   });
 
   function Program(program, scope) {
-      for (var index in program.body) {
-          evaluate(program.body[index], scope);
+      for (var i = 0; i < program.body.length; i++) {
+          evaluate(program.body[i], scope);
       }
   }
 
@@ -1408,8 +1437,8 @@
       if (!hoisted) {
           hoistFunc$1(block, subScope);
       }
-      for (var index in block.body) {
-          var result = evaluate(block.body[index], subScope);
+      for (var i = 0; i < block.body.length; i++) {
+          var result = evaluate(block.body[i], subScope);
           if (result === BREAK || result === CONTINUE || result === RETURN) {
               return result;
           }
@@ -1441,8 +1470,8 @@
   function SwitchStatement(node, scope) {
       var discriminant = evaluate(node.discriminant, scope);
       var matched = false;
-      for (var index in node.cases) {
-          var eachCase = node.cases[index];
+      for (var i = 0; i < node.cases.length; i++) {
+          var eachCase = node.cases[i];
           if (!matched
               && (!eachCase.test
                   || (evaluate(eachCase.test, scope)) === discriminant)) {
@@ -1457,8 +1486,8 @@
       }
   }
   function SwitchCase(node, scope) {
-      for (var index in node.consequent) {
-          var result = evaluate(node.consequent[index], scope);
+      for (var i = 0; i < node.consequent.length; i++) {
+          var result = evaluate(node.consequent[i], scope);
           if (result === BREAK || result === CONTINUE || result === RETURN) {
               return result;
           }
@@ -1492,7 +1521,10 @@
       }
       finally {
           if (node.finalizer) {
-              return BlockStatement(node.finalizer, scope);
+              var result = BlockStatement(node.finalizer, scope);
+              if (result === BREAK || result === CONTINUE || result === RETURN) {
+                  return result;
+              }
           }
       }
   }
@@ -1629,8 +1661,8 @@
   }
   function VariableDeclaration(node, scope, options) {
       if (options === void 0) { options = {}; }
-      for (var index in node.declarations) {
-          VariableDeclarator(node.declarations[index], scope, assign({ kind: node.kind }, options));
+      for (var i = 0; i < node.declarations.length; i++) {
+          VariableDeclarator(node.declarations[i], scope, assign({ kind: node.kind }, options));
       }
   }
   function VariableDeclarator(node, scope, options) {
@@ -1649,20 +1681,34 @@
       else if (kind === 'var'
           || kind === 'let'
           || kind === 'const') {
-          var value = hasOwn(options, 'feed') ? feed : evaluate(node.init, scope);
+          var hasFeed = hasOwn(options, 'feed');
+          var value = void 0;
+          if (hasFeed) {
+              value = feed;
+          }
+          else if (node.init
+              && (node.init.type === 'FunctionExpression'
+                  || node.init.type === 'ClassExpression')
+              && node.init.id
+              && node.init.id.name) {
+              var tmpScope = new Scope(scope);
+              value = evaluate(node.init, tmpScope);
+              tmpScope.const(node.init.id.name, value);
+          }
+          else {
+              value = evaluate(node.init, scope);
+          }
           if (node.id.type === 'Identifier') {
               var name_1 = node.id.name;
-              if (kind === 'var' && !node.init) {
+              if (kind === 'var' && !node.init && !hasFeed) {
                   scope.var(name_1, NOINIT);
               }
               else {
                   scope[kind](name_1, value);
               }
-              if (node.init &&
-                  [
-                      'FunctionExpression',
-                      'ArrowFunctionExpression'
-                  ].indexOf(node.init.type) !== -1
+              if (node.init
+                  && ['ClassExpression', 'FunctionExpression', 'ArrowFunctionExpression']
+                      .indexOf(node.init.type) !== -1
                   && !value.name) {
                   define(value, 'name', {
                       value: name_1,
@@ -1683,14 +1729,14 @@
   }
   function ClassBody(node, scope, options) {
       if (options === void 0) { options = {}; }
-      var _a = options.klass, klass = _a === void 0 ? function () { } : _a;
-      for (var index in node.body) {
-          MethodDefinition(node.body[index], scope, { klass: klass });
+      var klass = options.klass, superClass = options.superClass;
+      for (var i = 0; i < node.body.length; i++) {
+          MethodDefinition(node.body[i], scope, { klass: klass, superClass: superClass });
       }
   }
   function MethodDefinition(node, scope, options) {
       if (options === void 0) { options = {}; }
-      var _a = options.klass, klass = _a === void 0 ? function () { } : _a;
+      var klass = options.klass, superClass = options.superClass;
       var key;
       if (node.computed) {
           key = evaluate(node.key, scope);
@@ -1702,7 +1748,7 @@
           throw new SyntaxError('Unexpected token');
       }
       var obj = node.static ? klass : klass.prototype;
-      var value = createFunc$1(node.value, scope);
+      var value = createFunc$1(node.value, scope, { superClass: superClass });
       switch (node.kind) {
           case 'constructor':
               break;
@@ -1773,65 +1819,66 @@
   });
 
   function ThisExpression$1(node, scope) {
+      var superCall;
       return __generator(this, function (_a) {
-          return [2, scope.find('this').get()];
+          superCall = scope.find(SUPERCALL);
+          if (superCall && !superCall.get()) {
+              throw new ReferenceError('Must call super constructor in derived class'
+                  + 'before accessing \'this\' or returning from derived constructor');
+          }
+          else {
+              return [2, scope.find('this').get()];
+          }
+          return [2];
       });
   }
   function ArrayExpression$1(node, scope) {
-      var results, _a, _b, _i, index, item, _c, _d, _e, _f;
-      return __generator(this, function (_g) {
-          switch (_g.label) {
+      var results, i, item, _a, _b, _c, _d;
+      return __generator(this, function (_e) {
+          switch (_e.label) {
               case 0:
                   results = [];
-                  _a = [];
-                  for (_b in node.elements)
-                      _a.push(_b);
-                  _i = 0;
-                  _g.label = 1;
+                  i = 0;
+                  _e.label = 1;
               case 1:
-                  if (!(_i < _a.length)) return [3, 6];
-                  index = _a[_i];
-                  item = node.elements[index];
+                  if (!(i < node.elements.length)) return [3, 6];
+                  item = node.elements[i];
                   if (!(item.type === 'SpreadElement')) return [3, 3];
-                  _d = (_c = results).concat;
+                  _b = (_a = results).concat;
                   return [5, __values(SpreadElement$1(item, scope))];
               case 2:
-                  results = _d.apply(_c, [_g.sent()]);
+                  results = _b.apply(_a, [_e.sent()]);
                   return [3, 5];
               case 3:
-                  _f = (_e = results).push;
+                  _d = (_c = results).push;
                   return [5, __values(evaluate$1(item, scope))];
               case 4:
-                  _f.apply(_e, [_g.sent()]);
-                  _g.label = 5;
+                  _d.apply(_c, [_e.sent()]);
+                  _e.label = 5;
               case 5:
-                  _i++;
+                  i++;
                   return [3, 1];
               case 6: return [2, results];
           }
       });
   }
   function ObjectExpression$1(node, scope) {
-      var object, _a, _b, _i, index, property, _c, _d, key, propKey, _e, value, propKind;
-      return __generator(this, function (_f) {
-          switch (_f.label) {
+      var object, i, property, _a, _b, key, propKey, _c, value, propKind;
+      return __generator(this, function (_d) {
+          switch (_d.label) {
               case 0:
                   object = {};
-                  _a = [];
-                  for (_b in node.properties)
-                      _a.push(_b);
-                  _i = 0;
-                  _f.label = 1;
+                  i = 0;
+                  _d.label = 1;
               case 1:
-                  if (!(_i < _a.length)) return [3, 11];
-                  index = _a[_i];
-                  property = node.properties[index];
+                  if (!(i < node.properties.length)) return [3, 11];
+                  property = node.properties[i];
                   if (!(property.type === 'SpreadElement')) return [3, 3];
-                  _c = assign;
-                  _d = [object];
+                  _a = assign;
+                  _b = [object];
                   return [5, __values(SpreadElement$1(property, scope))];
               case 2:
-                  _c.apply(void 0, _d.concat([_f.sent()]));
+                  _a.apply(void 0, _b.concat([_d.sent()]));
                   return [3, 10];
               case 3:
                   key = void 0;
@@ -1839,21 +1886,21 @@
                   if (!property.computed) return [3, 5];
                   return [5, __values(evaluate$1(propKey, scope))];
               case 4:
-                  key = _f.sent();
+                  key = _d.sent();
                   return [3, 8];
               case 5:
                   if (!(propKey.type === 'Identifier')) return [3, 6];
                   key = propKey.name;
                   return [3, 8];
               case 6:
-                  _e = '';
+                  _c = '';
                   return [5, __values(Literal$1(propKey, scope))];
               case 7:
-                  key = _e + (_f.sent());
-                  _f.label = 8;
+                  key = _c + (_d.sent());
+                  _d.label = 8;
               case 8: return [5, __values(evaluate$1(property.value, scope))];
               case 9:
-                  value = _f.sent();
+                  value = _d.sent();
                   propKind = property.kind;
                   if (propKind === 'init') {
                       object[key] = value;
@@ -1864,9 +1911,9 @@
                   else {
                       define(object, key, { set: value });
                   }
-                  _f.label = 10;
+                  _d.label = 10;
               case 10:
-                  _i++;
+                  i++;
                   return [3, 1];
               case 11: return [2, object];
           }
@@ -2150,14 +2197,8 @@
                   object = _c.sent();
                   _c.label = 4;
               case 4:
-                  if (getObj) {
-                      if (node.object.type === 'Super') {
-                          return [2, scope.find('this').get()];
-                      }
-                      else {
-                          return [2, object];
-                      }
-                  }
+                  if (getObj)
+                      return [2, object];
                   if (!node.computed) return [3, 6];
                   return [5, __values(evaluate$1(node.property, scope))];
               case 5:
@@ -2213,23 +2254,23 @@
       });
   }
   function CallExpression$1(node, scope) {
-      var func, object, key, getter, thisObject, name_1, args, _a, _b, _i, index, arg, _c, _d, _e, _f;
-      return __generator(this, function (_g) {
-          switch (_g.label) {
+      var func, object, key, getter, thisObject, name_1, args, i, arg, _a, _b, _c, _d, superCall;
+      return __generator(this, function (_e) {
+          switch (_e.label) {
               case 0:
                   if (!(node.callee.type === 'MemberExpression')) return [3, 5];
                   return [5, __values(MemberExpression$1(node.callee, scope, { getObj: true }))];
               case 1:
-                  object = _g.sent();
+                  object = _e.sent();
                   key = void 0;
                   if (!node.callee.computed) return [3, 3];
                   return [5, __values(evaluate$1(node.callee.property, scope))];
               case 2:
-                  key = _g.sent();
+                  key = _e.sent();
                   return [3, 4];
               case 3:
                   key = node.callee.property.name;
-                  _g.label = 4;
+                  _e.label = 4;
               case 4:
                   getter = getGetter(object, key);
                   if (node.callee.object.type === 'Super' && getter) {
@@ -2242,13 +2283,16 @@
                   if (typeof func !== 'function') {
                       throw new TypeError(key + " is not a function");
                   }
+                  else if (func[CLSCTOR]) {
+                      throw new TypeError("Class constructor " + key + " cannot be invoked without 'new'");
+                  }
                   return [3, 7];
               case 5:
                   object = scope.find('this').get();
                   return [5, __values(evaluate$1(node.callee, scope))];
               case 6:
-                  func = _g.sent();
-                  if (typeof func !== 'function') {
+                  func = _e.sent();
+                  if (typeof func !== 'function' || node.callee.type !== 'Super' && func[CLSCTOR]) {
                       if (node.callee.type === 'Identifier') {
                           name_1 = node.callee.name;
                       }
@@ -2260,46 +2304,57 @@
                               name_1 = '' + func;
                           }
                       }
-                      throw new TypeError(name_1 + " is not a function");
+                      if (typeof func !== 'function') {
+                          throw new TypeError(name_1 + " is not a function");
+                      }
+                      else {
+                          throw new TypeError("Class constructor " + name_1 + " cannot be invoked without 'new'");
+                      }
                   }
-                  _g.label = 7;
+                  _e.label = 7;
               case 7:
                   args = [];
-                  _a = [];
-                  for (_b in node.arguments)
-                      _a.push(_b);
-                  _i = 0;
-                  _g.label = 8;
+                  i = 0;
+                  _e.label = 8;
               case 8:
-                  if (!(_i < _a.length)) return [3, 13];
-                  index = _a[_i];
-                  arg = node.arguments[index];
+                  if (!(i < node.arguments.length)) return [3, 13];
+                  arg = node.arguments[i];
                   if (!(arg.type === 'SpreadElement')) return [3, 10];
-                  _d = (_c = args).concat;
+                  _b = (_a = args).concat;
                   return [5, __values(SpreadElement$1(arg, scope))];
               case 9:
-                  args = _d.apply(_c, [_g.sent()]);
+                  args = _b.apply(_a, [_e.sent()]);
                   return [3, 12];
               case 10:
-                  _f = (_e = args).push;
+                  _d = (_c = args).push;
                   return [5, __values(evaluate$1(arg, scope))];
               case 11:
-                  _f.apply(_e, [_g.sent()]);
-                  _g.label = 12;
+                  _d.apply(_c, [_e.sent()]);
+                  _e.label = 12;
               case 12:
-                  _i++;
+                  i++;
                   return [3, 8];
-              case 13: return [2, func.apply(object, args)];
+              case 13:
+                  if (node.callee.type === 'Super') {
+                      superCall = scope.find(SUPERCALL);
+                      if (superCall.get()) {
+                          throw new ReferenceError('Super constructor may only be called once');
+                      }
+                      else {
+                          scope.find(SUPERCALL).set(true);
+                      }
+                  }
+                  return [2, func.apply(object, args)];
           }
       });
   }
   function NewExpression$1(node, scope) {
-      var constructor, name_2, args, _a, _b, _i, index, arg, _c, _d, _e, _f;
-      return __generator(this, function (_g) {
-          switch (_g.label) {
+      var constructor, name_2, args, i, arg, _a, _b, _c, _d;
+      return __generator(this, function (_e) {
+          switch (_e.label) {
               case 0: return [5, __values(evaluate$1(node.callee, scope))];
               case 1:
-                  constructor = _g.sent();
+                  constructor = _e.sent();
                   if (typeof constructor !== 'function') {
                       if (node.callee.type === 'Identifier') {
                           name_2 = node.callee.name;
@@ -2318,53 +2373,50 @@
                       throw new TypeError((constructor.name || '(intermediate value)') + " is not a constructor");
                   }
                   args = [];
-                  _a = [];
-                  for (_b in node.arguments)
-                      _a.push(_b);
-                  _i = 0;
-                  _g.label = 2;
+                  i = 0;
+                  _e.label = 2;
               case 2:
-                  if (!(_i < _a.length)) return [3, 7];
-                  index = _a[_i];
-                  arg = node.arguments[index];
+                  if (!(i < node.arguments.length)) return [3, 7];
+                  arg = node.arguments[i];
                   if (!(arg.type === 'SpreadElement')) return [3, 4];
-                  _d = (_c = args).concat;
+                  _b = (_a = args).concat;
                   return [5, __values(SpreadElement$1(arg, scope))];
               case 3:
-                  args = _d.apply(_c, [_g.sent()]);
+                  args = _b.apply(_a, [_e.sent()]);
                   return [3, 6];
               case 4:
-                  _f = (_e = args).push;
+                  _d = (_c = args).push;
                   return [5, __values(evaluate$1(arg, scope))];
               case 5:
-                  _f.apply(_e, [_g.sent()]);
-                  _g.label = 6;
+                  _d.apply(_c, [_e.sent()]);
+                  _e.label = 6;
               case 6:
-                  _i++;
+                  i++;
                   return [3, 2];
               case 7: return [2, new (constructor.bind.apply(constructor, __spread([void 0], args)))()];
           }
       });
   }
+  function MetaProperty$1(node, scope) {
+      return __generator(this, function (_a) {
+          return [2, scope.find(NEWTARGET).get()];
+      });
+  }
   function SequenceExpression$1(node, scope) {
-      var result, _a, _b, _i, index;
-      return __generator(this, function (_c) {
-          switch (_c.label) {
+      var result, i;
+      return __generator(this, function (_a) {
+          switch (_a.label) {
               case 0:
-                  _a = [];
-                  for (_b in node.expressions)
-                      _a.push(_b);
-                  _i = 0;
-                  _c.label = 1;
+                  i = 0;
+                  _a.label = 1;
               case 1:
-                  if (!(_i < _a.length)) return [3, 4];
-                  index = _a[_i];
-                  return [5, __values(evaluate$1(node.expressions[index], scope))];
+                  if (!(i < node.expressions.length)) return [3, 4];
+                  return [5, __values(evaluate$1(node.expressions[i], scope))];
               case 2:
-                  result = _c.sent();
-                  _c.label = 3;
+                  result = _a.sent();
+                  _a.label = 3;
               case 3:
-                  _i++;
+                  i++;
                   return [3, 1];
               case 4: return [2, result];
           }
@@ -2403,12 +2455,12 @@
       });
   }
   function TaggedTemplateExpression$1(node, scope) {
-      var tagFunc, quasis, str, raw, expressions, args, _a, _b, _i, index, _c, _d;
-      return __generator(this, function (_e) {
-          switch (_e.label) {
+      var tagFunc, quasis, str, raw, expressions, args, i, _a, _b;
+      return __generator(this, function (_c) {
+          switch (_c.label) {
               case 0: return [5, __values(evaluate$1(node.tag, scope))];
               case 1:
-                  tagFunc = _e.sent();
+                  tagFunc = _c.sent();
                   quasis = node.quasi.quasis;
                   str = quasis.map(function (v) { return v.value.cooked; });
                   raw = quasis.map(function (v) { return v.value.raw; });
@@ -2418,21 +2470,17 @@
                   expressions = node.quasi.expressions;
                   args = [];
                   if (!expressions) return [3, 5];
-                  _a = [];
-                  for (_b in expressions)
-                      _a.push(_b);
-                  _i = 0;
-                  _e.label = 2;
+                  i = 0;
+                  _c.label = 2;
               case 2:
-                  if (!(_i < _a.length)) return [3, 5];
-                  index = _a[_i];
-                  _d = (_c = args).push;
-                  return [5, __values(evaluate$1(expressions[index], scope))];
+                  if (!(i < expressions.length)) return [3, 5];
+                  _b = (_a = args).push;
+                  return [5, __values(evaluate$1(expressions[i], scope))];
               case 3:
-                  _d.apply(_c, [_e.sent()]);
-                  _e.label = 4;
+                  _b.apply(_a, [_c.sent()]);
+                  _c.label = 4;
               case 4:
-                  _i++;
+                  i++;
                   return [3, 2];
               case 5: return [2, tagFunc.apply(void 0, __spread([freeze(str)], args))];
           }
@@ -2517,6 +2565,7 @@
     ConditionalExpression: ConditionalExpression$1,
     CallExpression: CallExpression$1,
     NewExpression: NewExpression$1,
+    MetaProperty: MetaProperty$1,
     SequenceExpression: SequenceExpression$1,
     ArrowFunctionExpression: ArrowFunctionExpression$1,
     TemplateLiteral: TemplateLiteral$1,
@@ -2530,22 +2579,18 @@
   });
 
   function ObjectPattern$1(node, scope, options) {
-      var _a, kind, _b, hoist, _c, feed, fedKeys, _d, _e, _i, index, property, value, key, rest, index_1;
+      var _a, kind, _b, hoist, _c, feed, fedKeys, i, property, value, key, rest, i_1;
       if (options === void 0) { options = {}; }
-      return __generator(this, function (_f) {
-          switch (_f.label) {
+      return __generator(this, function (_d) {
+          switch (_d.label) {
               case 0:
                   _a = options.kind, kind = _a === void 0 ? 'let' : _a, _b = options.hoist, hoist = _b === void 0 ? false : _b, _c = options.feed, feed = _c === void 0 ? {} : _c;
                   fedKeys = [];
-                  _d = [];
-                  for (_e in node.properties)
-                      _d.push(_e);
-                  _i = 0;
-                  _f.label = 1;
+                  i = 0;
+                  _d.label = 1;
               case 1:
-                  if (!(_i < _d.length)) return [3, 15];
-                  index = _d[_i];
-                  property = node.properties[index];
+                  if (!(i < node.properties.length)) return [3, 15];
+                  property = node.properties[i];
                   value = property.value;
                   if (!hoist) return [3, 5];
                   if (!(kind === 'var')) return [3, 4];
@@ -2554,8 +2599,8 @@
                   return [3, 4];
               case 2: return [5, __values(pattern$2(value, scope, { kind: kind, hoist: hoist }))];
               case 3:
-                  _f.sent();
-                  _f.label = 4;
+                  _d.sent();
+                  _d.label = 4;
               case 4: return [3, 14];
               case 5:
                   if (!(property.type === 'Property')) return [3, 12];
@@ -2563,11 +2608,11 @@
                   if (!property.computed) return [3, 7];
                   return [5, __values(evaluate$1(property.key, scope))];
               case 6:
-                  key = _f.sent();
+                  key = _d.sent();
                   return [3, 8];
               case 7:
                   key = property.key.name;
-                  _f.label = 8;
+                  _d.label = 8;
               case 8:
                   fedKeys.push(key);
                   if (!(value.type === 'Identifier')) return [3, 9];
@@ -2575,20 +2620,19 @@
                   return [3, 11];
               case 9: return [5, __values(pattern$2(value, scope, { kind: kind, feed: feed[key] }))];
               case 10:
-                  _f.sent();
-                  _f.label = 11;
+                  _d.sent();
+                  _d.label = 11;
               case 11: return [3, 14];
               case 12:
                   rest = assign({}, feed);
-                  for (index_1 in fedKeys) {
-                      delete rest[fedKeys[index_1]];
-                  }
+                  for (i_1 = 0; i_1 < fedKeys.length; i_1++)
+                      delete rest[fedKeys[i_1]];
                   return [5, __values(RestElement$1(property, scope, { kind: kind, feed: rest }))];
               case 13:
-                  _f.sent();
-                  _f.label = 14;
+                  _d.sent();
+                  _d.label = 14;
               case 14:
-                  _i++;
+                  i++;
                   return [3, 1];
               case 15: return [2];
           }
@@ -2714,24 +2758,20 @@
   });
 
   function Program$1(program, scope) {
-      var _a, _b, _i, index;
-      return __generator(this, function (_c) {
-          switch (_c.label) {
+      var i;
+      return __generator(this, function (_a) {
+          switch (_a.label) {
               case 0:
-                  _a = [];
-                  for (_b in program.body)
-                      _a.push(_b);
-                  _i = 0;
-                  _c.label = 1;
+                  i = 0;
+                  _a.label = 1;
               case 1:
-                  if (!(_i < _a.length)) return [3, 4];
-                  index = _a[_i];
-                  return [5, __values(evaluate$1(program.body[index], scope))];
+                  if (!(i < program.body.length)) return [3, 4];
+                  return [5, __values(evaluate$1(program.body[i], scope))];
               case 2:
-                  _c.sent();
-                  _c.label = 3;
+                  _a.sent();
+                  _a.label = 3;
               case 3:
-                  _i++;
+                  i++;
                   return [3, 1];
               case 4: return [2];
           }
@@ -2753,36 +2793,32 @@
       });
   }
   function BlockStatement$1(block, scope, options) {
-      var _a, invasived, _b, hoisted, subScope, _c, _d, _i, index, result;
+      var _a, invasived, _b, hoisted, subScope, i, result;
       if (options === void 0) { options = {}; }
-      return __generator(this, function (_e) {
-          switch (_e.label) {
+      return __generator(this, function (_c) {
+          switch (_c.label) {
               case 0:
                   _a = options.invasived, invasived = _a === void 0 ? false : _a, _b = options.hoisted, hoisted = _b === void 0 ? false : _b;
                   subScope = invasived ? scope : new Scope(scope);
                   if (!!hoisted) return [3, 2];
                   return [5, __values(hoistFunc(block, subScope))];
               case 1:
-                  _e.sent();
-                  _e.label = 2;
+                  _c.sent();
+                  _c.label = 2;
               case 2:
-                  _c = [];
-                  for (_d in block.body)
-                      _c.push(_d);
-                  _i = 0;
-                  _e.label = 3;
+                  i = 0;
+                  _c.label = 3;
               case 3:
-                  if (!(_i < _c.length)) return [3, 6];
-                  index = _c[_i];
-                  return [5, __values(evaluate$1(block.body[index], subScope))];
+                  if (!(i < block.body.length)) return [3, 6];
+                  return [5, __values(evaluate$1(block.body[i], subScope))];
               case 4:
-                  result = _e.sent();
+                  result = _c.sent();
                   if (result === BREAK || result === CONTINUE || result === RETURN) {
                       return [2, result];
                   }
-                  _e.label = 5;
+                  _c.label = 5;
               case 5:
-                  _i++;
+                  i++;
                   return [3, 3];
               case 6: return [2];
           }
@@ -2843,74 +2879,66 @@
       });
   }
   function SwitchStatement$1(node, scope) {
-      var discriminant, matched, _a, _b, _i, index, eachCase, _c, _d, result;
-      return __generator(this, function (_e) {
-          switch (_e.label) {
+      var discriminant, matched, i, eachCase, _a, _b, result;
+      return __generator(this, function (_c) {
+          switch (_c.label) {
               case 0: return [5, __values(evaluate$1(node.discriminant, scope))];
               case 1:
-                  discriminant = _e.sent();
+                  discriminant = _c.sent();
                   matched = false;
-                  _a = [];
-                  for (_b in node.cases)
-                      _a.push(_b);
-                  _i = 0;
-                  _e.label = 2;
+                  i = 0;
+                  _c.label = 2;
               case 2:
-                  if (!(_i < _a.length)) return [3, 8];
-                  index = _a[_i];
-                  eachCase = node.cases[index];
-                  _c = !matched;
-                  if (!_c) return [3, 5];
-                  _d = !eachCase.test;
-                  if (_d) return [3, 4];
+                  if (!(i < node.cases.length)) return [3, 8];
+                  eachCase = node.cases[i];
+                  _a = !matched;
+                  if (!_a) return [3, 5];
+                  _b = !eachCase.test;
+                  if (_b) return [3, 4];
                   return [5, __values(evaluate$1(eachCase.test, scope))];
               case 3:
-                  _d = (_e.sent()) === discriminant;
-                  _e.label = 4;
+                  _b = (_c.sent()) === discriminant;
+                  _c.label = 4;
               case 4:
-                  _c = (_d);
-                  _e.label = 5;
+                  _a = (_b);
+                  _c.label = 5;
               case 5:
-                  if (_c) {
+                  if (_a) {
                       matched = true;
                   }
                   if (!matched) return [3, 7];
                   return [5, __values(SwitchCase$1(eachCase, scope))];
               case 6:
-                  result = _e.sent();
+                  result = _c.sent();
                   if (result === BREAK || result === CONTINUE || result === RETURN) {
                       return [2, result];
                   }
-                  _e.label = 7;
+                  _c.label = 7;
               case 7:
-                  _i++;
+                  i++;
                   return [3, 2];
               case 8: return [2];
           }
       });
   }
   function SwitchCase$1(node, scope) {
-      var _a, _b, _i, index, result;
-      return __generator(this, function (_c) {
-          switch (_c.label) {
+      var i, result;
+      return __generator(this, function (_a) {
+          switch (_a.label) {
               case 0:
-                  _a = [];
-                  for (_b in node.consequent)
-                      _a.push(_b);
-                  _i = 0;
-                  _c.label = 1;
+                  i = 0;
+                  _a.label = 1;
               case 1:
-                  if (!(_i < _a.length)) return [3, 4];
-                  index = _a[_i];
-                  return [5, __values(evaluate$1(node.consequent[index], scope))];
+                  if (!(i < node.consequent.length)) return [3, 4];
+                  return [5, __values(evaluate$1(node.consequent[i], scope))];
               case 2:
-                  result = _c.sent();
+                  result = _a.sent();
                   if (result === BREAK || result === CONTINUE || result === RETURN) {
                       return [2, result];
                   }
-                  _c.label = 3;
+                  _a.label = 3;
               case 3:
-                  _i++;
+                  i++;
                   return [3, 1];
               case 4: return [2];
           }
@@ -2925,7 +2953,7 @@
       });
   }
   function TryStatement$1(node, scope) {
-      var err_1, subScope, param, name_1;
+      var err_1, subScope, param, name_1, result;
       return __generator(this, function (_a) {
           switch (_a.label) {
               case 0:
@@ -2953,7 +2981,12 @@
               case 9:
                   if (!node.finalizer) return [3, 11];
                   return [5, __values(BlockStatement$1(node.finalizer, scope))];
-              case 10: return [2, _a.sent()];
+              case 10:
+                  result = _a.sent();
+                  if (result === BREAK || result === CONTINUE || result === RETURN) {
+                      return [2, result];
+                  }
+                  _a.label = 11;
               case 11: return [7];
               case 12: return [2];
           }
@@ -3223,35 +3256,31 @@
       });
   }
   function VariableDeclaration$1(node, scope, options) {
-      var _a, _b, _i, index;
+      var i;
       if (options === void 0) { options = {}; }
-      return __generator(this, function (_c) {
-          switch (_c.label) {
+      return __generator(this, function (_a) {
+          switch (_a.label) {
               case 0:
-                  _a = [];
-                  for (_b in node.declarations)
-                      _a.push(_b);
-                  _i = 0;
-                  _c.label = 1;
+                  i = 0;
+                  _a.label = 1;
               case 1:
-                  if (!(_i < _a.length)) return [3, 4];
-                  index = _a[_i];
-                  return [5, __values(VariableDeclarator$1(node.declarations[index], scope, assign({ kind: node.kind }, options)))];
+                  if (!(i < node.declarations.length)) return [3, 4];
+                  return [5, __values(VariableDeclarator$1(node.declarations[i], scope, assign({ kind: node.kind }, options)))];
               case 2:
-                  _c.sent();
-                  _c.label = 3;
+                  _a.sent();
+                  _a.label = 3;
               case 3:
-                  _i++;
+                  i++;
                   return [3, 1];
               case 4: return [2];
           }
       });
   }
   function VariableDeclarator$1(node, scope, options) {
-      var _a, kind, _b, hoist, feed, value, _c, name_1;
+      var _a, kind, _b, hoist, feed, hasFeed, value, tmpScope, name_1;
       if (options === void 0) { options = {}; }
-      return __generator(this, function (_d) {
-          switch (_d.label) {
+      return __generator(this, function (_c) {
+          switch (_c.label) {
               case 0:
                   _a = options.kind, kind = _a === void 0 ? 'let' : _a, _b = options.hoist, hoist = _b === void 0 ? false : _b, feed = options.feed;
                   if (!hoist) return [3, 4];
@@ -3261,49 +3290,60 @@
                   return [3, 3];
               case 1: return [5, __values(pattern$2(node.id, scope, { kind: kind, hoist: hoist }))];
               case 2:
-                  _d.sent();
-                  _d.label = 3;
-              case 3: return [3, 12];
+                  _c.sent();
+                  _c.label = 3;
+              case 3: return [3, 14];
               case 4:
                   if (!(kind === 'var'
                       || kind === 'let'
-                      || kind === 'const')) return [3, 11];
-                  if (!hasOwn(options, 'feed')) return [3, 5];
-                  _c = feed;
-                  return [3, 7];
-              case 5: return [5, __values(evaluate$1(node.init, scope))];
+                      || kind === 'const')) return [3, 13];
+                  hasFeed = hasOwn(options, 'feed');
+                  value = void 0;
+                  if (!hasFeed) return [3, 5];
+                  value = feed;
+                  return [3, 9];
+              case 5:
+                  if (!(node.init
+                      && (node.init.type === 'FunctionExpression'
+                          || node.init.type === 'ClassExpression')
+                      && node.init.id
+                      && node.init.id.name)) return [3, 7];
+                  tmpScope = new Scope(scope);
+                  return [5, __values(evaluate$1(node.init, tmpScope))];
               case 6:
-                  _c = _d.sent();
-                  _d.label = 7;
-              case 7:
-                  value = _c;
-                  if (!(node.id.type === 'Identifier')) return [3, 8];
+                  value = _c.sent();
+                  tmpScope.const(node.init.id.name, value);
+                  return [3, 9];
+              case 7: return [5, __values(evaluate$1(node.init, scope))];
+              case 8:
+                  value = _c.sent();
+                  _c.label = 9;
+              case 9:
+                  if (!(node.id.type === 'Identifier')) return [3, 10];
                   name_1 = node.id.name;
-                  if (kind === 'var' && !node.init) {
+                  if (kind === 'var' && !node.init && !hasFeed) {
                       scope.var(name_1, NOINIT);
                   }
                   else {
                       scope[kind](name_1, value);
                   }
-                  if (node.init &&
-                      [
-                          'FunctionExpression',
-                          'ArrowFunctionExpression'
-                      ].indexOf(node.init.type) !== -1
+                  if (node.init
+                      && ['ClassExpression', 'FunctionExpression', 'ArrowFunctionExpression']
+                          .indexOf(node.init.type) !== -1
                       && !value.name) {
                       define(value, 'name', {
                           value: name_1,
                           configurable: true
                       });
                   }
-                  return [3, 10];
-              case 8: return [5, __values(pattern$2(node.id, scope, { kind: kind, feed: value }))];
-              case 9:
-                  _d.sent();
-                  _d.label = 10;
-              case 10: return [3, 12];
-              case 11: throw new SyntaxError('Unexpected identifier');
-              case 12: return [2];
+                  return [3, 12];
+              case 10: return [5, __values(pattern$2(node.id, scope, { kind: kind, feed: value }))];
+              case 11:
+                  _c.sent();
+                  _c.label = 12;
+              case 12: return [3, 14];
+              case 13: throw new SyntaxError('Unexpected identifier');
+              case 14: return [2];
           }
       });
   }
@@ -3322,42 +3362,38 @@
       });
   }
   function ClassBody$1(node, scope, options) {
-      var _a, klass, _b, _c, _i, index;
+      var klass, superClass, i;
       if (options === void 0) { options = {}; }
-      return __generator(this, function (_d) {
-          switch (_d.label) {
+      return __generator(this, function (_a) {
+          switch (_a.label) {
               case 0:
-                  _a = options.klass, klass = _a === void 0 ? function () { } : _a;
-                  _b = [];
-                  for (_c in node.body)
-                      _b.push(_c);
-                  _i = 0;
-                  _d.label = 1;
+                  klass = options.klass, superClass = options.superClass;
+                  i = 0;
+                  _a.label = 1;
               case 1:
-                  if (!(_i < _b.length)) return [3, 4];
-                  index = _b[_i];
-                  return [5, __values(MethodDefinition$1(node.body[index], scope, { klass: klass }))];
+                  if (!(i < node.body.length)) return [3, 4];
+                  return [5, __values(MethodDefinition$1(node.body[i], scope, { klass: klass, superClass: superClass }))];
               case 2:
-                  _d.sent();
-                  _d.label = 3;
+                  _a.sent();
+                  _a.label = 3;
               case 3:
-                  _i++;
+                  i++;
                   return [3, 1];
               case 4: return [2];
           }
       });
   }
   function MethodDefinition$1(node, scope, options) {
-      var _a, klass, key, obj, value, oriDptor, oriDptor;
+      var klass, superClass, key, obj, value, oriDptor, oriDptor;
       if (options === void 0) { options = {}; }
-      return __generator(this, function (_b) {
-          switch (_b.label) {
+      return __generator(this, function (_a) {
+          switch (_a.label) {
               case 0:
-                  _a = options.klass, klass = _a === void 0 ? function () { } : _a;
+                  klass = options.klass, superClass = options.superClass;
                   if (!node.computed) return [3, 2];
                   return [5, __values(evaluate$1(node.key, scope))];
               case 1:
-                  key = _b.sent();
+                  key = _a.sent();
                   return [3, 3];
               case 2:
                   if (node.key.type === 'Identifier') {
@@ -3366,10 +3402,10 @@
                   else {
                       throw new SyntaxError('Unexpected token');
                   }
-                  _b.label = 3;
+                  _a.label = 3;
               case 3:
                   obj = node.static ? klass : klass.prototype;
-                  value = createFunc(node.value, scope);
+                  value = createFunc(node.value, scope, { superClass: superClass });
                   switch (node.kind) {
                       case 'constructor':
                           break;
@@ -3461,9 +3497,9 @@
       });
   }
   function hoistVarRecursion(statement, scope) {
-      var _a, _b, _c, _i, index, _d, _e, _f, index, _g, _h, _j, idx, tryBlock, _k, _l, _m, index, catchBlock, _o, _p, _q, index, finalBlock, _r, _s, _t, index;
-      return __generator(this, function (_u) {
-          switch (_u.label) {
+      var _a, i, i, j, tryBlock, i, catchBlock, i, finalBlock, i;
+      return __generator(this, function (_b) {
+          switch (_b.label) {
               case 0:
                   _a = statement.type;
                   switch (_a) {
@@ -3480,109 +3516,85 @@
                   return [3, 30];
               case 1: return [5, __values(VariableDeclaration$1(statement, scope, { hoist: true }))];
               case 2:
-                  _u.sent();
+                  _b.sent();
                   return [3, 30];
               case 3: return [5, __values(hoistVarRecursion(statement.body, scope))];
               case 4:
-                  _u.sent();
+                  _b.sent();
                   return [3, 30];
               case 5:
-                  _b = [];
-                  for (_c in statement.body)
-                      _b.push(_c);
-                  _i = 0;
-                  _u.label = 6;
+                  i = 0;
+                  _b.label = 6;
               case 6:
-                  if (!(_i < _b.length)) return [3, 9];
-                  index = _b[_i];
-                  return [5, __values(hoistVarRecursion(statement.body[index], scope))];
+                  if (!(i < statement.body.length)) return [3, 9];
+                  return [5, __values(hoistVarRecursion(statement.body[i], scope))];
               case 7:
-                  _u.sent();
-                  _u.label = 8;
+                  _b.sent();
+                  _b.label = 8;
               case 8:
-                  _i++;
+                  i++;
                   return [3, 6];
               case 9: return [3, 30];
               case 10:
-                  _d = [];
-                  for (_e in statement.cases)
-                      _d.push(_e);
-                  _f = 0;
-                  _u.label = 11;
+                  i = 0;
+                  _b.label = 11;
               case 11:
-                  if (!(_f < _d.length)) return [3, 16];
-                  index = _d[_f];
-                  _g = [];
-                  for (_h in statement.cases[index].consequent)
-                      _g.push(_h);
-                  _j = 0;
-                  _u.label = 12;
+                  if (!(i < statement.cases.length)) return [3, 16];
+                  j = 0;
+                  _b.label = 12;
               case 12:
-                  if (!(_j < _g.length)) return [3, 15];
-                  idx = _g[_j];
-                  return [5, __values(hoistVarRecursion(statement.cases[index].consequent[idx], scope))];
+                  if (!(j < statement.cases[i].consequent.length)) return [3, 15];
+                  return [5, __values(hoistVarRecursion(statement.cases[i].consequent[j], scope))];
               case 13:
-                  _u.sent();
-                  _u.label = 14;
+                  _b.sent();
+                  _b.label = 14;
               case 14:
-                  _j++;
+                  j++;
                   return [3, 12];
               case 15:
-                  _f++;
+                  i++;
                   return [3, 11];
               case 16: return [3, 30];
               case 17:
                   tryBlock = statement.block.body;
-                  _k = [];
-                  for (_l in tryBlock)
-                      _k.push(_l);
-                  _m = 0;
-                  _u.label = 18;
+                  i = 0;
+                  _b.label = 18;
               case 18:
-                  if (!(_m < _k.length)) return [3, 21];
-                  index = _k[_m];
-                  return [5, __values(hoistVarRecursion(tryBlock[index], scope))];
+                  if (!(i < tryBlock.length)) return [3, 21];
+                  return [5, __values(hoistVarRecursion(tryBlock[i], scope))];
               case 19:
-                  _u.sent();
-                  _u.label = 20;
+                  _b.sent();
+                  _b.label = 20;
               case 20:
-                  _m++;
+                  i++;
                   return [3, 18];
               case 21:
                   catchBlock = statement.handler && statement.handler.body.body;
                   if (!catchBlock) return [3, 25];
-                  _o = [];
-                  for (_p in catchBlock)
-                      _o.push(_p);
-                  _q = 0;
-                  _u.label = 22;
+                  i = 0;
+                  _b.label = 22;
               case 22:
-                  if (!(_q < _o.length)) return [3, 25];
-                  index = _o[_q];
-                  return [5, __values(hoistVarRecursion(catchBlock[index], scope))];
+                  if (!(i < catchBlock.length)) return [3, 25];
+                  return [5, __values(hoistVarRecursion(catchBlock[i], scope))];
               case 23:
-                  _u.sent();
-                  _u.label = 24;
+                  _b.sent();
+                  _b.label = 24;
               case 24:
-                  _q++;
+                  i++;
                   return [3, 22];
               case 25:
                   finalBlock = statement.finalizer && statement.finalizer.body;
                   if (!finalBlock) return [3, 29];
-                  _r = [];
-                  for (_s in finalBlock)
-                      _r.push(_s);
-                  _t = 0;
-                  _u.label = 26;
+                  i = 0;
+                  _b.label = 26;
               case 26:
-                  if (!(_t < _r.length)) return [3, 29];
-                  index = _r[_t];
-                  return [5, __values(hoistVarRecursion(finalBlock[index], scope))];
+                  if (!(i < finalBlock.length)) return [3, 29];
+                  return [5, __values(hoistVarRecursion(finalBlock[i], scope))];
               case 27:
-                  _u.sent();
-                  _u.label = 28;
+                  _b.sent();
+                  _b.label = 28;
               case 28:
-                  _t++;
+                  i++;
                   return [3, 26];
               case 29: return [3, 30];
               case 30: return [2];
@@ -3622,8 +3634,9 @@
       }
       var superClass = options.superClass;
       var params = node.params;
-      var tmpFunc = function () {
+      var tmpFunc = function _a() {
           var _i, subScope, i, param, result;
+          var _newTarget = this && this instanceof _a ? this.constructor : void 0;
           var args = [];
           for (_i = 0; _i < arguments.length; _i++) {
               args[_i] = arguments[_i];
@@ -3635,8 +3648,10 @@
                       if (node.type !== 'ArrowFunctionExpression') {
                           subScope.const('this', this);
                           subScope.let('arguments', arguments);
+                          subScope.const(NEWTARGET, _newTarget);
                           if (superClass) {
                               subScope.const(SUPER, superClass);
+                              subScope.let(SUPERCALL, false);
                           }
                       }
                       i = 0;
@@ -3737,40 +3752,34 @@
       return func;
   }
   function createClass(node, scope) {
-      var superClass, klass, methodBody, _a, _b, _i, index, method;
-      return __generator(this, function (_c) {
-          switch (_c.label) {
+      var superClass, klass, methodBody, i, method;
+      return __generator(this, function (_a) {
+          switch (_a.label) {
               case 0: return [5, __values(evaluate$1(node.superClass, scope))];
               case 1:
-                  superClass = _c.sent();
-                  klass = function () { };
+                  superClass = _a.sent();
+                  klass = function () {
+                      if (superClass) {
+                          superClass.apply(this);
+                      }
+                  };
                   methodBody = node.body.body;
-                  _a = [];
-                  for (_b in methodBody)
-                      _a.push(_b);
-                  _i = 0;
-                  _c.label = 2;
-              case 2:
-                  if (!(_i < _a.length)) return [3, 5];
-                  index = _a[_i];
-                  method = methodBody[index];
-                  if (!(method.kind === 'constructor')) return [3, 4];
-                  return [5, __values(createFunc(method.value, scope, { superClass: superClass }))];
-              case 3:
-                  klass = _c.sent();
-                  return [3, 5];
-              case 4:
-                  _i++;
-                  return [3, 2];
-              case 5:
+                  for (i = 0; i < methodBody.length; i++) {
+                      method = methodBody[i];
+                      if (method.kind === 'constructor') {
+                          klass = createFunc(method.value, scope, { superClass: superClass });
+                          break;
+                      }
+                  }
                   if (superClass) {
                       inherits(klass, superClass);
                   }
-                  return [5, __values(ClassBody$1(node.body, scope, { klass: klass }))];
-              case 6:
-                  _c.sent();
+                  return [5, __values(ClassBody$1(node.body, scope, { klass: klass, superClass: superClass }))];
+              case 2:
+                  _a.sent();
+                  define(klass, CLSCTOR, { value: true });
                   define(klass, 'name', {
-                      value: node.id.name,
+                      value: node.id && node.id.name || '',
                       configurable: true
                   });
                   return [2, klass];
@@ -3854,32 +3863,32 @@
               hoistVarRecursion$1(statement.body, scope);
               break;
           case 'BlockStatement':
-              for (var index in statement.body) {
-                  hoistVarRecursion$1(statement.body[index], scope);
+              for (var i = 0; i < statement.body.length; i++) {
+                  hoistVarRecursion$1(statement.body[i], scope);
               }
               break;
           case 'SwitchStatement':
-              for (var index in statement.cases) {
-                  for (var idx in statement.cases[index].consequent) {
-                      hoistVarRecursion$1(statement.cases[index].consequent[idx], scope);
+              for (var i = 0; i < statement.cases.length; i++) {
+                  for (var j = 0; j < statement.cases[i].consequent.length; j++) {
+                      hoistVarRecursion$1(statement.cases[i].consequent[j], scope);
                   }
               }
               break;
           case 'TryStatement': {
               var tryBlock = statement.block.body;
-              for (var index in tryBlock) {
-                  hoistVarRecursion$1(tryBlock[index], scope);
+              for (var i = 0; i < tryBlock.length; i++) {
+                  hoistVarRecursion$1(tryBlock[i], scope);
               }
               var catchBlock = statement.handler && statement.handler.body.body;
               if (catchBlock) {
-                  for (var index in catchBlock) {
-                      hoistVarRecursion$1(catchBlock[index], scope);
+                  for (var i = 0; i < catchBlock.length; i++) {
+                      hoistVarRecursion$1(catchBlock[i], scope);
                   }
               }
               var finalBlock = statement.finalizer && statement.finalizer.body;
               if (finalBlock) {
-                  for (var index in finalBlock) {
-                      hoistVarRecursion$1(finalBlock[index], scope);
+                  for (var i = 0; i < finalBlock.length; i++) {
+                      hoistVarRecursion$1(finalBlock[i], scope);
                   }
               }
               break;
@@ -3908,7 +3917,8 @@
       }
       var superClass = options.superClass;
       var params = node.params;
-      var tmpFunc = function () {
+      var tmpFunc = function _a() {
+          var _newTarget = this && this instanceof _a ? this.constructor : void 0;
           var args = [];
           for (var _i = 0; _i < arguments.length; _i++) {
               args[_i] = arguments[_i];
@@ -3917,8 +3927,10 @@
           if (node.type !== 'ArrowFunctionExpression') {
               subScope.const('this', this);
               subScope.let('arguments', arguments);
+              subScope.const(NEWTARGET, _newTarget);
               if (superClass) {
                   subScope.const(SUPER, superClass);
+                  subScope.let(SUPERCALL, false);
               }
           }
           for (var i = 0; i < params.length; i++) {
@@ -3970,10 +3982,14 @@
   }
   function createClass$1(node, scope) {
       var superClass = evaluate(node.superClass, scope);
-      var klass = function () { };
+      var klass = function () {
+          if (superClass) {
+              superClass.apply(this);
+          }
+      };
       var methodBody = node.body.body;
-      for (var index in methodBody) {
-          var method = methodBody[index];
+      for (var i = 0; i < methodBody.length; i++) {
+          var method = methodBody[i];
           if (method.kind === 'constructor') {
               klass = createFunc$1(method.value, scope, { superClass: superClass });
               break;
@@ -3982,9 +3998,10 @@
       if (superClass) {
           inherits(klass, superClass);
       }
-      ClassBody(node.body, scope, { klass: klass });
+      ClassBody(node.body, scope, { klass: klass, superClass: superClass });
+      define(klass, CLSCTOR, { value: true });
       define(klass, 'name', {
-          value: node.id.name,
+          value: node.id && node.id.name || '',
           configurable: true
       });
       return klass;
@@ -4044,8 +4061,8 @@
           if (typeof nameOrModules !== 'object')
               return;
           var names = getOwnNames(nameOrModules);
-          for (var index in names) {
-              var name_1 = names[index];
+          for (var i = 0; i < names.length; i++) {
+              var name_1 = names[i];
               this.scope.var(name_1, nameOrModules[name_1]);
           }
       };
