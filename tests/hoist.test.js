@@ -1,4 +1,4 @@
-const Sval = require('../dist/sval')
+import Sval from '../src'
 
 describe('testing src/index.ts', () => {
   it('should hoist function normally', () => {  

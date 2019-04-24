@@ -1,6 +1,6 @@
-const { readFileSync, existsSync } = require('fs')
-const { resolve } = require('path')
-const Sval = require('../dist/sval')
+import { readFileSync, existsSync } from 'fs'
+import { resolve } from 'path'
+import Sval from '../src'
 
 let code
 

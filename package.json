@@ -10,7 +10,7 @@
     "build": "npm start && npm test",
     "start": "node scripts && rollup -c && npm run post",
     "post": "mv types/src/index.d.ts types && rm -rf types/src",
-    "test": "jest --colors --coverage",
+    "test": "umi-test --colors --coverage",
     "cov": "cat ./coverage/lcov.info | coveralls"
   },
   "repository": {
@@ -36,18 +36,14 @@
   "devDependencies": {
     "@types/acorn": "^4.0.5",
     "@types/estree": "0.0.39",
+    "@types/jest": "^24.0.11",
     "jest": "^24.7.1",
     "rollup": "^1.10.1",
     "rollup-plugin-json": "^3.1.0",
     "rollup-plugin-node-resolve": "^4.2.3",
-    "rollup-plugin-typescript2": "^0.19.3",
+    "rollup-plugin-typescript2": "^0.21.0",
     "rollup-plugin-uglify": "^6.0.2",
-    "typescript": "^3.4.4"
-  },
-  "jest": {
-    "testRegex": "\\.test\\.js$",
-    "moduleFileExtensions": [
-      "js"
-    ]
+    "typescript": "^3.4.4",
+    "umi-test": "^1.5.6"
   }
 }
