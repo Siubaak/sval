@@ -5,9 +5,7 @@ describe('testing src/index.ts', () => {
     const interpreter = new Sval()
 
     class A {
-      constructor() {
-        this.a = 1
-      }
+      a = 1
       then() {
         this.a++
         return this

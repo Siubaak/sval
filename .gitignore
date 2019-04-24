@@ -32,6 +32,9 @@ bower_components
 # node-waf configuration
 .lock-wscript
 
+# vscode configuration
+.vscode
+
 # Compiled binary addons (https://nodejs.org/api/addons.html)
 build/Release
 
@@ -65,7 +68,3 @@ typings/
 
 # next.js build output
 .next
-
-.vscode
-
-dist

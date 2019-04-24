@@ -12,25 +12,21 @@ import * as statement from './statement'
 
 let evaluateOps: any
 
-function createEvaluateOps() {
-  evaluateOps = assign(
-    {},
-    declaration,
-    expression,
-    identifier,
-    literal,
-    pattern,
-    program,
-    statement,
-  )
-}
-
 export default function* evaluate(node: Node, scope: Scope) {
   if (!node) return
 
   // delay initalizing to remove circular reference issue for jest
   if (!evaluateOps) {
-    createEvaluateOps()
+    evaluateOps = assign(
+      {},
+      declaration,
+      expression,
+      identifier,
+      literal,
+      pattern,
+      program,
+      statement,
+    )
   }
 
   const handler = evaluateOps[node.type]

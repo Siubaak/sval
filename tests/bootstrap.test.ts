@@ -2,7 +2,7 @@ import { readFileSync, existsSync } from 'fs'
 import { resolve } from 'path'
 import Sval from '../src'
 
-let code
+let code: string
 
 const codePath = resolve(__dirname, '../dist/sval.min.js')
 if (existsSync(codePath)) {
