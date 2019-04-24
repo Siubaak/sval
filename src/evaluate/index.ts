@@ -5,10 +5,10 @@ import Scope from '../scope'
 import * as declaration from './declaration'
 import * as expression from './expression'
 import * as identifier from './identifier'
+import * as statement from './statement'
 import * as literal from './literal'
 import * as pattern from './pattern'
-import * as program from './program'
-import * as statement from './statement'
+/*<add>*//*import * as program from './program'*//*</add>*/
 
 let evaluateOps: any
 
@@ -22,10 +22,10 @@ export default function* evaluate(node: Node, scope: Scope) {
       declaration,
       expression,
       identifier,
+      statement,
       literal,
       pattern,
-      program,
-      statement,
+      /*<add>*//*program*//*</add>*/
     )
   }
 
