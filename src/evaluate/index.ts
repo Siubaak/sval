@@ -10,21 +10,30 @@ import * as pattern from './pattern'
 import * as program from './program'
 import * as statement from './statement'
 
-const evaluateOps = assign(
-  {},
-  declaration,
-  expression,
-  identifier,
-  literal,
-  pattern,
-  program,
-  statement,
-)
+let evaluateOps: any
+
+function createEvaluateOps() {
+  evaluateOps = assign(
+    {},
+    declaration,
+    expression,
+    identifier,
+    literal,
+    pattern,
+    program,
+    statement,
+  )
+}
 
 export default function* evaluate(node: Node, scope: Scope) {
   if (!node) return
 
-  const handler = (evaluateOps as any)[node.type]
+  // delay initalizing to remove circular reference issue for jest
+  if (!evaluateOps) {
+    createEvaluateOps()
+  }
+
+  const handler = evaluateOps[node.type]
   if (handler) {
     return yield* handler(node, scope)
   } else {

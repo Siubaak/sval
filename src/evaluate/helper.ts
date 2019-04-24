@@ -1,6 +1,7 @@
 import { RETURN, SUPER, NOCTOR, CLSCTOR, NEWTARGET, SUPERCALL } from '../share/const'
 import { FunctionDeclaration, VariableDeclaration, ClassBody } from './declaration'
-import { define, inherits, runAsync, runAsyncOptions, assign } from '../share/util'
+import { define, inherits, assign } from '../share/util'
+import { runAsync, runAsyncOptions } from '../share/async'
 import { Identifier } from '../evaluate_n/identifier'
 import { BlockStatement } from './statement'
 import { Var } from '../scope/variable'
