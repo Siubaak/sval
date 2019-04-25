@@ -1,5 +1,5 @@
 import { BREAK, CONTINUE, RETURN, AWAIT } from '../share/const'
-import { hoistFunc, pattern, ForXHandler } from './helper'
+import { hoist, pattern, ForXHandler } from './helper'
 import { getIterator } from '../share/util'
 import * as estree from 'estree'
 import Scope from '../scope'
@@ -27,7 +27,7 @@ export function* BlockStatement(
   const subScope = invasived ? scope : new Scope(scope)
 
   if (!hoisted) {
-    yield* hoistFunc(block, subScope)
+    yield* hoist(block, subScope, { onlyBlock: true })
   }
 
   for (let i = 0; i < block.body.length; i++) {
@@ -139,7 +139,6 @@ export function* CatchClause(node: estree.CatchClause, scope: Scope) {
 export function* WhileStatement(node: estree.WhileStatement, scope: Scope) {
   while (yield* evaluate(node.test, scope)) {
     const result = yield* evaluate(node.body, scope)
-
     if (result === BREAK) {
       break
     } else if (result === CONTINUE) {
@@ -153,7 +152,6 @@ export function* WhileStatement(node: estree.WhileStatement, scope: Scope) {
 export function* DoWhileStatement(node: estree.DoWhileStatement, scope: Scope) {
   do {
     const result = yield* evaluate(node.body, scope)
-
     if (result === BREAK) {
       break
     } else if (result === CONTINUE) {

@@ -17,33 +17,32 @@ import {
   AssignmentPattern
 } from './pattern'
 
-export function* hoist(block: estree.Program | estree.BlockStatement, scope: Scope) {
-  for (let i = 0; i < block.body.length; i++) {
-    const statement = block.body[i]
-    if (
-      statement.type === 'ImportDeclaration'
-      || statement.type === 'ExportNamedDeclaration'
-      || statement.type === 'ExportDefaultDeclaration'
-      || statement.type === 'ExportAllDeclaration'
-    ) {
-      continue
-    }
-
-    if (statement.type === 'FunctionDeclaration') {
-      yield* FunctionDeclaration(statement, scope)
-    } else {
-      yield* hoistVarRecursion(statement, scope)
-    }
-  }
+export interface hoistOptions {
+  onlyBlock?: boolean
 }
 
-export function* hoistFunc(block: estree.BlockStatement, scope: Scope) {
+export function* hoist(
+  block: estree.Program | estree.BlockStatement,
+  scope: Scope,
+  options: hoistOptions = {}
+) {
+  const { onlyBlock = false } = options
+  const funcDclrList: any[] = []
+  const funcDclrIdxs: number[] = []
   for (let i = 0; i < block.body.length; i++) {
     const statement = block.body[i]
-
     if (statement.type === 'FunctionDeclaration') {
-      yield* FunctionDeclaration(statement, scope)
+      funcDclrList.push(statement)
+      funcDclrIdxs.push(i)
+    } else if (!onlyBlock) {
+      yield* hoistVarRecursion(statement as estree.Statement, scope)
     }
+  }
+  if (funcDclrIdxs.length) {
+    for (let i = funcDclrIdxs.length - 1; i > -1; i--) {
+      block.body.splice(funcDclrIdxs[i], 1)
+    }
+    block.body = funcDclrList.concat(block.body)
   }
 }
 
