@@ -1,5 +1,5 @@
-import { define, getDptor, assign, hasOwn } from '../share/util'
 import { pattern, createFunc, createClass } from './helper'
+import { define, getDptor, assign } from '../share/util'
 import { NOINIT, DEADZONE } from '../share/const'
 import { VarKind } from '../scope/variable'
 import * as estree from 'estree'
@@ -48,7 +48,7 @@ export function* VariableDeclarator(
       }
     }
   } else {
-    const hasFeed = hasOwn(options, 'feed')
+    const hasFeed = 'feed' in options
     const value = hasFeed ? feed : yield* evaluate(node.init, scope)
     if (node.id.type === 'Identifier') {
       const name = node.id.name

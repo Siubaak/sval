@@ -1,5 +1,4 @@
 import { AWAIT } from './const'
-import { hasOwn } from './util'
 
 export interface runAsyncOptions {
   res?: any
@@ -14,10 +13,10 @@ export function runAsync(
 ): Promise<any> {
   const { res, err, ret, fullRet } = options
   return new Promise((resolve, reject) => {
-    if (hasOwn(options, 'ret')) {
+    if ('ret' in options) {
       return resolve(iterator.return(ret))
     }
-    if (hasOwn(options, 'err')) {
+    if ('err' in options) {
       onRejected(err)
     } else {
       onFulfilled(res)

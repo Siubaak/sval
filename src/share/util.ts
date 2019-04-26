@@ -9,10 +9,7 @@ export function hasOwn(obj: any, key: string): boolean {
   return hasOwnProperty.call(obj, key)
 }
 
-const getOwnPropertyNames = Object.getOwnPropertyNames
-export function getOwnNames(obj: any) {
-  return getOwnPropertyNames(obj)
-}
+export const getOwnNames = Object.getOwnPropertyNames
 
 const setPrototypeOf = Object.setPrototypeOf
 export function setProto(obj: any, proto: any) {
@@ -75,7 +72,7 @@ export const assign = Object.assign ||  _assign
 
 declare let WebAssembly: any // Avoid typescript error
 let names: string[] = []
-export let globalObj: any = {}
+export let globalObj = Object.create(null)
 try {
   // Browser environment
   if (!(window as any).Object) throw 0
@@ -150,13 +147,13 @@ try {
     names = getOwnNames(globalObj)
   }
 }
-const win: any = {}
+const win = Object.create(null)
 for (let i = 0; i < names.length; i++) {
   const name = names[i]
   try { win[name] = globalObj[name] } catch (err) { /* empty */ }
 }
 export function createSandBox() {
-  return assign({}, win)
+  return assign(Object.create(null), win)
 }
 
 export function createSymbol(key: string) {
