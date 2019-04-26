@@ -376,7 +376,19 @@
       }
   }
 
-  var version = "0.4.2";
+  var version = "0.4.3";
+
+  const AWAIT = { RES: undefined };
+  const RETURN = { RES: undefined };
+  const CONTINUE = createSymbol('continue');
+  const BREAK = createSymbol('break');
+  const SUPER = createSymbol('super');
+  const SUPERCALL = createSymbol('supercall');
+  const NOCTOR = createSymbol('noctor');
+  const CLSCTOR = createSymbol('clsctor');
+  const NEWTARGET = createSymbol('newtarget');
+  const NOINIT = createSymbol('noinit');
+  const DEADZONE = createSymbol('deadzone');
 
   class Var {
       constructor(kind, value) {
@@ -411,17 +423,6 @@
           return delete this.object[this.property];
       }
   }
-
-  const AWAIT = { RES: undefined };
-  const RETURN = { RES: undefined };
-  const CONTINUE = createSymbol('continue');
-  const BREAK = createSymbol('break');
-  const SUPER = createSymbol('super');
-  const SUPERCALL = createSymbol('supercall');
-  const NOCTOR = createSymbol('noctor');
-  const CLSCTOR = createSymbol('clsctor');
-  const NEWTARGET = createSymbol('newtarget');
-  const NOINIT = createSymbol('noinit');
 
   class Scope {
       constructor(parent = null, isolated = false) {
@@ -491,7 +492,7 @@
       }
       let(name, value) {
           const variable = this.context[name];
-          if (!variable) {
+          if (!variable || variable.get() === DEADZONE) {
               this.context[name] = new Var('let', value);
           }
           else {
@@ -500,7 +501,7 @@
       }
       const(name, value) {
           const variable = this.context[name];
-          if (!variable) {
+          if (!variable || variable.get() === DEADZONE) {
               this.context[name] = new Var('const', value);
           }
           else {
@@ -525,7 +526,18 @@
       }
       const variable = scope.find(node.name);
       if (variable) {
-          return getVar ? variable : variable.get();
+          if (getVar) {
+              return variable;
+          }
+          else {
+              const value = variable.get();
+              if (value === DEADZONE) {
+                  throw new ReferenceError(`${node.name} is not defined`);
+              }
+              else {
+                  return value;
+              }
+          }
       }
       else if (throwErr) {
           throw new ReferenceError(`${node.name} is not defined`);
@@ -1045,139 +1057,6 @@
     SpreadElement: SpreadElement
   });
 
-  function ObjectPattern(node, scope, options = {}) {
-      const { kind = 'let', hoist = false, feed = {} } = options;
-      const fedKeys = [];
-      for (let i = 0; i < node.properties.length; i++) {
-          const property = node.properties[i];
-          const value = property.value;
-          if (hoist) {
-              if (kind === 'var') {
-                  if (value.type === 'Identifier') {
-                      scope.var(value.name);
-                  }
-                  else {
-                      pattern$3(value, scope, { kind, hoist });
-                  }
-              }
-          }
-          else if (property.type === 'Property') {
-              let key;
-              if (property.computed) {
-                  key = evaluate(property.key, scope);
-              }
-              else {
-                  key = property.key.name;
-              }
-              fedKeys.push(key);
-              if (value.type === 'Identifier') {
-                  scope[kind](value.name, feed[key]);
-              }
-              else {
-                  pattern$3(value, scope, { kind, feed: feed[key] });
-              }
-          }
-          else {
-              const rest = assign({}, feed);
-              for (let i = 0; i < fedKeys.length; i++)
-                  delete rest[fedKeys[i]];
-              RestElement(property, scope, { kind, feed: rest });
-          }
-      }
-  }
-  function ArrayPattern(node, scope, options = {}) {
-      const { kind, hoist = false, feed = [] } = options;
-      const result = [];
-      for (let i = 0; i < node.elements.length; i++) {
-          const element = node.elements[i];
-          if (hoist) {
-              if (kind === 'var') {
-                  if (element.type === 'Identifier') {
-                      scope.var(element.name);
-                  }
-                  else {
-                      pattern$3(element, scope, { kind, hoist });
-                  }
-              }
-          }
-          else {
-              if (element.type === 'Identifier') {
-                  if (kind) {
-                      scope[kind](element.name, feed[i]);
-                  }
-                  else {
-                      const variable = Identifier(element, scope, { getVar: true });
-                      variable.set(feed[i]);
-                      result.push(variable.get());
-                  }
-              }
-              else if (element.type === 'RestElement') {
-                  RestElement(element, scope, { kind, feed: feed.slice(i) });
-              }
-              else {
-                  pattern$3(element, scope, { kind, feed: feed[i] });
-              }
-          }
-      }
-      if (result.length) {
-          return result;
-      }
-  }
-  function RestElement(node, scope, options = {}) {
-      const { kind, hoist = false, feed = [] } = options;
-      const arg = node.argument;
-      if (hoist) {
-          if (kind === 'var') {
-              if (arg.type === 'Identifier') {
-                  scope.var(arg.name);
-              }
-              else {
-                  pattern$3(arg, scope, { kind, hoist });
-              }
-          }
-      }
-      else {
-          if (arg.type === 'Identifier') {
-              if (kind) {
-                  scope[kind](arg.name, feed);
-              }
-              else {
-                  const variable = Identifier(arg, scope, { getVar: true });
-                  variable.set(feed);
-              }
-          }
-          else {
-              pattern$3(arg, scope, { kind, feed });
-          }
-      }
-  }
-  function AssignmentPattern(node, scope) {
-      const feed = evaluate(node.right, scope);
-      if (node.left.type === 'Identifier') {
-          scope.let(node.left.name, feed);
-      }
-      else {
-          pattern$3(node.left, scope, { feed });
-      }
-  }
-
-  var pattern = /*#__PURE__*/Object.freeze({
-    ObjectPattern: ObjectPattern,
-    ArrayPattern: ArrayPattern,
-    RestElement: RestElement,
-    AssignmentPattern: AssignmentPattern
-  });
-
-  function Program(program, scope) {
-      for (let i = 0; i < program.body.length; i++) {
-          evaluate(program.body[i], scope);
-      }
-  }
-
-  var program = /*#__PURE__*/Object.freeze({
-    Program: Program
-  });
-
   function ExpressionStatement(node, scope) {
       evaluate(node.expression, scope);
   }
@@ -1185,7 +1064,7 @@
       const { invasived = false, hoisted = false, } = options;
       const subScope = invasived ? scope : new Scope(scope);
       if (!hoisted) {
-          hoistFunc$1(block, subScope);
+          hoist$1(block, subScope, { onlyBlock: true });
       }
       for (let i = 0; i < block.body.length; i++) {
           const result = evaluate(block.body[i], subScope);
@@ -1382,12 +1261,159 @@
     ForOfStatement: ForOfStatement
   });
 
+  function ObjectPattern(node, scope, options = {}) {
+      const { kind = 'let', hoist = false, onlyBlock = false, feed = {} } = options;
+      const fedKeys = [];
+      for (let i = 0; i < node.properties.length; i++) {
+          const property = node.properties[i];
+          if (hoist) {
+              if (onlyBlock || kind === 'var') {
+                  if (property.type === 'Property') {
+                      const value = property.value;
+                      if (value.type === 'Identifier') {
+                          scope[onlyBlock ? kind : 'var'](value.name, onlyBlock ? DEADZONE : undefined);
+                      }
+                      else {
+                          pattern$3(value, scope, { kind, hoist, onlyBlock });
+                      }
+                  }
+                  else {
+                      RestElement(property, scope, { kind, hoist, onlyBlock });
+                  }
+              }
+          }
+          else if (property.type === 'Property') {
+              let key;
+              if (property.computed) {
+                  key = evaluate(property.key, scope);
+              }
+              else {
+                  key = property.key.name;
+              }
+              fedKeys.push(key);
+              const value = property.value;
+              if (value.type === 'Identifier') {
+                  scope[kind](value.name, feed[key]);
+              }
+              else {
+                  pattern$3(value, scope, { kind, feed: feed[key] });
+              }
+          }
+          else {
+              const rest = assign({}, feed);
+              for (let i = 0; i < fedKeys.length; i++)
+                  delete rest[fedKeys[i]];
+              RestElement(property, scope, { kind, feed: rest });
+          }
+      }
+  }
+  function ArrayPattern(node, scope, options = {}) {
+      const { kind, hoist = false, onlyBlock = false, feed = [] } = options;
+      const result = [];
+      for (let i = 0; i < node.elements.length; i++) {
+          const element = node.elements[i];
+          if (hoist) {
+              if (onlyBlock || kind === 'var') {
+                  if (element.type === 'Identifier') {
+                      scope[onlyBlock ? kind : 'var'](element.name, onlyBlock ? DEADZONE : undefined);
+                  }
+                  else {
+                      pattern$3(element, scope, { kind, hoist, onlyBlock });
+                  }
+              }
+          }
+          else if (element.type === 'Identifier') {
+              if (kind) {
+                  scope[kind](element.name, feed[i]);
+              }
+              else {
+                  const variable = Identifier(element, scope, { getVar: true });
+                  variable.set(feed[i]);
+                  result.push(variable.get());
+              }
+          }
+          else if (element.type === 'RestElement') {
+              RestElement(element, scope, { kind, feed: feed.slice(i) });
+          }
+          else {
+              pattern$3(element, scope, { kind, feed: feed[i] });
+          }
+      }
+      if (result.length) {
+          return result;
+      }
+  }
+  function RestElement(node, scope, options = {}) {
+      const { kind, hoist = false, onlyBlock = false, feed = [] } = options;
+      const arg = node.argument;
+      if (hoist) {
+          if (onlyBlock || kind === 'var') {
+              if (arg.type === 'Identifier') {
+                  scope[onlyBlock ? kind : 'var'](arg.name, onlyBlock ? DEADZONE : undefined);
+              }
+              else {
+                  pattern$3(arg, scope, { kind, hoist, onlyBlock });
+              }
+          }
+      }
+      else if (arg.type === 'Identifier') {
+          if (kind) {
+              scope[kind](arg.name, feed);
+          }
+          else {
+              const variable = Identifier(arg, scope, { getVar: true });
+              variable.set(feed);
+          }
+      }
+      else {
+          pattern$3(arg, scope, { kind, feed });
+      }
+  }
+  function AssignmentPattern(node, scope, options = {}) {
+      const { kind = 'let', hoist = false, onlyBlock = false } = options;
+      const feed = evaluate(node.right, scope);
+      const left = node.left;
+      if (hoist) {
+          if (onlyBlock || kind === 'var') {
+              if (left.type === 'Identifier') {
+                  scope[onlyBlock ? kind : 'var'](left.name, onlyBlock ? DEADZONE : undefined);
+              }
+              else {
+                  pattern$3(left, scope, { kind, hoist, onlyBlock });
+              }
+          }
+      }
+      else if (left.type === 'Identifier') {
+          scope[kind](left.name, feed);
+      }
+      else {
+          pattern$3(left, scope, { kind, feed });
+      }
+  }
+
+  var pattern = /*#__PURE__*/Object.freeze({
+    ObjectPattern: ObjectPattern,
+    ArrayPattern: ArrayPattern,
+    RestElement: RestElement,
+    AssignmentPattern: AssignmentPattern
+  });
+
+  function Program(program, scope) {
+      for (let i = 0; i < program.body.length; i++) {
+          evaluate(program.body[i], scope);
+      }
+  }
+
+  var program = /*#__PURE__*/Object.freeze({
+    Program: Program
+  });
+
   let evaluateOps;
   function evaluate(node, scope) {
       if (!node)
           return;
       if (!evaluateOps) {
-          evaluateOps = assign({}, declaration, expression, identifier, literal, pattern, program, statement);
+          evaluateOps = assign({}, declaration, expression, identifier, statement, literal, pattern, program);
       }
       const handler = evaluateOps[node.type];
       if (handler) {
@@ -1407,20 +1433,18 @@
       }
   }
   function VariableDeclarator(node, scope, options = {}) {
-      const { kind = 'let', hoist = false, feed } = options;
+      const { kind = 'let', hoist = false, onlyBlock = false, feed } = options;
       if (hoist) {
-          if (kind === 'var') {
+          if (onlyBlock || kind === 'var') {
               if (node.id.type === 'Identifier') {
-                  scope.var(node.id.name);
+                  scope[onlyBlock ? kind : 'var'](node.id.name, onlyBlock ? DEADZONE : undefined);
               }
               else {
-                  pattern$3(node.id, scope, { kind, hoist });
+                  pattern$3(node.id, scope, { kind, hoist, onlyBlock });
               }
           }
       }
-      else if (kind === 'var'
-          || kind === 'let'
-          || kind === 'const') {
+      else {
           const hasFeed = hasOwn(options, 'feed');
           const value = hasFeed ? feed : evaluate(node.init, scope);
           if (node.id.type === 'Identifier') {
@@ -1444,9 +1468,6 @@
           else {
               pattern$3(node.id, scope, { kind, feed: value });
           }
-      }
-      else {
-          throw new SyntaxError('Unexpected identifier');
       }
   }
   function ClassDeclaration(node, scope) {
@@ -1512,7 +1533,18 @@
       }
       const variable = scope.find(node.name);
       if (variable) {
-          return getVar ? variable : variable.get();
+          if (getVar) {
+              return variable;
+          }
+          else {
+              const value = variable.get();
+              if (value === DEADZONE) {
+                  throw new ReferenceError(`${node.name} is not defined`);
+              }
+              else {
+                  return value;
+              }
+          }
       }
       else if (throwErr) {
           throw new ReferenceError(`${node.name} is not defined`);
@@ -2042,139 +2074,6 @@
     AwaitExpression: AwaitExpression
   });
 
-  function* ObjectPattern$1(node, scope, options = {}) {
-      const { kind = 'let', hoist = false, feed = {} } = options;
-      const fedKeys = [];
-      for (let i = 0; i < node.properties.length; i++) {
-          const property = node.properties[i];
-          const value = property.value;
-          if (hoist) {
-              if (kind === 'var') {
-                  if (value.type === 'Identifier') {
-                      scope.var(value.name);
-                  }
-                  else {
-                      yield* pattern$2(value, scope, { kind, hoist });
-                  }
-              }
-          }
-          else if (property.type === 'Property') {
-              let key;
-              if (property.computed) {
-                  key = yield* evaluate$1(property.key, scope);
-              }
-              else {
-                  key = property.key.name;
-              }
-              fedKeys.push(key);
-              if (value.type === 'Identifier') {
-                  scope[kind](value.name, feed[key]);
-              }
-              else {
-                  yield* pattern$2(value, scope, { kind, feed: feed[key] });
-              }
-          }
-          else {
-              const rest = assign({}, feed);
-              for (let i = 0; i < fedKeys.length; i++)
-                  delete rest[fedKeys[i]];
-              yield* RestElement$1(property, scope, { kind, feed: rest });
-          }
-      }
-  }
-  function* ArrayPattern$1(node, scope, options = {}) {
-      const { kind, hoist = false, feed = [] } = options;
-      const result = [];
-      for (let i = 0; i < node.elements.length; i++) {
-          const element = node.elements[i];
-          if (hoist) {
-              if (kind === 'var') {
-                  if (element.type === 'Identifier') {
-                      scope.var(element.name);
-                  }
-                  else {
-                      yield* pattern$2(element, scope, { kind, hoist });
-                  }
-              }
-          }
-          else {
-              if (element.type === 'Identifier') {
-                  if (kind) {
-                      scope[kind](element.name, feed[i]);
-                  }
-                  else {
-                      const variable = yield* Identifier$1(element, scope, { getVar: true });
-                      variable.set(feed[i]);
-                      result.push(variable.get());
-                  }
-              }
-              else if (element.type === 'RestElement') {
-                  yield* RestElement$1(element, scope, { kind, feed: feed.slice(i) });
-              }
-              else {
-                  yield* pattern$2(element, scope, { kind, feed: feed[i] });
-              }
-          }
-      }
-      if (result.length) {
-          return result;
-      }
-  }
-  function* RestElement$1(node, scope, options = {}) {
-      const { kind, hoist = false, feed = [] } = options;
-      const arg = node.argument;
-      if (hoist) {
-          if (kind === 'var') {
-              if (arg.type === 'Identifier') {
-                  scope.var(arg.name);
-              }
-              else {
-                  yield* pattern$2(arg, scope, { kind, hoist });
-              }
-          }
-      }
-      else {
-          if (arg.type === 'Identifier') {
-              if (kind) {
-                  scope[kind](arg.name, feed);
-              }
-              else {
-                  const variable = yield* Identifier$1(arg, scope, { getVar: true });
-                  variable.set(feed);
-              }
-          }
-          else {
-              yield* pattern$2(arg, scope, { kind, feed });
-          }
-      }
-  }
-  function* AssignmentPattern$1(node, scope) {
-      const feed = yield* evaluate$1(node.right, scope);
-      if (node.left.type === 'Identifier') {
-          scope.let(node.left.name, feed);
-      }
-      else {
-          yield* pattern$2(node.left, scope, { feed });
-      }
-  }
-
-  var pattern$1 = /*#__PURE__*/Object.freeze({
-    ObjectPattern: ObjectPattern$1,
-    ArrayPattern: ArrayPattern$1,
-    RestElement: RestElement$1,
-    AssignmentPattern: AssignmentPattern$1
-  });
-
-  function* Program$1(program, scope) {
-      for (let i = 0; i < program.body.length; i++) {
-          yield* evaluate$1(program.body[i], scope);
-      }
-  }
-
-  var program$1 = /*#__PURE__*/Object.freeze({
-    Program: Program$1
-  });
-
   function* ExpressionStatement$1(node, scope) {
       yield* evaluate$1(node.expression, scope);
   }
@@ -2182,7 +2081,7 @@
       const { invasived = false, hoisted = false, } = options;
       const subScope = invasived ? scope : new Scope(scope);
       if (!hoisted) {
-          yield* hoistFunc(block, subScope);
+          yield* hoist(block, subScope, { onlyBlock: true });
       }
       for (let i = 0; i < block.body.length; i++) {
           const result = yield* evaluate$1(block.body[i], subScope);
@@ -2397,12 +2296,149 @@
     ForOfStatement: ForOfStatement$1
   });
 
+  function* ObjectPattern$1(node, scope, options = {}) {
+      const { kind = 'let', hoist = false, onlyBlock = false, feed = {} } = options;
+      const fedKeys = [];
+      for (let i = 0; i < node.properties.length; i++) {
+          const property = node.properties[i];
+          if (hoist) {
+              if (onlyBlock || kind === 'var') {
+                  if (property.type === 'Property') {
+                      const value = property.value;
+                      if (value.type === 'Identifier') {
+                          scope[onlyBlock ? kind : 'var'](value.name, onlyBlock ? DEADZONE : undefined);
+                      }
+                      else {
+                          yield* pattern$2(value, scope, { kind, hoist, onlyBlock });
+                      }
+                  }
+                  else {
+                      yield* RestElement$1(property, scope, { kind, hoist, onlyBlock });
+                  }
+              }
+          }
+          else if (property.type === 'Property') {
+              let key;
+              if (property.computed) {
+                  key = yield* evaluate$1(property.key, scope);
+              }
+              else {
+                  key = property.key.name;
+              }
+              fedKeys.push(key);
+              const value = property.value;
+              if (value.type === 'Identifier') {
+                  scope[kind](value.name, feed[key]);
+              }
+              else {
+                  yield* pattern$2(value, scope, { kind, feed: feed[key] });
+              }
+          }
+          else {
+              const rest = assign({}, feed);
+              for (let i = 0; i < fedKeys.length; i++)
+                  delete rest[fedKeys[i]];
+              yield* RestElement$1(property, scope, { kind, feed: rest });
+          }
+      }
+  }
+  function* ArrayPattern$1(node, scope, options = {}) {
+      const { kind, hoist = false, onlyBlock = false, feed = [] } = options;
+      const result = [];
+      for (let i = 0; i < node.elements.length; i++) {
+          const element = node.elements[i];
+          if (hoist) {
+              if (onlyBlock || kind === 'var') {
+                  if (element.type === 'Identifier') {
+                      scope[onlyBlock ? kind : 'var'](element.name, onlyBlock ? DEADZONE : undefined);
+                  }
+                  else {
+                      yield* pattern$2(element, scope, { kind, hoist, onlyBlock });
+                  }
+              }
+          }
+          else if (element.type === 'Identifier') {
+              if (kind) {
+                  scope[kind](element.name, feed[i]);
+              }
+              else {
+                  const variable = yield* Identifier$1(element, scope, { getVar: true });
+                  variable.set(feed[i]);
+                  result.push(variable.get());
+              }
+          }
+          else if (element.type === 'RestElement') {
+              yield* RestElement$1(element, scope, { kind, feed: feed.slice(i) });
+          }
+          else {
+              yield* pattern$2(element, scope, { kind, feed: feed[i] });
+          }
+      }
+      if (result.length) {
+          return result;
+      }
+  }
+  function* RestElement$1(node, scope, options = {}) {
+      const { kind, hoist = false, onlyBlock = false, feed = [] } = options;
+      const arg = node.argument;
+      if (hoist) {
+          if (onlyBlock || kind === 'var') {
+              if (arg.type === 'Identifier') {
+                  scope[onlyBlock ? kind : 'var'](arg.name, onlyBlock ? DEADZONE : undefined);
+              }
+              else {
+                  yield* pattern$2(arg, scope, { kind, hoist, onlyBlock });
+              }
+          }
+      }
+      else if (arg.type === 'Identifier') {
+          if (kind) {
+              scope[kind](arg.name, feed);
+          }
+          else {
+              const variable = yield* Identifier$1(arg, scope, { getVar: true });
+              variable.set(feed);
+          }
+      }
+      else {
+          yield* pattern$2(arg, scope, { kind, feed });
+      }
+  }
+  function* AssignmentPattern$1(node, scope, options = {}) {
+      const { kind = 'let', hoist = false, onlyBlock = false } = options;
+      const feed = yield* evaluate$1(node.right, scope);
+      const left = node.left;
+      if (hoist) {
+          if (onlyBlock || kind === 'var') {
+              if (left.type === 'Identifier') {
+                  scope[onlyBlock ? kind : 'var'](left.name, onlyBlock ? DEADZONE : undefined);
+              }
+              else {
+                  yield* pattern$2(left, scope, { kind, hoist, onlyBlock });
+              }
+          }
+      }
+      else if (left.type === 'Identifier') {
+          scope[kind](left.name, feed);
+      }
+      else {
+          yield* pattern$2(left, scope, { kind, feed });
+      }
+  }
+
+  var pattern$1 = /*#__PURE__*/Object.freeze({
+    ObjectPattern: ObjectPattern$1,
+    ArrayPattern: ArrayPattern$1,
+    RestElement: RestElement$1,
+    AssignmentPattern: AssignmentPattern$1
+  });
+
   let evaluateOps$1;
   function* evaluate$1(node, scope) {
       if (!node)
           return;
       if (!evaluateOps$1) {
-          evaluateOps$1 = assign({}, declaration$1, expression$1, identifier$1, literal$1, pattern$1, program$1, statement$1);
+          evaluateOps$1 = assign({}, declaration$1, expression$1, identifier$1, statement$1, literal$1, pattern$1);
       }
       const handler = evaluateOps$1[node.type];
       if (handler) {
@@ -2422,20 +2458,18 @@
       }
   }
   function* VariableDeclarator$1(node, scope, options = {}) {
-      const { kind = 'let', hoist = false, feed } = options;
+      const { kind = 'let', hoist = false, onlyBlock = false, feed } = options;
       if (hoist) {
-          if (kind === 'var') {
+          if (onlyBlock || kind === 'var') {
               if (node.id.type === 'Identifier') {
-                  scope.var(node.id.name);
+                  scope[onlyBlock ? kind : 'var'](node.id.name, onlyBlock ? DEADZONE : undefined);
               }
               else {
-                  yield* pattern$2(node.id, scope, { kind, hoist });
+                  yield* pattern$2(node.id, scope, { kind, hoist, onlyBlock });
               }
           }
       }
-      else if (kind === 'var'
-          || kind === 'let'
-          || kind === 'const') {
+      else {
           const hasFeed = hasOwn(options, 'feed');
           const value = hasFeed ? feed : yield* evaluate$1(node.init, scope);
           if (node.id.type === 'Identifier') {
@@ -2459,9 +2493,6 @@
           else {
               yield* pattern$2(node.id, scope, { kind, feed: value });
           }
-      }
-      else {
-          throw new SyntaxError('Unexpected identifier');
       }
   }
   function* ClassDeclaration$1(node, scope) {
@@ -2566,29 +2597,29 @@
       });
   }
 
-  function* hoist(block, scope) {
+  function* hoist(block, scope, options = {}) {
+      const { onlyBlock = false } = options;
+      const funcDclrList = [];
+      const funcDclrIdxs = [];
       for (let i = 0; i < block.body.length; i++) {
           const statement = block.body[i];
-          if (statement.type === 'ImportDeclaration'
-              || statement.type === 'ExportNamedDeclaration'
-              || statement.type === 'ExportDefaultDeclaration'
-              || statement.type === 'ExportAllDeclaration') {
-              continue;
-          }
           if (statement.type === 'FunctionDeclaration') {
-              yield* FunctionDeclaration$1(statement, scope);
+              funcDclrList.push(statement);
+              funcDclrIdxs.push(i);
           }
-          else {
+          else if (statement.type === 'VariableDeclaration'
+              && ['const', 'let'].indexOf(statement.kind) !== -1) {
+              yield* VariableDeclaration$1(statement, scope, { hoist: true, onlyBlock: true });
+          }
+          else if (!onlyBlock) {
               yield* hoistVarRecursion(statement, scope);
           }
       }
-  }
-  function* hoistFunc(block, scope) {
-      for (let i = 0; i < block.body.length; i++) {
-          const statement = block.body[i];
-          if (statement.type === 'FunctionDeclaration') {
-              yield* FunctionDeclaration$1(statement, scope);
+      if (funcDclrIdxs.length) {
+          for (let i = funcDclrIdxs.length - 1; i > -1; i--) {
+              block.body.splice(funcDclrIdxs[i], 1);
           }
+          block.body = funcDclrList.concat(block.body);
       }
   }
   function* hoistVarRecursion(statement, scope) {
@@ -2645,7 +2676,7 @@
           case 'RestElement':
               return yield* RestElement$1(node, scope, options);
           case 'AssignmentPattern':
-              return yield* AssignmentPattern$1(node, scope);
+              return yield* AssignmentPattern$1(node, scope, options);
           default:
               throw new SyntaxError('Unexpected token');
       }
@@ -2784,29 +2815,29 @@
       return result;
   }
 
-  function hoist$1(block, scope) {
+  function hoist$1(block, scope, options = {}) {
+      const { onlyBlock = false } = options;
+      const funcDclrList = [];
+      const funcDclrIdxs = [];
       for (let i = 0; i < block.body.length; i++) {
           const statement = block.body[i];
-          if (statement.type === 'ImportDeclaration'
-              || statement.type === 'ExportNamedDeclaration'
-              || statement.type === 'ExportDefaultDeclaration'
-              || statement.type === 'ExportAllDeclaration') {
-              continue;
-          }
           if (statement.type === 'FunctionDeclaration') {
-              FunctionDeclaration(statement, scope);
+              funcDclrList.push(statement);
+              funcDclrIdxs.push(i);
           }
-          else {
+          else if (statement.type === 'VariableDeclaration'
+              && ['const', 'let'].indexOf(statement.kind) !== -1) {
+              VariableDeclaration(statement, scope, { hoist: true, onlyBlock: true });
+          }
+          else if (!onlyBlock) {
               hoistVarRecursion$1(statement, scope);
           }
       }
-  }
-  function hoistFunc$1(block, scope) {
-      for (let i = 0; i < block.body.length; i++) {
-          const statement = block.body[i];
-          if (statement.type === 'FunctionDeclaration') {
-              FunctionDeclaration(statement, scope);
+      if (funcDclrIdxs.length) {
+          for (let i = funcDclrIdxs.length - 1; i > -1; i--) {
+              block.body.splice(funcDclrIdxs[i], 1);
           }
+          block.body = funcDclrList.concat(block.body);
       }
   }
   function hoistVarRecursion$1(statement, scope) {
@@ -2863,7 +2894,7 @@
           case 'RestElement':
               return RestElement(node, scope, options);
           case 'AssignmentPattern':
-              return AssignmentPattern(node, scope);
+              return AssignmentPattern(node, scope, options);
           default:
               throw new SyntaxError('Unexpected token');
       }
