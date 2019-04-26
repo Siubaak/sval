@@ -14,11 +14,7 @@ if (existsSync(codePath)) {
 describe('testing src/index.ts', () => {
   it('should compile normally', () => {  
     const interpreter = new Sval()
+    interpreter.run(`!async function(){${code}}()`) // also test for generator env
     interpreter.run(code)
-  })
-
-  it('should compile normally in generator env', () => {  
-    const interpreter = new Sval()
-    interpreter.run(`!async function(){${code}}()`)
   })
 })

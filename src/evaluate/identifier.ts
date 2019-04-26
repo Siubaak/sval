@@ -1,3 +1,4 @@
+import { DEADZONE } from '../share/const'
 import * as estree from 'estree'
 import Scope from '../scope'
 
@@ -14,7 +15,16 @@ export function* Identifier(node: estree.Identifier, scope: Scope, options: Iden
   }
   const variable = scope.find(node.name)
   if (variable) {
-    return getVar ? variable : variable.get()
+    if (getVar) { // left value
+      return variable
+    } else { // right value
+      const value = variable.get()
+      if (value === DEADZONE) {
+        throw new ReferenceError(`${node.name} is not defined`)
+      } else {
+        return value
+      }
+    }
   } else if (throwErr) {
     throw new ReferenceError(`${node.name} is not defined`)
   } else {

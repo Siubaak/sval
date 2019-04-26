@@ -3,7 +3,7 @@ import Sval from '../src'
 describe('testing src/index.ts', () => {
   it('should create es5 class normally', () => {
     const interpreter = new Sval()
-      interpreter.run(`
+    interpreter.run(`
       function Point(x, y) {
         this.x = x
         this.y = y

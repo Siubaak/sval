@@ -1,6 +1,6 @@
 import { hasOwn, getOwnNames, define } from '../share/util'
+import { NOINIT, DEADZONE } from '../share/const'
 import { Variable, Var, Prop } from './variable'
-import { NOINIT } from '../share/const'
 
 /**
  * Scope simulation class
@@ -131,7 +131,7 @@ export default class Scope {
    */
   let(name: string, value: any) {
     const variable = this.context[name]
-    if (!variable) {
+    if (!variable || variable.get() === DEADZONE) {
       this.context[name] = new Var('let', value)
     } else {
       throw new SyntaxError(`Identifier '${name}' has already been declared`)
@@ -145,7 +145,7 @@ export default class Scope {
    */
   const(name: string, value: any) {
     const variable = this.context[name]
-    if (!variable) {
+    if (!variable || variable.get() === DEADZONE) {
       this.context[name] = new Var('const', value)
     } else {
       throw new SyntaxError(`Identifier '${name}' has already been declared`)

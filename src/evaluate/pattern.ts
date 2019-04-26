@@ -1,5 +1,6 @@
-import { VarKind, Var } from '../scope/variable'
+import { VarKind } from '../scope/variable'
 import { Identifier } from './identifier'
+import { DEADZONE } from '../share/const'
 import { assign } from '../share/util'
 import { pattern } from './helper'
 import * as estree from 'estree'
@@ -9,21 +10,26 @@ import evaluate from '.'
 export interface PatternOptions {
   kind?: VarKind
   hoist?: boolean
+  onlyBlock?: boolean
   feed?: any
 }
 
 export function* ObjectPattern(node: estree.ObjectPattern, scope: Scope, options: PatternOptions = {}) {
-  const { kind = 'let', hoist = false, feed = {} } = options
+  const { kind = 'let', hoist = false, onlyBlock = false, feed = {} } = options
   const fedKeys: string[] = []
   for (let i = 0; i < node.properties.length; i++) {
     const property = node.properties[i]
-    const value = property.value
     if (hoist) {
-      if (kind === 'var') {
-        if (value.type === 'Identifier') {
-          scope.var(value.name)
+      if (onlyBlock || kind === 'var') {
+        if (property.type === 'Property') {
+          const value = property.value
+          if (value.type === 'Identifier') {
+            scope[onlyBlock ? kind : 'var'](value.name, onlyBlock ? DEADZONE : undefined)
+          } else {
+            yield* pattern(value, scope, { kind, hoist, onlyBlock })
+          }
         } else {
-          yield* pattern(value, scope, { kind, hoist })
+          yield* RestElement(property as any, scope, { kind, hoist, onlyBlock })
         }
       }
     } else if (property.type === 'Property') {
@@ -35,6 +41,7 @@ export function* ObjectPattern(node: estree.ObjectPattern, scope: Scope, options
       }
       fedKeys.push(key)
       
+      const value = property.value
       if (value.type === 'Identifier') {
         scope[kind](value.name, feed[key])
       } else {
@@ -49,34 +56,32 @@ export function* ObjectPattern(node: estree.ObjectPattern, scope: Scope, options
 }
 
 export function* ArrayPattern(node: estree.ArrayPattern, scope: Scope, options: PatternOptions = {}) {
-  const { kind, hoist = false, feed = [] } = options
+  const { kind, hoist = false, onlyBlock = false, feed = [] } = options
   const result = []
   for (let i = 0; i < node.elements.length; i++) {
     const element = node.elements[i]
     if (hoist) {
-      if (kind === 'var') {
+      if (onlyBlock || kind === 'var') {
         if (element.type === 'Identifier') {
-          scope.var(element.name)
+          scope[onlyBlock ? kind : 'var'](element.name, onlyBlock ? DEADZONE : undefined)
         } else {
-          yield* pattern(element, scope, { kind, hoist })
+          yield* pattern(element, scope, { kind, hoist, onlyBlock })
         }
       }
-    } else {
-      if (element.type === 'Identifier') {
-        if (kind) {
-          // If kind isn't undefined, it's a declaration
-          scope[kind](element.name, feed[i])
-        } else {
-          // If kind is undefined, it's a statement
-          const variable: Var = yield* Identifier(element, scope, { getVar: true })
-          variable.set(feed[i])
-          result.push(variable.get())
-        }
-      } else if (element.type === 'RestElement') {
-        yield* RestElement(element, scope, { kind, feed: feed.slice(i) })
+    } else if (element.type === 'Identifier') {
+      if (kind) {
+        // If kind isn't undefined, it's a declaration
+        scope[kind](element.name, feed[i])
       } else {
-        yield* pattern(element, scope, { kind, feed: feed[i] })
+        // If kind is undefined, it's a statement
+        const variable = yield* Identifier(element, scope, { getVar: true })
+        variable.set(feed[i])
+        result.push(variable.get())
       }
+    } else if (element.type === 'RestElement') {
+      yield* RestElement(element, scope, { kind, feed: feed.slice(i) })
+    } else {
+      yield* pattern(element, scope, { kind, feed: feed[i] })
     }
   }
   if (result.length) {
@@ -85,37 +90,45 @@ export function* ArrayPattern(node: estree.ArrayPattern, scope: Scope, options: 
 }
 
 export function* RestElement(node: estree.RestElement, scope: Scope, options: PatternOptions = {}) {
-  const { kind, hoist = false, feed = [] } = options
+  const { kind, hoist = false, onlyBlock = false, feed = [] } = options
   const arg = node.argument
   if (hoist) {
-    if (kind === 'var') {
+    if (onlyBlock || kind === 'var') {
       if (arg.type === 'Identifier') {
-        scope.var(arg.name)
+        scope[onlyBlock ? kind : 'var'](arg.name, onlyBlock ? DEADZONE : undefined)
       } else {
-        yield* pattern(arg, scope, { kind, hoist })
+        yield* pattern(arg, scope, { kind, hoist, onlyBlock })
       }
+    }
+  } else if (arg.type === 'Identifier') {
+    if (kind) {
+      // If kind isn't undefined, it's a declaration
+      scope[kind](arg.name, feed)
+    } else {
+      // If kind is undefined, it's a statement
+      const variable = yield* Identifier(arg, scope, { getVar: true })
+      variable.set(feed)
     }
   } else {
-    if (arg.type === 'Identifier') {
-      if (kind) {
-        // If kind isn't undefined, it's a declaration
-        scope[kind](arg.name, feed)
-      } else {
-        // If kind is undefined, it's a statement
-        const variable: Var = yield* Identifier(arg, scope, { getVar: true })
-        variable.set(feed)
-      }
-    } else {
-      yield* pattern(arg, scope, { kind, feed })
-    }
+    yield* pattern(arg, scope, { kind, feed })
   }
 }
 
-export function* AssignmentPattern(node: estree.AssignmentPattern, scope: Scope) {
+export function* AssignmentPattern(node: estree.AssignmentPattern, scope: Scope, options: PatternOptions = {}) {
+  const { kind = 'let', hoist = false, onlyBlock = false } = options
   const feed = yield* evaluate(node.right, scope)
-  if (node.left.type === 'Identifier') {
-    scope.let(node.left.name, feed)
+  const left = node.left
+  if (hoist) {
+    if (onlyBlock || kind === 'var') {
+      if (left.type === 'Identifier') {
+        scope[onlyBlock ? kind : 'var'](left.name, onlyBlock ? DEADZONE : undefined)
+      } else {
+        yield* pattern(left, scope, { kind, hoist, onlyBlock })
+      }
+    }
+  } else if (left.type === 'Identifier') {
+    scope[kind](left.name, feed)
   } else {
-    yield* pattern(node.left, scope, { feed })
+    yield* pattern(left, scope, { kind, feed })
   }
 }

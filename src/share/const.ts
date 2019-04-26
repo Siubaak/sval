@@ -19,3 +19,5 @@ export const CLSCTOR = createSymbol('clsctor') // class constructor
 export const NEWTARGET = createSymbol('newtarget') // new.target
 
 export const NOINIT = createSymbol('noinit')
+
+export const DEADZONE = createSymbol('deadzone')

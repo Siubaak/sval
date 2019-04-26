@@ -1,10 +1,9 @@
 import { RETURN, SUPER, NOCTOR, CLSCTOR, NEWTARGET, SUPERCALL } from '../share/const'
-import { FunctionDeclaration, VariableDeclaration, ClassBody } from './declaration'
+import { VariableDeclaration, ClassBody } from './declaration'
 import { runAsync, runAsyncOptions } from '../share/async'
 import { define, inherits, assign } from '../share/util'
 import { Identifier } from '../evaluate_n/identifier'
 import { BlockStatement } from './statement'
-import { Var } from '../scope/variable'
 import * as estree from 'estree'
 import Scope from '../scope'
 import evaluate from '.'
@@ -34,6 +33,11 @@ export function* hoist(
     if (statement.type === 'FunctionDeclaration') {
       funcDclrList.push(statement)
       funcDclrIdxs.push(i)
+    } else if (
+      statement.type === 'VariableDeclaration'
+      && ['const', 'let'].indexOf(statement.kind) !== -1
+    ) {
+      yield* VariableDeclaration(statement, scope, { hoist: true, onlyBlock: true })
     } else if (!onlyBlock) {
       yield* hoistVarRecursion(statement as estree.Statement, scope)
     }
@@ -101,7 +105,7 @@ export function* pattern(node: estree.Pattern, scope: Scope, options: PatternOpt
     case 'RestElement':
       return yield* RestElement(node, scope, options)
     case 'AssignmentPattern':
-      return yield* AssignmentPattern(node, scope)
+      return yield* AssignmentPattern(node, scope, options)
     default:
       throw new SyntaxError('Unexpected token')
   }
@@ -262,7 +266,7 @@ export function* ForXHandler(
   if (left.type === 'VariableDeclaration') {
     yield* VariableDeclaration(left, subScope, { feed: value })
   } else if (left.type === 'Identifier') {
-    const variable: Var = yield* Identifier(left, scope, { getVar: true })
+    const variable = yield* Identifier(left, scope, { getVar: true })
     variable.set(value)
   } else {
     yield* pattern(left, scope, { feed: value })

@@ -1,7 +1,7 @@
 import { define, getDptor, assign, hasOwn } from '../share/util'
 import { pattern, createFunc, createClass } from './helper'
+import { NOINIT, DEADZONE } from '../share/const'
 import { VarKind } from '../scope/variable'
-import { NOINIT } from '../share/const'
 import * as estree from 'estree'
 import Scope from '../scope'
 import evaluate from '.'
@@ -15,6 +15,7 @@ export function* FunctionDeclaration(
 
 export interface VariableDeclarationOptions {
   hoist?: boolean
+  onlyBlock?: boolean
   feed?: any
 }
 
@@ -37,21 +38,16 @@ export function* VariableDeclarator(
   scope: Scope,
   options: VariableDeclaratorOptions & VariableDeclarationOptions = {},
 ) {
-  const { kind = 'let', hoist = false, feed } = options
+  const { kind = 'let', hoist = false, onlyBlock = false, feed } = options
   if (hoist) {
-    // hoist the var variable
-    if (kind === 'var') {
+    if (onlyBlock || kind === 'var') {
       if (node.id.type === 'Identifier') {
-        scope.var(node.id.name)
+        scope[onlyBlock ? kind : 'var'](node.id.name, onlyBlock ? DEADZONE : undefined)
       } else {
-        yield* pattern(node.id, scope, { kind, hoist })
+        yield* pattern(node.id, scope, { kind, hoist, onlyBlock })
       }
     }
-  } else if (
-    kind === 'var'
-    || kind === 'let'
-    || kind === 'const'
-  ) {
+  } else {
     const hasFeed = hasOwn(options, 'feed')
     const value = hasFeed ? feed : yield* evaluate(node.init, scope)
     if (node.id.type === 'Identifier') {
@@ -75,8 +71,6 @@ export function* VariableDeclarator(
     } else {
       yield* pattern(node.id, scope, { kind, feed: value })
     }
-  } else {
-    throw new SyntaxError('Unexpected identifier')
   }
 }
 

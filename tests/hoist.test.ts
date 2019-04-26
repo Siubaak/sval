@@ -152,15 +152,16 @@ describe('testing src/index.ts', () => {
     // delete (window as any).b
     delete (window as any).c
   })
-  it('should hoist var normally in destructure', () => {  
+  it('should hoist var normally in patterns', () => {  
     const interpreter = new Sval()
-    interpreter.run(`
+    const code = `
       a
       b
       c
       d
       e
       f
+      g
       var { a } = { a: 1 }
       var { u: b } = { u: 1 }
       var [c] = [1]
@@ -168,6 +169,36 @@ describe('testing src/index.ts', () => {
       var { v: { w: e } } = { v: { w: 1 } }
       var { x: [e] } = { x: [1] }
       var { x: [...f] } = { x: [1, 2] }
-    `)
+      var { ...g } = { a: 1, b: 2 }
+    `
+    interpreter.run(`!async function(){${code}}()`) // also test for generator env
+    interpreter.run(code)
+  })
+  it('should hoist const and let and simulate temporal dead zone', () => {  
+    const interpreter = new Sval()
+    try {
+      interpreter.run(`
+        const a = 1
+        {
+          a
+          const a = 2
+          a
+        }
+      `)
+    } catch (err) {
+      expect(err).toBeInstanceOf(ReferenceError)
+    }
+    try {
+      interpreter.run(`
+        let b = 1
+        {
+          b
+          let b = 2
+          b
+        }
+      `)
+    } catch (err) {
+      expect(err).toBeInstanceOf(ReferenceError)
+    }
   })
 })

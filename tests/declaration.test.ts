@@ -3,7 +3,7 @@ import Sval from '../src'
 describe('testing src/index.ts', () => {
   it('should declare var normally', () => {  
     const interpreter = new Sval()
-    interpreter.run(`
+    const code = `
       var a
       var a = 1
       var b = 2
@@ -52,7 +52,9 @@ describe('testing src/index.ts', () => {
       exports.h2 = h2
       exports.h3 = h3
       exports.h4 = h4
-    `)
+    `
+    interpreter.run(`!async function(){${code}}()`) // also test for generator env
+    interpreter.run(code)
     expect(interpreter.exports.a).toBe(1)
     expect(interpreter.exports.b).toBe(2)
     expect(interpreter.exports.c).toBeUndefined()
@@ -67,7 +69,7 @@ describe('testing src/index.ts', () => {
 
   it('should declare let normally', () => {  
     const interpreter = new Sval()
-    interpreter.run(`
+    const code = `
       let a = 1
       let b
       let c = function() {
@@ -80,7 +82,9 @@ describe('testing src/index.ts', () => {
       exports.b = b
       exports.c = c
       exports.d = d
-    `)
+    `
+    interpreter.run(`!async function(){${code}}()`) // also test for generator env
+    interpreter.run(code)
     expect(interpreter.exports.a).toBe(1)
     expect(interpreter.exports.b).toBeUndefined()
     expect(interpreter.exports.c()).toBe('c')
@@ -137,17 +141,14 @@ describe('testing src/index.ts', () => {
   it('should throw SyntaxError when declaring multiple times with `let`', () => {  
     const interpreter = new Sval()
 
-    let err
     try {
       interpreter.run(`
         let a = 1
         let a = 2
       `)
-    } catch (ex) {
-      err = ex
+    } catch (err) {
+      expect(err).toBeInstanceOf(SyntaxError)
     }
-
-    expect(err).toBeInstanceOf(SyntaxError)
   })
 
   it('should throw SyntaxError when declaring multiple times with `const`', () => {  
@@ -184,7 +185,7 @@ describe('testing src/index.ts', () => {
   it('should support declare variable with sequence', () => {  
     const interpreter = new Sval()
 
-    interpreter.run(`
+    const code = `
       var a = 1, b, c = function() { return 3 }
       let la = 1, lb, lc = function() { return 3 }
       const ca = 1, cb = function() { return 3 }
@@ -197,7 +198,9 @@ describe('testing src/index.ts', () => {
       exports.lc = lc
       exports.ca = ca
       exports.cb = cb
-    `)
+    `
+    interpreter.run(`!async function(){${code}}()`) // also test for generator env
+    interpreter.run(code)
 
     expect(interpreter.exports.a).toBe(1)
     expect(interpreter.exports.b).toBeUndefined()
@@ -214,7 +217,6 @@ describe('testing src/index.ts', () => {
   it('should throw SyntaxError when const does not have initializer in sequence', () => {  
     const interpreter = new Sval()
 
-    let err
     try {
       interpreter.run(`
         const ca = 1, cb, cc = function() { return 3 }
@@ -223,17 +225,15 @@ describe('testing src/index.ts', () => {
         exports.cb = cb
         exports.cc = cc
       `)
-    } catch(ex) {
-      err = ex
+    } catch(err) {
+      expect(err).toBeInstanceOf(SyntaxError)
     }
-
-    expect(err).toBeInstanceOf(SyntaxError)
   })
 
   it('should support nested variable definition within global + block', () => {  
     const interpreter = new Sval()
 
-    interpreter.run(`
+    const code = `
       let a = 5
       const b = 5
       var c = 5
@@ -249,7 +249,9 @@ describe('testing src/index.ts', () => {
       exports.outerA = a
       exports.outerB = b
       exports.outerC = c
-    `)
+    `
+    interpreter.run(`!async function(){${code}}()`) // also test for generator env
+    interpreter.run(code)
 
     expect(interpreter.exports.innerA).toBe(6)
     expect(interpreter.exports.outerA).toBe(5)
