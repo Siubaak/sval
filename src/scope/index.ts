@@ -78,7 +78,7 @@ export default class Scope {
       // If enter this branch, the scope will be the global scope
       // And the global scope should have window object
       const win = this.global().find('window').get()
-      if (name in window) {
+      if (name in win) {
         // Find property in window
         return new Prop(win, name)
       } else {
