@@ -85,6 +85,25 @@ describe('testing src/index.ts', () => {
     }
   })
 
+  it('should excute async function with params', done => {  
+    const interpreter = new Sval()
+    interpreter.import({ getItem, expect, done })
+    interpreter.run(`
+      a([1, 2, 3], [1, 2, 3])
+      async function a(input, expected) {
+        const res = []
+        for (const i of input) {
+          res.push(await getItem(i))
+        }
+        expect(res).toEqual(expected)
+        done()
+      }
+    `)
+    function getItem(n) {
+      return new Promise(resolve => setTimeout(resolve, 5, n))
+    }
+  })
+
   it('should excute async generator normally', done => {  
     const interpreter = new Sval()
     interpreter.import({ getItem, expect, done })

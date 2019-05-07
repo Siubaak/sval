@@ -5,16 +5,18 @@ describe('testing src/index.ts', () => {
     const interpreter = new Sval()
     interpreter.run(`
       const tmp = 'd'
-      const { a, b, c = 3, [tmp]: d } = { a: 1, b: 2, d: 4 }
+      const { a, b, c = 3, [tmp]: d, e = 2 } = { a: 1, b: 2, d: 4, e: 3 }
       exports.a = a
       exports.b = b
       exports.c = c
       exports.d = d
+      exports.e = e
     `)
     expect(interpreter.exports.a).toBe(1)
     expect(interpreter.exports.b).toBe(2)
     expect(interpreter.exports.c).toBe(3)
     expect(interpreter.exports.d).toBe(4)
+    expect(interpreter.exports.e).toBe(3)
   })
   it('should parse assign pattern normally', () => {  
     const interpreter = new Sval()
@@ -52,10 +54,16 @@ describe('testing src/index.ts', () => {
       const { ...e } = o
       const { a: f, ...g } = o
       const h = { a: 2, ...o, d: 4}
+      const [i = 3, [j, ...k], ...[x, y]] = [1, [2, 3, 4], [5, 6]]
       exports.e = e
       exports.f = f
       exports.g = g
       exports.h = h
+      exports.i = i
+      exports.j = j
+      exports.k = k
+      exports.x = x
+      exports.y = y
     `)
     expect(interpreter.exports.a).toEqual([1, 2])
     expect(interpreter.exports.b).toEqual([1, 2, 3])
@@ -65,6 +73,12 @@ describe('testing src/index.ts', () => {
     expect(interpreter.exports.f).toBe(1)
     expect(interpreter.exports.g).toEqual({ b: 2, c: 3 })
     expect(interpreter.exports.h).toEqual({ a: 1, b: 2, c: 3, d: 4 })
+    expect(interpreter.exports.i).toEqual(1)
+    expect(interpreter.exports.j).toEqual(2)
+    expect(interpreter.exports.k).toEqual([3,4])
+    expect(interpreter.exports.x).toEqual(5)
+    expect(interpreter.exports.y).toEqual(6)
+    expect(interpreter.exports.z).toEqual(4)
   })
   it('should parse rest element of function params normally', () => {  
     const interpreter = new Sval()

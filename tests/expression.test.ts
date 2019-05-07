@@ -167,4 +167,37 @@ describe('testing src/index.ts', () => {
     `)
     expect(interpreter.exports.a).toBe('hello world')
   })
+
+  it('should support object expression', () => {  
+    const interpreter = new Sval()
+    interpreter.import({ expect })
+    interpreter.run(`
+      const name = 'y'
+      const values = { a: 1, b: 2}
+      const a = {
+        x: 5,
+        [name]: 6,
+        ...values
+      }
+
+      expect(a).toEqual(result = {
+        x: 5,
+        y: 6,
+        a: 1,
+        b: 2
+      })
+    `)
+  })
+
+  it('should support logic expression', () => {  
+    const interpreter = new Sval()
+    interpreter.import({ expect })
+    interpreter.run(`
+      const x = 0
+      const y = true
+
+      expect(x && y).toBe(0)
+      expect(x || y).toBe(true)
+    `)
+  })
 })
