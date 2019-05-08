@@ -189,7 +189,9 @@ export function createFunc(
       return asyncIterator
     }
   } else if (node.async) {
-    func = (...args: any[]) => runAsync(tmpFunc(args))
+    func = function () {
+      return runAsync(tmpFunc(...arguments))
+    }
   } else {
     func = tmpFunc
   }
