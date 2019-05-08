@@ -101,7 +101,7 @@ describe('testing src/index.ts', () => {
             }
           }
         }
-      }
+      };
       (async function() {
         const res = []
         for await (let num of iterable) {
@@ -131,8 +131,7 @@ describe('testing src/index.ts', () => {
             }
           }
         }
-      }
-      
+      };
       (async function() {
         const res = []
         for await (let num of asyncIterable) {
