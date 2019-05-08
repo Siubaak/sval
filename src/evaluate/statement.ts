@@ -1,6 +1,6 @@
 import { BREAK, CONTINUE, RETURN, AWAIT } from '../share/const'
 import { hoist, pattern, ForXHandler } from './helper'
-import { getIterator } from '../share/util'
+import { getAsyncIterator } from '../share/util'
 import * as estree from 'estree'
 import Scope from '../scope'
 import evaluate from '.'
@@ -205,7 +205,7 @@ export function* ForOfStatement(node: estree.ForOfStatement, scope: Scope) {
   const right = yield* evaluate(node.right, scope)
   /*<remove>*/
   if ((node as any).await) {
-    const iterator = getIterator(right)
+    const iterator = getAsyncIterator(right)
     let ret: any
     for (
       AWAIT.RES = iterator.next(), ret = yield AWAIT;

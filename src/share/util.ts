@@ -95,7 +95,6 @@ try {
     try { globalObj.undefined = undefined                   } catch (err) { /* empty */ }
     try { globalObj.Boolean = Boolean                       } catch (err) { /* empty */ }
     try { globalObj.String = String                         } catch (err) { /* empty */ }
-    try { globalObj.Symbol = Symbol                         } catch (err) { /* empty */ }
     try { globalObj.Date = Date                             } catch (err) { /* empty */ }
     try { globalObj.Promise = Promise                       } catch (err) { /* empty */ }
     try { globalObj.RegExp = RegExp                         } catch (err) { /* empty */ }
@@ -144,6 +143,11 @@ try {
     try { globalObj.setInterval = setInterval               } catch (err) { /* empty */ }
     try { globalObj.setTimeout = setTimeout                 } catch (err) { /* empty */ }
     try { globalObj.crypto = crypto                         } catch (err) { /* empty */ }
+    try {
+      globalObj.Symbol = Symbol
+      !Symbol.iterator && ((Symbol.iterator as any) = createSymbol('iterator'))
+      !Symbol.asyncIterator && ((Symbol.asyncIterator as any) = createSymbol('asynciterator'))
+    } catch (err) { /* empty */ }
     names = getOwnNames(globalObj)
   }
 }
@@ -160,8 +164,12 @@ export function createSymbol(key: string) {
   return key + Math.random().toString(36).substring(2)
 }
 
-export function getIterator(obj: any) {
-  const iterator = typeof Symbol === 'function' && obj[Symbol.iterator]
+export function getAsyncIterator(obj: any) {
+  let iterator: any
+  if (typeof Symbol === 'function') {
+    iterator = obj[Symbol.asyncIterator]
+    !iterator && (iterator = obj[Symbol.iterator])
+  }
   if (iterator) {
     return iterator.call(obj)
   } else if (typeof obj.next === 'function') {
@@ -170,9 +178,7 @@ export function getIterator(obj: any) {
     let i = 0
     return {
       next() {
-        if (obj && i >= obj.length) {
-          obj = undefined
-        }
+        if (obj && i >= obj.length) obj = undefined
         return { value: obj && obj[i++], done: !obj }
       }
     }
