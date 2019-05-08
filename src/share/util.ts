@@ -95,6 +95,7 @@ try {
     try { globalObj.undefined = undefined                   } catch (err) { /* empty */ }
     try { globalObj.Boolean = Boolean                       } catch (err) { /* empty */ }
     try { globalObj.String = String                         } catch (err) { /* empty */ }
+    try { globalObj.Symbol = Symbol                         } catch (err) { /* empty */ }
     try { globalObj.Date = Date                             } catch (err) { /* empty */ }
     try { globalObj.Promise = Promise                       } catch (err) { /* empty */ }
     try { globalObj.RegExp = RegExp                         } catch (err) { /* empty */ }
@@ -143,13 +144,12 @@ try {
     try { globalObj.setInterval = setInterval               } catch (err) { /* empty */ }
     try { globalObj.setTimeout = setTimeout                 } catch (err) { /* empty */ }
     try { globalObj.crypto = crypto                         } catch (err) { /* empty */ }
-    try {
-      globalObj.Symbol = Symbol
-      !Symbol.iterator && ((Symbol.iterator as any) = createSymbol('iterator'))
-      !Symbol.asyncIterator && ((Symbol.asyncIterator as any) = createSymbol('asynciterator'))
-    } catch (err) { /* empty */ }
     names = getOwnNames(globalObj)
   }
+}
+if (globalObj.Symbol) {
+  !globalObj.Symbol.iterator && (globalObj.Symbol.iterator = createSymbol('iterator'))
+  !globalObj.Symbol.asyncIterator && (globalObj.Symbol.asyncIterator = createSymbol('asynciterator'))
 }
 const win = Object.create(null)
 for (let i = 0; i < names.length; i++) {

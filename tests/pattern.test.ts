@@ -78,7 +78,6 @@ describe('testing src/index.ts', () => {
     expect(interpreter.exports.k).toEqual([3,4])
     expect(interpreter.exports.x).toEqual(5)
     expect(interpreter.exports.y).toEqual(6)
-    expect(interpreter.exports.z).toEqual(4)
   })
   it('should parse rest element of function params normally', () => {  
     const interpreter = new Sval()
