@@ -60,6 +60,7 @@ export function* ArrayPattern(node: estree.ArrayPattern, scope: Scope, options: 
   const result = []
   for (let i = 0; i < node.elements.length; i++) {
     const element = node.elements[i]
+    if (!element) continue // for the case: let [ , x] = [1, 2]
     if (hoist) {
       if (onlyBlock || kind === 'var') {
         if (element.type === 'Identifier') {
