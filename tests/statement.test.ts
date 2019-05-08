@@ -9,6 +9,7 @@ describe('testing src/index.ts', () => {
       }
     `)
   })
+
   it('should for-in statement run normally', () => {  
     const interpreter = new Sval()
     interpreter.run(`
@@ -19,6 +20,7 @@ describe('testing src/index.ts', () => {
     `)
     expect(interpreter.exports.a).toEqual(['0', '1', '2'])
   })
+
   it('should for-of statement run normally', () => {  
     const interpreter = new Sval()
     interpreter.run(`
@@ -29,6 +31,7 @@ describe('testing src/index.ts', () => {
     `)
     expect(interpreter.exports.a).toEqual([1, 2, 3])
   })
+
   it('should for-await-of statement run normally', done => {  
     const interpreter = new Sval()
     interpreter.import({ getItem, expect, done })
@@ -52,6 +55,121 @@ describe('testing src/index.ts', () => {
       return new Promise(resolve => setTimeout(resolve, 5, n))
     }
   })
+
+  it('should support for-await-of with sync iterables', done => {  
+    const interpreter = new Sval()
+    interpreter.import({ expect, done })
+    interpreter.run(`
+      (async function run() {
+        const res = []
+        for await (const i of 'xyz') {
+          res.push(i)
+        }
+
+        for await (const i of ['a', 'b', 'c']) {
+          res.push(i)
+        }
+
+        for await (const i of {0: 1, 1: 2, 2: 3, length: 3}) {
+          res.push(i)
+        }
+
+        for await (const i of new Set([4, 5, 6])) {
+          res.push(i)
+        }
+        expect(res).toEqual(['x', 'y', 'z', 'a', 'b', 'c', 1, 2, 3, 4, 5, 6])
+
+        done()
+      })()
+    `)
+  })
+
+  // it('should support for-await-of with sync iterator', done => {  
+  //   const interpreter = new Sval()
+  //   interpreter.import({ expect, done })
+  //   interpreter.run(`
+  //   const iterable = {
+  //     [Symbol.iterator]() {
+  //       return {
+  //         i: 0,
+  //         next() {
+  //           if (this.i < 3) {
+  //             return ({ value: this.i++, done: false });
+  //           }
+    
+  //           return ({ done: true });
+  //         }
+  //       };
+  //     }
+  //   };
+    
+  //   (async function() {
+  //     const res = []
+  //     for await (let num of iterable) {
+  //       res.push(num)
+  //     }
+
+  //     expect(res).toEqual([0, 1, 2])
+
+  //     done()
+  //   })();
+  //   `)
+  // })
+
+  // it('should support for-await-of with async iterator', done => {  
+  //   const interpreter = new Sval()
+  //   interpreter.import({ expect, done })
+  //   interpreter.run(`
+  //   const asyncIterable = {
+  //     [Symbol.asyncIterator]() {
+  //       return {
+  //         i: 0,
+  //         next() {
+  //           if (this.i < 3) {
+  //             return Promise.resolve({ value: this.i++, done: false });
+  //           }
+    
+  //           return Promise.resolve({ done: true });
+  //         }
+  //       };
+  //     }
+  //   };
+    
+  //   (async function() {
+  //     const res = []
+  //     for await (let num of asyncIterable) {
+  //       res.push(num)
+  //     }
+
+  //     expect(res).toEqual([0, 1, 2])
+
+  //     done()
+  //   })();
+  //   `)
+  // })
+
+  // it('should support for-await-of with async generator', done => {  
+  //   const interpreter = new Sval()
+  //   interpreter.import({ expect, done })
+  //   interpreter.run(`
+  //     async function* asyncGenerator() {
+  //       var i = 0;
+  //       while (i < 3) {
+  //         yield i++;
+  //       }
+  //     }
+      
+  //     (async function() {
+  //       const res = []
+  //       for await (let num of asyncGenerator()) {
+  //         res.push(num)
+  //       }
+
+  //       expect(res).toEqual([0, 1, 2])
+  //       done()
+  //     })();
+  //   `)
+  // })
   
   it('should try statement run normally', () => {  
     const interpreter = new Sval({ ecmaVer: 10 })
