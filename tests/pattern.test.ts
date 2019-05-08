@@ -54,7 +54,7 @@ describe('testing src/index.ts', () => {
       const { ...e } = o
       const { a: f, ...g } = o
       const h = { a: 2, ...o, d: 4}
-      const [i = 3, [j, ...k], ...[x, y]] = [1, [2, 3, 4], [5, 6]]
+      const [i = 3, [j, ...k], ...[x, y]] = [1, [2, 3, 4], 5, 6]
       exports.e = e
       exports.f = f
       exports.g = g
@@ -95,6 +95,6 @@ describe('testing src/index.ts', () => {
     `)
     expect(interpreter.exports.b).toEqual([1, 2])
     expect(interpreter.exports.e).toEqual([2, 3])
-    expect(interpreter.exports.d).toBe(4)
+    expect(interpreter.exports.d).toBe(1)
   })
 })
