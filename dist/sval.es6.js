@@ -28,10 +28,7 @@
   function hasOwn(obj, key) {
       return hasOwnProperty.call(obj, key);
   }
-  const getOwnPropertyNames = Object.getOwnPropertyNames;
-  function getOwnNames(obj) {
-      return getOwnPropertyNames(obj);
-  }
+  const getOwnNames = Object.getOwnPropertyNames;
   const setPrototypeOf = Object.setPrototypeOf;
   function setProto(obj, proto) {
       setPrototypeOf ? setPrototypeOf(obj, proto) : obj.__proto__ = proto;
@@ -85,7 +82,7 @@
   }
   const assign = Object.assign || _assign;
   let names = [];
-  let globalObj = {};
+  let globalObj = Object.create(null);
   try {
       if (!window.Object)
           throw 0;
@@ -341,7 +338,11 @@
           names = getOwnNames(globalObj);
       }
   }
-  const win = {};
+  if (globalObj.Symbol) {
+      !globalObj.Symbol.iterator && (globalObj.Symbol.iterator = createSymbol('iterator'));
+      !globalObj.Symbol.asyncIterator && (globalObj.Symbol.asyncIterator = createSymbol('asynciterator'));
+  }
+  const win = Object.create(null);
   for (let i = 0; i < names.length; i++) {
       const name = names[i];
       try {
@@ -350,13 +351,17 @@
       catch (err) { }
   }
   function createSandBox() {
-      return assign({}, win);
+      return assign(Object.create(null), win);
   }
   function createSymbol(key) {
       return key + Math.random().toString(36).substring(2);
   }
-  function getIterator(obj) {
-      const iterator = typeof Symbol === 'function' && obj[Symbol.iterator];
+  function getAsyncIterator(obj) {
+      let iterator;
+      if (typeof Symbol === 'function') {
+          iterator = obj[Symbol.asyncIterator];
+          !iterator && (iterator = obj[Symbol.iterator]);
+      }
       if (iterator) {
           return iterator.call(obj);
       }
@@ -367,16 +372,15 @@
           let i = 0;
           return {
               next() {
-                  if (obj && i >= obj.length) {
+                  if (obj && i >= obj.length)
                       obj = undefined;
-                  }
                   return { value: obj && obj[i++], done: !obj };
               }
           };
       }
   }
 
-  var version = "0.4.3";
+  var version = "0.4.4";
 
   const AWAIT = { RES: undefined };
   const RETURN = { RES: undefined };
@@ -439,16 +443,14 @@
       }
       clone() {
           const cloneScope = new Scope(this.parent, this.isolated);
-          const names = getOwnNames(this.context);
-          for (let i = 0; i < names.length; i++) {
-              const name = names[i];
+          for (const name in this.context) {
               const variable = this.context[name];
               cloneScope[variable.kind](name, variable.get());
           }
           return cloneScope;
       }
       find(name) {
-          if (hasOwn(this.context, name)) {
+          if (this.context[name]) {
               return this.context[name];
           }
           else if (this.parent) {
@@ -456,7 +458,7 @@
           }
           else {
               const win = this.global().find('window').get();
-              if (hasOwn(win, name)) {
+              if (name in win) {
                   return new Prop(win, name);
               }
               else {
@@ -1370,8 +1372,7 @@
       }
   }
   function AssignmentPattern(node, scope, options = {}) {
-      const { kind = 'let', hoist = false, onlyBlock = false } = options;
-      const feed = evaluate(node.right, scope);
+      const { kind = 'let', hoist = false, onlyBlock = false, feed = evaluate(node.right, scope) } = options;
       const left = node.left;
       if (hoist) {
           if (onlyBlock || kind === 'var') {
@@ -1445,7 +1446,7 @@
           }
       }
       else {
-          const hasFeed = hasOwn(options, 'feed');
+          const hasFeed = 'feed' in options;
           const value = hasFeed ? feed : evaluate(node.init, scope);
           if (node.id.type === 'Identifier') {
               const name = node.id.name;
@@ -2244,7 +2245,7 @@
   function* ForOfStatement$1(node, scope) {
       const right = yield* evaluate$1(node.right, scope);
       if (node.await) {
-          const iterator = getIterator(right);
+          const iterator = getAsyncIterator(right);
           let ret;
           for (AWAIT.RES = iterator.next(), ret = yield AWAIT; !ret.done; AWAIT.RES = iterator.next(), ret = yield AWAIT) {
               const result = yield* ForXHandler(node, scope, { value: ret.value });
@@ -2405,8 +2406,7 @@
       }
   }
   function* AssignmentPattern$1(node, scope, options = {}) {
-      const { kind = 'let', hoist = false, onlyBlock = false } = options;
-      const feed = yield* evaluate$1(node.right, scope);
+      const { kind = 'let', hoist = false, onlyBlock = false, feed = yield* evaluate$1(node.right, scope) } = options;
       const left = node.left;
       if (hoist) {
           if (onlyBlock || kind === 'var') {
@@ -2470,7 +2470,7 @@
           }
       }
       else {
-          const hasFeed = hasOwn(options, 'feed');
+          const hasFeed = 'feed' in options;
           const value = hasFeed ? feed : yield* evaluate$1(node.init, scope);
           if (node.id.type === 'Identifier') {
               const name = node.id.name;
@@ -2554,10 +2554,10 @@
   function runAsync(iterator, options = {}) {
       const { res, err, ret, fullRet } = options;
       return new Promise((resolve, reject) => {
-          if (hasOwn(options, 'ret')) {
+          if ('ret' in options) {
               return resolve(iterator.return(ret));
           }
-          if (hasOwn(options, 'err')) {
+          if ('err' in options) {
               onRejected(err);
           }
           else {
@@ -2731,8 +2731,8 @@
       };
       let func;
       if (node.async && node.generator) {
-          func = function (...args) {
-              const iterator = tmpFunc(args);
+          func = function () {
+              const iterator = tmpFunc.apply(void 0, arguments);
               let last = Promise.resolve();
               const run = (opts) => last = last.then(() => runAsync(iterator, assign({ fullRet: true }, opts)));
               const asyncIterator = {
@@ -2747,7 +2747,7 @@
           };
       }
       else if (node.async) {
-          func = (...args) => runAsync(tmpFunc(args));
+          func = function () { return runAsync(tmpFunc.apply(void 0, arguments)); };
       }
       else {
           func = tmpFunc;

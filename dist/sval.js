@@ -28,10 +28,7 @@
   function hasOwn(obj, key) {
       return hasOwnProperty.call(obj, key);
   }
-  var getOwnPropertyNames = Object.getOwnPropertyNames;
-  function getOwnNames(obj) {
-      return getOwnPropertyNames(obj);
-  }
+  var getOwnNames = Object.getOwnPropertyNames;
   var setPrototypeOf = Object.setPrototypeOf;
   function setProto(obj, proto) {
       setPrototypeOf ? setPrototypeOf(obj, proto) : obj.__proto__ = proto;
@@ -85,7 +82,7 @@
   }
   var assign = Object.assign || _assign;
   var names = [];
-  var globalObj = {};
+  var globalObj = Object.create(null);
   try {
       if (!window.Object)
           throw 0;
@@ -341,7 +338,11 @@
           names = getOwnNames(globalObj);
       }
   }
-  var win = {};
+  if (globalObj.Symbol) {
+      !globalObj.Symbol.iterator && (globalObj.Symbol.iterator = createSymbol('iterator'));
+      !globalObj.Symbol.asyncIterator && (globalObj.Symbol.asyncIterator = createSymbol('asynciterator'));
+  }
+  var win = Object.create(null);
   for (var i = 0; i < names.length; i++) {
       var name_1 = names[i];
       try {
@@ -350,13 +351,17 @@
       catch (err) { }
   }
   function createSandBox() {
-      return assign({}, win);
+      return assign(Object.create(null), win);
   }
   function createSymbol(key) {
       return key + Math.random().toString(36).substring(2);
   }
-  function getIterator(obj) {
-      var iterator = typeof Symbol === 'function' && obj[Symbol.iterator];
+  function getAsyncIterator(obj) {
+      var iterator;
+      if (typeof Symbol === 'function') {
+          iterator = obj[Symbol.asyncIterator];
+          !iterator && (iterator = obj[Symbol.iterator]);
+      }
       if (iterator) {
           return iterator.call(obj);
       }
@@ -367,16 +372,15 @@
           var i_1 = 0;
           return {
               next: function () {
-                  if (obj && i_1 >= obj.length) {
+                  if (obj && i_1 >= obj.length)
                       obj = undefined;
-                  }
                   return { value: obj && obj[i_1++], done: !obj };
               }
           };
       }
   }
 
-  var version = "0.4.3";
+  var version = "0.4.4";
 
   var AWAIT = { RES: undefined };
   var RETURN = { RES: undefined };
@@ -443,16 +447,14 @@
       };
       Scope.prototype.clone = function () {
           var cloneScope = new Scope(this.parent, this.isolated);
-          var names = getOwnNames(this.context);
-          for (var i = 0; i < names.length; i++) {
-              var name_1 = names[i];
+          for (var name_1 in this.context) {
               var variable = this.context[name_1];
               cloneScope[variable.kind](name_1, variable.get());
           }
           return cloneScope;
       };
       Scope.prototype.find = function (name) {
-          if (hasOwn(this.context, name)) {
+          if (this.context[name]) {
               return this.context[name];
           }
           else if (this.parent) {
@@ -460,7 +462,7 @@
           }
           else {
               var win = this.global().find('window').get();
-              if (hasOwn(win, name)) {
+              if (name in win) {
                   return new Prop(win, name);
               }
               else {
@@ -1602,8 +1604,7 @@
   }
   function AssignmentPattern(node, scope, options) {
       if (options === void 0) { options = {}; }
-      var _a = options.kind, kind = _a === void 0 ? 'let' : _a, _b = options.hoist, hoist = _b === void 0 ? false : _b, _c = options.onlyBlock, onlyBlock = _c === void 0 ? false : _c;
-      var feed = evaluate(node.right, scope);
+      var _a = options.kind, kind = _a === void 0 ? 'let' : _a, _b = options.hoist, hoist = _b === void 0 ? false : _b, _c = options.onlyBlock, onlyBlock = _c === void 0 ? false : _c, _d = options.feed, feed = _d === void 0 ? evaluate(node.right, scope) : _d;
       var left = node.left;
       if (hoist) {
           if (onlyBlock || kind === 'var') {
@@ -1679,7 +1680,7 @@
           }
       }
       else {
-          var hasFeed = hasOwn(options, 'feed');
+          var hasFeed = 'feed' in options;
           var value = hasFeed ? feed : evaluate(node.init, scope);
           if (node.id.type === 'Identifier') {
               var name_1 = node.id.name;
@@ -2949,7 +2950,7 @@
               case 1:
                   right = _b.sent();
                   if (!node.await) return [3, 8];
-                  iterator = getIterator(right);
+                  iterator = getAsyncIterator(right);
                   ret = void 0;
                   AWAIT.RES = iterator.next();
                   return [4, AWAIT];
@@ -3199,35 +3200,42 @@
       });
   }
   function AssignmentPattern$1(node, scope, options) {
-      var _a, kind, _b, hoist, _c, onlyBlock, feed, left;
+      var _a, kind, _b, hoist, _c, onlyBlock, _d, feed, _e, left;
       if (options === void 0) { options = {}; }
-      return __generator(this, function (_d) {
-          switch (_d.label) {
+      return __generator(this, function (_f) {
+          switch (_f.label) {
               case 0:
-                  _a = options.kind, kind = _a === void 0 ? 'let' : _a, _b = options.hoist, hoist = _b === void 0 ? false : _b, _c = options.onlyBlock, onlyBlock = _c === void 0 ? false : _c;
+                  _a = options.kind, kind = _a === void 0 ? 'let' : _a, _b = options.hoist, hoist = _b === void 0 ? false : _b, _c = options.onlyBlock, onlyBlock = _c === void 0 ? false : _c, _d = options.feed;
+                  if (!(_d === void 0)) return [3, 2];
                   return [5, __values(evaluate$1(node.right, scope))];
               case 1:
-                  feed = _d.sent();
-                  left = node.left;
-                  if (!hoist) return [3, 5];
-                  if (!(onlyBlock || kind === 'var')) return [3, 4];
-                  if (!(left.type === 'Identifier')) return [3, 2];
-                  scope[onlyBlock ? kind : 'var'](left.name, onlyBlock ? DEADZONE : undefined);
-                  return [3, 4];
-              case 2: return [5, __values(pattern$2(left, scope, { kind: kind, hoist: hoist, onlyBlock: onlyBlock }))];
+                  _e = _f.sent();
+                  return [3, 3];
+              case 2:
+                  _e = _d;
+                  _f.label = 3;
               case 3:
-                  _d.sent();
-                  _d.label = 4;
-              case 4: return [3, 8];
+                  feed = _e;
+                  left = node.left;
+                  if (!hoist) return [3, 7];
+                  if (!(onlyBlock || kind === 'var')) return [3, 6];
+                  if (!(left.type === 'Identifier')) return [3, 4];
+                  scope[onlyBlock ? kind : 'var'](left.name, onlyBlock ? DEADZONE : undefined);
+                  return [3, 6];
+              case 4: return [5, __values(pattern$2(left, scope, { kind: kind, hoist: hoist, onlyBlock: onlyBlock }))];
               case 5:
-                  if (!(left.type === 'Identifier')) return [3, 6];
-                  scope[kind](left.name, feed);
-                  return [3, 8];
-              case 6: return [5, __values(pattern$2(left, scope, { kind: kind, feed: feed }))];
+                  _f.sent();
+                  _f.label = 6;
+              case 6: return [3, 10];
               case 7:
-                  _d.sent();
-                  _d.label = 8;
-              case 8: return [2];
+                  if (!(left.type === 'Identifier')) return [3, 8];
+                  scope[kind](left.name, feed);
+                  return [3, 10];
+              case 8: return [5, __values(pattern$2(left, scope, { kind: kind, feed: feed }))];
+              case 9:
+                  _f.sent();
+                  _f.label = 10;
+              case 10: return [2];
           }
       });
   }
@@ -3304,7 +3312,7 @@
                   _e.label = 3;
               case 3: return [3, 10];
               case 4:
-                  hasFeed = hasOwn(options, 'feed');
+                  hasFeed = 'feed' in options;
                   if (!hasFeed) return [3, 5];
                   _d = feed;
                   return [3, 7];
@@ -3439,10 +3447,10 @@
       if (options === void 0) { options = {}; }
       var res = options.res, err = options.err, ret = options.ret, fullRet = options.fullRet;
       return new Promise(function (resolve, reject) {
-          if (hasOwn(options, 'ret')) {
+          if ('ret' in options) {
               return resolve(iterator.return(ret));
           }
-          if (hasOwn(options, 'err')) {
+          if ('err' in options) {
               onRejected(err);
           }
           else {
@@ -3737,11 +3745,7 @@
       var func;
       if (node.async && node.generator) {
           func = function () {
-              var args = [];
-              for (var _i = 0; _i < arguments.length; _i++) {
-                  args[_i] = arguments[_i];
-              }
-              var iterator = tmpFunc(args);
+              var iterator = tmpFunc.apply(void 0, arguments);
               var last = Promise.resolve();
               var run = function (opts) {
                   return last = last.then(function () { return runAsync(iterator, assign({ fullRet: true }, opts)); });
@@ -3758,13 +3762,7 @@
           };
       }
       else if (node.async) {
-          func = function () {
-              var args = [];
-              for (var _i = 0; _i < arguments.length; _i++) {
-                  args[_i] = arguments[_i];
-              }
-              return runAsync(tmpFunc(args));
-          };
+          func = function () { return runAsync(tmpFunc.apply(void 0, arguments)); };
       }
       else {
           func = tmpFunc;
