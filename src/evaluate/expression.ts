@@ -81,16 +81,11 @@ export function* FunctionExpression(node: estree.FunctionExpression, scope: Scop
 export function* UnaryExpression(node: estree.UnaryExpression, scope: Scope) {
   const arg = node.argument
   switch (node.operator) {
-    case '+':
-      return +(yield* evaluate(arg, scope))
-    case '-':
-      return -(yield* evaluate(arg, scope))
-    case '!':
-      return !(yield* evaluate(arg, scope))
-    case '~':
-      return ~(yield* evaluate(arg, scope))
-    case 'void':
-      return void (yield* evaluate(arg, scope))
+    case '+': return +(yield* evaluate(arg, scope))
+    case '-': return -(yield* evaluate(arg, scope))
+    case '!': return !(yield* evaluate(arg, scope))
+    case '~': return ~(yield* evaluate(arg, scope))
+    case 'void': return void (yield* evaluate(arg, scope))
     case 'typeof':
       if (arg.type === 'Identifier') {
         return typeof (yield* Identifier(arg, scope, { throwErr: false }))
@@ -107,8 +102,7 @@ export function* UnaryExpression(node: estree.UnaryExpression, scope: Scope) {
       } else {
         throw new SyntaxError('Unexpected token')
       }
-    default:
-      throw new SyntaxError(`Unexpected token ${node.operator}`)
+    default: throw new SyntaxError(`Unexpected token ${node.operator}`)
   }
 }
 
@@ -140,36 +134,30 @@ export function* BinaryExpression(node: estree.BinaryExpression, scope: Scope) {
   const left = yield* evaluate(node.left, scope)
   const right = yield* evaluate(node.right, scope)
 
-  const binaryOps = {
-    '==': () => left == right,
-    '!=': () => left != right,
-    '===': () => left === right,
-    '!==': () => left !== right,
-    '<': () => left < right,
-    '<=': () => left <= right,
-    '>': () => left > right,
-    '>=': () => left >= right,
-    '<<': () => left << right,
-    '>>': () => left >> right,
-    '>>>': () => left >>> right,
-    '+': () => left + right,
-    '-': () => left - right,
-    '*': () => left * right,
-    '**': () => left ** right,
-    '/': () => left / right,
-    '%': () => left % right,
-    '|': () => left | right,
-    '^': () => left ^ right,
-    '&': () => left & right,
-    'in': () => left in right,
-    'instanceof': () => left instanceof right,
-  }
-
-  const handler = binaryOps[node.operator]
-  if (handler) {
-    return handler()
-  } else {
-    throw new SyntaxError(`Unexpected token ${node.operator}`)
+  switch (node.operator) {
+    case '==': return left == right
+    case '!=': return left != right
+    case '===': return left === right
+    case '!==': return left !== right
+    case '<': return left < right
+    case '<=': return left <= right
+    case '>': return left > right
+    case '>=': return left >= right
+    case '<<': return left << right
+    case '>>': return left >> right
+    case '>>>': return left >>> right
+    case '+': return left + right
+    case '-': return left - right
+    case '*': return left * right
+    case '**': return left ** right
+    case '/': return left / right
+    case '%': return left % right
+    case '|': return left | right
+    case '^': return left ^ right
+    case '&': return left & right
+    case 'in': return left in right
+    case 'instanceof': return left instanceof right
+    default: throw new SyntaxError(`Unexpected token ${node.operator}`)
   }
 }
 
@@ -191,66 +179,21 @@ export function* AssignmentExpression(node: estree.AssignmentExpression, scope: 
     return yield* pattern(left, scope, { feed: value })
   }
 
-  const assignOps = {
-    '=': () => {
-      variable.set(value)
-      return variable.get()
-    },
-    '+=': () => {
-      variable.set(variable.get() + value)
-      return variable.get()
-    },
-    '-=': () => {
-      variable.set(variable.get() - value)
-      return variable.get()
-    },
-    '*=': () => {
-      variable.set(variable.get() * value)
-      return variable.get()
-    },
-    '/=': () => {
-      variable.set(variable.get() / value)
-      return variable.get()
-    },
-    '%=': () => {
-      variable.set(variable.get() % value)
-      return variable.get()
-    },
-    '**=': () => {
-      variable.set(variable.get() ** value)
-      return variable.get()
-    },
-    '<<=': () => {
-      variable.set(variable.get() << value)
-      return variable.get()
-    },
-    '>>=': () => {
-      variable.set(variable.get() >> value)
-      return variable.get()
-    },
-    '>>>=': () => {
-      variable.set(variable.get() >>> value)
-      return variable.get()
-    },
-    '|=': () => {
-      variable.set(variable.get() | value)
-      return variable.get()
-    },
-    '^=': () => {
-      variable.set(variable.get() ^ value)
-      return variable.get()
-    },
-    '&=': () => {
-      variable.set(variable.get() & value)
-      return variable.get()
-    },
-  }
-  
-  const handler = assignOps[node.operator]
-  if (handler) {
-    return handler()
-  } else {
-    throw new SyntaxError(`Unexpected token ${node.operator}`)
+  switch (node.operator) {
+    case '=': return variable.set(value)
+    case '+=': return variable.set(variable.get() + value)
+    case '-=': return variable.set(variable.get() - value)
+    case '*=': return variable.set(variable.get() * value)
+    case '/=': return variable.set(variable.get() / value)
+    case '%=': return variable.set(variable.get() % value)
+    case '**=': return variable.set(variable.get() ** value)
+    case '<<=': return variable.set(variable.get() << value)
+    case '>>=': return variable.set(variable.get() >> value)
+    case '>>>=': return variable.set(variable.get() >>> value)
+    case '|=': return variable.set(variable.get() | value)
+    case '^=': return variable.set(variable.get() ^ value)
+    case '&=': return variable.set(variable.get() & value)
+    default: throw new SyntaxError(`Unexpected token ${node.operator}`)
   }
 }
 
