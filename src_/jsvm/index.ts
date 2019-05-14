@@ -1,5 +1,5 @@
 import State from '../state'
-import { OP } from '../share/const';
+import { OP } from '../share/const'
 
 export default function execute(state: State) {
   const opCodes = state.opCodes
@@ -33,45 +33,33 @@ export default function execute(state: State) {
         const right = stack.pop()
         const left = stack.pop()
         switch (code.val) {
-          case '+':
-            stack.push(left + right)
-            break
-          case '<':
-            stack.push(left < right)
-            break
-          default:
+          case '+': stack.push(left + right); break
+          case '-': stack.push(left - right); break
+          case '*': stack.push(left * right); break
+          case '/': stack.push(left / right); break
 
+          case '==': stack.push(left == right); break
+          case '!=': stack.push(left != right); break
+          case '===': stack.push(left === right); break
+          case '!==': stack.push(left !== right); break
+          case '<': stack.push(left < right); break
+          case '<=': stack.push(left <= right); break
+          case '>': stack.push(left > right); break
+          case '>=': stack.push(left >= right); break
+
+          case 'in': stack.push(left in right); break
+          case 'instanceof': stack.push(left instanceof right); break
+
+          case '**': stack.push(left ** right); break
+          case '%': stack.push(left % right); break
+          case '|': stack.push(left | right); break
+          case '^': stack.push(left ^ right); break
+          case '&': stack.push(left & right); break
+          case '<<': stack.push(left << right); break
+          case '>>': stack.push(left >> right); break
+          case '>>>': stack.push(left >>> right); break
+          default: throw new SyntaxError(`Unexpected token ${code.val}`)
         }
-        // const binaryOps: any = {
-        //   '==': () => left == right,
-        //   '!=': () => left != right,
-        //   '===': () => left === right,
-        //   '!==': () => left !== right,
-        //   '<': () => left < right,
-        //   '<=': () => left <= right,
-        //   '>': () => left > right,
-        //   '>=': () => left >= right,
-        //   '<<': () => left << right,
-        //   '>>': () => left >> right,
-        //   '>>>': () => left >>> right,
-        //   '+': () => left + right,
-        //   '-': () => left - right,
-        //   '*': () => left * right,
-        //   '**': () => left ** right,
-        //   '/': () => left / right,
-        //   '%': () => left % right,
-        //   '|': () => left | right,
-        //   '^': () => left ^ right,
-        //   '&': () => left & right,
-        //   'in': () => left in right,
-        //   'instanceof': () => left instanceof right,
-        // }
-        // const handler = binaryOps[code.val]
-        // if (handler) {
-        //   stack.push(handler())
-        // } else {
-        //   throw new SyntaxError(`Unexpected token ${code.val}`)
-        // }
         break
       }
       case OP.UPOP: {
