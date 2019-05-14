@@ -6,9 +6,10 @@ import * as identifier from './identifier'
 import * as program from './program'
 import * as statement from './statement'
 import * as expression from './expression'
+import * as declaration from './declaration'
 
 const handlers: any = Object.assign(
-  {}, literal, identifier, program, statement, expression
+  {}, literal, identifier, program, statement, expression, declaration
 )
 
 export default function compile(node: Node, state: State) {

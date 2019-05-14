@@ -6,8 +6,17 @@ import { OP } from '../share/const'
 export function BinaryExpression(node: estree.BinaryExpression, state: State) {
   compile(node.left, state)
   compile(node.right, state)
-  state.opcodes.push({
-    op: OP.CMP,
-    val: node.operator
-  })
+  state.opCodes.push({ op: OP.BIOP, val: node.operator })
+}
+
+export function AssignmentExpression(node: estree.AssignmentExpression, state: State) {
+  compile(node.right, state)
+  if (node.left.type === 'Identifier') {
+    const binaryOp = node.operator.substring(0, node.operator.length - 1)
+    if (binaryOp) {
+      state.opCodes.push({ op: OP.LOADV, val: node.left.name })
+      state.opCodes.push({ op: OP.BIOP, val: binaryOp })
+    }
+    state.opCodes.push({ op: OP.MOVE, val: node.left.name })
+  }
 }

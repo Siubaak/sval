@@ -7,9 +7,8 @@ export enum OP {
   FUNC,
   MOVE,
   JMP,
-  CMP,
-  ADD,
-  SUB,
-  MUL,
-  DIV
+  BIOP,
+  UPOP,
+  UNOP,
+  IFJMP
 }

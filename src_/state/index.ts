@@ -1,8 +1,12 @@
 import { OP } from '../share/const'
 
 export default class State {
-  opcodes: {
+  stack: any[] = []
+  context: {
+    [name: string]: any
+  } = {}
+  opCodes: {
     op: OP,
-    val: any
+    val?: any
   }[] = []
 }
