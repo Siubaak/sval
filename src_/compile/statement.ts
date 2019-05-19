@@ -17,12 +17,12 @@ export function IfStatement(node: estree.IfStatement, state: State) {
   compile(node.test, state)
   const ifCode: any = { op: OP.IFJMP }
   state.opCodes.push(ifCode)
-  compile(node.alternate, state) // else
+  compile(node.alternate, state)
   const elseCode: any = { op: OP.JMP }
   state.opCodes.push(elseCode)
   ifCode.val = state.opCodes.length // if true, jump to consequent
   compile(node.consequent, state)
-  elseCode.val = state.opCodes.length // if true, jump to consequent
+  elseCode.val = state.opCodes.length // if false, jump to alternate
 }
 
 export function ForStatement(node: estree.ForStatement, state: State) {

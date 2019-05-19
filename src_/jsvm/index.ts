@@ -17,10 +17,22 @@ export default function execute(state: State) {
         stack.push(context[code.val])
         break
       }
-      case OP.CONST:
-      case OP.LET:
-      case OP.VAR:
-      case OP.FUNC:
+      case OP.CONST:{
+        context[code.val] = stack.pop()
+        break
+      }
+      case OP.LET:{
+        context[code.val] = stack.pop()
+        break
+      }
+      case OP.FUNC: {
+        context[code.val] = stack.pop()
+        break
+      }
+      case OP.VAR:{
+        context[code.val] = stack.pop()
+        break
+      }
       case OP.MOVE: {
         context[code.val] = stack.pop()
         break
@@ -33,11 +45,11 @@ export default function execute(state: State) {
         const right = stack.pop()
         const left = stack.pop()
         switch (code.val) {
+          // very often used
           case '+': stack.push(left + right); break
           case '-': stack.push(left - right); break
           case '*': stack.push(left * right); break
           case '/': stack.push(left / right); break
-
           case '==': stack.push(left == right); break
           case '!=': stack.push(left != right); break
           case '===': stack.push(left === right); break
@@ -46,10 +58,9 @@ export default function execute(state: State) {
           case '<=': stack.push(left <= right); break
           case '>': stack.push(left > right); break
           case '>=': stack.push(left >= right); break
-
           case 'in': stack.push(left in right); break
           case 'instanceof': stack.push(left instanceof right); break
-
+          // not quite often used
           case '**': stack.push(left ** right); break
           case '%': stack.push(left % right); break
           case '|': stack.push(left | right); break

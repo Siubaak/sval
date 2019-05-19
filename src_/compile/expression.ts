@@ -14,9 +14,9 @@ export function AssignmentExpression(node: estree.AssignmentExpression, state: S
   if (node.left.type === 'Identifier') {
     const binaryOp = node.operator.substring(0, node.operator.length - 1)
     if (binaryOp) {
-      state.opCodes.push({ op: OP.LOADV, val: node.left.name })
+      state.opCodes.push({ op: OP.LOADV, val: state.symbols[node.left.name] })
       state.opCodes.push({ op: OP.BIOP, val: binaryOp })
     }
-    state.opCodes.push({ op: OP.MOVE, val: node.left.name })
+    state.opCodes.push({ op: OP.MOVE, val: state.symbols[node.left.name] })
   }
 }
