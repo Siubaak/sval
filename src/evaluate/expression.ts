@@ -180,19 +180,19 @@ export function* AssignmentExpression(node: estree.AssignmentExpression, scope: 
   }
 
   switch (node.operator) {
-    case '=': return variable.set(value)
-    case '+=': return variable.set(variable.get() + value)
-    case '-=': return variable.set(variable.get() - value)
-    case '*=': return variable.set(variable.get() * value)
-    case '/=': return variable.set(variable.get() / value)
-    case '%=': return variable.set(variable.get() % value)
-    case '**=': return variable.set(variable.get() ** value)
-    case '<<=': return variable.set(variable.get() << value)
-    case '>>=': return variable.set(variable.get() >> value)
-    case '>>>=': return variable.set(variable.get() >>> value)
-    case '|=': return variable.set(variable.get() | value)
-    case '^=': return variable.set(variable.get() ^ value)
-    case '&=': return variable.set(variable.get() & value)
+    case '=': variable.set(value); return variable.get()
+    case '+=': variable.set(variable.get() + value); return variable.get()
+    case '-=': variable.set(variable.get() - value); return variable.get()
+    case '*=': variable.set(variable.get() * value); return variable.get()
+    case '/=': variable.set(variable.get() / value); return variable.get()
+    case '%=': variable.set(variable.get() % value); return variable.get()
+    case '**=': variable.set(variable.get() ** value); return variable.get()
+    case '<<=': variable.set(variable.get() << value); return variable.get()
+    case '>>=': variable.set(variable.get() >> value); return variable.get()
+    case '>>>=': variable.set(variable.get() >>> value); return variable.get()
+    case '|=': variable.set(variable.get() | value); return variable.get()
+    case '^=': variable.set(variable.get() ^ value); return variable.get()
+    case '&=': variable.set(variable.get() & value); return variable.get()
     default: throw new SyntaxError(`Unexpected token ${node.operator}`)
   }
 }
