@@ -380,7 +380,7 @@
       }
   }
 
-  var version = "0.4.4";
+  var version = "0.4.5";
 
   var AWAIT = { RES: undefined };
   var RETURN = { RES: undefined };
@@ -848,16 +848,11 @@
   function UnaryExpression(node, scope) {
       var arg = node.argument;
       switch (node.operator) {
-          case '+':
-              return +(evaluate(arg, scope));
-          case '-':
-              return -(evaluate(arg, scope));
-          case '!':
-              return !(evaluate(arg, scope));
-          case '~':
-              return ~(evaluate(arg, scope));
-          case 'void':
-              return void (evaluate(arg, scope));
+          case '+': return +(evaluate(arg, scope));
+          case '-': return -(evaluate(arg, scope));
+          case '!': return !(evaluate(arg, scope));
+          case '~': return ~(evaluate(arg, scope));
+          case 'void': return void (evaluate(arg, scope));
           case 'typeof':
               if (arg.type === 'Identifier') {
                   return typeof (Identifier(arg, scope, { throwErr: false }));
@@ -877,8 +872,7 @@
               else {
                   throw new SyntaxError('Unexpected token');
               }
-          default:
-              throw new SyntaxError("Unexpected token " + node.operator);
+          default: throw new SyntaxError("Unexpected token " + node.operator);
       }
   }
   function UpdateExpression(node, scope) {
@@ -909,36 +903,30 @@
   function BinaryExpression(node, scope) {
       var left = evaluate(node.left, scope);
       var right = evaluate(node.right, scope);
-      var binaryOps = {
-          '==': function () { return left == right; },
-          '!=': function () { return left != right; },
-          '===': function () { return left === right; },
-          '!==': function () { return left !== right; },
-          '<': function () { return left < right; },
-          '<=': function () { return left <= right; },
-          '>': function () { return left > right; },
-          '>=': function () { return left >= right; },
-          '<<': function () { return left << right; },
-          '>>': function () { return left >> right; },
-          '>>>': function () { return left >>> right; },
-          '+': function () { return left + right; },
-          '-': function () { return left - right; },
-          '*': function () { return left * right; },
-          '**': function () { return Math.pow(left, right); },
-          '/': function () { return left / right; },
-          '%': function () { return left % right; },
-          '|': function () { return left | right; },
-          '^': function () { return left ^ right; },
-          '&': function () { return left & right; },
-          'in': function () { return left in right; },
-          'instanceof': function () { return left instanceof right; },
-      };
-      var handler = binaryOps[node.operator];
-      if (handler) {
-          return handler();
-      }
-      else {
-          throw new SyntaxError("Unexpected token " + node.operator);
+      switch (node.operator) {
+          case '==': return left == right;
+          case '!=': return left != right;
+          case '===': return left === right;
+          case '!==': return left !== right;
+          case '<': return left < right;
+          case '<=': return left <= right;
+          case '>': return left > right;
+          case '>=': return left >= right;
+          case '<<': return left << right;
+          case '>>': return left >> right;
+          case '>>>': return left >>> right;
+          case '+': return left + right;
+          case '-': return left - right;
+          case '*': return left * right;
+          case '**': return Math.pow(left, right);
+          case '/': return left / right;
+          case '%': return left % right;
+          case '|': return left | right;
+          case '^': return left ^ right;
+          case '&': return left & right;
+          case 'in': return left in right;
+          case 'instanceof': return left instanceof right;
+          default: throw new SyntaxError("Unexpected token " + node.operator);
       }
   }
   function AssignmentExpression(node, scope) {
@@ -958,66 +946,47 @@
       else {
           return pattern$3(left, scope, { feed: value });
       }
-      var assignOps = {
-          '=': function () {
+      switch (node.operator) {
+          case '=':
               variable.set(value);
               return variable.get();
-          },
-          '+=': function () {
+          case '+=':
               variable.set(variable.get() + value);
               return variable.get();
-          },
-          '-=': function () {
+          case '-=':
               variable.set(variable.get() - value);
               return variable.get();
-          },
-          '*=': function () {
+          case '*=':
               variable.set(variable.get() * value);
               return variable.get();
-          },
-          '/=': function () {
+          case '/=':
               variable.set(variable.get() / value);
               return variable.get();
-          },
-          '%=': function () {
+          case '%=':
               variable.set(variable.get() % value);
               return variable.get();
-          },
-          '**=': function () {
+          case '**=':
               variable.set(Math.pow(variable.get(), value));
               return variable.get();
-          },
-          '<<=': function () {
+          case '<<=':
               variable.set(variable.get() << value);
               return variable.get();
-          },
-          '>>=': function () {
+          case '>>=':
               variable.set(variable.get() >> value);
               return variable.get();
-          },
-          '>>>=': function () {
+          case '>>>=':
               variable.set(variable.get() >>> value);
               return variable.get();
-          },
-          '|=': function () {
+          case '|=':
               variable.set(variable.get() | value);
               return variable.get();
-          },
-          '^=': function () {
+          case '^=':
               variable.set(variable.get() ^ value);
               return variable.get();
-          },
-          '&=': function () {
+          case '&=':
               variable.set(variable.get() & value);
               return variable.get();
-          },
-      };
-      var handler = assignOps[node.operator];
-      if (handler) {
-          return handler();
-      }
-      else {
-          throw new SyntaxError("Unexpected token " + node.operator);
+          default: throw new SyntaxError("Unexpected token " + node.operator);
       }
   }
   function LogicalExpression(node, scope) {
@@ -1544,6 +1513,8 @@
       var result = [];
       for (var i = 0; i < node.elements.length; i++) {
           var element = node.elements[i];
+          if (!element)
+              continue;
           if (hoist) {
               if (onlyBlock || kind === 'var') {
                   if (element.type === 'Identifier') {
@@ -2014,7 +1985,7 @@
       });
   }
   function BinaryExpression$1(node, scope) {
-      var left, right, binaryOps, handler;
+      var left, right;
       return __generator(this, function (_a) {
           switch (_a.label) {
               case 0: return [5, __values(evaluate$1(node.left, scope))];
@@ -2023,43 +1994,37 @@
                   return [5, __values(evaluate$1(node.right, scope))];
               case 2:
                   right = _a.sent();
-                  binaryOps = {
-                      '==': function () { return left == right; },
-                      '!=': function () { return left != right; },
-                      '===': function () { return left === right; },
-                      '!==': function () { return left !== right; },
-                      '<': function () { return left < right; },
-                      '<=': function () { return left <= right; },
-                      '>': function () { return left > right; },
-                      '>=': function () { return left >= right; },
-                      '<<': function () { return left << right; },
-                      '>>': function () { return left >> right; },
-                      '>>>': function () { return left >>> right; },
-                      '+': function () { return left + right; },
-                      '-': function () { return left - right; },
-                      '*': function () { return left * right; },
-                      '**': function () { return Math.pow(left, right); },
-                      '/': function () { return left / right; },
-                      '%': function () { return left % right; },
-                      '|': function () { return left | right; },
-                      '^': function () { return left ^ right; },
-                      '&': function () { return left & right; },
-                      'in': function () { return left in right; },
-                      'instanceof': function () { return left instanceof right; },
-                  };
-                  handler = binaryOps[node.operator];
-                  if (handler) {
-                      return [2, handler()];
-                  }
-                  else {
-                      throw new SyntaxError("Unexpected token " + node.operator);
+                  switch (node.operator) {
+                      case '==': return [2, left == right];
+                      case '!=': return [2, left != right];
+                      case '===': return [2, left === right];
+                      case '!==': return [2, left !== right];
+                      case '<': return [2, left < right];
+                      case '<=': return [2, left <= right];
+                      case '>': return [2, left > right];
+                      case '>=': return [2, left >= right];
+                      case '<<': return [2, left << right];
+                      case '>>': return [2, left >> right];
+                      case '>>>': return [2, left >>> right];
+                      case '+': return [2, left + right];
+                      case '-': return [2, left - right];
+                      case '*': return [2, left * right];
+                      case '**': return [2, Math.pow(left, right)];
+                      case '/': return [2, left / right];
+                      case '%': return [2, left % right];
+                      case '|': return [2, left | right];
+                      case '^': return [2, left ^ right];
+                      case '&': return [2, left & right];
+                      case 'in': return [2, left in right];
+                      case 'instanceof': return [2, left instanceof right];
+                      default: throw new SyntaxError("Unexpected token " + node.operator);
                   }
                   return [2];
           }
       });
   }
   function AssignmentExpression$1(node, scope) {
-      var value, left, variable, win, assignOps, handler;
+      var value, left, variable, win;
       return __generator(this, function (_a) {
           switch (_a.label) {
               case 0: return [5, __values(evaluate$1(node.right, scope))];
@@ -2084,66 +2049,47 @@
               case 5: return [5, __values(pattern$2(left, scope, { feed: value }))];
               case 6: return [2, _a.sent()];
               case 7:
-                  assignOps = {
-                      '=': function () {
+                  switch (node.operator) {
+                      case '=':
                           variable.set(value);
-                          return variable.get();
-                      },
-                      '+=': function () {
+                          return [2, variable.get()];
+                      case '+=':
                           variable.set(variable.get() + value);
-                          return variable.get();
-                      },
-                      '-=': function () {
+                          return [2, variable.get()];
+                      case '-=':
                           variable.set(variable.get() - value);
-                          return variable.get();
-                      },
-                      '*=': function () {
+                          return [2, variable.get()];
+                      case '*=':
                           variable.set(variable.get() * value);
-                          return variable.get();
-                      },
-                      '/=': function () {
+                          return [2, variable.get()];
+                      case '/=':
                           variable.set(variable.get() / value);
-                          return variable.get();
-                      },
-                      '%=': function () {
+                          return [2, variable.get()];
+                      case '%=':
                           variable.set(variable.get() % value);
-                          return variable.get();
-                      },
-                      '**=': function () {
+                          return [2, variable.get()];
+                      case '**=':
                           variable.set(Math.pow(variable.get(), value));
-                          return variable.get();
-                      },
-                      '<<=': function () {
+                          return [2, variable.get()];
+                      case '<<=':
                           variable.set(variable.get() << value);
-                          return variable.get();
-                      },
-                      '>>=': function () {
+                          return [2, variable.get()];
+                      case '>>=':
                           variable.set(variable.get() >> value);
-                          return variable.get();
-                      },
-                      '>>>=': function () {
+                          return [2, variable.get()];
+                      case '>>>=':
                           variable.set(variable.get() >>> value);
-                          return variable.get();
-                      },
-                      '|=': function () {
+                          return [2, variable.get()];
+                      case '|=':
                           variable.set(variable.get() | value);
-                          return variable.get();
-                      },
-                      '^=': function () {
+                          return [2, variable.get()];
+                      case '^=':
                           variable.set(variable.get() ^ value);
-                          return variable.get();
-                      },
-                      '&=': function () {
+                          return [2, variable.get()];
+                      case '&=':
                           variable.set(variable.get() & value);
-                          return variable.get();
-                      },
-                  };
-                  handler = assignOps[node.operator];
-                  if (handler) {
-                      return [2, handler()];
-                  }
-                  else {
-                      throw new SyntaxError("Unexpected token " + node.operator);
+                          return [2, variable.get()];
+                      default: throw new SyntaxError("Unexpected token " + node.operator);
                   }
                   return [2];
           }
@@ -3119,6 +3065,8 @@
               case 1:
                   if (!(i < node.elements.length)) return [3, 14];
                   element = node.elements[i];
+                  if (!element)
+                      return [3, 13];
                   if (!hoist) return [3, 5];
                   if (!(onlyBlock || kind === 'var')) return [3, 4];
                   if (!(element.type === 'Identifier')) return [3, 2];
