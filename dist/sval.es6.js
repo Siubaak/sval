@@ -380,7 +380,7 @@
       }
   }
 
-  var version = "0.4.4";
+  var version = "0.4.5";
 
   const AWAIT = { RES: undefined };
   const RETURN = { RES: undefined };
@@ -634,16 +634,11 @@
   function UnaryExpression(node, scope) {
       const arg = node.argument;
       switch (node.operator) {
-          case '+':
-              return +(evaluate(arg, scope));
-          case '-':
-              return -(evaluate(arg, scope));
-          case '!':
-              return !(evaluate(arg, scope));
-          case '~':
-              return ~(evaluate(arg, scope));
-          case 'void':
-              return void (evaluate(arg, scope));
+          case '+': return +(evaluate(arg, scope));
+          case '-': return -(evaluate(arg, scope));
+          case '!': return !(evaluate(arg, scope));
+          case '~': return ~(evaluate(arg, scope));
+          case 'void': return void (evaluate(arg, scope));
           case 'typeof':
               if (arg.type === 'Identifier') {
                   return typeof (Identifier(arg, scope, { throwErr: false }));
@@ -663,8 +658,7 @@
               else {
                   throw new SyntaxError('Unexpected token');
               }
-          default:
-              throw new SyntaxError(`Unexpected token ${node.operator}`);
+          default: throw new SyntaxError(`Unexpected token ${node.operator}`);
       }
   }
   function UpdateExpression(node, scope) {
@@ -695,36 +689,30 @@
   function BinaryExpression(node, scope) {
       const left = evaluate(node.left, scope);
       const right = evaluate(node.right, scope);
-      const binaryOps = {
-          '==': () => left == right,
-          '!=': () => left != right,
-          '===': () => left === right,
-          '!==': () => left !== right,
-          '<': () => left < right,
-          '<=': () => left <= right,
-          '>': () => left > right,
-          '>=': () => left >= right,
-          '<<': () => left << right,
-          '>>': () => left >> right,
-          '>>>': () => left >>> right,
-          '+': () => left + right,
-          '-': () => left - right,
-          '*': () => left * right,
-          '**': () => Math.pow(left, right),
-          '/': () => left / right,
-          '%': () => left % right,
-          '|': () => left | right,
-          '^': () => left ^ right,
-          '&': () => left & right,
-          'in': () => left in right,
-          'instanceof': () => left instanceof right,
-      };
-      const handler = binaryOps[node.operator];
-      if (handler) {
-          return handler();
-      }
-      else {
-          throw new SyntaxError(`Unexpected token ${node.operator}`);
+      switch (node.operator) {
+          case '==': return left == right;
+          case '!=': return left != right;
+          case '===': return left === right;
+          case '!==': return left !== right;
+          case '<': return left < right;
+          case '<=': return left <= right;
+          case '>': return left > right;
+          case '>=': return left >= right;
+          case '<<': return left << right;
+          case '>>': return left >> right;
+          case '>>>': return left >>> right;
+          case '+': return left + right;
+          case '-': return left - right;
+          case '*': return left * right;
+          case '**': return Math.pow(left, right);
+          case '/': return left / right;
+          case '%': return left % right;
+          case '|': return left | right;
+          case '^': return left ^ right;
+          case '&': return left & right;
+          case 'in': return left in right;
+          case 'instanceof': return left instanceof right;
+          default: throw new SyntaxError(`Unexpected token ${node.operator}`);
       }
   }
   function AssignmentExpression(node, scope) {
@@ -744,66 +732,47 @@
       else {
           return pattern$3(left, scope, { feed: value });
       }
-      const assignOps = {
-          '=': () => {
+      switch (node.operator) {
+          case '=':
               variable.set(value);
               return variable.get();
-          },
-          '+=': () => {
+          case '+=':
               variable.set(variable.get() + value);
               return variable.get();
-          },
-          '-=': () => {
+          case '-=':
               variable.set(variable.get() - value);
               return variable.get();
-          },
-          '*=': () => {
+          case '*=':
               variable.set(variable.get() * value);
               return variable.get();
-          },
-          '/=': () => {
+          case '/=':
               variable.set(variable.get() / value);
               return variable.get();
-          },
-          '%=': () => {
+          case '%=':
               variable.set(variable.get() % value);
               return variable.get();
-          },
-          '**=': () => {
+          case '**=':
               variable.set(Math.pow(variable.get(), value));
               return variable.get();
-          },
-          '<<=': () => {
+          case '<<=':
               variable.set(variable.get() << value);
               return variable.get();
-          },
-          '>>=': () => {
+          case '>>=':
               variable.set(variable.get() >> value);
               return variable.get();
-          },
-          '>>>=': () => {
+          case '>>>=':
               variable.set(variable.get() >>> value);
               return variable.get();
-          },
-          '|=': () => {
+          case '|=':
               variable.set(variable.get() | value);
               return variable.get();
-          },
-          '^=': () => {
+          case '^=':
               variable.set(variable.get() ^ value);
               return variable.get();
-          },
-          '&=': () => {
+          case '&=':
               variable.set(variable.get() & value);
               return variable.get();
-          },
-      };
-      const handler = assignOps[node.operator];
-      if (handler) {
-          return handler();
-      }
-      else {
-          throw new SyntaxError(`Unexpected token ${node.operator}`);
+          default: throw new SyntaxError(`Unexpected token ${node.operator}`);
       }
   }
   function LogicalExpression(node, scope) {
@@ -1314,6 +1283,8 @@
       const result = [];
       for (let i = 0; i < node.elements.length; i++) {
           const element = node.elements[i];
+          if (!element)
+              continue;
           if (hoist) {
               if (onlyBlock || kind === 'var') {
                   if (element.type === 'Identifier') {
@@ -1640,16 +1611,11 @@
   function* UnaryExpression$1(node, scope) {
       const arg = node.argument;
       switch (node.operator) {
-          case '+':
-              return +(yield* evaluate$1(arg, scope));
-          case '-':
-              return -(yield* evaluate$1(arg, scope));
-          case '!':
-              return !(yield* evaluate$1(arg, scope));
-          case '~':
-              return ~(yield* evaluate$1(arg, scope));
-          case 'void':
-              return void (yield* evaluate$1(arg, scope));
+          case '+': return +(yield* evaluate$1(arg, scope));
+          case '-': return -(yield* evaluate$1(arg, scope));
+          case '!': return !(yield* evaluate$1(arg, scope));
+          case '~': return ~(yield* evaluate$1(arg, scope));
+          case 'void': return void (yield* evaluate$1(arg, scope));
           case 'typeof':
               if (arg.type === 'Identifier') {
                   return typeof (yield* Identifier$1(arg, scope, { throwErr: false }));
@@ -1669,8 +1635,7 @@
               else {
                   throw new SyntaxError('Unexpected token');
               }
-          default:
-              throw new SyntaxError(`Unexpected token ${node.operator}`);
+          default: throw new SyntaxError(`Unexpected token ${node.operator}`);
       }
   }
   function* UpdateExpression$1(node, scope) {
@@ -1701,36 +1666,30 @@
   function* BinaryExpression$1(node, scope) {
       const left = yield* evaluate$1(node.left, scope);
       const right = yield* evaluate$1(node.right, scope);
-      const binaryOps = {
-          '==': () => left == right,
-          '!=': () => left != right,
-          '===': () => left === right,
-          '!==': () => left !== right,
-          '<': () => left < right,
-          '<=': () => left <= right,
-          '>': () => left > right,
-          '>=': () => left >= right,
-          '<<': () => left << right,
-          '>>': () => left >> right,
-          '>>>': () => left >>> right,
-          '+': () => left + right,
-          '-': () => left - right,
-          '*': () => left * right,
-          '**': () => Math.pow(left, right),
-          '/': () => left / right,
-          '%': () => left % right,
-          '|': () => left | right,
-          '^': () => left ^ right,
-          '&': () => left & right,
-          'in': () => left in right,
-          'instanceof': () => left instanceof right,
-      };
-      const handler = binaryOps[node.operator];
-      if (handler) {
-          return handler();
-      }
-      else {
-          throw new SyntaxError(`Unexpected token ${node.operator}`);
+      switch (node.operator) {
+          case '==': return left == right;
+          case '!=': return left != right;
+          case '===': return left === right;
+          case '!==': return left !== right;
+          case '<': return left < right;
+          case '<=': return left <= right;
+          case '>': return left > right;
+          case '>=': return left >= right;
+          case '<<': return left << right;
+          case '>>': return left >> right;
+          case '>>>': return left >>> right;
+          case '+': return left + right;
+          case '-': return left - right;
+          case '*': return left * right;
+          case '**': return Math.pow(left, right);
+          case '/': return left / right;
+          case '%': return left % right;
+          case '|': return left | right;
+          case '^': return left ^ right;
+          case '&': return left & right;
+          case 'in': return left in right;
+          case 'instanceof': return left instanceof right;
+          default: throw new SyntaxError(`Unexpected token ${node.operator}`);
       }
   }
   function* AssignmentExpression$1(node, scope) {
@@ -1750,66 +1709,47 @@
       else {
           return yield* pattern$2(left, scope, { feed: value });
       }
-      const assignOps = {
-          '=': () => {
+      switch (node.operator) {
+          case '=':
               variable.set(value);
               return variable.get();
-          },
-          '+=': () => {
+          case '+=':
               variable.set(variable.get() + value);
               return variable.get();
-          },
-          '-=': () => {
+          case '-=':
               variable.set(variable.get() - value);
               return variable.get();
-          },
-          '*=': () => {
+          case '*=':
               variable.set(variable.get() * value);
               return variable.get();
-          },
-          '/=': () => {
+          case '/=':
               variable.set(variable.get() / value);
               return variable.get();
-          },
-          '%=': () => {
+          case '%=':
               variable.set(variable.get() % value);
               return variable.get();
-          },
-          '**=': () => {
+          case '**=':
               variable.set(Math.pow(variable.get(), value));
               return variable.get();
-          },
-          '<<=': () => {
+          case '<<=':
               variable.set(variable.get() << value);
               return variable.get();
-          },
-          '>>=': () => {
+          case '>>=':
               variable.set(variable.get() >> value);
               return variable.get();
-          },
-          '>>>=': () => {
+          case '>>>=':
               variable.set(variable.get() >>> value);
               return variable.get();
-          },
-          '|=': () => {
+          case '|=':
               variable.set(variable.get() | value);
               return variable.get();
-          },
-          '^=': () => {
+          case '^=':
               variable.set(variable.get() ^ value);
               return variable.get();
-          },
-          '&=': () => {
+          case '&=':
               variable.set(variable.get() & value);
               return variable.get();
-          },
-      };
-      const handler = assignOps[node.operator];
-      if (handler) {
-          return handler();
-      }
-      else {
-          throw new SyntaxError(`Unexpected token ${node.operator}`);
+          default: throw new SyntaxError(`Unexpected token ${node.operator}`);
       }
   }
   function* LogicalExpression$1(node, scope) {
@@ -2348,6 +2288,8 @@
       const result = [];
       for (let i = 0; i < node.elements.length; i++) {
           const element = node.elements[i];
+          if (!element)
+              continue;
           if (hoist) {
               if (onlyBlock || kind === 'var') {
                   if (element.type === 'Identifier') {
