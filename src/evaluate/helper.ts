@@ -173,8 +173,8 @@ export function createFunc(
   let func: any /*<add>*//*= tmpFunc*//*</add>*/
   /*<remove>*/
   if (node.async && node.generator) {
-    func = function (...args: any[]): AsyncIterator<any> {
-      const iterator = tmpFunc(args)
+    func = function (): AsyncIterator<any> {
+      const iterator = tmpFunc.apply(void 0, arguments)
       let last: Promise<any> = Promise.resolve()
       const run = (opts: runAsyncOptions) =>
         last = last.then(() => runAsync(iterator, assign({ fullRet: true }, opts)))
@@ -189,7 +189,7 @@ export function createFunc(
       return asyncIterator
     }
   } else if (node.async) {
-    func = (...args: any[]) => runAsync(tmpFunc(args))
+    func = function () { return runAsync(tmpFunc.apply(void 0, arguments)) }
   } else {
     func = tmpFunc
   }

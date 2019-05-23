@@ -6,7 +6,7 @@
 
 A JavaScript interpreter writen in JavaScript, based on parser [Acorn](https://github.com/acornjs/acorn).
 
-- **Running on ES5 ___strict___ mode, supporting ES5/6/7/8/9/10 full features**
+- **Running on ES5, supporting ES5~10 full features**
 - **Both invasived and sandbox modes available**
 
 It's useful to evaluate the code of higher ECMAScript editions, or for the environment with disabled `eval`, `setTimeout` and `new Function`.
