@@ -127,4 +127,80 @@ describe('testing src/index.ts', () => {
       return new Promise(resolve => setTimeout(resolve, 5, n))
     }
   })
+
+  it('should throw Error when using arrow function as constructor', () => {
+    const interpreter = new Sval()
+    try {
+      interpreter.run(`
+        const ArrowFunc = () => {}
+
+        new ArrowFunc()
+      `)
+    } catch (ex) {
+      expect(ex).toBeInstanceOf(TypeError)
+    }
+  })
+
+  it('should throw TypeError when using arrow function as constructor', () => {
+    const interpreter = new Sval()
+    let error = null
+    try {
+      interpreter.run(`
+        const ArrowFunc = () => {}
+
+        new ArrowFunc()
+      `)
+    } catch (ex) {
+      error = ex
+    }
+
+    expect(error).toBeInstanceOf(TypeError)
+  })
+
+  it('should throw TypeError when using non-function as constructor', () => {
+    const interpreter = new Sval()
+    let error = null
+    try {
+      interpreter.run(`
+        const NonFunc = {}
+
+        new NonFunc()
+      `)
+    } catch (ex) {
+      error = ex
+    }
+
+    expect(error).toBeInstanceOf(TypeError)
+    error = null
+
+    try {
+      // to raise coverage
+      interpreter.run(`
+        const obj = {}
+        obj.x = { o: obj }
+        new {a: obj}
+      `)
+    } catch (ex) {
+      error = ex
+    }
+
+    expect(error).toBeInstanceOf(TypeError)
+  })
+
+  it('should throw TypeError when calling non-function', () => {
+    const interpreter = new Sval()
+    let error = null
+    try {
+      interpreter.run(`
+        const nonFunc = {}
+
+        nonFunc()
+      `)
+    } catch (ex) {
+      error = ex
+    }
+
+    expect(error).toBeInstanceOf(TypeError)
+  })
+
 })
