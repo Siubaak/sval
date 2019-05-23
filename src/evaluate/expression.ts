@@ -102,6 +102,7 @@ export function* UnaryExpression(node: estree.UnaryExpression, scope: Scope) {
       } else {
         throw new SyntaxError('Unexpected token')
       }
+    /* istanbul ignore next */
     default: throw new SyntaxError(`Unexpected token ${node.operator}`)
   }
 }
@@ -115,6 +116,7 @@ export function* UpdateExpression(node: estree.UpdateExpression, scope: Scope) {
   } else if (arg.type === 'MemberExpression') {
     variable = yield* MemberExpression(arg, scope, { getVar: true })
   } else {
+    /* istanbul ignore next */
     throw new SyntaxError('Unexpected token')
   }
 
@@ -126,6 +128,7 @@ export function* UpdateExpression(node: estree.UpdateExpression, scope: Scope) {
     variable.set(value - 1)
     return node.prefix ? variable.get() : value
   } else {
+    /* istanbul ignore next */
     throw new SyntaxError(`Unexpected token ${node.operator}`)
   }
 }
@@ -157,6 +160,7 @@ export function* BinaryExpression(node: estree.BinaryExpression, scope: Scope) {
     case '&': return left & right
     case 'in': return left in right
     case 'instanceof': return left instanceof right
+    /* istanbul ignore next */
     default: throw new SyntaxError(`Unexpected token ${node.operator}`)
   }
 }
@@ -193,6 +197,7 @@ export function* AssignmentExpression(node: estree.AssignmentExpression, scope: 
     case '|=': variable.set(variable.get() | value); return variable.get()
     case '^=': variable.set(variable.get() ^ value); return variable.get()
     case '&=': variable.set(variable.get() & value); return variable.get()
+    /* istanbul ignore next */
     default: throw new SyntaxError(`Unexpected token ${node.operator}`)
   }
 }
@@ -204,6 +209,7 @@ export function* LogicalExpression(node: estree.LogicalExpression, scope: Scope)
     case '&&':
       return (yield* evaluate(node.left, scope)) && (yield* evaluate(node.right, scope))
     default:
+      /* istanbul ignore next */
       throw new SyntaxError(`Unexpected token ${node.operator}`)
   }
 }

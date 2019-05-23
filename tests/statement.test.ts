@@ -56,6 +56,33 @@ describe('testing src/index.ts', () => {
     }
   })
 
+  it('should for-await-of with manual iterator run normally', done => {  
+    const interpreter = new Sval()
+    interpreter.import({ expect, done })
+    interpreter.run(`
+      c()
+      function makeIterator(array) {
+        var nextIndex = 0;
+        return {
+          next: function() {
+            return nextIndex < array.length ?
+              {value: array[nextIndex++], done: false} :
+              {value: undefined, done: true};
+          }
+        };
+      }
+
+      async function c() {
+        const res = []
+        for await (const i of makeIterator([1,2,3,4])) {
+          res.push(i)
+        }
+        expect(res).toEqual([1, 2, 3, 4])
+        done()
+      }
+    `)
+  })
+
   it('should support for-await-of with sync iterables', done => {  
     const interpreter = new Sval()
     interpreter.import({ expect, done })

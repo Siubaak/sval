@@ -128,6 +128,70 @@ describe('testing src/index.ts', () => {
     }
   })
 
+  it('should support async generator with throwing error', (done) => {  
+    const interpreter = new Sval()
+    interpreter.import({ getItem, expect, done })
+    interpreter.run(`
+      const res = []
+      async function* a() {
+        for (const i of [1, 2, 3, 4]) {
+          res.push(yield await getItem(i))
+        }
+      }
+      const g = a()
+      g.next()
+      g.next(2)
+      g.return(4)
+      g.next(6)
+      g.throw(8).catch((e) => {
+        expect(res).toEqual([2])
+        expect(e).toEqual(8)
+        done()
+      })
+    `)
+    function getItem(n: any) {
+      return new Promise(resolve => setTimeout(resolve, 5, n))
+    }
+  })
+
+  it('should support async generator with throwing error in generator', (done) => {  
+    const interpreter = new Sval()
+    interpreter.import({ getItem, expect, done })
+    interpreter.run(`
+      const res = []
+      let visited = false
+      async function* a() {
+        for (const i of [1, 2, 3, 4]) {
+          res.push(yield await getItem(i))
+        }
+      }
+      const g = a()
+      g.next()
+      g.next(2)
+      g.next(4)
+      g.next(6).catch((e) => {
+        visited = true
+
+        expect(res).toEqual([2, 4, 6])
+        expect(e).toEqual(4) // here the return value is 4, from generator it self
+      })
+      g.next(8).catch((e) => {
+        // should never come here
+        expect(false).toBeTruthy()
+      })
+
+      // simulate done action
+      setTimeout(() => {
+        expect(visited).toBeTruthy()
+        done()
+      }, 60)
+    `)
+    function getItem(n: any) {
+      if (n === 4) throw 4 // throw error when doing next
+      return new Promise(resolve => setTimeout(resolve, 5, n))
+    }
+  })
+
   it('should throw Error when using arrow function as constructor', () => {
     const interpreter = new Sval()
     try {
@@ -199,7 +263,35 @@ describe('testing src/index.ts', () => {
     } catch (ex) {
       error = ex
     }
+    expect(error).toBeInstanceOf(TypeError)
 
+    error = null
+    try {
+      interpreter.run(`
+        const nonFunc2 = {}
+        const x = {
+          func: nonFunc2
+        }
+
+        x.func()
+      `)
+    } catch (ex) {
+      error = ex
+    }
+    expect(error).toBeInstanceOf(TypeError)
+
+    error = null
+    try {
+      interpreter.run(`
+        const nonFunc3 = {}
+        nonFunc3.self = nonFunc3
+        const getFunc = () => nonFunc3
+
+        getFunc()()
+      `)
+    } catch (ex) {
+      error = ex
+    }
     expect(error).toBeInstanceOf(TypeError)
   })
 
