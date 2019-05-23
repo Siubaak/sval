@@ -147,6 +147,10 @@ try {
     names = getOwnNames(globalObj)
   }
 }
+if (globalObj.Symbol) {
+  !globalObj.Symbol.iterator && (globalObj.Symbol.iterator = createSymbol('iterator'))
+  !globalObj.Symbol.asyncIterator && (globalObj.Symbol.asyncIterator = createSymbol('asynciterator'))
+}
 const win = Object.create(null)
 for (let i = 0; i < names.length; i++) {
   const name = names[i]
@@ -160,8 +164,12 @@ export function createSymbol(key: string) {
   return key + Math.random().toString(36).substring(2)
 }
 
-export function getIterator(obj: any) {
-  const iterator = typeof Symbol === 'function' && obj[Symbol.iterator]
+export function getAsyncIterator(obj: any) {
+  let iterator: any
+  if (typeof Symbol === 'function') {
+    iterator = obj[Symbol.asyncIterator]
+    !iterator && (iterator = obj[Symbol.iterator])
+  }
   if (iterator) {
     return iterator.call(obj)
   } else if (typeof obj.next === 'function') {
@@ -170,9 +178,7 @@ export function getIterator(obj: any) {
     let i = 0
     return {
       next() {
-        if (obj && i >= obj.length) {
-          obj = undefined
-        }
+        if (obj && i >= obj.length) obj = undefined
         return { value: obj && obj[i++], done: !obj }
       }
     }

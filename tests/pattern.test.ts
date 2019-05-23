@@ -54,7 +54,8 @@ describe('testing src/index.ts', () => {
       const { ...e } = o
       const { a: f, ...g } = o
       const h = { a: 2, ...o, d: 4}
-      const [i = 3, [j, ...k], ...[x, y]] = [1, [2, 3, 4], [5, 6]]
+      const [i = 3, [j, ...k], ...[x, y]] = [1, [2, 3, 4], 5, 6]
+      const [ , z] = [7, 8]
       exports.e = e
       exports.f = f
       exports.g = g
@@ -64,6 +65,7 @@ describe('testing src/index.ts', () => {
       exports.k = k
       exports.x = x
       exports.y = y
+      exports.z = z
     `)
     expect(interpreter.exports.a).toEqual([1, 2])
     expect(interpreter.exports.b).toEqual([1, 2, 3])
@@ -78,7 +80,7 @@ describe('testing src/index.ts', () => {
     expect(interpreter.exports.k).toEqual([3,4])
     expect(interpreter.exports.x).toEqual(5)
     expect(interpreter.exports.y).toEqual(6)
-    expect(interpreter.exports.z).toEqual(4)
+    expect(interpreter.exports.z).toEqual(8)
   })
   it('should parse rest element of function params normally', () => {  
     const interpreter = new Sval()
@@ -95,6 +97,6 @@ describe('testing src/index.ts', () => {
     `)
     expect(interpreter.exports.b).toEqual([1, 2])
     expect(interpreter.exports.e).toEqual([2, 3])
-    expect(interpreter.exports.d).toBe(4)
+    expect(interpreter.exports.d).toBe(1)
   })
 })

@@ -1,6 +1,6 @@
 import { readFileSync, existsSync } from 'fs'
+import Sval, { SvalOptions } from '../src'
 import { resolve } from 'path'
-import Sval from '../src'
 
 let code: string
 
@@ -33,11 +33,11 @@ describe('testing src/index.ts', () => {
       this.y1 = 6
     `)
 
-    expect(window.x1).toBe(5)
-    expect(window.y1).toBe(6)
+    expect((window as any).x1).toBe(5)
+    expect((window as any).y1).toBe(6)
 
-    delete window.x1
-    delete window.y1
+    delete (window as any).x1
+    delete (window as any).y1
   })
 
   it('should support sandbox mode', () => {
@@ -50,16 +50,16 @@ describe('testing src/index.ts', () => {
       this.y2 = 6
     `)
 
-    expect(window.x2).toBeUndefined()
-    expect(window.y2).toBeUndefined()
+    expect((window as any).x2).toBeUndefined()
+    expect((window as any).y2).toBeUndefined()
   })
 
   it('should support ecma version 3, 5, 6, 7, 8, 9, 10', () => {
     const versions = [3, 5, 6, 7, 8, 9, 10, 2015, 2016, 2017, 2018, 2019]
-    versions.forEach(v => new Sval({ ecmaVer: v}))
+    versions.forEach((v: SvalOptions['ecmaVer']) => new Sval({ ecmaVer: v }))
 
     try {
-      new Sval({ ecmaVer: 4})
+      new Sval({ ecmaVer: 4 as any })
     } catch(ex) {
       expect(ex.message).toBe('unsupported ecmaVer')
     }
@@ -100,10 +100,10 @@ describe('testing src/index.ts', () => {
     expect(interpreter.exports.foo).toBe('foo2')
 
     // other than string / object, other types are not supported
-    interpreter.import(2)
+    interpreter.import(2 as any)
     interpreter.import(undefined)
     interpreter.import(function() {})
-    interpreter.import(true)
-    interpreter.import(Symbol('hello'))
+    interpreter.import(true as any)
+    interpreter.import(Symbol('hello') as any)
   })
 })

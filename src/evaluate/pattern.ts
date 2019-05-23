@@ -60,6 +60,7 @@ export function* ArrayPattern(node: estree.ArrayPattern, scope: Scope, options: 
   const result = []
   for (let i = 0; i < node.elements.length; i++) {
     const element = node.elements[i]
+    if (!element) continue // for the case: let [ , x] = [1, 2]
     if (hoist) {
       if (onlyBlock || kind === 'var') {
         if (element.type === 'Identifier') {
@@ -115,8 +116,7 @@ export function* RestElement(node: estree.RestElement, scope: Scope, options: Pa
 }
 
 export function* AssignmentPattern(node: estree.AssignmentPattern, scope: Scope, options: PatternOptions = {}) {
-  const { kind = 'let', hoist = false, onlyBlock = false } = options
-  const feed = yield* evaluate(node.right, scope)
+  const { kind = 'let', hoist = false, onlyBlock = false, feed = yield* evaluate(node.right, scope) } = options
   const left = node.left
   if (hoist) {
     if (onlyBlock || kind === 'var') {
