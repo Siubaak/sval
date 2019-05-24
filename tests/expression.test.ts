@@ -1,6 +1,6 @@
 import Sval from '../src'
 
-describe('testing src/index.ts', () => {
+describe('testing src/expression.ts', () => {
   it('should call expression run normally', () => {  
     const interpreter = new Sval()
 
@@ -191,7 +191,7 @@ describe('testing src/index.ts', () => {
     interpreter.import({ expect })
     interpreter.run(`
       const name = 'y'
-      const values = { a: 1, b: 2}
+      const values = { a: 1, b: 2 }
       const a = {
         x: 5,
         [name]: 6,

@@ -1,4 +1,4 @@
-import { define, freeze, getGetter, getSetter, createSymbol, assign } from '../share/util'
+import { define, freeze, getGetter, getSetter, createSymbol, assign, getDptor } from '../share/util'
 import { SUPER, NOCTOR, AWAIT, CLSCTOR, NEWTARGET, SUPERCALL } from '../share/const'
 import { pattern, createFunc, createClass } from './helper'
 import { Variable, Prop } from '../scope/variable'
@@ -11,7 +11,7 @@ import evaluate from '.'
 export function* ThisExpression(node: estree.ThisExpression, scope: Scope) {
   const superCall = scope.find(SUPERCALL)
   if (superCall && !superCall.get()) {
-    throw new ReferenceError('Must call super constructor in derived class'
+    throw new ReferenceError('Must call super constructor in derived class '
       + 'before accessing \'this\' or returning from derived constructor')
   } else {
     return scope.find('this').get()
@@ -56,9 +56,21 @@ export function* ObjectExpression(node: estree.ObjectExpression, scope: Scope) {
       if (propKind === 'init') {
         object[key] = value
       } else if (propKind === 'get') {
-        define(object, key, { get: value })
+        const oriDptor = getDptor(object, key)
+        define(object, key, {
+          get: value,
+          set: oriDptor && oriDptor.set,
+          enumerable: true,
+          configurable: true
+        })
       } else { // propKind === 'set'
-        define(object, key, { set: value })
+        const oriDptor = getDptor(object, key)
+        define(object, key, {
+          get: oriDptor && oriDptor.get,
+          set: value,
+          enumerable: true,
+          configurable: true
+        })
       }
     }
   }
