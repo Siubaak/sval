@@ -175,6 +175,7 @@ describe('testing src/index.ts', () => {
 
   it('should throw TypeError when calling es6 class as function', () => {
     const interpreter = new Sval()
+    let error = null;
     try {
       interpreter.run(`
         class Foo {
@@ -184,8 +185,29 @@ describe('testing src/index.ts', () => {
         Foo()
       `)
     } catch (err) {
-      expect(err).toBeInstanceOf(TypeError)
+      error = err
     }
+
+    expect(error).toBeInstanceOf(TypeError)
+    error = null;
+
+    try {
+      interpreter.run(`
+        class Bar {
+          
+        }
+
+        const x = {
+          bar: Bar
+        }
+        
+        x.bar()
+      `)
+    } catch (err) {
+      error = err
+    }
+
+    expect(error).toBeInstanceOf(TypeError)
   })
   
   it('should call super normally', () => {
@@ -450,5 +472,44 @@ describe('testing src/index.ts', () => {
     `)
 
     expect(interpreter.exports.target).toEqual(interpreter.exports.actual)
+  })
+
+  it('should support property accessing between parent and child class', () => {  
+    const interpreter = new Sval()
+    interpreter.run(`
+      class X {
+        constructor() {
+          this.x = 5
+          this.y = 7
+        }
+
+        say() {
+          return this.x
+        }
+      }
+
+      class Y extends X {
+        constructor() {
+          super()
+          this.x = 6
+        }
+
+        say() {
+          return super.say()
+        }
+
+        bark() {
+          return this.y
+        }
+      }
+
+      exports.x = new Y().say()
+      exports.y = new Y().bark()
+    `)
+
+    // parent reads overrided property
+    expect(interpreter.exports.x).toEqual(6);
+    // child reads parent property with this
+    expect(interpreter.exports.y).toEqual(7);
   })
 })
