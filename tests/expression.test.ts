@@ -346,7 +346,7 @@ describe('testing src/expression.ts', () => {
       result &= delete Symbol('xx')
       result &= delete null
       result &= delete {}
-      cresult &= delete function(){}
+      result &= delete function () {}
       result &= delete /x/
 
       exports.result = result
@@ -357,14 +357,14 @@ describe('testing src/expression.ts', () => {
     let error = null;
     try {
       interpreter.run(`
-      // trying to delete a regular identifier in strict mode
-      var y = {}
-      delete y
-    `)
+        // trying to delete a regular identifier in strict mode
+        var y = {}
+        delete y
+      `)
     } catch (ex) {
-      error =ex
+      error = ex
     }
 
-    expect(error.stack).toBeInstanceOf(SyntaxError);
+    expect(error).toBeInstanceOf(SyntaxError);
   })
 })

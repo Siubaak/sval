@@ -109,10 +109,10 @@ export function* UnaryExpression(node: estree.UnaryExpression, scope: Scope) {
         const variable: Prop = yield* MemberExpression(arg, scope, { getVar: true })
         return variable.del()
       } else if (arg.type === 'Identifier') {
-        const win = scope.global().find('window').get()
-        return delete win[arg.name]
+        throw new SyntaxError('Delete of an unqualified identifier in strict mode')
       } else {
-        throw new SyntaxError('Unexpected token')
+        yield* evaluate(arg, scope)
+        return true
       }
     /* istanbul ignore next */
     default: throw new SyntaxError(`Unexpected token ${node.operator}`)
