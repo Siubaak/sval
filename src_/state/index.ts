@@ -1,4 +1,4 @@
-import { OP } from '../share/const'
+import { OpCode } from '../share/const'
 
 export type SymbolTable = { [name: string]: any }
 
@@ -7,10 +7,8 @@ export default class State {
 
   readonly context: any[] = []
 
-  readonly symbols: SymbolTable = {}
+  symbols: SymbolTable = Object.create(null)
+  symbolPointer: number = 0
 
-  readonly opCodes: {
-    op: OP,
-    val?: any
-  }[] = []
+  readonly opCodes: OpCode[] = []
 }

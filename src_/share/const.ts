@@ -8,8 +8,12 @@ export enum OP {
   MOVE,  // move data from stack to context (assignment)
   JMP,   // jump to specified position
   BIOP,  // binary operation
-  UPOP,  // update operation
   UNOP,  // unary operation
   IFJMP, // jump to specified position if true
   CALL,  // invoke functions or methods
+}
+
+export interface OpCode {
+  op: OP
+  val?: any
 }

@@ -73,10 +73,18 @@ export default function execute(state: State) {
         }
         break
       }
-      case OP.UPOP: {
-        break
-      }
       case OP.UNOP: {
+        const arg = stack.pop()
+        switch (code.val) {
+          case '+': stack.push(+arg)
+          case '-': stack.push(-arg)
+          case '!': stack.push(!arg)
+          case '~': stack.push(~arg)
+          case 'void': stack.push(void arg)
+          case 'typeof': stack.push(typeof arg)
+          case 'delete': throw new SyntaxError('delete is not implemented')
+          default: throw new SyntaxError(`Unexpected token ${code.val}`)
+        }
         break
       }
       case OP.IFJMP: {

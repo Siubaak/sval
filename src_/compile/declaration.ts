@@ -8,10 +8,11 @@ export function VariableDeclaration(node: estree.VariableDeclaration, state: Sta
     const declr = node.declarations[i]
     compile(declr.init, state)
     if (declr.id.type === 'Identifier') {
-      state.symbols[declr.id.name] = state.stack.length
+      const curSymbolPos = state.symbolPointer++
+      state.symbols[declr.id.name] = curSymbolPos
       state.opCodes.push({
         op: (OP as any)[node.kind.toUpperCase()],
-        val: state.stack.length
+        val: curSymbolPos
       })
     }
   }
