@@ -177,8 +177,16 @@ export function createFunc(
     func = function (): AsyncIterator<any> {
       const iterator = tmpFunc.apply(void 0, arguments)
       let last: Promise<any> = Promise.resolve()
+      let hasCatch = false
       const run = (opts: runAsyncOptions) =>
-        last = last.then(() => runAsync(iterator, assign({ fullRet: true }, opts)))
+        last = last
+          .then(() => runAsync(iterator, assign({ fullRet: true }, opts)))
+          .catch(err => {
+            if (!hasCatch) {
+              hasCatch = true
+              return Promise.reject(err)
+            }
+          })
       const asyncIterator: AsyncIterator<any> = {
         next: (res?: any) => run({ res }),
         throw: (err?: any) => run({ err }),
