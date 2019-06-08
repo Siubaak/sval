@@ -300,10 +300,9 @@ export function* CallExpression(node: estree.CallExpression, scope: Scope) {
     }
 
     // right value
-    const getter = getGetter(object, key)
-    if (node.callee.object.type === 'Super' && getter) {
+    if (node.callee.object.type === 'Super') {
       const thisObject = scope.find('this').get()
-      func = getter.call(thisObject)
+      func = object[key].bind(thisObject)
     } else {
       func = object[key]
     }
