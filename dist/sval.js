@@ -380,7 +380,7 @@
       }
   }
 
-  var version = "0.4.5";
+  var version = "0.4.6";
 
   var AWAIT = { RES: undefined };
   var RETURN = { RES: undefined };
@@ -540,65 +540,6 @@
   See the Apache Version 2.0 License for specific language governing permissions
   and limitations under the License.
   ***************************************************************************** */
-  /* global Reflect, Promise */
-
-  var extendStatics = function(d, b) {
-      extendStatics = Object.setPrototypeOf ||
-          ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-          function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-      return extendStatics(d, b);
-  };
-
-  function __extends(d, b) {
-      extendStatics(d, b);
-      function __() { this.constructor = d; }
-      d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  }
-
-  var __assign = function() {
-      __assign = Object.assign || function __assign(t) {
-          for (var s, i = 1, n = arguments.length; i < n; i++) {
-              s = arguments[i];
-              for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
-          }
-          return t;
-      };
-      return __assign.apply(this, arguments);
-  };
-
-  function __rest(s, e) {
-      var t = {};
-      for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
-          t[p] = s[p];
-      if (s != null && typeof Object.getOwnPropertySymbols === "function")
-          for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) if (e.indexOf(p[i]) < 0)
-              t[p[i]] = s[p[i]];
-      return t;
-  }
-
-  function __decorate(decorators, target, key, desc) {
-      var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-      if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-      else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-      return c > 3 && r && Object.defineProperty(target, key, r), r;
-  }
-
-  function __param(paramIndex, decorator) {
-      return function (target, key) { decorator(target, key, paramIndex); }
-  }
-
-  function __metadata(metadataKey, metadataValue) {
-      if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(metadataKey, metadataValue);
-  }
-
-  function __awaiter(thisArg, _arguments, P, generator) {
-      return new (P || (P = Promise))(function (resolve, reject) {
-          function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-          function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-          function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-          step((generator = generator.apply(thisArg, _arguments || [])).next());
-      });
-  }
 
   function __generator(thisArg, body) {
       var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
@@ -626,10 +567,6 @@
           } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
           if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
       }
-  }
-
-  function __exportStar(m, exports) {
-      for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
   }
 
   function __values(o) {
@@ -665,74 +602,6 @@
           ar = ar.concat(__read(arguments[i]));
       return ar;
   }
-
-  function __await(v) {
-      return this instanceof __await ? (this.v = v, this) : new __await(v);
-  }
-
-  function __asyncGenerator(thisArg, _arguments, generator) {
-      if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
-      var g = generator.apply(thisArg, _arguments || []), i, q = [];
-      return i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i;
-      function verb(n) { if (g[n]) i[n] = function (v) { return new Promise(function (a, b) { q.push([n, v, a, b]) > 1 || resume(n, v); }); }; }
-      function resume(n, v) { try { step(g[n](v)); } catch (e) { settle(q[0][3], e); } }
-      function step(r) { r.value instanceof __await ? Promise.resolve(r.value.v).then(fulfill, reject) : settle(q[0][2], r); }
-      function fulfill(value) { resume("next", value); }
-      function reject(value) { resume("throw", value); }
-      function settle(f, v) { if (f(v), q.shift(), q.length) resume(q[0][0], q[0][1]); }
-  }
-
-  function __asyncDelegator(o) {
-      var i, p;
-      return i = {}, verb("next"), verb("throw", function (e) { throw e; }), verb("return"), i[Symbol.iterator] = function () { return this; }, i;
-      function verb(n, f) { i[n] = o[n] ? function (v) { return (p = !p) ? { value: __await(o[n](v)), done: n === "return" } : f ? f(v) : v; } : f; }
-  }
-
-  function __asyncValues(o) {
-      if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
-      var m = o[Symbol.asyncIterator], i;
-      return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
-      function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
-      function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
-  }
-
-  function __makeTemplateObject(cooked, raw) {
-      if (Object.defineProperty) { Object.defineProperty(cooked, "raw", { value: raw }); } else { cooked.raw = raw; }
-      return cooked;
-  }
-  function __importStar(mod) {
-      if (mod && mod.__esModule) return mod;
-      var result = {};
-      if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-      result.default = mod;
-      return result;
-  }
-
-  function __importDefault(mod) {
-      return (mod && mod.__esModule) ? mod : { default: mod };
-  }
-
-  var tslib_1 = /*#__PURE__*/Object.freeze({
-    __extends: __extends,
-    get __assign () { return __assign; },
-    __rest: __rest,
-    __decorate: __decorate,
-    __param: __param,
-    __metadata: __metadata,
-    __awaiter: __awaiter,
-    __generator: __generator,
-    __exportStar: __exportStar,
-    __values: __values,
-    __read: __read,
-    __spread: __spread,
-    __await: __await,
-    __asyncGenerator: __asyncGenerator,
-    __asyncDelegator: __asyncDelegator,
-    __asyncValues: __asyncValues,
-    __makeTemplateObject: __makeTemplateObject,
-    __importStar: __importStar,
-    __importDefault: __importDefault
-  });
 
   function Identifier(node, scope, options) {
       if (options === void 0) { options = {}; }
@@ -778,7 +647,7 @@
   function ThisExpression(node, scope) {
       var superCall = scope.find(SUPERCALL);
       if (superCall && !superCall.get()) {
-          throw new ReferenceError('Must call super constructor in derived class'
+          throw new ReferenceError('Must call super constructor in derived class '
               + 'before accessing \'this\' or returning from derived constructor');
       }
       else {
@@ -816,7 +685,7 @@
                       key = propKey.name;
                   }
                   else {
-                      key = '' + (Literal(propKey, scope));
+                      key = '' + (Literal(propKey));
                   }
               }
               var value = evaluate(property.value, scope);
@@ -825,10 +694,22 @@
                   object[key] = value;
               }
               else if (propKind === 'get') {
-                  define(object, key, { get: value });
+                  var oriDptor = getDptor(object, key);
+                  define(object, key, {
+                      get: value,
+                      set: oriDptor && oriDptor.set,
+                      enumerable: true,
+                      configurable: true
+                  });
               }
               else {
-                  define(object, key, { set: value });
+                  var oriDptor = getDptor(object, key);
+                  define(object, key, {
+                      get: oriDptor && oriDptor.get,
+                      set: value,
+                      enumerable: true,
+                      configurable: true
+                  });
               }
           }
       }
@@ -866,11 +747,11 @@
                   return variable.del();
               }
               else if (arg.type === 'Identifier') {
-                  var win = scope.global().find('window').get();
-                  return delete win[arg.name];
+                  throw new SyntaxError('Delete of an unqualified identifier in strict mode');
               }
               else {
-                  throw new SyntaxError('Unexpected token');
+                  evaluate(arg, scope);
+                  return true;
               }
           default: throw new SyntaxError("Unexpected token " + node.operator);
       }
@@ -1058,10 +939,9 @@
           else {
               key = node.callee.property.name;
           }
-          var getter = getGetter(object, key);
-          if (node.callee.object.type === 'Super' && getter) {
+          if (node.callee.object.type === 'Super') {
               var thisObject = scope.find('this').get();
-              func = getter.call(thisObject);
+              func = object[key].bind(thisObject);
           }
           else {
               func = object[key];
@@ -1170,7 +1050,7 @@
       var temEl;
       var expr;
       while (temEl = quasis.shift()) {
-          result += TemplateElement(temEl, scope);
+          result += TemplateElement(temEl);
           expr = expressions.shift();
           if (expr) {
               result += evaluate(expr, scope);
@@ -1786,7 +1666,7 @@
       return __generator(this, function (_a) {
           superCall = scope.find(SUPERCALL);
           if (superCall && !superCall.get()) {
-              throw new ReferenceError('Must call super constructor in derived class'
+              throw new ReferenceError('Must call super constructor in derived class '
                   + 'before accessing \'this\' or returning from derived constructor');
           }
           else {
@@ -1826,7 +1706,7 @@
       });
   }
   function ObjectExpression$1(node, scope) {
-      var object, i, property, _a, _b, key, propKey, _c, value, propKind;
+      var object, i, property, _a, _b, key, propKey, _c, value, propKind, oriDptor, oriDptor;
       return __generator(this, function (_d) {
           switch (_d.label) {
               case 0:
@@ -1857,7 +1737,7 @@
                   return [3, 8];
               case 6:
                   _c = '';
-                  return [5, __values(Literal$1(propKey, scope))];
+                  return [5, __values(Literal$1(propKey))];
               case 7:
                   key = _c + (_d.sent());
                   _d.label = 8;
@@ -1869,10 +1749,22 @@
                       object[key] = value;
                   }
                   else if (propKind === 'get') {
-                      define(object, key, { get: value });
+                      oriDptor = getDptor(object, key);
+                      define(object, key, {
+                          get: value,
+                          set: oriDptor && oriDptor.set,
+                          enumerable: true,
+                          configurable: true
+                      });
                   }
                   else {
-                      define(object, key, { set: value });
+                      oriDptor = getDptor(object, key);
+                      define(object, key, {
+                          get: oriDptor && oriDptor.get,
+                          set: value,
+                          enumerable: true,
+                          configurable: true
+                      });
                   }
                   _d.label = 10;
               case 10:
@@ -1898,7 +1790,7 @@
       });
   }
   function UnaryExpression$1(node, scope) {
-      var arg, _a, variable, win;
+      var arg, _a, variable;
       return __generator(this, function (_b) {
           switch (_b.label) {
               case 0:
@@ -1913,7 +1805,7 @@
                       case 'typeof': return [3, 11];
                       case 'delete': return [3, 15];
                   }
-                  return [3, 18];
+                  return [3, 20];
               case 1: return [5, __values(evaluate$1(arg, scope))];
               case 2: return [2, +(_b.sent())];
               case 3: return [5, __values(evaluate$1(arg, scope))];
@@ -1937,15 +1829,13 @@
                   variable = _b.sent();
                   return [2, variable.del()];
               case 17:
-                  if (arg.type === 'Identifier') {
-                      win = scope.global().find('window').get();
-                      return [2, delete win[arg.name]];
-                  }
-                  else {
-                      throw new SyntaxError('Unexpected token');
-                  }
-                  _b.label = 18;
-              case 18: throw new SyntaxError("Unexpected token " + node.operator);
+                  if (!(arg.type === 'Identifier')) return [3, 18];
+                  throw new SyntaxError('Delete of an unqualified identifier in strict mode');
+              case 18: return [5, __values(evaluate$1(arg, scope))];
+              case 19:
+                  _b.sent();
+                  return [2, true];
+              case 20: throw new SyntaxError("Unexpected token " + node.operator);
           }
       });
   }
@@ -2202,7 +2092,7 @@
       });
   }
   function CallExpression$1(node, scope) {
-      var func, object, key, getter, thisObject, name_1, args, i, arg, _a, _b, _c, _d, superCall;
+      var func, object, key, thisObject, name_1, args, i, arg, _a, _b, _c, _d, superCall;
       return __generator(this, function (_e) {
           switch (_e.label) {
               case 0:
@@ -2220,10 +2110,9 @@
                   key = node.callee.property.name;
                   _e.label = 4;
               case 4:
-                  getter = getGetter(object, key);
-                  if (node.callee.object.type === 'Super' && getter) {
+                  if (node.callee.object.type === 'Super') {
                       thisObject = scope.find('this').get();
-                      func = getter.call(thisObject);
+                      func = object[key].bind(thisObject);
                   }
                   else {
                       func = object[key];
@@ -2387,7 +2276,7 @@
               case 1:
                   if (!(temEl = quasis.shift())) return [3, 5];
                   _a = result;
-                  return [5, __values(TemplateElement$1(temEl, scope))];
+                  return [5, __values(TemplateElement$1(temEl))];
               case 2:
                   result = _a + _c.sent();
                   expr = expressions.shift();
@@ -2889,7 +2778,8 @@
       });
   }
   function ForOfStatement$1(node, scope) {
-      var e_1, _a, right, iterator, ret, result, right_1, right_1_1, value, result, e_1_1;
+      var right, iterator, ret, result, right_1, right_1_1, value, result, e_1_1;
+      var e_1, _a;
       return __generator(this, function (_b) {
           switch (_b.label) {
               case 0: return [5, __values(evaluate$1(node.right, scope))];
@@ -3619,7 +3509,7 @@
       if (!node.generator && !node.async) {
           return createFunc$1(node, scope, options);
       }
-      var superClass = options.superClass;
+      var superClass = options.superClass, isCtor = options.isCtor;
       var params = node.params;
       var tmpFunc = function _a() {
           var _i, subScope, i, param, result;
@@ -3638,7 +3528,8 @@
                           subScope.const(NEWTARGET, _newTarget);
                           if (superClass) {
                               subScope.const(SUPER, superClass);
-                              subScope.let(SUPERCALL, false);
+                              if (isCtor)
+                                  subScope.let(SUPERCALL, false);
                           }
                       }
                       i = 0;
@@ -3695,8 +3586,16 @@
           func = function () {
               var iterator = tmpFunc.apply(void 0, arguments);
               var last = Promise.resolve();
+              var hasCatch = false;
               var run = function (opts) {
-                  return last = last.then(function () { return runAsync(iterator, assign({ fullRet: true }, opts)); });
+                  return last = last
+                      .then(function () { return runAsync(iterator, assign({ fullRet: true }, opts)); })
+                      .catch(function (err) {
+                      if (!hasCatch) {
+                          hasCatch = true;
+                          return Promise.reject(err);
+                      }
+                  });
               };
               var asyncIterator = {
                   next: function (res) { return run({ res: res }); },
@@ -3744,7 +3643,7 @@
                   for (i = 0; i < methodBody.length; i++) {
                       method = methodBody[i];
                       if (method.kind === 'constructor') {
-                          klass = createFunc(method.value, scope, { superClass: superClass });
+                          klass = createFunc(method.value, scope, { superClass: superClass, isCtor: true });
                           break;
                       }
                   }
@@ -3893,7 +3792,7 @@
       if (node.generator || node.async) {
           return createFunc(node, scope, options);
       }
-      var superClass = options.superClass;
+      var superClass = options.superClass, isCtor = options.isCtor;
       var params = node.params;
       var tmpFunc = function _a() {
           var _newTarget = this && this instanceof _a ? this.constructor : void 0;
@@ -3908,7 +3807,8 @@
               subScope.const(NEWTARGET, _newTarget);
               if (superClass) {
                   subScope.const(SUPER, superClass);
-                  subScope.let(SUPERCALL, false);
+                  if (isCtor)
+                      subScope.let(SUPERCALL, false);
               }
           }
           for (var i = 0; i < params.length; i++) {
@@ -3969,7 +3869,7 @@
       for (var i = 0; i < methodBody.length; i++) {
           var method = methodBody[i];
           if (method.kind === 'constructor') {
-              klass = createFunc$1(method.value, scope, { superClass: superClass });
+              klass = createFunc$1(method.value, scope, { superClass: superClass, isCtor: true });
               break;
           }
       }

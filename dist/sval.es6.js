@@ -380,7 +380,7 @@
       }
   }
 
-  var version = "0.4.5";
+  var version = "0.4.6";
 
   const AWAIT = { RES: undefined };
   const RETURN = { RES: undefined };
@@ -564,7 +564,7 @@
   function ThisExpression(node, scope) {
       const superCall = scope.find(SUPERCALL);
       if (superCall && !superCall.get()) {
-          throw new ReferenceError('Must call super constructor in derived class'
+          throw new ReferenceError('Must call super constructor in derived class '
               + 'before accessing \'this\' or returning from derived constructor');
       }
       else {
@@ -602,7 +602,7 @@
                       key = propKey.name;
                   }
                   else {
-                      key = '' + (Literal(propKey, scope));
+                      key = '' + (Literal(propKey));
                   }
               }
               const value = evaluate(property.value, scope);
@@ -611,10 +611,22 @@
                   object[key] = value;
               }
               else if (propKind === 'get') {
-                  define(object, key, { get: value });
+                  const oriDptor = getDptor(object, key);
+                  define(object, key, {
+                      get: value,
+                      set: oriDptor && oriDptor.set,
+                      enumerable: true,
+                      configurable: true
+                  });
               }
               else {
-                  define(object, key, { set: value });
+                  const oriDptor = getDptor(object, key);
+                  define(object, key, {
+                      get: oriDptor && oriDptor.get,
+                      set: value,
+                      enumerable: true,
+                      configurable: true
+                  });
               }
           }
       }
@@ -652,11 +664,11 @@
                   return variable.del();
               }
               else if (arg.type === 'Identifier') {
-                  const win = scope.global().find('window').get();
-                  return delete win[arg.name];
+                  throw new SyntaxError('Delete of an unqualified identifier in strict mode');
               }
               else {
-                  throw new SyntaxError('Unexpected token');
+                  evaluate(arg, scope);
+                  return true;
               }
           default: throw new SyntaxError(`Unexpected token ${node.operator}`);
       }
@@ -843,10 +855,9 @@
           else {
               key = node.callee.property.name;
           }
-          const getter = getGetter(object, key);
-          if (node.callee.object.type === 'Super' && getter) {
+          if (node.callee.object.type === 'Super') {
               const thisObject = scope.find('this').get();
-              func = getter.call(thisObject);
+              func = object[key].bind(thisObject);
           }
           else {
               func = object[key];
@@ -955,7 +966,7 @@
       let temEl;
       let expr;
       while (temEl = quasis.shift()) {
-          result += TemplateElement(temEl, scope);
+          result += TemplateElement(temEl);
           expr = expressions.shift();
           if (expr) {
               result += evaluate(expr, scope);
@@ -1541,7 +1552,7 @@
   function* ThisExpression$1(node, scope) {
       const superCall = scope.find(SUPERCALL);
       if (superCall && !superCall.get()) {
-          throw new ReferenceError('Must call super constructor in derived class'
+          throw new ReferenceError('Must call super constructor in derived class '
               + 'before accessing \'this\' or returning from derived constructor');
       }
       else {
@@ -1579,7 +1590,7 @@
                       key = propKey.name;
                   }
                   else {
-                      key = '' + (yield* Literal$1(propKey, scope));
+                      key = '' + (yield* Literal$1(propKey));
                   }
               }
               const value = yield* evaluate$1(property.value, scope);
@@ -1588,10 +1599,22 @@
                   object[key] = value;
               }
               else if (propKind === 'get') {
-                  define(object, key, { get: value });
+                  const oriDptor = getDptor(object, key);
+                  define(object, key, {
+                      get: value,
+                      set: oriDptor && oriDptor.set,
+                      enumerable: true,
+                      configurable: true
+                  });
               }
               else {
-                  define(object, key, { set: value });
+                  const oriDptor = getDptor(object, key);
+                  define(object, key, {
+                      get: oriDptor && oriDptor.get,
+                      set: value,
+                      enumerable: true,
+                      configurable: true
+                  });
               }
           }
       }
@@ -1629,11 +1652,11 @@
                   return variable.del();
               }
               else if (arg.type === 'Identifier') {
-                  const win = scope.global().find('window').get();
-                  return delete win[arg.name];
+                  throw new SyntaxError('Delete of an unqualified identifier in strict mode');
               }
               else {
-                  throw new SyntaxError('Unexpected token');
+                  yield* evaluate$1(arg, scope);
+                  return true;
               }
           default: throw new SyntaxError(`Unexpected token ${node.operator}`);
       }
@@ -1820,10 +1843,9 @@
           else {
               key = node.callee.property.name;
           }
-          const getter = getGetter(object, key);
-          if (node.callee.object.type === 'Super' && getter) {
+          if (node.callee.object.type === 'Super') {
               const thisObject = scope.find('this').get();
-              func = getter.call(thisObject);
+              func = object[key].bind(thisObject);
           }
           else {
               func = object[key];
@@ -1932,7 +1954,7 @@
       let temEl;
       let expr;
       while (temEl = quasis.shift()) {
-          result += yield* TemplateElement$1(temEl, scope);
+          result += yield* TemplateElement$1(temEl);
           expr = expressions.shift();
           if (expr) {
               result += yield* evaluate$1(expr, scope);
@@ -2627,7 +2649,7 @@
       if (!node.generator && !node.async) {
           return createFunc$1(node, scope, options);
       }
-      const { superClass } = options;
+      const { superClass, isCtor } = options;
       const params = node.params;
       const tmpFunc = function* (...args) {
           const subScope = new Scope(scope, true);
@@ -2637,7 +2659,8 @@
               subScope.const(NEWTARGET, new.target);
               if (superClass) {
                   subScope.const(SUPER, superClass);
-                  subScope.let(SUPERCALL, false);
+                  if (isCtor)
+                      subScope.let(SUPERCALL, false);
               }
           }
           for (let i = 0; i < params.length; i++) {
@@ -2676,7 +2699,15 @@
           func = function () {
               const iterator = tmpFunc.apply(void 0, arguments);
               let last = Promise.resolve();
-              const run = (opts) => last = last.then(() => runAsync(iterator, assign({ fullRet: true }, opts)));
+              let hasCatch = false;
+              const run = (opts) => last = last
+                  .then(() => runAsync(iterator, assign({ fullRet: true }, opts)))
+                  .catch(err => {
+                  if (!hasCatch) {
+                      hasCatch = true;
+                      return Promise.reject(err);
+                  }
+              });
               const asyncIterator = {
                   next: (res) => run({ res }),
                   throw: (err) => run({ err }),
@@ -2718,7 +2749,7 @@
       for (let i = 0; i < methodBody.length; i++) {
           const method = methodBody[i];
           if (method.kind === 'constructor') {
-              klass = createFunc(method.value, scope, { superClass });
+              klass = createFunc(method.value, scope, { superClass, isCtor: true });
               break;
           }
       }
@@ -2845,7 +2876,7 @@
       if (node.generator || node.async) {
           return createFunc(node, scope, options);
       }
-      const { superClass } = options;
+      const { superClass, isCtor } = options;
       const params = node.params;
       const tmpFunc = function (...args) {
           const subScope = new Scope(scope, true);
@@ -2855,7 +2886,8 @@
               subScope.const(NEWTARGET, new.target);
               if (superClass) {
                   subScope.const(SUPER, superClass);
-                  subScope.let(SUPERCALL, false);
+                  if (isCtor)
+                      subScope.let(SUPERCALL, false);
               }
           }
           for (let i = 0; i < params.length; i++) {
@@ -2916,7 +2948,7 @@
       for (let i = 0; i < methodBody.length; i++) {
           const method = methodBody[i];
           if (method.kind === 'constructor') {
-              klass = createFunc$1(method.value, scope, { superClass });
+              klass = createFunc$1(method.value, scope, { superClass, isCtor: true });
               break;
           }
       }
