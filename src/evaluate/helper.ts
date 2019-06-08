@@ -113,6 +113,7 @@ export function* pattern(node: estree.Pattern, scope: Scope, options: PatternOpt
 
 export interface CtorOptions {
   superClass?: (...args: any[]) => any
+  isCtor?: boolean
 }
 
 import { createFunc as createAnotherFunc } from /*<replace by:='../evaluate/helper'>*/'../evaluate_n/helper'/*</replace>*/
@@ -125,7 +126,7 @@ export function createFunc(
     return createAnotherFunc(node, scope, options)
   }
 
-  const { superClass } = options
+  const { superClass, isCtor } = options
   const params = node.params
   const tmpFunc = function* (...args: any[]) {
     const subScope: Scope = new Scope(scope, true)
@@ -135,7 +136,7 @@ export function createFunc(
       subScope.const(NEWTARGET, new.target)
       if (superClass) {
         subScope.const(SUPER, superClass)
-        subScope.let(SUPERCALL, false)
+        if (isCtor) subScope.let(SUPERCALL, false)
       }
     }
 
@@ -176,8 +177,16 @@ export function createFunc(
     func = function (): AsyncIterator<any> {
       const iterator = tmpFunc.apply(void 0, arguments)
       let last: Promise<any> = Promise.resolve()
+      let hasCatch = false
       const run = (opts: runAsyncOptions) =>
-        last = last.then(() => runAsync(iterator, assign({ fullRet: true }, opts)))
+        last = last
+          .then(() => runAsync(iterator, assign({ fullRet: true }, opts)))
+          .catch(err => {
+            if (!hasCatch) {
+              hasCatch = true
+              return Promise.reject(err)
+            }
+          })
       const asyncIterator: AsyncIterator<any> = {
         next: (res?: any) => run({ res }),
         throw: (err?: any) => run({ err }),
@@ -230,7 +239,7 @@ export function* createClass(
   for (let i = 0; i < methodBody.length; i++) {
     const method = methodBody[i]
     if (method.kind === 'constructor') {
-      klass = createFunc(method.value, scope, { superClass })
+      klass = createFunc(method.value, scope, { superClass, isCtor: true })
       break
     }
   }

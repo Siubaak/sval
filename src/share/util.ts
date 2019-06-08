@@ -57,7 +57,7 @@ export function inherits(
   })
 }
 
-function _assign(target: any): any {
+export function _assign(target: any): any {
     for (let i = 1; i < arguments.length; ++i) {
       const source = arguments[i]
       for (const key in source) {
@@ -78,6 +78,7 @@ try {
   if (!(window as any).Object) throw 0
   names = getOwnNames(globalObj = window).filter(n => n !== 'webkitStorageInfo')
 } catch (err) {
+  /* istanbul ignore next */
   try {
     // Node environment
     if (!global.Object) throw 0

@@ -1,4 +1,4 @@
-import { define, freeze, getGetter, getSetter, createSymbol, assign } from '../share/util'
+import { define, freeze, getGetter, getSetter, createSymbol, assign, getDptor } from '../share/util'
 import { SUPER, NOCTOR, AWAIT, CLSCTOR, NEWTARGET, SUPERCALL } from '../share/const'
 import { pattern, createFunc, createClass } from './helper'
 import { Variable, Prop } from '../scope/variable'
@@ -11,7 +11,7 @@ import evaluate from '.'
 export function* ThisExpression(node: estree.ThisExpression, scope: Scope) {
   const superCall = scope.find(SUPERCALL)
   if (superCall && !superCall.get()) {
-    throw new ReferenceError('Must call super constructor in derived class'
+    throw new ReferenceError('Must call super constructor in derived class '
       + 'before accessing \'this\' or returning from derived constructor')
   } else {
     return scope.find('this').get()
@@ -56,9 +56,21 @@ export function* ObjectExpression(node: estree.ObjectExpression, scope: Scope) {
       if (propKind === 'init') {
         object[key] = value
       } else if (propKind === 'get') {
-        define(object, key, { get: value })
+        const oriDptor = getDptor(object, key)
+        define(object, key, {
+          get: value,
+          set: oriDptor && oriDptor.set,
+          enumerable: true,
+          configurable: true
+        })
       } else { // propKind === 'set'
-        define(object, key, { set: value })
+        const oriDptor = getDptor(object, key)
+        define(object, key, {
+          get: oriDptor && oriDptor.get,
+          set: value,
+          enumerable: true,
+          configurable: true
+        })
       }
     }
   }
@@ -97,11 +109,12 @@ export function* UnaryExpression(node: estree.UnaryExpression, scope: Scope) {
         const variable: Prop = yield* MemberExpression(arg, scope, { getVar: true })
         return variable.del()
       } else if (arg.type === 'Identifier') {
-        const win = scope.global().find('window').get()
-        return delete win[arg.name]
+        throw new SyntaxError('Delete of an unqualified identifier in strict mode')
       } else {
-        throw new SyntaxError('Unexpected token')
+        yield* evaluate(arg, scope)
+        return true
       }
+    /* istanbul ignore next */
     default: throw new SyntaxError(`Unexpected token ${node.operator}`)
   }
 }
@@ -115,6 +128,7 @@ export function* UpdateExpression(node: estree.UpdateExpression, scope: Scope) {
   } else if (arg.type === 'MemberExpression') {
     variable = yield* MemberExpression(arg, scope, { getVar: true })
   } else {
+    /* istanbul ignore next */
     throw new SyntaxError('Unexpected token')
   }
 
@@ -126,6 +140,7 @@ export function* UpdateExpression(node: estree.UpdateExpression, scope: Scope) {
     variable.set(value - 1)
     return node.prefix ? variable.get() : value
   } else {
+    /* istanbul ignore next */
     throw new SyntaxError(`Unexpected token ${node.operator}`)
   }
 }
@@ -157,6 +172,7 @@ export function* BinaryExpression(node: estree.BinaryExpression, scope: Scope) {
     case '&': return left & right
     case 'in': return left in right
     case 'instanceof': return left instanceof right
+    /* istanbul ignore next */
     default: throw new SyntaxError(`Unexpected token ${node.operator}`)
   }
 }
@@ -193,6 +209,7 @@ export function* AssignmentExpression(node: estree.AssignmentExpression, scope: 
     case '|=': variable.set(variable.get() | value); return variable.get()
     case '^=': variable.set(variable.get() ^ value); return variable.get()
     case '&=': variable.set(variable.get() & value); return variable.get()
+    /* istanbul ignore next */
     default: throw new SyntaxError(`Unexpected token ${node.operator}`)
   }
 }
@@ -204,6 +221,7 @@ export function* LogicalExpression(node: estree.LogicalExpression, scope: Scope)
     case '&&':
       return (yield* evaluate(node.left, scope)) && (yield* evaluate(node.right, scope))
     default:
+      /* istanbul ignore next */
       throw new SyntaxError(`Unexpected token ${node.operator}`)
   }
 }
@@ -282,10 +300,9 @@ export function* CallExpression(node: estree.CallExpression, scope: Scope) {
     }
 
     // right value
-    const getter = getGetter(object, key)
-    if (node.callee.object.type === 'Super' && getter) {
+    if (node.callee.object.type === 'Super') {
       const thisObject = scope.find('this').get()
-      func = getter.call(thisObject)
+      func = object[key].bind(thisObject)
     } else {
       func = object[key]
     }

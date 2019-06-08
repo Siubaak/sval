@@ -1,6 +1,6 @@
 import Sval from '../src'
 
-describe('testing src/index.ts', () => {
+describe('testing src/expression.ts', () => {
   it('should call expression run normally', () => {  
     const interpreter = new Sval()
 
@@ -26,6 +26,7 @@ describe('testing src/index.ts', () => {
       exports.c = typeof x // shouldn't throw err
       exports.d = 1
       exports.e = delete exports.d
+      exports.f = typeof exports.e
     `
     interpreter.run(`!async function(){${code}}()`) // also test for generator env
     interpreter.run(code)
@@ -35,6 +36,7 @@ describe('testing src/index.ts', () => {
     expect(interpreter.exports.c).toBe('undefined')
     expect(interpreter.exports.d).toBeUndefined()
     expect(interpreter.exports.e).toBeTruthy()
+    expect(interpreter.exports.f).toBe('boolean')
   })
   it('should binary expression run normally', () => {
     const interpreter = new Sval()
@@ -133,6 +135,22 @@ describe('testing src/index.ts', () => {
     interpreter.run(`!async function(){${code}}()`) // also test for generator env
     interpreter.run(code)
   })
+
+  it ('should throw TypeError when assigning to constant', () => {
+    const interpreter = new Sval()
+    let error = null
+    try {
+      interpreter.run(`
+        const x = 5
+        x = 6
+      `)
+    } catch (ex) {
+      error = ex
+    }
+
+    expect(error).toBeInstanceOf(TypeError)
+  })
+
   it('should parse spread element normally', () => {
     const interpreter = new Sval()
 
@@ -173,7 +191,7 @@ describe('testing src/index.ts', () => {
     interpreter.import({ expect })
     interpreter.run(`
       const name = 'y'
-      const values = { a: 1, b: 2}
+      const values = { a: 1, b: 2 }
       const a = {
         x: 5,
         [name]: 6,
@@ -186,7 +204,73 @@ describe('testing src/index.ts', () => {
         a: 1,
         b: 2
       })
+
+      // object with getter+setter
+      const b = {
+        _t: 1,
+        get t() {
+          return this._t
+        },
+        set t(v) {
+          this._t = v
+        }
+      }
+
+      b.t = 2
+
+      exports.b = b
     `)
+
+    const b = {
+      _t: 1,
+      get t() {
+        return this._t
+      },
+      set t(v) {
+        this._t = v
+      }
+    }
+
+    b.t = 2
+
+    expect(interpreter.exports.b).toEqual(b)
+  })
+
+  it('should support object expression with correct property descriptor', () => {  
+    const interpreter = new Sval()
+    interpreter.run(`
+      const a = {
+        x: 5,
+        get y() {
+          return this.x + 1
+        },
+        set y(v) {
+          this.x = v - 1
+        }
+      }
+
+      exports.a = a
+    `)
+
+    const a = interpreter.exports.a;
+    expect(Object.keys(a)).toEqual(['x', 'y'])
+
+    const xPD = Object.getOwnPropertyDescriptor(a, 'x')
+    expect(xPD).toEqual({
+      configurable: true,
+      enumerable: true,
+      value: 5,
+      writable: true
+    })
+    
+    const yPD = Object.getOwnPropertyDescriptor(a, 'y')
+    expect({
+      configurable: yPD.configurable,
+      enumerable: yPD.enumerable,
+    }).toEqual({
+      configurable: true,
+      enumerable: true,
+    })
   })
 
   it('should support logic expression', () => {  
@@ -199,5 +283,88 @@ describe('testing src/index.ts', () => {
       expect(x && y).toBe(0)
       expect(x || y).toBe(true)
     `)
+  })
+
+  it('should support method call with super + getter', () => {  
+    const interpreter = new Sval()
+    interpreter.run(`
+      class X {
+        get say() {
+          return function() { return 1}
+        }
+      }
+
+      class Y extends X {
+        say() {
+          return super.say()
+        }
+      }
+
+      exports.result = new Y().say()
+    `)
+
+    expect(interpreter.exports.result).toEqual(1);
+  })
+
+  it('should support method call with computed name', () => {  
+    const interpreter = new Sval()
+    interpreter.run(`
+      var x = {
+        say() {
+          return 1
+        }
+      }
+
+      exports.result = x['say']()
+    `)
+
+    expect(interpreter.exports.result).toEqual(1);
+  })
+
+  it('should support method call with computed name', () => {  
+    const interpreter = new Sval()
+    interpreter.run(`
+      exports.result = 1+!!2
+    `)
+
+    expect(interpreter.exports.result).toEqual(2);
+  })
+
+  it('should support all kinds of delete actions', () => {  
+    const interpreter = new Sval()
+    interpreter.run(`
+      var x = {}
+
+      // normal behavior for 'delete' in strict mode
+      delete x.x
+
+      // delete any literal except undefined, undefined is an identifier in js
+      let result = true
+      result &= delete 1
+      result &= '1'
+      result &= delete true
+      result &= delete Symbol('xx')
+      result &= delete null
+      result &= delete {}
+      result &= delete function () {}
+      result &= delete /x/
+
+      exports.result = result
+    `)
+
+    expect(interpreter.exports.result).toBeTruthy()
+
+    let error = null;
+    try {
+      interpreter.run(`
+        // trying to delete a regular identifier in strict mode
+        var y = {}
+        delete y
+      `)
+    } catch (ex) {
+      error = ex
+    }
+
+    expect(error).toBeInstanceOf(SyntaxError);
   })
 })
