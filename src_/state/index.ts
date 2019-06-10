@@ -9,4 +9,6 @@ export default class State {
   readonly symbols: SymbolTable = new SymbolTable()
 
   readonly opCodes: OpCode[] = []
+
+  pc: number = 0
 }

@@ -12,6 +12,8 @@ export enum OP {
   IFJMP, // jump to specified position if true
   CALL,  // invoke functions or methods
   MEMB,  // get member of object
+  RET,   // return
+  YIELD, // yield
 }
 
 export interface OpCode {

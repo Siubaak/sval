@@ -65,7 +65,8 @@ class Sval {
     compile(ast as any, this.state)
     for (let i = 0; i < this.state.opCodes.length; i++) {
       const opCode = this.state.opCodes[i]
-      console.log((OP as any)[opCode.op], typeof opCode.val === 'undefined' ? '' : opCode.val)
+      console.log(i, (OP as any)[opCode.op], typeof opCode.val === 'undefined' ? '' : opCode.val)
+      if (opCode.op === OP.FUNC) console.log('   ', opCode.begin, opCode.end)
     }
     execute(this.state)
     // console.log(this.state)
