@@ -8,25 +8,22 @@ export function VariableDeclaration(node: estree.VariableDeclaration, state: Sta
     const declr = node.declarations[i]
     compile(declr.init, state)
     if (declr.id.type === 'Identifier') {
-      state.opCodes.push({
-        op: (OP as any)[node.kind.toUpperCase()],
-        val: state.symbols.set(declr.id.name)
-      })
+      state.opCodes.push({ op: OP.MOVE, val: state.symbols.set(node.kind, declr.id.name).pointer })
     }
   }
 }
 
 export function FunctionDeclaration(node: estree.FunctionDeclaration, state: State) {
-  const funCode = { op: OP.FUNC, val: state.symbols.set(node.id.name), begin: state.opCodes.length + 1, end: -1 }
+  const funCode = { op: OP.FUNC, val: -1 }
   state.opCodes.push(funCode)
 
   state.symbols.pushScope()
-  state.opCodes.push({ op: OP.CONST, val: state.symbols.set('this') })
-  state.opCodes.push({ op: OP.LET, val: state.symbols.set('arguments') })
+  state.opCodes.push({ op: OP.MOVE, val: state.symbols.set('const', 'this').pointer })
+  state.opCodes.push({ op: OP.MOVE, val: state.symbols.set('let', 'arguments').pointer })
   for (let i = 0; i < node.params.length; i++) {
     const param = node.params[i]
     if (param.type === 'Identifier') {
-      state.opCodes.push({ op: OP.LET, val: state.symbols.set(param.name) })
+      state.opCodes.push({ op: OP.MOVE, val: state.symbols.set('let', param.name).pointer })
     } else if (param.type === 'RestElement') {
     } else {
     }
@@ -37,5 +34,6 @@ export function FunctionDeclaration(node: estree.FunctionDeclaration, state: Sta
   }
   state.symbols.popScope()
 
-  funCode.end = state.opCodes.length
+  funCode.val = state.opCodes.length
+  state.opCodes.push({ op: OP.MOVE, val: state.symbols.set('var', node.id.name).pointer })
 }

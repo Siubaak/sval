@@ -1,11 +1,28 @@
+import { hasOwn } from '../share/util'
+
+type VarType = 'var' | 'let' | 'const'
+
+interface VarSymbol {
+	type: VarType
+	pointer: number
+}
+
+interface SymbolMap {
+	[name: string]: VarSymbol
+}
+
 export default class SymbolTable {
-	private table: any = Object.create(null)
+	private table: SymbolMap = Object.create(null)
 	private pointer: number = 0
-	private readonly tableChain: any[] = []
+	private readonly tableChain: SymbolMap[] = []
 	private readonly pointerChain: number[] = []
 
-	set(name: string) {
-		return this.table[name] = this.pointer++
+	set(type: VarType, name: string) {
+		if (hasOwn(this.table, name)) {
+			throw new SyntaxError(`Identifier '${name}' has already been declared`)
+		} else {
+			return this.table[name] = { type, pointer: this.pointer++ }
+		}
 	}
 
 	get(name: string) {

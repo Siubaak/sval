@@ -40,3 +40,8 @@ export function ForStatement(node: estree.ForStatement, state: State) {
   state.opCodes.push({ op: OP.JMP, val: testPc })
   breakCode.val = state.opCodes.length // if false, break
 }
+
+export function ReturnStatement(node: estree.ReturnStatement, state: State) {
+  compile(node.argument, state)
+  state.opCodes.push({ op: OP.RET })
+}

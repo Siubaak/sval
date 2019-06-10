@@ -4,6 +4,11 @@ export function createSymbol(key: string) {
   return key + Math.random().toString(36).substring(2)
 }
 
+const hasOwnProperty = Object.prototype.hasOwnProperty
+export function hasOwn(obj: any, key: string): boolean {
+  return hasOwnProperty.call(obj, key)
+}
+
 declare let WebAssembly: any // Avoid typescript error
 let names: string[] = []
 export let globalObj = Object.create(null)

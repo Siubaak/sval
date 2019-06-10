@@ -56,7 +56,7 @@ class Sval {
  
     for (let i = 0; i < names.length; i++) {
       const name = names[i]
-      this.state.context[this.state.symbols.set(name)] = nameOrModules[name]
+      this.state.context[this.state.symbols.set('var', name).pointer] = nameOrModules[name]
     }
   }
 
@@ -66,10 +66,8 @@ class Sval {
     for (let i = 0; i < this.state.opCodes.length; i++) {
       const opCode = this.state.opCodes[i]
       console.log(i, (OP as any)[opCode.op], typeof opCode.val === 'undefined' ? '' : opCode.val)
-      if (opCode.op === OP.FUNC) console.log('   ', opCode.begin, opCode.end)
     }
     execute(this.state)
-    // console.log(this.state)
   }
 }
 

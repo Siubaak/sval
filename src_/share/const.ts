@@ -1,23 +1,26 @@
 export enum OP {
-  LOADK, // push constant into stack
-  LOADV, // push variable value into stack
-  CONST, // declare a const variable
-  LET,   // declare a let variable
-  VAR,   // declare a var variable
-  FUNC,  // declare a function
-  MOVE,  // move data from stack to context (assignment)
-  JMP,   // jump to specified position
-  BIOP,  // binary operation
-  UNOP,  // unary operation
-  IFJMP, // jump to specified position if true
-  CALL,  // invoke functions or methods
-  MEMB,  // get member of object
-  RET,   // return
-  YIELD, // yield
+  LOADK, // push literal into stack (val: literal cooked value)
+  LOADV, // push variable value into stack (val: context pointer)
+  MOVE,  // move data from stack to context (val: context pointer)
+  BIOP,  // binary operation (val: operator)
+  UNOP,  // unary operation (val: operator)
+  JMP,   // jump to specified position (val: jumped pc)
+  IFJMP, // jump to specified position if true (val: jumped pc)
+  MEMB,  // get member of object (no val)
+  FUNC,  // declare a function (val: end pc of its op codes)
+  CALL,  // invoke functions or methods (val: number of parameters)
+  RET,   // return (no val)
+  YIELD, // yield (no val)
+  COPY,  // copy the top of stack and push into stack (no val)
+}
+
+export enum SIGNAL {
+  NONE,  // null
+  RET,   // return signal
+  YIELD, // yield signal
 }
 
 export interface OpCode {
   op: OP
   val?: any
-  [more: string]: any
 }

@@ -3,11 +3,9 @@ import Sval from '.'
 const i = new Sval()
 
 i.run(`
-var i = console.log
-function a(b) {
-  i(b)
+for (var i = 0; i < 10; i++) {
+  setTimeout(function (i) {
+    console.log(i)
+  }, 0, i)
 }
-a(2)
-var k = 3
-a(3)
 `)
