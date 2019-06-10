@@ -1,19 +1,14 @@
-import compile from './compile'
-import execute from './jsvm'
-import { parse } from 'acorn'
-import State from './state'
-import { OP } from './share/const';
+import Sval from '.'
 
-const ast: any = parse(`
-for (var i = 0; i < 100; ++i) {
-  var j = i
+const i = new Sval()
+
+i.run(`
+var log = console.log
+var i = 1
+log(i)
+{
+  var i = 3
+  var j = 2
+  log(i, j)
 }
 `)
-const state = new State
-compile(ast, state)
-for (let i = 0; i < state.opCodes.length; i++) {
-  const opCode = state.opCodes[i]
-  console.log((OP as any)[opCode.op], opCode.val)
-}
-execute(state)
-console.log(state.context)

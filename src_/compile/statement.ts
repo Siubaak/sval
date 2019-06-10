@@ -8,14 +8,11 @@ export function ExpressionStatement(node: estree.ExpressionStatement, state: Sta
 }
 
 export function BlockStatement(node: estree.BlockStatement, state: State) {
-  const parentSymbols = state.symbols
-  const parentSymbolPointer = state.symbolPointer
-  state.symbols = Object.create(parentSymbols)
+  state.symbols.pushScope()
   for (let i = 0; i < node.body.length; i++) {
     compile(node.body[i], state)
   }
-  state.symbols = parentSymbols
-  state.symbolPointer = parentSymbolPointer
+  state.symbols.popScope()
 }
 
 export function IfStatement(node: estree.IfStatement, state: State) {

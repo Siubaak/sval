@@ -11,9 +11,11 @@ export enum OP {
   UNOP,  // unary operation
   IFJMP, // jump to specified position if true
   CALL,  // invoke functions or methods
+  MEMB,  // get member of object
 }
 
 export interface OpCode {
   op: OP
   val?: any
+  [more: string]: any
 }

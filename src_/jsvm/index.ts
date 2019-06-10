@@ -85,10 +85,25 @@ export default function execute(state: State) {
           case 'delete': throw new SyntaxError('delete is not implemented')
           default: throw new SyntaxError(`Unexpected token ${code.val}`)
         }
-        break
       }
       case OP.IFJMP: {
         if (stack.pop()) pc = code.val - 1
+        break
+      }
+      case OP.MEMB: {
+        const key = stack.pop()
+        const object = stack.pop()
+        stack.push(object[key])
+        break
+      }
+      case OP.CALL: {
+        const func = stack.pop()
+        const thisObj = stack.pop()
+        const args = []
+        for (let i = 0; i < code.val; i++) {
+          args.push(stack.pop())
+        }
+        stack.push(func.apply(thisObj, args.reverse()))
         break
       }
       default:
