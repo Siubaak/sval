@@ -1,4 +1,4 @@
-import { hasOwn } from '../share/util'
+import { hasOwn } from '../share/utils'
 
 type VarType = 'var' | 'let' | 'const'
 

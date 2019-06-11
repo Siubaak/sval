@@ -4,7 +4,7 @@ import State from './state'
 
 import execute from './jsvm'
 import compile from './compile'
-import { createSandBox, globalObj, getOwnNames } from './share/util'
+import { createSandBox, globalObj, getOwnNames } from './share/utils'
 import { OP } from './share/const'
 
 export interface SvalOptions {

@@ -27,6 +27,8 @@ function step(state: State) {
         case '<=': stack.push(left <= right); break
         case '>': stack.push(left > right); break
         case '>=': stack.push(left >= right); break
+        case '||': stack.push(left || right); break
+        case '&&': stack.push(left && right); break
         case 'in': stack.push(left in right); break
         case 'instanceof': stack.push(left instanceof right); break
         // not quite often used

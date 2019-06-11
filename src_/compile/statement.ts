@@ -15,6 +15,22 @@ export function BlockStatement(node: estree.BlockStatement, state: State) {
   state.symbols.popScope()
 }
 
+export function EmptyStatement() { /* No operation here */ }
+
+export function DebuggerStatement() {
+}
+
+export function ReturnStatement(node: estree.ReturnStatement, state: State) {
+  compile(node.argument, state)
+  state.opCodes.push({ op: OP.RET })
+}
+
+export function BreakStatement() {
+}
+
+export function ContinueStatement() {
+}
+
 export function IfStatement(node: estree.IfStatement, state: State) {
   compile(node.test, state)
   const ifCode: OpCode = { op: OP.IFJMP, val: -1 }
@@ -25,6 +41,27 @@ export function IfStatement(node: estree.IfStatement, state: State) {
   ifCode.val = state.opCodes.length // if true, jump to consequent
   compile(node.consequent, state)
   elseCode.val = state.opCodes.length // if false, jump to alternate
+}
+
+export function SwitchStatement(node: estree.SwitchStatement, state: State) {
+}
+
+export function SwitchCase(node: estree.SwitchCase, state: State) {
+}
+
+export function ThrowStatement(node: estree.ThrowStatement, state: State) {
+}
+
+export function TryStatement(node: estree.TryStatement, state: State) {
+}
+
+export function CatchClause(node: estree.CatchClause, state: State) {
+}
+
+export function WhileStatement(node: estree.WhileStatement, state: State) {
+}
+
+export function DoWhileStatement(node: estree.DoWhileStatement, state: State) {
 }
 
 export function ForStatement(node: estree.ForStatement, state: State) {
@@ -41,7 +78,8 @@ export function ForStatement(node: estree.ForStatement, state: State) {
   breakCode.val = state.opCodes.length // if false, break
 }
 
-export function ReturnStatement(node: estree.ReturnStatement, state: State) {
-  compile(node.argument, state)
-  state.opCodes.push({ op: OP.RET })
+export function ForInStatement(node: estree.ForInStatement, state: State) {
+}
+
+export function ForOfStatement(node: estree.ForOfStatement, state: State) {
 }
