@@ -5,9 +5,15 @@ import { OP } from '../share/const'
 import { compileFunc } from '../share/helpers'
 
 export function ThisExpression(node: estree.ThisExpression, state: State) {
+  state.opCodes.push({ op: OP.LOADV, val: state.symbols.get('this') })
 }
 
 export function ArrayExpression(node: estree.ArrayExpression, state: State) {
+  for (let i = 0; i < node.elements.length; i++) {
+    const item = node.elements[i]
+    compile(item, state)
+  }
+  state.opCodes.push({ op: OP.ARR, val: node.elements.length })
 }
 
 export function ObjectExpression(node: estree.ObjectExpression, state: State) {
@@ -47,7 +53,9 @@ export function BinaryExpression(node: estree.BinaryExpression, state: State) {
 export function AssignmentExpression(node: estree.AssignmentExpression, state: State) {
   compile(node.right, state)
   if (node.left.type === 'Identifier') {
-    const pointer = state.symbols.get(node.left.name).pointer
+    const symbol = state.symbols.get(node.left.name)
+    if (symbol.type === 'const') throw new TypeError('Assignment to constant variable')
+    const pointer = symbol.pointer
     const binaryOp = node.operator.substring(0, node.operator.length - 1)
     if (binaryOp) {
       state.opCodes.push({ op: OP.LOADV, val: pointer })
@@ -74,6 +82,17 @@ export function MemberExpression(node: estree.MemberExpression, state: State) {
 }
 
 export function ConditionalExpression(node: estree.ConditionalExpression, state: State) {
+  compile(node.test, state)
+  const ifnotCode = { op: OP.IFNOT, val: -1 }
+  state.opCodes.push(ifnotCode)
+  // if true
+  compile(node.consequent, state)
+  const trueEndCode = { op: OP.JMP, val: -1 }
+  state.opCodes.push(trueEndCode)
+  ifnotCode.val = state.opCodes.length
+  // else
+  compile(node.alternate, state)
+  trueEndCode.val = state.opCodes.length
 }
 
 export function CallExpression(node: estree.CallExpression, state: State) {
@@ -110,6 +129,9 @@ export function MetaProperty(node: estree.MetaProperty, state: State) {
 }
 
 export function SequenceExpression(node: estree.SequenceExpression, state: State) {
+  for (let i = 0; i < node.expressions.length; i++) {
+    compile(node.expressions[i], state)
+  }
 }
 
 export function ArrowFunctionExpression(node: estree.ArrowFunctionExpression, state: State) {
@@ -117,13 +139,21 @@ export function ArrowFunctionExpression(node: estree.ArrowFunctionExpression, st
 }
 
 export function TemplateLiteral(node: estree.TemplateLiteral, state: State) {
+  const quasis = node.quasis
+  const expressions = node.expressions
+
+  state.opCodes.push({ op: OP.LOADK, val: quasis.shift().value.raw })
+
+  let expr: estree.Expression
+  while (expr = expressions.shift()) {
+    compile(expr, state)
+    state.opCodes.push({ op: OP.BIOP, val: '+' })
+    state.opCodes.push({ op: OP.LOADK, val: quasis.shift().value.raw })
+    state.opCodes.push({ op: OP.BIOP, val: '+' })
+  }
 }
 
 export function TaggedTemplateExpression(node: estree.TaggedTemplateExpression, state: State) {
-}
-
-export function TemplateElement(node: estree.TemplateElement, state: State) {
-  state.opCodes.push({ op: OP.LOADK, val: node.value.raw })
 }
 
 export function ClassExpression(node: estree.ClassExpression, state: State) {

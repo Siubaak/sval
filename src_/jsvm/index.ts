@@ -59,10 +59,9 @@ function step(state: State) {
       break
     }
     case OP.JMP: state.pc = code.val - 1; break
-    case OP.IFJMP: {
-      if (stack.pop()) state.pc = code.val - 1
-      break
-    }
+    case OP.IF: stack.pop() && (state.pc = code.val - 1); break
+    case OP.IFNOT: !stack.pop() && (state.pc = code.val - 1); break
+    case OP.ARR: stack.push(stack.splice(stack.length - code.val)); break
     case OP.MEMB: {
       const key = stack.pop()
       const object = stack.pop()
@@ -98,11 +97,8 @@ function step(state: State) {
     case OP.CALL: {
       const func = stack.pop()
       const obj = stack.pop()
-      const args = []
-      for (let i = 0; i < code.val; i++) {
-        args.push(stack.pop())
-      }
-      func.apply(obj, args.reverse()) // never mind the return, it's at the top of stack
+      const args = stack.splice(stack.length - code.val)
+      func.apply(obj, args) // never mind the return, it's at the top of stack
       break
     }
     case OP.RET: signal = SIGNAL.RET; break
