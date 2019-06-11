@@ -1,6 +1,6 @@
 import * as estree from 'estree'
 import State from '../state'
-import compile from '../compile'
+import compile from '.'
 import { OP } from '../share/const'
 
 export function ExpressionStatement(node: estree.ExpressionStatement, state: State) {
@@ -13,7 +13,7 @@ export function BlockStatement(node: estree.BlockStatement, state: State) {
   state.symbols.popScope()
 }
 
-export function EmptyStatement() { /* No operation here */ }
+export function EmptyStatement() { /* no operation here */ }
 
 export function DebuggerStatement(node: estree.DebuggerStatement, state: State) {
   state.opCodes.push({ op: OP.DBG })

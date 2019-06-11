@@ -1,6 +1,6 @@
 import * as estree from 'estree'
 import State from '../state'
-import compile from '../compile'
+import compile from '.'
 
 export function ObjectPattern(node: estree.ObjectPattern, state: State) {
 

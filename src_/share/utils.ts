@@ -9,16 +9,16 @@ export function hasOwn(obj: any, key: string): boolean {
   return hasOwnProperty.call(obj, key)
 }
 
-declare let WebAssembly: any // Avoid typescript error
+declare let WebAssembly: any // avoid typescript error
 let names: string[] = []
 export let globalObj = Object.create(null)
 try {
-  // Browser environment
+  // browser environment
   if (!(window as any).Object) throw 0
   names = getOwnNames(globalObj = window).filter(n => n !== 'webkitStorageInfo')
 } catch (err) {
   try {
-    // Node environment
+    // node environment
     if (!global.Object) throw 0
     names = getOwnNames(globalObj = global).filter(n => n !== 'GLOBAL' && n !== 'root')
   } catch (err) {
@@ -98,3 +98,54 @@ for (let i = 0; i < names.length; i++) {
 export function createSandBox() {
   return Object.assign(Object.create(null), win)
 }
+
+// export interface runAsyncOptions {
+//   res?: any
+//   err?: any
+//   ret?: any
+//   fullRet?: boolean
+// }
+
+// export function runAsync(
+//   iterator: IterableIterator<any>,
+//   options: runAsyncOptions = {}
+// ): Promise<any> {
+//   const { res, err, ret, fullRet } = options
+//   return new Promise((resolve, reject) => {
+//     if ('ret' in options) {
+//       return resolve(iterator.return(ret))
+//     }
+//     if ('err' in options) {
+//       onRejected(err)
+//     } else {
+//       onFulfilled(res)
+//     }
+//     function onFulfilled(res: any) {
+//       let ret: any
+//       try {
+//         ret = iterator.next(res)
+//       } catch (e) {
+//         return reject(e)
+//       }
+//       next(ret)
+//       return null
+//     }
+//     function onRejected(err: any) {
+//       let ret: any
+//       try {
+//         ret = iterator.throw(err)
+//       } catch (e) {
+//         return reject(e)
+//       }
+//       next(ret)
+//     }
+//     function next(ret: any) {
+//       if (ret.done) return resolve(fullRet ? ret : ret.value)
+//       if (ret.value !== AWAIT) return resolve(ret)
+//       const awaitValue = ret.value.RES
+//       const value = awaitValue && awaitValue.then === 'function'
+//         ? awaitValue : Promise.resolve(awaitValue)
+//       return value.then(onFulfilled, onRejected)
+//     }
+//   })
+// }

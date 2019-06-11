@@ -72,25 +72,84 @@ function step(state: State) {
       const beginPc = state.pc + 1 // the begin pc
       const endPc = code.val // the end pc
       const lexicalCtx = state.context.concat() // reserve the lexical context for function
-      stack.push(function () {
-        for (let i = arguments.length - 1; i > -1; i--) {
-          stack.push(arguments[i]) // load arguments
-        }
-        stack.push(arguments) // load argument array itself
-        stack.push(this) // load this
-
-        const resetPc = state.pc // reserve the current pc
-        const resetCtx = state.context // reserve the current context
-        state.pc = beginPc // offset pc to the function op codes
-        state.context = lexicalCtx // set the context as the lexical context of function
-
-        while (state.pc < endPc) {
-          if (step(state) === SIGNAL.RET) break
-        }
-
-        state.pc = resetPc // reset to the current pc
-        state.context = resetCtx // reset to the current context
-      })
+      if (!code.generator && !code.async) {
+        stack.push(function () {
+          for (let i = arguments.length - 1; i > -1; i--) {
+            stack.push(arguments[i]) // load arguments
+          }
+          if (!code.arrow) {
+            stack.push(arguments) // load argument array itself
+            stack.push(this) // load this
+          }
+  
+          const resetPc = state.pc // reserve the current pc
+          const resetCtx = state.context // reserve the current context
+          state.pc = beginPc // offset pc to the function op codes
+          state.context = lexicalCtx // set the context as the lexical context of function
+  
+          while (state.pc < endPc) {
+            if (step(state) === SIGNAL.RET) break
+          }
+  
+          state.pc = resetPc // reset to the current pc
+          state.context = resetCtx // reset to the current context
+        })
+      } else {
+        // const tmpFunc = function* () {
+        //   for (let i = arguments.length - 1; i > -1; i--) {
+        //     stack.push(arguments[i]) // load arguments
+        //   }
+        //   if (!code.arrow) {
+        //     stack.push(arguments) // load argument array itself
+        //     stack.push(this) // load this
+        //   }
+  
+        //   const resetPc = state.pc // reserve the current pc
+        //   const resetCtx = state.context // reserve the current context
+        //   state.pc = beginPc // offset pc to the function op codes
+        //   state.context = lexicalCtx // set the context as the lexical context of function
+  
+        //   while (state.pc < endPc) {
+        //     const s = step(state)
+        //     if (s === SIGNAL.RET) break
+        //     else if (s === SIGNAL.YIELD) yield
+        //   }
+  
+        //   state.pc = resetPc // reset to the current pc
+        //   state.context = resetCtx // reset to the current context
+        // }
+        // if (code.async && code.generator) {
+        //   stack.push(function (): AsyncIterator<any> {
+        //     const iterator = tmpFunc.apply(void 0, arguments)
+        //     let last: Promise<any> = Promise.resolve()
+        //     let hasCatch = false
+        //     const run = (opts: runAsyncOptions) =>
+        //       last = last
+        //         .then(() => runAsync(iterator, assign({ fullRet: true }, opts)))
+        //         .catch(err => {
+        //           if (!hasCatch) {
+        //             hasCatch = true
+        //             return Promise.reject(err)
+        //           }
+        //         })
+        //     const asyncIterator: AsyncIterator<any> = {
+        //       next: (res?: any) => run({ res }),
+        //       throw: (err?: any) => run({ err }),
+        //       return: (ret?: any) => run({ ret })
+        //     }
+        //     if (typeof Symbol === 'function') {
+        //       (asyncIterator as any)[Symbol.iterator] = function () { return this }
+        //     }
+        //     return asyncIterator
+        //   })
+        // } else if (code.async) {
+        //   stack.push(function () {
+        //     return runAsync(tmpFunc.apply(void 0, arguments))
+        //   })
+        // } else {
+        //   stack.push(tmpFunc)
+        // }
+      }
       state.pc = endPc - 1
       break
     }
@@ -101,8 +160,13 @@ function step(state: State) {
       func.apply(obj, args) // never mind the return, it's at the top of stack
       break
     }
+    case OP.BRK: signal = SIGNAL.BRK; break
+    case OP.CONTI: signal = SIGNAL.CONTI; break
     case OP.RET: signal = SIGNAL.RET; break
+    case OP.YIELD: signal = SIGNAL.YIELD; break
+    case OP.AWAIT: signal = SIGNAL.AWAIT; break
     case OP.COPY: stack.push(stack[stack.length - 1]); break
+    case OP.DBG: debugger; break
     default:
       throw new Error('Unknown instruct code')
   }

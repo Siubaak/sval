@@ -15,18 +15,23 @@ export enum OP {
   BRK,   // break (val: label)
   CONTI, // continue (val: label)
   RET,   // return (no val)
-  YIELD, // yield (no val)
+  YIELD, // yield (val: delegate or not)
+  AWAIT, // await (no val)
   COPY,  // copy the top of stack and push into stack (no val)
   DBG,   // debug (node val)
 }
 
 export enum SIGNAL {
   NONE,  // null
+  BRK,   // break signal
+  CONTI, // continue signal
   RET,   // return signal
   YIELD, // yield signal
+  AWAIT, // await signal
 }
 
 export interface OpCode {
   op: OP
   val?: any
+  [more: string]: any
 }

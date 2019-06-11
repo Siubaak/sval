@@ -5,7 +5,7 @@ import { OP } from '../share/const'
 import { compileFunc } from '../share/helpers'
 
 export function ThisExpression(node: estree.ThisExpression, state: State) {
-  state.opCodes.push({ op: OP.LOADV, val: state.symbols.get('this') })
+  state.opCodes.push({ op: OP.LOADV, val: state.symbols.get('this').pointer })
 }
 
 export function ArrayExpression(node: estree.ArrayExpression, state: State) {
@@ -55,13 +55,12 @@ export function AssignmentExpression(node: estree.AssignmentExpression, state: S
   if (node.left.type === 'Identifier') {
     const symbol = state.symbols.get(node.left.name)
     if (symbol.type === 'const') throw new TypeError('Assignment to constant variable')
-    const pointer = symbol.pointer
     const binaryOp = node.operator.substring(0, node.operator.length - 1)
     if (binaryOp) {
-      state.opCodes.push({ op: OP.LOADV, val: pointer })
+      state.opCodes.push({ op: OP.LOADV, val: symbol.pointer })
       state.opCodes.push({ op: OP.BIOP, val: binaryOp })
     }
-    state.opCodes.push({ op: OP.MOVE, val: pointer })
+    state.opCodes.push({ op: OP.MOVE, val: symbol.pointer })
   }
 }
 
@@ -167,7 +166,11 @@ export function SpreadElement(node: estree.SpreadElement, state: State) {
 }
 
 export function YieldExpression(node: estree.YieldExpression, state: State) {
+  compile(node.argument, state)
+  state.opCodes.push({ op: OP.YIELD, val: node.delegate })
 }
 
 export function AwaitExpression(node: estree.AwaitExpression, state: State) {
+  compile(node.argument, state)
+  state.opCodes.push({ op: OP.AWAIT })
 }
