@@ -1,5 +1,6 @@
 import State from '../state'
 import { OP, SIGNAL } from '../share/const'
+import { getDptor, define } from '../share/utils'
 
 function step(state: State) {
   const stack = state.stack
@@ -62,10 +63,50 @@ function step(state: State) {
     case OP.IF: stack.pop() && (state.pc = code.val - 1); break
     case OP.IFNOT: !stack.pop() && (state.pc = code.val - 1); break
     case OP.ARR: stack.push(stack.splice(stack.length - code.val)); break
-    case OP.MEMB: {
+    case OP.OBJ: {
+      const object: any = {}
+      const propKinds = code.val
+      const keyValue = stack.splice(stack.length - propKinds.length * 2)
+      for (let i = 0; i < propKinds.length * 2; i += 2) {
+        const key = keyValue[i]
+        const value = keyValue[i + 1]
+        const kind = propKinds[i / 2]
+        if (kind === 'init') {
+          object[key] = value
+        } else if (kind === 'get') {
+          const oriDptor = getDptor(object, key)
+          define(object, key, {
+            get: value,
+            set: oriDptor && oriDptor.set,
+            enumerable: true,
+            configurable: true
+          })
+        } else { // kind === 'set'
+          const oriDptor = getDptor(object, key)
+          define(object, key, {
+            get: oriDptor && oriDptor.get,
+            set: value,
+            enumerable: true,
+            configurable: true
+          })
+        }
+      }
+      stack.push(object)
+      break
+    }
+    case OP.MGET: {
       const key = stack.pop()
       const object = stack.pop()
-      stack.push(object[key])
+      const dptor = getDptor(object, key)
+      // if getter, just call
+      dptor && dptor.get ? object[key] : stack.push(object[key])
+      break
+    }
+    case OP.MSET: {
+      const key = stack.pop()
+      const object = stack.pop()
+      const value = stack.pop()
+      object[key] = value
       break
     }
     case OP.FUNC: {
@@ -87,10 +128,15 @@ function step(state: State) {
           state.pc = beginPc // offset pc to the function op codes
           state.context = lexicalCtx // set the context as the lexical context of function
   
+          let s = SIGNAL.NONE
           while (state.pc < endPc) {
-            if (step(state) === SIGNAL.RET) break
+            s = step(state)
+            if (s === SIGNAL.RET) break
           }
-  
+          
+          if (s !== SIGNAL.RET) {
+            stack.push(undefined)
+          }
           state.pc = resetPc // reset to the current pc
           state.context = resetCtx // reset to the current context
         })

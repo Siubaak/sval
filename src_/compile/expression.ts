@@ -17,6 +17,28 @@ export function ArrayExpression(node: estree.ArrayExpression, state: State) {
 }
 
 export function ObjectExpression(node: estree.ObjectExpression, state: State) {
+  const propKinds = []
+  for (let i = 0; i < node.properties.length; i++) {
+    const property = node.properties[i]
+    if (property.type as any === 'SpreadElement') {
+
+    } else {
+      // key
+      const propKey = property.key
+      if (propKey.type === 'Identifier') {
+        state.opCodes.push({ op: OP.LOADK, val: propKey.name })
+      } else if (propKey.type === 'Literal') {
+        state.opCodes.push({ op: OP.LOADK, val: propKey.value })
+      } else {
+        // property.computed === true
+        compile(propKey, state)
+      }
+      // value
+      compile(property.value, state)
+      propKinds.push(property.kind)
+    }
+  }
+  state.opCodes.push({ op: OP.OBJ, val: propKinds })
 }
 
 export function FunctionExpression(node: estree.FunctionExpression, state: State) {
@@ -52,8 +74,10 @@ export function BinaryExpression(node: estree.BinaryExpression, state: State) {
 
 export function AssignmentExpression(node: estree.AssignmentExpression, state: State) {
   compile(node.right, state)
-  if (node.left.type === 'Identifier') {
-    const symbol = state.symbols.get(node.left.name)
+  state.opCodes.push({ op: OP.COPY })
+  const left = node.left
+  if (left.type === 'Identifier') {
+    const symbol = state.symbols.get(left.name)
     if (symbol.type === 'const') throw new TypeError('Assignment to constant variable')
     const binaryOp = node.operator.substring(0, node.operator.length - 1)
     if (binaryOp) {
@@ -61,6 +85,17 @@ export function AssignmentExpression(node: estree.AssignmentExpression, state: S
       state.opCodes.push({ op: OP.BIOP, val: binaryOp })
     }
     state.opCodes.push({ op: OP.MOVE, val: symbol.pointer })
+  } else if (left.type === 'MemberExpression') {
+    compile(left.object, state)
+    const property = left.property
+    if (property.type === 'Identifier') {
+      state.opCodes.push({ op: OP.LOADK, val: property.name })
+    } else { // node.computed === true
+      compile(property, state)
+    }
+    state.opCodes.push({ op: OP.MSET })
+  } else {
+
   }
 }
 
@@ -72,12 +107,13 @@ export function LogicalExpression(node: estree.LogicalExpression, state: State) 
 
 export function MemberExpression(node: estree.MemberExpression, state: State) {
   compile(node.object, state)
-  if (node.computed) {
-    compile(node.property, state)
-  } else {
-    state.opCodes.push({ op: OP.LOADK, val: (node.property as estree.Identifier).name })
+  const property = node.property
+  if (property.type === 'Identifier') {
+    state.opCodes.push({ op: OP.LOADK, val: property.name })
+  } else { // node.computed === true
+    compile(property, state)
   }
-  state.opCodes.push({ op: OP.MEMB })
+  state.opCodes.push({ op: OP.MGET })
 }
 
 export function ConditionalExpression(node: estree.ConditionalExpression, state: State) {
@@ -107,12 +143,13 @@ export function CallExpression(node: estree.CallExpression, state: State) {
   if (callee.type === 'MemberExpression') {
     compile(callee.object, state)
     state.opCodes.push({ op: OP.COPY })
-    if (callee.computed) {
-      compile(callee.property, state)
-    } else {
-      state.opCodes.push({ op: OP.LOADK, val: (callee.property as estree.Identifier).name })
+    const property = callee.property
+    if (property.type === 'Identifier') {
+      state.opCodes.push({ op: OP.LOADK, val: property.name })
+    } else { // node.computed === true
+      compile(property, state)
     }
-    state.opCodes.push({ op: OP.MEMB })
+    state.opCodes.push({ op: OP.MGET })
   } else {
     state.opCodes.push({ op: OP.LOADV, val: state.symbols.get('this').pointer })
     compile(callee, state)

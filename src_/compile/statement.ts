@@ -20,7 +20,11 @@ export function DebuggerStatement(node: estree.DebuggerStatement, state: State) 
 }
 
 export function ReturnStatement(node: estree.ReturnStatement, state: State) {
-  compile(node.argument, state)
+  if (node.argument) {
+    compile(node.argument, state)
+  } else {
+    state.opCodes.push({ op: OP.LOADK }) // load undefined into stack
+  }
   state.opCodes.push({ op: OP.RET })
 }
 

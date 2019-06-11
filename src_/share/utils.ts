@@ -1,3 +1,7 @@
+export const define = Object.defineProperty
+
+export const getDptor = Object.getOwnPropertyDescriptor
+
 export const getOwnNames = Object.getOwnPropertyNames
 
 export function createSymbol(key: string) {
