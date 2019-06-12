@@ -8,7 +8,7 @@ export default class State {
 
   readonly opCodes: OpCode[] = []
 
-  context: any[] = []
+  context: { store: any }[] = [] // context item must be a ref type to maintain a lexical scope
 
   pc: number = 0
 }

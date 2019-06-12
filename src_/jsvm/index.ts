@@ -9,8 +9,9 @@ function step(state: State) {
   let signal = SIGNAL.NONE
   switch (code.op) {
     case OP.LOADK: stack.push(code.val); break
-    case OP.LOADV: stack.push(context[code.val]); break
-    case OP.MOVE: context[code.val] = stack.pop(); break
+    case OP.LOADV: stack.push(context[code.val].store); break
+    case OP.ALLOC: context[code.val] = { store: stack.pop() }; break
+    case OP.STORE: context[code.val].store = stack.pop(); break
     case OP.BIOP: {
       const right = stack.pop()
       const left = stack.pop()

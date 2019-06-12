@@ -18,13 +18,13 @@ export function compileFunc(node: FunctionDefinition, state: State) {
 
   state.symbols.pushScope()
   if (!arrow) {
-    state.opCodes.push({ op: OP.MOVE, val: state.symbols.set('const', 'this').pointer })
-    state.opCodes.push({ op: OP.MOVE, val: state.symbols.set('let', 'arguments').pointer })
+    state.opCodes.push({ op: OP.ALLOC, val: state.symbols.set('const', 'this').pointer })
+    state.opCodes.push({ op: OP.ALLOC, val: state.symbols.set('var', 'arguments').pointer })
   }
   for (let i = 0; i < node.params.length; i++) {
     const param = node.params[i]
     if (param.type === 'Identifier') {
-      state.opCodes.push({ op: OP.MOVE, val: state.symbols.set('let', param.name).pointer })
+      state.opCodes.push({ op: OP.ALLOC, val: state.symbols.set('var', param.name).pointer })
     } else if (param.type === 'RestElement') {
     } else {
     }

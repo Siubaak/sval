@@ -9,14 +9,14 @@ export function VariableDeclaration(node: estree.VariableDeclaration, state: Sta
     const declr = node.declarations[i]
     compile(declr.init, state)
     if (declr.id.type === 'Identifier') {
-      state.opCodes.push({ op: OP.MOVE, val: state.symbols.set(node.kind, declr.id.name).pointer })
+      state.opCodes.push({ op: OP.ALLOC, val: state.symbols.set(node.kind, declr.id.name).pointer })
     }
   }
 }
 
 export function FunctionDeclaration(node: estree.FunctionDeclaration, state: State) {
   compileFunc(node, state)
-  state.opCodes.push({ op: OP.MOVE, val: state.symbols.set('var', node.id.name).pointer })
+  state.opCodes.push({ op: OP.ALLOC, val: state.symbols.set('var', node.id.name).pointer })
 }
 
 export function ClassDeclaration(node: estree.ClassDeclaration, state: State) {

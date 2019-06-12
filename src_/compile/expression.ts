@@ -52,8 +52,8 @@ export function UnaryExpression(node: estree.UnaryExpression, state: State) {
 
 export function UpdateExpression(node: estree.UpdateExpression, state: State) {
   if (node.argument.type === 'Identifier') {
-    const symbol = state.symbols.get(node.argument.name).pointer
-    state.opCodes.push({ op: OP.LOADV, val: symbol })
+    const pointer = state.symbols.get(node.argument.name).pointer
+    state.opCodes.push({ op: OP.LOADV, val: pointer })
     if (!node.prefix) {
       state.opCodes.push({ op: OP.COPY })
     }
@@ -62,7 +62,7 @@ export function UpdateExpression(node: estree.UpdateExpression, state: State) {
     if (node.prefix) {
       state.opCodes.push({ op: OP.COPY })
     }
-    state.opCodes.push({ op: OP.MOVE, val: symbol })
+    state.opCodes.push({ op: OP.STORE, val: pointer })
   }
 }
 
@@ -84,7 +84,7 @@ export function AssignmentExpression(node: estree.AssignmentExpression, state: S
       state.opCodes.push({ op: OP.LOADV, val: symbol.pointer })
       state.opCodes.push({ op: OP.BIOP, val: binaryOp })
     }
-    state.opCodes.push({ op: OP.MOVE, val: symbol.pointer })
+    state.opCodes.push({ op: OP.STORE, val: symbol.pointer })
   } else if (left.type === 'MemberExpression') {
     compile(left.object, state)
     const property = left.property
