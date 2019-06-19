@@ -7,12 +7,21 @@ export enum OP {
   UNOP,  // unary operation (val: operator)
   JMP,   // jump to specified position (val: jumped pc)
   IF,    // jump to specified position if true (val: jumped pc)
-  IFNOT, // jump to specified position if true (val: jumped pc)
+  IFNOT, // jump to specified position if false (val: jumped pc)
   ARR,   // create array (val: number of items)
   OBJ,   // create object (val: array of property kinds)
   MGET,  // get member of object (no val)
   MSET,  // set member of object (no val)
-  FUNC,  // declare a function (val: end pc of its op codes)
+  CLS,   // declare a class
+         //   (val: class name,
+         //    constructor: has constructor or not,
+         //    inherit: has super class or not)
+  FUNC,  // declare a function
+         //   (val: function name,
+         //    end: end pc of its op codes,
+         //    arrow: arrow function or not,
+         //    async: async function or not,
+         //    generator: generator or not)
   CALL,  // invoke functions or methods (val: number of parameters)
   BRK,   // break (val: label)
   CONTI, // continue (val: label)

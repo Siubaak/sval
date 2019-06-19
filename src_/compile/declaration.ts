@@ -20,6 +20,24 @@ export function FunctionDeclaration(node: estree.FunctionDeclaration, state: Sta
 }
 
 export function ClassDeclaration(node: estree.ClassDeclaration, state: State) {
+  const clsCode = { op: OP.CLS, val: node.id.name, constructor: false, inherit: false }
+
+  const methodBody = node.body.body
+  for (let i = 0; i < methodBody.length; i++) {
+    if (methodBody[i].kind === 'constructor') {
+      compileFunc(methodBody[i].value, state)
+      clsCode.constructor = true
+      break
+    }
+  }
+
+  if (node.superClass) {
+    compile(node.superClass, state)
+    clsCode.inherit = true
+  }
+
+  state.opCodes.push(clsCode)
+  state.opCodes.push({ op: OP.ALLOC, val: state.symbols.set('var', node.id.name).pointer })
 }
 
 export function ClassBody(node: estree.ClassBody, state: State) {

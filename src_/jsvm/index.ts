@@ -1,6 +1,6 @@
 import State from '../state'
 import { OP, SIGNAL } from '../share/const'
-import { getDptor, define } from '../share/utils'
+import { getDptor, define, inherits } from '../share/utils'
 
 function step(state: State) {
   const stack = state.stack
@@ -112,7 +112,7 @@ function step(state: State) {
     }
     case OP.FUNC: {
       const beginPc = state.pc + 1 // the begin pc
-      const endPc = code.val // the end pc
+      const endPc = code.end // the end pc
       const lexicalCtx = state.context.concat() // reserve the lexical context for function
       if (!code.generator && !code.async) {
         stack.push(function () {
@@ -198,6 +198,26 @@ function step(state: State) {
         // }
       }
       state.pc = endPc - 1
+      break
+    }
+    case OP.CLS: {
+      let superClass: any = null
+      if (code.inherit) {
+        superClass = stack.pop()
+      }
+      let ctor = function () {
+        if (superClass) {
+          superClass.apply(this)
+        }
+      }
+      if (code.constructor) {
+        ctor = stack.pop()
+      }
+      if (superClass) {
+        inherits(ctor, superClass)
+      }
+      define(ctor, 'name', { value: code.val, configurable: true })
+      stack.push(ctor)
       break
     }
     case OP.CALL: {

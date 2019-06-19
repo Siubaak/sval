@@ -9,7 +9,8 @@ export function compileFunc(node: FunctionDefinition, state: State) {
   const arrow = node.type === 'ArrowFunctionExpression'
   const funCode = {
     op: OP.FUNC,
-    val: -1,
+    val: '',
+    end: -1,
     arrow,
     async: node.async,
     generator: node.generator
@@ -35,5 +36,9 @@ export function compileFunc(node: FunctionDefinition, state: State) {
   }
   state.symbols.popScope()
 
-  funCode.val = state.opCodes.length
+  funCode.end = state.opCodes.length
+}
+
+export function compileCls(node: estree.ClassDeclaration | estree.ClassExpression, state: State) {
+
 }

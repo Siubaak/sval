@@ -29,8 +29,7 @@ export function ObjectExpression(node: estree.ObjectExpression, state: State) {
         state.opCodes.push({ op: OP.LOADK, val: propKey.name })
       } else if (propKey.type === 'Literal') {
         state.opCodes.push({ op: OP.LOADK, val: propKey.value })
-      } else {
-        // property.computed === true
+      } else { // property.computed === true
         compile(propKey, state)
       }
       // value

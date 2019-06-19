@@ -103,6 +103,19 @@ export function createSandBox() {
   return Object.assign(Object.create(null), win)
 }
 
+function setProto(obj: any, proto: any) {
+  Object.setPrototypeOf ? Object.setPrototypeOf(obj, proto) : obj.__proto__ = proto
+}
+export function inherits(subClass: (...args: any[]) => any, superClass: (...args: any[]) => any,) {
+  setProto(subClass, superClass) // allow to access static methods from derived class
+  subClass.prototype = Object.create(superClass.prototype, {
+    constructor: {
+      value: subClass,
+      writable: true,
+    }
+  })
+}
+
 // export interface runAsyncOptions {
 //   res?: any
 //   err?: any
