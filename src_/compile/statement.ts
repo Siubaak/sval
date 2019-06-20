@@ -51,9 +51,29 @@ export function IfStatement(node: estree.IfStatement, state: State) {
 }
 
 export function SwitchStatement(node: estree.SwitchStatement, state: State) {
-}
-
-export function SwitchCase(node: estree.SwitchCase, state: State) {
+  compile(node.discriminant, state)
+  const cases = node.cases
+  let jumpCode: { op: OP, val: any }
+  for (let i = 0; i < cases.length; i++) {
+    const eachCase = cases[i]
+    // test
+    compile(eachCase.test, state)
+    const caseCode = { op: OP.CSNE, val: -1 }
+    state.opCodes.push(caseCode)
+    if (i !== 0) {
+      jumpCode.val = state.opCodes.length
+    }
+    // switch cases
+    for (let i = 0; i < eachCase.consequent.length; i++) {
+      compile(eachCase.consequent[i], state)
+    }
+    if (i !== cases.length - 1) {
+      jumpCode = { op: OP.JMP, val: -1 }
+      state.opCodes.push(jumpCode)
+    }
+    // fill up end position
+    caseCode.val = state.opCodes.length
+  }
 }
 
 export function ThrowStatement(node: estree.ThrowStatement, state: State) {

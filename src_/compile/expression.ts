@@ -2,7 +2,7 @@ import * as estree from 'estree'
 import State from '../state'
 import compile from '../compile'
 import { OP } from '../share/const'
-import { compileFunc } from '../share/helpers'
+import { compileFunc } from './helper'
 
 export function ThisExpression(node: estree.ThisExpression, state: State) {
   state.opCodes.push({ op: OP.LOADV, val: state.symbols.get('this').pointer })

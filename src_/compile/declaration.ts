@@ -2,7 +2,7 @@ import * as estree from 'estree'
 import State from '../state'
 import compile from '../compile'
 import { OP } from '../share/const'
-import { compileFunc } from '../share/helpers'
+import { compileFunc } from './helper'
 
 export function VariableDeclaration(node: estree.VariableDeclaration, state: State) {
   for (let i = 0; i < node.declarations.length; i++) {

@@ -63,6 +63,7 @@ function step(state: State) {
     case OP.JMP: state.pc = code.val - 1; break
     case OP.IF: stack.pop() && (state.pc = code.val - 1); break
     case OP.IFNOT: !stack.pop() && (state.pc = code.val - 1); break
+    case OP.CSNE: stack.pop() !== stack[stack.length - 1] && (state.pc = code.val - 1); break
     case OP.ARR: stack.push(stack.splice(stack.length - code.val)); break
     case OP.OBJ: {
       const object: any = {}
@@ -115,7 +116,7 @@ function step(state: State) {
       const endPc = code.end // the end pc
       const lexicalCtx = state.context.concat() // reserve the lexical context for function
       if (!code.generator && !code.async) {
-        stack.push(function () {
+        const func = function () {
           for (let i = arguments.length - 1; i > -1; i--) {
             stack.push(arguments[i]) // load arguments
           }
@@ -140,7 +141,12 @@ function step(state: State) {
           }
           state.pc = resetPc // reset to the current pc
           state.context = resetCtx // reset to the current context
+        }
+        define(func, 'name', {
+          value: code.val,
+          configurable: true
         })
+        stack.push(func)
       } else {
         // const tmpFunc = function* () {
         //   for (let i = arguments.length - 1; i > -1; i--) {
@@ -216,7 +222,10 @@ function step(state: State) {
       if (superClass) {
         inherits(ctor, superClass)
       }
-      define(ctor, 'name', { value: code.val, configurable: true })
+      define(ctor, 'name', {
+        value: code.val,
+        configurable: true
+      })
       stack.push(ctor)
       break
     }

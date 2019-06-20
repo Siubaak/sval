@@ -8,6 +8,7 @@ export enum OP {
   JMP,   // jump to specified position (val: jumped pc)
   IF,    // jump to specified position if true (val: jumped pc)
   IFNOT, // jump to specified position if false (val: jumped pc)
+  CSNE,  // jump to next case position if don't match the case (val: next case pc)
   ARR,   // create array (val: number of items)
   OBJ,   // create object (val: array of property kinds)
   MGET,  // get member of object (no val)

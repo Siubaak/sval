@@ -1,7 +1,7 @@
 import State from '../state'
 import * as estree from 'estree'
-import { OP } from './const'
-import compile from '../compile'
+import { OP } from '../share/const'
+import compile from '.'
 
 type FunctionDefinition = estree.FunctionDeclaration | estree.FunctionExpression | estree.ArrowFunctionExpression
 
@@ -39,6 +39,8 @@ export function compileFunc(node: FunctionDefinition, state: State) {
   funCode.end = state.opCodes.length
 }
 
-export function compileCls(node: estree.ClassDeclaration | estree.ClassExpression, state: State) {
+type ClassDefinition = estree.ClassDeclaration | estree.ClassExpression
+
+export function compileCls(node: ClassDefinition, state: State) {
 
 }
