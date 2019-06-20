@@ -30,7 +30,9 @@ export enum OP {
   YIELD, // yield (val: delegate or not)
   AWAIT, // await (no val)
   COPY,  // copy the top of stack and push into stack (no val)
-  DBG,   // debug (node val)
+  DBG,   // debug (no val)
+  THROW, // throw (no val)
+  TRY,   // try (val: catch statement pc)
 }
 
 export enum SIGNAL {

@@ -243,6 +243,8 @@ function step(state: State) {
     case OP.AWAIT: signal = SIGNAL.AWAIT; break
     case OP.COPY: stack.push(stack[stack.length - 1]); break
     case OP.DBG: debugger; break
+    case OP.THROW: throw stack.pop()
+    case OP.TRY: break
     default:
       throw new Error('Unknown instruct code')
   }

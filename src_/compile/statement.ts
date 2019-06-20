@@ -77,6 +77,8 @@ export function SwitchStatement(node: estree.SwitchStatement, state: State) {
 }
 
 export function ThrowStatement(node: estree.ThrowStatement, state: State) {
+  compile(node.argument, state)
+  state.opCodes.push({ op: OP.THROW })
 }
 
 export function TryStatement(node: estree.TryStatement, state: State) {
