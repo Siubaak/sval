@@ -11,4 +11,6 @@ export default class State {
   context: { store: any }[] = [] // context item must be a ref type to maintain a lexical scope
 
   pc: number = 0
+
+  readonly catchPcStack: { pc: number }[] = [] // mark catch statement pc for jump of throw statement
 }

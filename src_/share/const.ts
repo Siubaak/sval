@@ -31,8 +31,7 @@ export enum OP {
   AWAIT, // await (no val)
   COPY,  // copy the top of stack and push into stack (no val)
   DBG,   // debug (no val)
-  THROW, // throw (no val)
-  TRY,   // try (val: catch statement pc)
+  THROW, // throw (val: { pc: catch statement pc })
 }
 
 export enum SIGNAL {

@@ -78,13 +78,32 @@ export function SwitchStatement(node: estree.SwitchStatement, state: State) {
 
 export function ThrowStatement(node: estree.ThrowStatement, state: State) {
   compile(node.argument, state)
-  state.opCodes.push({ op: OP.THROW })
+  const catchPcStack = state.catchPcStack
+  state.opCodes.push({ op: OP.THROW, val: catchPcStack[catchPcStack.length - 1] })
 }
 
 export function TryStatement(node: estree.TryStatement, state: State) {
-}
-
-export function CatchClause(node: estree.CatchClause, state: State) {
+  const catchPc = { pc: -1 }
+  state.catchPcStack.push(catchPc)
+  // try block
+  compile(node.block, state)
+  const finallyCode = { op: OP.JMP, val: -1 }
+  state.opCodes.push(finallyCode)
+  catchPc.pc = state.opCodes.length
+  state.catchPcStack.pop()
+  // catch block
+  const param = node.handler.param
+  if (param) {
+    if (param.type === 'Identifier') {
+      state.opCodes.push({ op: OP.ALLOC, val: state.symbols.set('var', param.name).pointer })
+    }
+  }
+  compile(node.handler.body, state)
+  finallyCode.val = state.opCodes.length
+  // finally block
+  if (node.finalizer) {
+    compile(node.finalizer, state)
+  }
 }
 
 export function WhileStatement(node: estree.WhileStatement, state: State) {
