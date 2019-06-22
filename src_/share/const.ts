@@ -23,7 +23,9 @@ export enum OP {
          //    arrow: arrow function or not,
          //    async: async function or not,
          //    generator: generator or not)
-  CALL,  // invoke functions or methods (val: number of parameters)
+  CALL,  // invoke functions or methods
+         // (val: number of parameters,
+         //  catch: { pc: catch statement pc })
   BRK,   // break (val: label)
   CONTI, // continue (val: label)
   RET,   // return (no val)

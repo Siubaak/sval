@@ -18,6 +18,8 @@ export function compileFunc(node: FunctionDefinition, state: State) {
   state.opCodes.push(funCode)
 
   state.symbols.pushScope()
+  // isolate outer try catch block, call expression will give true runtime catch statement pc
+  state.catchPcStack.push(null)
   if (!arrow) {
     state.opCodes.push({ op: OP.ALLOC, val: state.symbols.set('const', 'this').pointer })
     state.opCodes.push({ op: OP.ALLOC, val: state.symbols.set('var', 'arguments').pointer })
@@ -34,6 +36,7 @@ export function compileFunc(node: FunctionDefinition, state: State) {
   for (let i = 0; i < body.length; i++) {
     compile(body[i], state)
   }
+  state.catchPcStack.pop()
   state.symbols.popScope()
 
   funCode.end = state.opCodes.length

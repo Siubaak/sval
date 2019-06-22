@@ -233,7 +233,16 @@ function step(state: State) {
       const func = stack.pop()
       const obj = stack.pop()
       const args = stack.splice(stack.length - code.val)
-      func.apply(obj, args) // never mind the return, it's at the top of stack
+      if (code.catch) {
+        try {
+          func.apply(obj, args) // never mind the return, it's at the top of stack
+        } catch (err) {
+          stack.push(err)
+          state.pc = code.catch.pc - 1
+        }
+      } else {
+        func.apply(obj, args) // never mind the return, it's at the top of stack
+      }
       break
     }
     case OP.BRK: signal = SIGNAL.BRK; break

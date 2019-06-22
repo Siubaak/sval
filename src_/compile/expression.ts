@@ -154,7 +154,12 @@ export function CallExpression(node: estree.CallExpression, state: State) {
     compile(callee, state)
   }
 
-  state.opCodes.push({ op: OP.CALL, val: node.arguments.length })
+  const catchPcStack = state.catchPcStack
+  state.opCodes.push({
+    op: OP.CALL,
+    val: node.arguments.length,
+    catch: catchPcStack[catchPcStack.length - 1]
+  })
 }
 
 export function NewExpression(node: estree.NewExpression, state: State) {
