@@ -1,12 +1,8 @@
 import Sval from '.'
 
-const i = new Sval({ ecmaVer: 10 })
-i.import('a', function a() { throw 12 })
-i.run(`
-try {
-  a()
-
-} catch (err) {
-  console.log(err)
-}
+const interpreter = new Sval()
+interpreter.run(`
+  var start = Date.now()
+  for (var i = 0; i < 10000000; i++) {}
+  console.log((Date.now() - start) / 1000)
 `)

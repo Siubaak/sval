@@ -64,10 +64,10 @@ class Sval {
   run(code: string) {
     const ast = parse(code, this.options)
     compile(ast as any, this.state)
-    for (let i = 0; i < this.state.opCodes.length; i++) {
-      const opCode = this.state.opCodes[i]
-      console.log(i, (OP as any)[opCode.op], typeof opCode.val === 'undefined' ? '' : opCode.val)
-    }
+    // for (let i = 0; i < this.state.opCodes.length; i++) {
+    //   const opCode = this.state.opCodes[i]
+    //   console.log(i, (OP as any)[opCode.op], typeof opCode.val === 'undefined' ? '' : opCode.val)
+    // }
     execute(this.state)
   }
 }

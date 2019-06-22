@@ -131,16 +131,19 @@ function step(state: State) {
           state.context = lexicalCtx // set the context as the lexical context of function
   
           let s = SIGNAL.NONE
+          let ret: any
           while (state.pc < endPc) {
             s = step(state)
-            if (s === SIGNAL.RET) break
+            if (s === SIGNAL.RET) {
+              ret = stack.pop()
+              break
+            }
           }
           
-          if (s !== SIGNAL.RET) {
-            stack.push(undefined)
-          }
           state.pc = resetPc // reset to the current pc
           state.context = resetCtx // reset to the current context
+
+          return ret
         }
         define(func, 'name', {
           value: code.val,
@@ -235,13 +238,13 @@ function step(state: State) {
       const args = stack.splice(stack.length - code.val)
       if (code.catch) {
         try {
-          func.apply(obj, args) // never mind the return, it's at the top of stack
+          stack.push(func.apply(obj, args))
         } catch (err) {
           stack.push(err)
           state.pc = code.catch.pc - 1
         }
       } else {
-        func.apply(obj, args) // never mind the return, it's at the top of stack
+        stack.push(func.apply(obj, args))
       }
       break
     }
