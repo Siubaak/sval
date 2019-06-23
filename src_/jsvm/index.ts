@@ -149,6 +149,10 @@ function step(state: State) {
           value: code.val,
           configurable: true
         })
+        define(func, 'length', {
+          value: code.length,
+          configurable: true
+        })
         stack.push(func)
       } else {
         // const tmpFunc = function* () {

@@ -13,7 +13,8 @@ export function compileFunc(node: FunctionDefinition, state: State) {
     end: -1,
     arrow,
     async: node.async,
-    generator: node.generator
+    generator: node.generator,
+    length: node.params.length
   }
   state.opCodes.push(funCode)
 
@@ -45,8 +46,8 @@ export function compileFunc(node: FunctionDefinition, state: State) {
 type ClassDefinition = estree.ClassDeclaration | estree.ClassExpression
 
 export function compileCls(node: ClassDefinition, state: State) {
+  // class constructor
   const clsCode = { op: OP.CLS, val: node.id.name, constructor: false, inherit: false }
-
   const methodBody = node.body.body
   for (let i = 0; i < methodBody.length; i++) {
     if (methodBody[i].kind === 'constructor') {
@@ -55,14 +56,12 @@ export function compileCls(node: ClassDefinition, state: State) {
       break
     }
   }
-
   if (node.superClass) {
     compile(node.superClass, state)
     clsCode.inherit = true
   }
-
   state.opCodes.push(clsCode)
-
+  // class body
   const methodDefs = node.body.body
   for (let i = 0; i < methodDefs.length; i++) {
     const met = methodDefs[i]
