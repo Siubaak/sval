@@ -248,8 +248,23 @@ function step(state: State) {
       }
       break
     }
-    case OP.BRK: signal = SIGNAL.BRK; break
-    case OP.CONTI: signal = SIGNAL.CONTI; break
+    case OP.NEW: {
+      const ctor = stack.pop()
+      const args = stack.splice(stack.length - code.val)
+      if (code.catch) {
+        try {
+          stack.push(new ctor(...args))
+        } catch (err) {
+          stack.push(err)
+          state.pc = code.catch.pc - 1
+        }
+      } else {
+        stack.push(new ctor(...args))
+      }
+      break
+    }
+    case OP.BRK: break
+    case OP.CONTI: break
     case OP.RET: signal = SIGNAL.RET; break
     case OP.YIELD: signal = SIGNAL.YIELD; break
     case OP.AWAIT: signal = SIGNAL.AWAIT; break

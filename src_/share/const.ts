@@ -26,6 +26,9 @@ export enum OP {
   CALL,  // invoke functions or methods
          // (val: number of parameters,
          //  catch: { pc: catch statement pc })
+  NEW,   // create an object by constructor
+         // (val: number of parameters,
+         //  catch: { pc: catch statement pc })
   BRK,   // break (val: label)
   CONTI, // continue (val: label)
   RET,   // return (no val)
@@ -38,8 +41,6 @@ export enum OP {
 
 export enum SIGNAL {
   NONE,  // null
-  BRK,   // break signal
-  CONTI, // continue signal
   RET,   // return signal
   YIELD, // yield signal
   AWAIT, // await signal

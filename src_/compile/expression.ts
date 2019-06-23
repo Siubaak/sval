@@ -163,6 +163,22 @@ export function CallExpression(node: estree.CallExpression, state: State) {
 }
 
 export function NewExpression(node: estree.NewExpression, state: State) {
+  for (let i = 0; i < node.arguments.length; i++) {
+    const arg = node.arguments[i]
+    if (arg.type === 'SpreadElement') {
+    } else {
+      compile(arg, state)
+    }
+  }
+
+  compile(node.callee, state)
+
+  const catchPcStack = state.catchPcStack
+  state.opCodes.push({
+    op: OP.NEW,
+    val: node.arguments.length,
+    catch: catchPcStack[catchPcStack.length - 1]
+  })
 }
 
 export function MetaProperty(node: estree.MetaProperty, state: State) {
