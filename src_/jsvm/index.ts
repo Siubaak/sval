@@ -232,6 +232,38 @@ function step(state: State) {
       stack.push(ctor)
       break
     }
+    case OP.CMET: {
+      const key = stack.pop()
+      const met = stack.pop()
+      const obj = code.static ? stack[stack.length - 1] : stack[stack.length - 1].prototype
+      switch (code.val) {
+        case 'get': {
+          const oriDptor = getDptor(obj, key)
+          define(obj, key, {
+            get: met,
+            set: oriDptor && oriDptor.set,
+            configurable: true,
+          })
+          break
+        }
+        case 'set': {
+          const oriDptor = getDptor(obj, key)
+          define(obj, key, {
+            get: oriDptor && oriDptor.get,
+            set: met,
+            configurable: true,
+          })
+          break
+        }
+        default: // kind is 'method'
+          define(obj, key, {
+            value: met,
+            writable: true,
+            configurable: true,
+          })
+      }
+      break
+    }
     case OP.CALL: {
       const func = stack.pop()
       const obj = stack.pop()

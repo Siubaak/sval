@@ -2,7 +2,7 @@ import * as estree from 'estree'
 import State from '../state'
 import compile from '../compile'
 import { OP } from '../share/const'
-import { compileFunc } from './helper'
+import { compileFunc, compileCls } from './helper'
 
 export function ThisExpression(node: estree.ThisExpression, state: State) {
   state.opCodes.push({ op: OP.LOADV, val: state.symbols.get('this').pointer })
@@ -213,6 +213,7 @@ export function TaggedTemplateExpression(node: estree.TaggedTemplateExpression, 
 }
 
 export function ClassExpression(node: estree.ClassExpression, state: State) {
+  compileCls(node, state)
 }
 
 export function Super(node: estree.Super, state: State) {

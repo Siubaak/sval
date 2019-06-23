@@ -17,6 +17,7 @@ export enum OP {
          //   (val: class name,
          //    constructor: has constructor or not,
          //    inherit: has super class or not)
+  CMET,  // define a method of class (val: kind of methods, static: static methods or not)
   FUNC,  // declare a function
          //   (val: function name,
          //    end: end pc of its op codes,

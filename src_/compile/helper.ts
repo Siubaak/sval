@@ -45,5 +45,40 @@ export function compileFunc(node: FunctionDefinition, state: State) {
 type ClassDefinition = estree.ClassDeclaration | estree.ClassExpression
 
 export function compileCls(node: ClassDefinition, state: State) {
+  const clsCode = { op: OP.CLS, val: node.id.name, constructor: false, inherit: false }
 
+  const methodBody = node.body.body
+  for (let i = 0; i < methodBody.length; i++) {
+    if (methodBody[i].kind === 'constructor') {
+      compileFunc(methodBody[i].value, state)
+      clsCode.constructor = true
+      break
+    }
+  }
+
+  if (node.superClass) {
+    compile(node.superClass, state)
+    clsCode.inherit = true
+  }
+
+  state.opCodes.push(clsCode)
+
+  const methodDefs = node.body.body
+  for (let i = 0; i < methodDefs.length; i++) {
+    const met = methodDefs[i]
+    if (met.kind === 'constructor') continue
+    // method
+    compileFunc(met.value, state)
+    // key
+    const metKey = met.key
+    if (metKey.type === 'Identifier') {
+      state.opCodes.push({ op: OP.LOADK, val: metKey.name })
+    } else if (metKey.type === 'Literal') {
+      state.opCodes.push({ op: OP.LOADK, val: metKey.value })
+    } else { // met.computed === true
+      compile(metKey, state)
+    }
+    // definition
+    state.opCodes.push({ op: OP.CMET, val: met.kind, static: met.static })
+  }
 }
