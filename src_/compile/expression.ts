@@ -9,11 +9,17 @@ export function ThisExpression(node: estree.ThisExpression, state: State) {
 }
 
 export function ArrayExpression(node: estree.ArrayExpression, state: State) {
+  const spread: any[] = []
   for (let i = 0; i < node.elements.length; i++) {
     const item = node.elements[i]
-    compile(item, state)
+    if (item.type === 'SpreadElement') {
+      spread.push(i)
+      compile(item.argument, state)
+    } else {
+      compile(item, state)
+    }
   }
-  state.opCodes.push({ op: OP.ARR, val: node.elements.length })
+  state.opCodes.push({ op: OP.ARR, val: node.elements.length, spread })
 }
 
 export function ObjectExpression(node: estree.ObjectExpression, state: State) {
@@ -217,10 +223,6 @@ export function ClassExpression(node: estree.ClassExpression, state: State) {
 }
 
 export function Super(node: estree.Super, state: State) {
-}
-
-export function SpreadElement(node: estree.SpreadElement, state: State) {
-  compile(node.argument, state)
 }
 
 export function YieldExpression(node: estree.YieldExpression, state: State) {

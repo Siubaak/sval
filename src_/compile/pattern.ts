@@ -10,11 +10,12 @@ export function ArrayPattern(node: estree.ArrayPattern, state: State) {
 
 }
 
-export function RestElement(node: estree.RestElement, state: State) {
-
-}
-
 export function AssignmentPattern(node: estree.AssignmentPattern, state: State) {
 
 }
 
+export function RestElement(node: estree.RestElement, state: State) {
+  if (node.argument.type === 'Identifier') {
+    
+  }
+}

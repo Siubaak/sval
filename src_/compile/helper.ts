@@ -30,7 +30,9 @@ export function compileFunc(node: FunctionDefinition, state: State) {
     if (param.type === 'Identifier') {
       state.opCodes.push({ op: OP.ALLOC, val: state.symbols.set('var', param.name).pointer })
     } else if (param.type === 'RestElement') {
+      
     } else {
+      
     }
   }
   const body = node.body.type === 'BlockStatement' ? node.body.body : [node.body]

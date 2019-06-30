@@ -9,8 +9,8 @@ export enum OP {
   IF,    // jump to specified position if true (val: jumped pc)
   IFNOT, // jump to specified position if false (val: jumped pc)
   CSNE,  // jump to next case position if don't match the case (val: next case pc)
-  ARR,   // create array (val: number of items)
-  OBJ,   // create object (val: array of property kinds)
+  ARR,   // create array (val: number of items, spread: array of spread element indexes)
+  OBJ,   // create object (val: array of property kinds, spread: array of spread element indexes)
   MGET,  // get member of object (no val)
   MSET,  // set member of object (no val)
   CLS,   // declare a class
@@ -23,13 +23,14 @@ export enum OP {
          //    end: end pc of its op codes,
          //    arrow: arrow function or not,
          //    async: async function or not,
-         //    generator: generator or not)
+         //    generator: generator or not,
+         //    length: function.length)
   CALL,  // invoke functions or methods
-         // (val: number of parameters,
-         //  catch: { pc: catch statement pc })
+         //   (val: number of parameters,
+         //    catch: { pc: catch statement pc })
   NEW,   // create an object by constructor
-         // (val: number of parameters,
-         //  catch: { pc: catch statement pc })
+         //   (val: number of parameters,
+         //    catch: { pc: catch statement pc })
   BRK,   // break (val: label)
   CONTI, // continue (val: label)
   RET,   // return (no val)

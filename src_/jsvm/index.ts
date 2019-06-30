@@ -64,7 +64,19 @@ function step(state: State) {
     case OP.IF: stack.pop() && (state.pc = code.val - 1); break
     case OP.IFNOT: !stack.pop() && (state.pc = code.val - 1); break
     case OP.CSNE: stack.pop() !== stack[stack.length - 1] && (state.pc = code.val - 1); break
-    case OP.ARR: stack.push(stack.splice(stack.length - code.val)); break
+    case OP.ARR: {
+      const arrItems = stack.splice(stack.length - code.val)
+      let arr: any[] = []
+      for (let i = 0; i < arrItems.length; i++) {
+        if (code.spread.indexOf(i) === -1) {
+          arr.push(arrItems[i])
+        } else {
+          arr = [...arr, ...arrItems[i]]
+        }
+      }
+      stack.push(arr)
+      break
+    }
     case OP.OBJ: {
       const object: any = {}
       const propKinds = code.val
