@@ -13,13 +13,14 @@ export function ArrayExpression(node: estree.ArrayExpression, state: State) {
   for (let i = 0; i < node.elements.length; i++) {
     const item = node.elements[i]
     if (item.type === 'SpreadElement') {
-      spread.push(i)
       compile(item.argument, state)
+      spread.push(i)
     } else {
       compile(item, state)
     }
   }
-  state.opCodes.push({ op: OP.ARR, val: node.elements.length, spread })
+  spread.push(node.elements.length)
+  state.opCodes.push({ op: OP.ARR, val: spread })
 }
 
 export function ObjectExpression(node: estree.ObjectExpression, state: State) {
@@ -27,7 +28,9 @@ export function ObjectExpression(node: estree.ObjectExpression, state: State) {
   for (let i = 0; i < node.properties.length; i++) {
     const property = node.properties[i]
     if (property.type as any === 'SpreadElement') {
-
+      state.opCodes.push({ op: OP.LOADK, val: null }) // placeholder for spread element
+      compile((property as any).argument, state)
+      propKinds.push('sprd')
     } else {
       // key
       const propKey = property.key

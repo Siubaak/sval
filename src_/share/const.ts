@@ -9,8 +9,8 @@ export enum OP {
   IF,    // jump to specified position if true (val: jumped pc)
   IFNOT, // jump to specified position if false (val: jumped pc)
   CSNE,  // jump to next case position if don't match the case (val: next case pc)
-  ARR,   // create array (val: number of items, spread: array of spread element indexes)
-  OBJ,   // create object (val: array of property kinds, spread: array of spread element indexes)
+  ARR,   // create array (val: array of spread element indexes, with number of items at the end)
+  OBJ,   // create object (val: array of property kinds)
   MGET,  // get member of object (no val)
   MSET,  // set member of object (no val)
   CLS,   // declare a class

@@ -65,10 +65,11 @@ function step(state: State) {
     case OP.IFNOT: !stack.pop() && (state.pc = code.val - 1); break
     case OP.CSNE: stack.pop() !== stack[stack.length - 1] && (state.pc = code.val - 1); break
     case OP.ARR: {
-      const arrItems = stack.splice(stack.length - code.val)
+      const spread = code.val
+      const arrItems = stack.splice(stack.length - spread.pop())
       let arr: any[] = []
       for (let i = 0; i < arrItems.length; i++) {
-        if (code.spread.indexOf(i) === -1) {
+        if (spread.indexOf(i) === -1) {
           arr.push(arrItems[i])
         } else {
           arr = [...arr, ...arrItems[i]]
@@ -95,7 +96,7 @@ function step(state: State) {
             enumerable: true,
             configurable: true
           })
-        } else { // kind === 'set'
+        } else if (kind === 'set') {
           const oriDptor = getDptor(object, key)
           define(object, key, {
             get: oriDptor && oriDptor.get,
@@ -103,6 +104,8 @@ function step(state: State) {
             enumerable: true,
             configurable: true
           })
+        } else { // kind === 'sprd'
+          Object.assign(object, value)
         }
       }
       stack.push(object)
