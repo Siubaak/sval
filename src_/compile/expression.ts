@@ -9,7 +9,7 @@ export function ThisExpression(node: estree.ThisExpression, state: State) {
 }
 
 export function ArrayExpression(node: estree.ArrayExpression, state: State) {
-  const spread: any[] = []
+  const spread: number[] = []
   for (let i = 0; i < node.elements.length; i++) {
     const item = node.elements[i]
     if (item.type === 'SpreadElement') {
@@ -24,7 +24,7 @@ export function ArrayExpression(node: estree.ArrayExpression, state: State) {
 }
 
 export function ObjectExpression(node: estree.ObjectExpression, state: State) {
-  const propKinds = []
+  const propKinds: string[] = []
   for (let i = 0; i < node.properties.length; i++) {
     const property = node.properties[i]
     if (property.type as any === 'SpreadElement') {
@@ -139,13 +139,17 @@ export function ConditionalExpression(node: estree.ConditionalExpression, state:
 }
 
 export function CallExpression(node: estree.CallExpression, state: State) {
+  const spread: number[] = []
   for (let i = 0; i < node.arguments.length; i++) {
     const arg = node.arguments[i]
     if (arg.type === 'SpreadElement') {
+      compile(arg.argument, state)
+      spread.push(i)
     } else {
       compile(arg, state)
     }
   }
+  spread.push(node.arguments.length)
 
   const callee = node.callee
   if (callee.type === 'MemberExpression') {
@@ -166,26 +170,30 @@ export function CallExpression(node: estree.CallExpression, state: State) {
   const catchPcStack = state.catchPcStack
   state.opCodes.push({
     op: OP.CALL,
-    val: node.arguments.length,
+    val: spread,
     catch: catchPcStack[catchPcStack.length - 1]
   })
 }
 
 export function NewExpression(node: estree.NewExpression, state: State) {
+  const spread: number[] = []
   for (let i = 0; i < node.arguments.length; i++) {
     const arg = node.arguments[i]
     if (arg.type === 'SpreadElement') {
+      compile(arg.argument, state)
+      spread.push(i)
     } else {
       compile(arg, state)
     }
   }
+  spread.push(node.arguments.length)
 
   compile(node.callee, state)
 
   const catchPcStack = state.catchPcStack
   state.opCodes.push({
     op: OP.NEW,
-    val: node.arguments.length,
+    val: spread,
     catch: catchPcStack[catchPcStack.length - 1]
   })
 }

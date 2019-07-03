@@ -286,7 +286,18 @@ function step(state: State) {
     case OP.CALL: {
       const func = stack.pop()
       const obj = stack.pop()
-      const args = stack.splice(stack.length - code.val)
+
+      const spread = code.val
+      const argsItems = stack.splice(stack.length - spread.pop())
+      let args: any[] = []
+      for (let i = 0; i < argsItems.length; i++) {
+        if (spread.indexOf(i) === -1) {
+          args.push(argsItems[i])
+        } else {
+          args = [...args, ...argsItems[i]]
+        }
+      }
+
       if (code.catch) {
         try {
           stack.push(func.apply(obj, args))
@@ -301,7 +312,18 @@ function step(state: State) {
     }
     case OP.NEW: {
       const ctor = stack.pop()
-      const args = stack.splice(stack.length - code.val)
+      
+      const spread = code.val
+      const argsItems = stack.splice(stack.length - spread.pop())
+      let args: any[] = []
+      for (let i = 0; i < argsItems.length; i++) {
+        if (spread.indexOf(i) === -1) {
+          args.push(argsItems[i])
+        } else {
+          args = [...args, ...argsItems[i]]
+        }
+      }
+
       if (code.catch) {
         try {
           stack.push(new ctor(...args))
