@@ -2,6 +2,7 @@ import * as estree from 'estree'
 import State from '../state'
 import compile from '.'
 import { OP } from '../share/const'
+import { compileForXStatement } from './helper'
 
 export function ExpressionStatement(node: estree.ExpressionStatement, state: State) {
   compile(node.expression, state)
@@ -145,7 +146,13 @@ export function ForStatement(node: estree.ForStatement, state: State) {
 }
 
 export function ForInStatement(node: estree.ForInStatement, state: State) {
+  compile(node.right, state)
+  state.opCodes.push({ op: OP.KOVS, val: true })
+  compileForXStatement(node, state)
 }
 
 export function ForOfStatement(node: estree.ForOfStatement, state: State) {
+  compile(node.right, state)
+  state.opCodes.push({ op: OP.KOVS, val: false })
+  compileForXStatement(node, state)
 }

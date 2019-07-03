@@ -2,6 +2,7 @@ import State from '../state'
 import * as estree from 'estree'
 import { OP } from '../share/const'
 import compile from '.'
+import { createSymbol } from '../share/utils'
 
 type FunctionDefinition = estree.FunctionDeclaration | estree.FunctionExpression | estree.ArrowFunctionExpression
 
@@ -82,4 +83,71 @@ export function compileCls(node: ClassDefinition, state: State) {
     // definition
     state.opCodes.push({ op: OP.CMET, val: met.kind, static: met.static })
   }
+}
+
+const idx = createSymbol('fi') // for in loop private index variable name
+const len = createSymbol('fil') // for in loop keys or values length variable name
+const kovs = createSymbol('fikv') // for in loop keys or values variable name
+export function compileForXStatement(node: estree.ForInStatement | estree.ForOfStatement, state: State) {
+  /**
+   * compile equivalent to the code below
+   * 
+   * const len = { stack.pop() }
+   * const kovs = { stack.pop() }
+   * let idx = 0
+   * while (idx < len) {
+   *   { compile(node.left) } = kovs[idx++]
+   * }
+   */
+  state.symbols.pushScope()
+  const opCodes = state.opCodes
+  const symbols = state.symbols
+
+  opCodes.push({ op: OP.ALLOC, val: symbols.set('const', len).pointer }) // const len = { stack.pop() }
+  opCodes.push({ op: OP.ALLOC, val: symbols.set('const', kovs).pointer }) // const kovs = { stack.pop() }
+  // let idx = 0
+  opCodes.push({ op: OP.LOADK, val: 0 })
+  opCodes.push({ op: OP.ALLOC, val: symbols.set('let', idx).pointer })
+  // while (idx < len) {
+  const testPc = opCodes.length
+  opCodes.push({ op: OP.LOADV, val: symbols.get(idx).pointer })
+  opCodes.push({ op: OP.LOADV, val: symbols.get(len).pointer })
+  opCodes.push({ op: OP.BIOP, val: '<' })
+  const ifnotCode = { op: OP.IFNOT, val: -1 }
+  opCodes.push(ifnotCode)
+  // { compile(node.left) } = kovs[idx++]
+  opCodes.push({ op: OP.LOADV, val: symbols.get(kovs).pointer })
+  opCodes.push({ op: OP.LOADV, val: symbols.get(idx).pointer })
+  opCodes.push({ op: OP.COPY })
+  opCodes.push({ op: OP.LOADK, val: 1 })
+  opCodes.push({ op: OP.BIOP, val: '+' })
+  opCodes.push({ op: OP.STORE, val: symbols.get(idx).pointer })
+  opCodes.push({ op: OP.MGET })
+
+  const left = node.left
+  if (left.type === 'Identifier') {
+    const symbol = symbols.get(left.name)
+    if (symbol.type === 'const') {
+      throw new TypeError('Assignment to constant variable')
+    }
+    opCodes.push({ op: OP.STORE, val: symbol.pointer })
+  } else if (left.type === 'MemberExpression') {
+    compile(left.object, state)
+    const property = left.property
+    if (property.type === 'Identifier') {
+      opCodes.push({ op: OP.LOADK, val: property.name })
+    } else { // node.computed === true
+      compile(property, state)
+    }
+    opCodes.push({ op: OP.MSET })
+  } else {
+    compile(left, state)
+  }
+
+  compile(node.body, state)
+
+  opCodes.push({ op: OP.JMP, val: testPc })
+  ifnotCode.val = opCodes.length
+
+  symbols.popScope()
 }

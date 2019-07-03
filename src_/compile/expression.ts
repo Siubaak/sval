@@ -86,7 +86,9 @@ export function AssignmentExpression(node: estree.AssignmentExpression, state: S
   const left = node.left
   if (left.type === 'Identifier') {
     const symbol = state.symbols.get(left.name)
-    if (symbol.type === 'const') throw new TypeError('Assignment to constant variable')
+    if (symbol.type === 'const') {
+      throw new TypeError('Assignment to constant variable')
+    }
     const binaryOp = node.operator.substring(0, node.operator.length - 1)
     if (binaryOp) {
       state.opCodes.push({ op: OP.LOADV, val: symbol.pointer })

@@ -65,7 +65,7 @@ function step(state: State) {
     case OP.IFNOT: !stack.pop() && (state.pc = code.val - 1); break
     case OP.CSNE: stack.pop() !== stack[stack.length - 1] && (state.pc = code.val - 1); break
     case OP.ARR: {
-      const spread = code.val
+      const spread = code.val.concat()
       const arrItems = stack.splice(stack.length - spread.pop())
       let arr: any[] = []
       for (let i = 0; i < arrItems.length; i++) {
@@ -124,6 +124,25 @@ function step(state: State) {
       const object = stack.pop()
       const value = stack.pop()
       object[key] = value
+      break
+    }
+    case OP.KOVS: {
+      const kovs = []
+      if (code.val) {
+        for (const key in stack.pop()) {
+          kovs.push(key)
+        }
+      } else {
+        const iterator = stack.pop()
+        if (!iterator[Symbol.iterator]) {
+          throw new TypeError(`${JSON.stringify(iterator)} is not iterable`)
+        }
+        for (const value of iterator) {
+          kovs.push(value)
+        }
+      }
+      stack.push(kovs)
+      stack.push(kovs.length)
       break
     }
     case OP.FUNC: {
@@ -287,7 +306,7 @@ function step(state: State) {
       const func = stack.pop()
       const obj = stack.pop()
 
-      const spread = code.val
+      const spread = code.val.concat()
       const argsItems = stack.splice(stack.length - spread.pop())
       let args: any[] = []
       for (let i = 0; i < argsItems.length; i++) {
@@ -313,7 +332,7 @@ function step(state: State) {
     case OP.NEW: {
       const ctor = stack.pop()
       
-      const spread = code.val
+      const spread = code.val.concat()
       const argsItems = stack.splice(stack.length - spread.pop())
       let args: any[] = []
       for (let i = 0; i < argsItems.length; i++) {

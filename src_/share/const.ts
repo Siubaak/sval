@@ -13,6 +13,8 @@ export enum OP {
   OBJ,   // create object (val: array of property kinds)
   MGET,  // get member of object (no val)
   MSET,  // set member of object (no val)
+  KOVS,   // get enumerable properties or iterable values of an object for for-in or for-of statement
+         //   (val: true for keys and false for values)
   CLS,   // declare a class
          //   (val: class name,
          //    constructor: has constructor or not,
