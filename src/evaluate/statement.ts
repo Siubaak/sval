@@ -6,7 +6,7 @@ import Scope from '../scope'
 import evaluate from '.'
 
 export function* ExpressionStatement(node: estree.ExpressionStatement, scope: Scope) {
-  yield* evaluate(node.expression, scope)
+  return yield* evaluate(node.expression, scope)
 }
 
 export interface BlockOptions {
