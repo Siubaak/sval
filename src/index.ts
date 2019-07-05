@@ -61,7 +61,7 @@ class Sval {
   run(code: string) {
     const ast = parse(code, this.options) as any
     hoist(ast, this.scope)
-    evaluate(ast, this.scope)
+    return evaluate(ast, this.scope)
   }
 }
 
