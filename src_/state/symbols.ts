@@ -1,6 +1,6 @@
 import { hasOwn } from '../share/utils'
 
-type VarType = 'var' | 'let' | 'const'
+export type VarType = 'var' | 'let' | 'const'
 
 interface VarSymbol {
 	type: VarType
@@ -17,11 +17,13 @@ export default class SymbolTable {
 	private readonly tableChain: SymbolMap[] = []
 	private readonly pointerChain: number[] = []
 
-	set(type: VarType, name: string) {
+	type: VarType = null
+
+	set(name: string, type?: VarType) {
 		if (hasOwn(this.table, name)) {
 			throw new SyntaxError(`Identifier '${name}' has already been declared`)
 		} else {
-			return this.table[name] = { type, pointer: this.pointer++ }
+			return this.table[name] = { type: type || this.type, pointer: this.pointer++ }
 		}
 	}
 

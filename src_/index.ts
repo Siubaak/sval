@@ -56,7 +56,7 @@ class Sval {
  
     for (let i = 0; i < names.length; i++) {
       const name = names[i]
-      const pointer = this.state.symbols.set('var', name).pointer
+      const pointer = this.state.symbols.set(name, 'var').pointer
       this.state.context[pointer] = { store: nameOrModules[name] }
     }
   }

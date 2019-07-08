@@ -2,5 +2,6 @@ import Sval from '.'
 
 const interpreter = new Sval()
 interpreter.run(`
-for (const a of 'fdsa') { console.log(a) }
+let { a, b, c: { d } } = { a: 1, b: 2, c: { d: 3 } }
+console.log(a, b, d)
 `)

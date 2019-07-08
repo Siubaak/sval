@@ -114,6 +114,9 @@ function step(state: State) {
     case OP.MGET: {
       const key = stack.pop()
       const object = stack.pop()
+      if (object == undefined) {
+        throw new TypeError(`Cannot read property '${key}' of ${object}`)
+      }
       const dptor = getDptor(object, key)
       // if getter, just call
       dptor && dptor.get ? object[key] : stack.push(object[key])

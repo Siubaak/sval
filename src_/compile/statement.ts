@@ -96,7 +96,7 @@ export function TryStatement(node: estree.TryStatement, state: State) {
   const param = node.handler.param
   if (param) {
     if (param.type === 'Identifier') {
-      state.opCodes.push({ op: OP.ALLOC, val: state.symbols.set('var', param.name).pointer })
+      state.opCodes.push({ op: OP.ALLOC, val: state.symbols.set(param.name, 'var').pointer })
     }
   }
   compile(node.handler.body, state)

@@ -3,6 +3,7 @@ import * as estree from 'estree'
 import { OP } from '../share/const'
 import compile from '.'
 import { createSymbol } from '../share/utils'
+import { ObjectPattern, ArrayPattern, AssignmentPattern, RestElement } from './pattern'
 
 type FunctionDefinition = estree.FunctionDeclaration | estree.FunctionExpression | estree.ArrowFunctionExpression
 
@@ -23,13 +24,13 @@ export function compileFunc(node: FunctionDefinition, state: State) {
   // isolate outer try catch block, call expression will give true runtime catch statement pc
   state.catchPcStack.push(null)
   if (!arrow) {
-    state.opCodes.push({ op: OP.ALLOC, val: state.symbols.set('const', 'this').pointer })
-    state.opCodes.push({ op: OP.ALLOC, val: state.symbols.set('var', 'arguments').pointer })
+    state.opCodes.push({ op: OP.ALLOC, val: state.symbols.set('this', 'const').pointer })
+    state.opCodes.push({ op: OP.ALLOC, val: state.symbols.set('arguments', 'var').pointer })
   }
   for (let i = 0; i < node.params.length; i++) {
     const param = node.params[i]
     if (param.type === 'Identifier') {
-      state.opCodes.push({ op: OP.ALLOC, val: state.symbols.set('var', param.name).pointer })
+      state.opCodes.push({ op: OP.ALLOC, val: state.symbols.set(param.name, 'var').pointer })
     } else if (param.type === 'RestElement') {
       
     } else {
@@ -48,7 +49,7 @@ export function compileFunc(node: FunctionDefinition, state: State) {
 
 type ClassDefinition = estree.ClassDeclaration | estree.ClassExpression
 
-export function compileCls(node: ClassDefinition, state: State) {
+export function compileClass(node: ClassDefinition, state: State) {
   // class constructor
   const clsCode = { op: OP.CLS, val: node.id.name, constructor: false, inherit: false }
   const methodBody = node.body.body
@@ -75,13 +76,26 @@ export function compileCls(node: ClassDefinition, state: State) {
     const metKey = met.key
     if (metKey.type === 'Identifier') {
       state.opCodes.push({ op: OP.LOADK, val: metKey.name })
-    } else if (metKey.type === 'Literal') {
-      state.opCodes.push({ op: OP.LOADK, val: metKey.value })
     } else { // met.computed === true
       compile(metKey, state)
     }
     // definition
     state.opCodes.push({ op: OP.CMET, val: met.kind, static: met.static })
+  }
+}
+
+export function compilePattern(node: estree.Pattern, state: State) {
+  switch (node.type) {
+    case 'ObjectPattern':
+      return ObjectPattern(node, state)
+    case 'ArrayPattern':
+      return ArrayPattern(node, state)
+    case 'AssignmentPattern':
+      return AssignmentPattern(node, state)
+    case 'RestElement':
+      return RestElement(node, state)
+    default:
+      throw new SyntaxError('Unexpected token')
   }
 }
 
@@ -103,11 +117,11 @@ export function compileForXStatement(node: estree.ForInStatement | estree.ForOfS
   const opCodes = state.opCodes
   const symbols = state.symbols
 
-  opCodes.push({ op: OP.ALLOC, val: symbols.set('const', len).pointer }) // const len = { stack.pop() }
-  opCodes.push({ op: OP.ALLOC, val: symbols.set('const', kovs).pointer }) // const kovs = { stack.pop() }
+  opCodes.push({ op: OP.ALLOC, val: symbols.set(len, 'const').pointer }) // const len = { stack.pop() }
+  opCodes.push({ op: OP.ALLOC, val: symbols.set(kovs, 'const').pointer }) // const kovs = { stack.pop() }
   // let idx = 0
   opCodes.push({ op: OP.LOADK, val: 0 })
-  opCodes.push({ op: OP.ALLOC, val: symbols.set('let', idx).pointer })
+  opCodes.push({ op: OP.ALLOC, val: symbols.set(idx, 'let').pointer })
   // while (idx < len) {
   const testPc = opCodes.length
   opCodes.push({ op: OP.LOADV, val: symbols.get(idx).pointer })

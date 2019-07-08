@@ -2,7 +2,7 @@ import * as estree from 'estree'
 import State from '../state'
 import compile from '../compile'
 import { OP } from '../share/const'
-import { compileFunc, compileCls } from './helper'
+import { compileFunc, compileClass } from './helper'
 
 export function ThisExpression(node: estree.ThisExpression, state: State) {
   state.opCodes.push({ op: OP.LOADV, val: state.symbols.get('this').pointer })
@@ -36,8 +36,6 @@ export function ObjectExpression(node: estree.ObjectExpression, state: State) {
       const propKey = property.key
       if (propKey.type === 'Identifier') {
         state.opCodes.push({ op: OP.LOADK, val: propKey.name })
-      } else if (propKey.type === 'Literal') {
-        state.opCodes.push({ op: OP.LOADK, val: propKey.value })
       } else { // property.computed === true
         compile(propKey, state)
       }
@@ -232,7 +230,7 @@ export function TaggedTemplateExpression(node: estree.TaggedTemplateExpression, 
 }
 
 export function ClassExpression(node: estree.ClassExpression, state: State) {
-  compileCls(node, state)
+  compileClass(node, state)
 }
 
 export function Super(node: estree.Super, state: State) {

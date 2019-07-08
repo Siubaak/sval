@@ -1,5 +1,5 @@
 import { OpCode } from '../share/const'
-import SymbolTable from './symbols'
+import SymbolTable, { VarType } from './symbols'
 
 export default class State {
   readonly stack: any[] = []
