@@ -2,7 +2,7 @@ import * as estree from 'estree'
 import State from '../state'
 import compile from '../compile'
 import { OP } from '../share/const'
-import { compileFunc, compileClass } from './helper'
+import { compileFunc, compileClass, compilePattern } from './helper'
 
 export function ThisExpression(node: estree.ThisExpression, state: State) {
   state.opCodes.push({ op: OP.LOADV, val: state.symbols.get('this').pointer })
@@ -103,7 +103,7 @@ export function AssignmentExpression(node: estree.AssignmentExpression, state: S
     }
     state.opCodes.push({ op: OP.MSET })
   } else {
-
+    compilePattern(left, state)
   }
 }
 
