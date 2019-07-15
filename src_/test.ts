@@ -2,6 +2,6 @@ import Sval from '.'
 
 const interpreter = new Sval()
 interpreter.run(`
-let a,b,c
-console.log([a,b,c] = [1,2,3,4])
+const { a = 1, b } = { b: 2 }
+console.log(a, b)
 `)

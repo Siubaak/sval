@@ -76,7 +76,24 @@ export function ArrayPattern(node: estree.ArrayPattern, state: State) {
 }
 
 export function AssignmentPattern(node: estree.AssignmentPattern, state: State) {
-
+  state.opCodes.push({ op: OP.COPY })
+  state.opCodes.push({ op: OP.LOADK, val: undefined })
+  state.opCodes.push({ op: OP.BIOP, val: '===' })
+  const ifnotCode = { op: OP.IFNOT, val: -1 }
+  state.opCodes.push(ifnotCode)
+  // if undefined, assign the right value
+  state.opCodes.push({ op: OP.POP })
+  compile(node.right, state)
+  ifnotCode.val = state.opCodes.length
+  if (node.left.type === 'Identifier') {
+    if (state.symbols.type) {
+      state.opCodes.push({ op: OP.ALLOC, val: state.symbols.set(node.left.name).pointer })
+    } else {
+      state.opCodes.push({ op: OP.STORE, val: state.symbols.get(node.left.name).pointer })
+    }
+  } else {
+    compilePattern(node.left, state)
+  }
 }
 
 export function RestElement(node: estree.RestElement, state: State) {
