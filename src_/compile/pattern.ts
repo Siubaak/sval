@@ -41,22 +41,38 @@ export function ObjectPattern(node: estree.ObjectPattern, state: State) {
       
     }
   }
+  state.opCodes.push({ op: OP.POP })
 }
 
 export function ArrayPattern(node: estree.ArrayPattern, state: State) {
   for (let i = 0; i < node.elements.length; i++) {
     const element = node.elements[i]
+    if (!element) continue // for the case: let [ , x] = [1, 2]
     state.opCodes.push({ op: OP.COPY })
+    state.opCodes.push({ op: OP.LOADK, val: i })
+    state.opCodes.push({ op: OP.MGET })
     if (element.type === 'Identifier') {
-
+      if (state.symbols.type) {
+        state.opCodes.push({ op: OP.ALLOC, val: state.symbols.set(element.name).pointer })
+      } else {
+        state.opCodes.push({ op: OP.STORE, val: state.symbols.get(element.name).pointer })
+      }
     } else if (element.type === 'MemberExpression') {
-      
+      compile(element.object, state)
+      const property = element.property
+      if (property.type === 'Identifier') {
+        state.opCodes.push({ op: OP.LOADK, val: property.name })
+      } else { // node.computed === true
+        compile(property, state)
+      }
+      state.opCodes.push({ op: OP.MSET })
     } else if (element.type === 'RestElement') {
 
     } else {
       compilePattern(element, state)
     }
   }
+  state.opCodes.push({ op: OP.POP })
 }
 
 export function AssignmentPattern(node: estree.AssignmentPattern, state: State) {

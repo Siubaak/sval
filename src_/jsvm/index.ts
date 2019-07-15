@@ -364,6 +364,7 @@ function step(state: State) {
     case OP.YIELD: signal = SIGNAL.YIELD; break
     case OP.AWAIT: signal = SIGNAL.AWAIT; break
     case OP.COPY: stack.push(stack[stack.length - 1]); break
+    case OP.POP: stack.pop(); break
     case OP.DBG: debugger; break
     case OP.THROW: {
       if (code.val) {
