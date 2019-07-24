@@ -10,7 +10,10 @@ export function ExpressionStatement(node: estree.ExpressionStatement, state: Sta
 
 export function BlockStatement(node: estree.BlockStatement, state: State) {
   state.symbols.pushScope()
-  for (let i = 0; i < node.body.length; i++) compile(node.body[i], state)
+  for (let i = 0; i < node.body.length; i++) {
+    compile(node.body[i], state)
+    state.opCodes.push({ op: OP.GC })
+  }
   state.symbols.popScope()
 }
 

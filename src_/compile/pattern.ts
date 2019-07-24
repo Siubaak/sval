@@ -10,7 +10,6 @@ export function ObjectPattern(node: estree.ObjectPattern, state: State) {
     let value: estree.Pattern = (property as estree.AssignmentProperty).value
     state.opCodes.push({ op: OP.COPY })
     if (property.type === 'Property') {
-      // key
       const propKey = property.key
       if (propKey.type === 'Identifier') {
         state.opCodes.push({ op: OP.LOADK, val: propKey.name })
@@ -27,7 +26,7 @@ export function ObjectPattern(node: estree.ObjectPattern, state: State) {
           compile(propKey, state)
         }
       }
-      state.opCodes.push({ op: OP.REST, val: i, type: 'obj' })
+      state.opCodes.push({ op: OP.REST, val: 'obj', remove: i })
       value = (property as any).argument
     }
     if (value.type === 'Identifier') {
@@ -59,7 +58,7 @@ export function ArrayPattern(node: estree.ArrayPattern, state: State) {
     let value: estree.Pattern = element
     state.opCodes.push({ op: OP.COPY })
     if (element.type === 'RestElement') {
-      state.opCodes.push({ op: OP.REST, val: i, type: 'arr' })
+      state.opCodes.push({ op: OP.REST, val: 'arr', remove: i })
       value = element.argument
     } else {
       state.opCodes.push({ op: OP.LOADK, val: i })
@@ -105,11 +104,5 @@ export function AssignmentPattern(node: estree.AssignmentPattern, state: State) 
     }
   } else {
     compilePattern(node.left, state)
-  }
-}
-
-export function RestElement(node: estree.RestElement, state: State) {
-  if (node.argument.type === 'Identifier') {
-    
   }
 }

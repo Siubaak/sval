@@ -10,7 +10,9 @@ function step(state: State) {
   switch (code.op) {
     case OP.LOADK: stack.push(code.val); break
     case OP.LOADV: stack.push(context[code.val].store); break
-    case OP.ALLOC: context[code.val] = { store: stack.pop() }; break
+    case OP.ALLOC: context[code.val] = {
+      store: stack.length > state.ebpList[state.ebpList.length - 1] ? stack.pop() : undefined
+    }; break
     case OP.STORE: context[code.val].store = stack.pop(); break
     case OP.BIOP: {
       const right = stack.pop()
@@ -130,17 +132,17 @@ function step(state: State) {
       break
     }
     case OP.REST: {
-      if (code.type === 'obj') {
-        const rmKeys = stack.splice(stack.length - code.val)
+      if (code.val === 'obj') {
+        const rmKeys = stack.splice(stack.length - code.remove)
         const object = Object.assign({}, stack.pop())
         for (let i = 0; i < rmKeys.length; i++) {
           delete object[rmKeys[i]]
         }
         stack.push(object)
-      } else if (code.type === 'arr') {
-        stack.push(stack.pop().slice(code.val))
-      } else { // code.type === 'func'
-
+      } else if (code.val === 'arr') {
+        stack.push(stack.pop().slice(code.remove))
+      } else { // code.val === 'func'
+        stack.push(stack.splice(state.ebpList[state.ebpList.length - 1]).reverse())
       }
       break
     }
@@ -182,11 +184,11 @@ function step(state: State) {
           state.pc = beginPc // offset pc to the function op codes
           state.context = lexicalCtx // set the context as the lexical context of function
   
-          let s = SIGNAL.NONE
+          let signal = SIGNAL.NONE
           let ret: any
           while (state.pc < endPc) {
-            s = step(state)
-            if (s === SIGNAL.RET) {
+            signal = step(state)
+            if (signal === SIGNAL.RET) {
               ret = stack.pop()
               break
             }
@@ -335,16 +337,20 @@ function step(state: State) {
         }
       }
 
+      let result: any
+      state.ebpList.push(stack.length)
       if (code.catch) {
         try {
-          stack.push(func.apply(obj, args))
+          result = func.apply(obj, args)
         } catch (err) {
-          stack.push(err)
+          result = err
           state.pc = code.catch.pc - 1
         }
       } else {
-        stack.push(func.apply(obj, args))
+        result = func.apply(obj, args)
       }
+      stack.length = state.ebpList.pop()
+      stack.push(result)
       break
     }
     case OP.NEW: {
@@ -361,16 +367,20 @@ function step(state: State) {
         }
       }
 
+      let result: any
+      state.ebpList.push(stack.length)
       if (code.catch) {
         try {
-          stack.push(new ctor(...args))
+          result = new ctor(...args)
         } catch (err) {
-          stack.push(err)
+          result = err
           state.pc = code.catch.pc - 1
         }
       } else {
-        stack.push(new ctor(...args))
+        result = new ctor(...args)
       }
+      stack.length = state.ebpList.pop()
+      stack.push(result)
       break
     }
     case OP.BRK: break
@@ -389,6 +399,7 @@ function step(state: State) {
         throw stack.pop()
       }
     }
+    case OP.GC: stack.length = state.ebpList[state.ebpList.length - 1]; break
     default: throw new Error('Unknown instruct code')
   }
   state.pc++

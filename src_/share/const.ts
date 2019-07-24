@@ -14,8 +14,8 @@ export enum OP {
   MGET,  // get member of object (no val)
   MSET,  // set member of object (no val)
   REST,  // get rest elements of object, array & function params
-         //   (val: number of removed elements,
-         //    type: 'obj' | 'arr' | 'func')
+         //   (val: 'obj' | 'arr' | 'func',
+         //    remove: number of removed elements)
   KOVS,  // get enumerable properties or iterable values of an object for for-in or for-of statement
          //   (val: true for keys and false for values)
   CLS,   // declare a class
@@ -46,7 +46,8 @@ export enum OP {
   COPY,  // copy the top of stack and push into stack (no val)
   POP,   // pop the top of stack (no val)
   DBG,   // debug (no val)
-  THROW, // throw (val: { pc: catch statement pc })
+  THROW, // throw (val: { pc: catch statement pc }),
+  GC,    // clean stack after each statments (no val)
 }
 
 export enum SIGNAL {

@@ -3,7 +3,7 @@ import * as estree from 'estree'
 import { OP } from '../share/const'
 import compile from '.'
 import { createSymbol } from '../share/utils'
-import { ObjectPattern, ArrayPattern, AssignmentPattern, RestElement } from './pattern'
+import { ObjectPattern, ArrayPattern, AssignmentPattern } from './pattern'
 
 type FunctionDefinition = estree.FunctionDeclaration | estree.FunctionExpression | estree.ArrowFunctionExpression
 
@@ -32,9 +32,24 @@ export function compileFunc(node: FunctionDefinition, state: State) {
     if (param.type === 'Identifier') {
       state.opCodes.push({ op: OP.ALLOC, val: state.symbols.set(param.name, 'var').pointer })
     } else if (param.type === 'RestElement') {
-      
+      state.opCodes.push({ op: OP.REST, val: 'func' })
+      const value = param.argument
+      if (value.type === 'Identifier') {
+        state.opCodes.push({ op: OP.ALLOC, val: state.symbols.set(value.name, 'var').pointer })
+      // } else if (value.type === 'MemberExpression') {
+      //   compile(value.object, state)
+      //   const prop = value.property
+      //   if (prop.type === 'Identifier') {
+      //     state.opCodes.push({ op: OP.LOADK, val: prop.name })
+      //   } else { // node.computed === true
+      //     compile(prop, state)
+      //   }
+      //   state.opCodes.push({ op: OP.MSET })
+      } else {
+        compilePattern(value, state)
+      }
     } else {
-      
+      compilePattern(param, state)
     }
   }
   const body = node.body.type === 'BlockStatement' ? node.body.body : [node.body]
@@ -92,8 +107,6 @@ export function compilePattern(node: estree.Pattern, state: State) {
       return ArrayPattern(node, state)
     case 'AssignmentPattern':
       return AssignmentPattern(node, state)
-    case 'RestElement':
-      return RestElement(node, state)
     default:
       throw new SyntaxError('Unexpected token')
   }
