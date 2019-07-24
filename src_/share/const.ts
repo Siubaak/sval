@@ -13,7 +13,9 @@ export enum OP {
   OBJ,   // create object (val: array of property kinds)
   MGET,  // get member of object (no val)
   MSET,  // set member of object (no val)
-  DEL,   // delete property ()
+  REST,  // get rest elements of object, array & function params
+         //   (val: number of removed elements,
+         //    type: 'obj' | 'arr' | 'func')
   KOVS,  // get enumerable properties or iterable values of an object for for-in or for-of statement
          //   (val: true for keys and false for values)
   CLS,   // declare a class
@@ -30,9 +32,11 @@ export enum OP {
          //    length: function.length)
   CALL,  // invoke functions or methods
          //   (val: number of parameters,
+         //    spread: array of spread element indexes,
          //    catch: { pc: catch statement pc })
   NEW,   // create an object by constructor
          //   (val: number of parameters,
+         //    spread: array of spread element indexes,
          //    catch: { pc: catch statement pc })
   BRK,   // break (val: label)
   CONTI, // continue (val: label)

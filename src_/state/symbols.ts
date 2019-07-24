@@ -1,6 +1,6 @@
 import { hasOwn } from '../share/utils'
 
-export type VarType = 'var' | 'let' | 'const'
+type VarType = 'var' | 'let' | 'const'
 
 interface VarSymbol {
 	type: VarType

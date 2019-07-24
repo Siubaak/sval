@@ -129,6 +129,21 @@ function step(state: State) {
       object[key] = value
       break
     }
+    case OP.REST: {
+      if (code.type === 'obj') {
+        const rmKeys = stack.splice(stack.length - code.val)
+        const object = Object.assign({}, stack.pop())
+        for (let i = 0; i < rmKeys.length; i++) {
+          delete object[rmKeys[i]]
+        }
+        stack.push(object)
+      } else if (code.type === 'arr') {
+        stack.push(stack.pop().slice(code.val))
+      } else { // code.type === 'func'
+
+      }
+      break
+    }
     case OP.KOVS: {
       const kovs = []
       if (code.val) {

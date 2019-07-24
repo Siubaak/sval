@@ -7,8 +7,9 @@ import { compilePattern } from './helper';
 export function ObjectPattern(node: estree.ObjectPattern, state: State) {
   for (let i = 0; i < node.properties.length; i++) {
     const property = node.properties[i]
+    let value: estree.Pattern = (property as estree.AssignmentProperty).value
+    state.opCodes.push({ op: OP.COPY })
     if (property.type === 'Property') {
-      state.opCodes.push({ op: OP.COPY })
       // key
       const propKey = property.key
       if (propKey.type === 'Identifier') {
@@ -17,28 +18,35 @@ export function ObjectPattern(node: estree.ObjectPattern, state: State) {
         compile(propKey, state)
       }
       state.opCodes.push({ op: OP.MGET })
-      // value
-      const value = property.value
-      if (value.type === 'Identifier') {
-        if (state.symbols.type) {
-          state.opCodes.push({ op: OP.ALLOC, val: state.symbols.set(value.name).pointer })
-        } else {
-          state.opCodes.push({ op: OP.STORE, val: state.symbols.get(value.name).pointer })
-        }
-      } else if (value.type === 'MemberExpression') {
-        compile(value.object, state)
-        const property = value.property
-        if (property.type === 'Identifier') {
-          state.opCodes.push({ op: OP.LOADK, val: property.name })
-        } else { // node.computed === true
-          compile(property, state)
-        }
-        state.opCodes.push({ op: OP.MSET })
-      } else {
-        compilePattern(value, state)
-      }
     } else { // property.type === 'RestElement'
-      
+      for (let j = 0; j < i; j++) {
+        const propKey = node.properties[j].key
+        if (propKey.type === 'Identifier') {
+          state.opCodes.push({ op: OP.LOADK, val: propKey.name })
+        } else {
+          compile(propKey, state)
+        }
+      }
+      state.opCodes.push({ op: OP.REST, val: i, type: 'obj' })
+      value = (property as any).argument
+    }
+    if (value.type === 'Identifier') {
+      if (state.symbols.type) {
+        state.opCodes.push({ op: OP.ALLOC, val: state.symbols.set(value.name).pointer })
+      } else {
+        state.opCodes.push({ op: OP.STORE, val: state.symbols.get(value.name).pointer })
+      }
+    } else if (value.type === 'MemberExpression') {
+      compile(value.object, state)
+      const prop = value.property
+      if (prop.type === 'Identifier') {
+        state.opCodes.push({ op: OP.LOADK, val: prop.name })
+      } else { // node.computed === true
+        compile(prop, state)
+      }
+      state.opCodes.push({ op: OP.MSET })
+    } else {
+      compilePattern(value, state)
     }
   }
   state.opCodes.push({ op: OP.POP })
@@ -48,28 +56,32 @@ export function ArrayPattern(node: estree.ArrayPattern, state: State) {
   for (let i = 0; i < node.elements.length; i++) {
     const element = node.elements[i]
     if (!element) continue // for the case: let [ , x] = [1, 2]
+    let value: estree.Pattern = element
     state.opCodes.push({ op: OP.COPY })
-    state.opCodes.push({ op: OP.LOADK, val: i })
-    state.opCodes.push({ op: OP.MGET })
-    if (element.type === 'Identifier') {
+    if (element.type === 'RestElement') {
+      state.opCodes.push({ op: OP.REST, val: i, type: 'arr' })
+      value = element.argument
+    } else {
+      state.opCodes.push({ op: OP.LOADK, val: i })
+      state.opCodes.push({ op: OP.MGET })
+    }
+    if (value.type === 'Identifier') {
       if (state.symbols.type) {
-        state.opCodes.push({ op: OP.ALLOC, val: state.symbols.set(element.name).pointer })
+        state.opCodes.push({ op: OP.ALLOC, val: state.symbols.set(value.name).pointer })
       } else {
-        state.opCodes.push({ op: OP.STORE, val: state.symbols.get(element.name).pointer })
+        state.opCodes.push({ op: OP.STORE, val: state.symbols.get(value.name).pointer })
       }
-    } else if (element.type === 'MemberExpression') {
-      compile(element.object, state)
-      const property = element.property
-      if (property.type === 'Identifier') {
-        state.opCodes.push({ op: OP.LOADK, val: property.name })
+    } else if (value.type === 'MemberExpression') {
+      compile(value.object, state)
+      const prop = value.property
+      if (prop.type === 'Identifier') {
+        state.opCodes.push({ op: OP.LOADK, val: prop.name })
       } else { // node.computed === true
-        compile(property, state)
+        compile(prop, state)
       }
       state.opCodes.push({ op: OP.MSET })
-    } else if (element.type === 'RestElement') {
-
     } else {
-      compilePattern(element, state)
+      compilePattern(value, state)
     }
   }
   state.opCodes.push({ op: OP.POP })
