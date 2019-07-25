@@ -19,7 +19,7 @@ export default class SymbolTable {
 
 	type: VarType = null
 
-	set(name: string, type?: VarType) {
+	set(name: string, type?: VarType): VarSymbol {
 		if (hasOwn(this.table, name)) {
 			throw new SyntaxError(`Identifier '${name}' has already been declared`)
 		} else {

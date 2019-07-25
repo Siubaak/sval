@@ -38,16 +38,14 @@ export enum OP {
          //   (val: number of parameters,
          //    spread: array of spread element indexes,
          //    catch: { pc: catch statement pc })
-  BRK,   // break (val: label)
-  CONTI, // continue (val: label)
   RET,   // return (no val)
   YIELD, // yield (val: delegate or not)
   AWAIT, // await (no val)
   COPY,  // copy the top of stack and push into stack (no val)
   POP,   // pop the top of stack (no val)
-  DBG,   // debug (no val)
-  THROW, // throw (val: { pc: catch statement pc }),
   GC,    // clean stack after each statments (no val)
+  DBG,   // debug (no val)
+  THROW, // throw (val: { pc: catch statement pc })
 }
 
 export enum SIGNAL {

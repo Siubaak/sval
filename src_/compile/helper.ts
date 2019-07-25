@@ -36,15 +36,15 @@ export function compileFunc(node: FunctionDefinition, state: State) {
       const value = param.argument
       if (value.type === 'Identifier') {
         state.opCodes.push({ op: OP.ALLOC, val: state.symbols.set(value.name, 'var').pointer })
-      // } else if (value.type === 'MemberExpression') {
-      //   compile(value.object, state)
-      //   const prop = value.property
-      //   if (prop.type === 'Identifier') {
-      //     state.opCodes.push({ op: OP.LOADK, val: prop.name })
-      //   } else { // node.computed === true
-      //     compile(prop, state)
-      //   }
-      //   state.opCodes.push({ op: OP.MSET })
+      } else if (value.type === 'MemberExpression') {
+        compile(value.object, state)
+        const prop = value.property
+        if (prop.type === 'Identifier') {
+          state.opCodes.push({ op: OP.LOADK, val: prop.name })
+        } else { // node.computed === true
+          compile(prop, state)
+        }
+        state.opCodes.push({ op: OP.MSET })
       } else {
         compilePattern(value, state)
       }

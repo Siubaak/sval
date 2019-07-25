@@ -4,16 +4,15 @@ import { getDptor, define, inherits } from '../share/utils'
 
 function step(state: State) {
   const stack = state.stack
-  const context = state.context
   const code = state.opCodes[state.pc]
   let signal = SIGNAL.NONE
   switch (code.op) {
     case OP.LOADK: stack.push(code.val); break
-    case OP.LOADV: stack.push(context[code.val].store); break
-    case OP.ALLOC: context[code.val] = {
+    case OP.LOADV: stack.push(state.context[code.val].store); break
+    case OP.ALLOC: state.context[code.val] = {
       store: stack.length > state.ebpList[state.ebpList.length - 1] ? stack.pop() : undefined
     }; break
-    case OP.STORE: context[code.val].store = stack.pop(); break
+    case OP.STORE: state.context[code.val].store = stack.pop(); break
     case OP.BIOP: {
       const right = stack.pop()
       const left = stack.pop()
@@ -337,8 +336,10 @@ function step(state: State) {
         }
       }
 
-      let result: any
+      // push ebp here instead of inside functions
+      // to avoid a wrong ebp list caused by throwing error in functions
       state.ebpList.push(stack.length)
+      let result: any
       if (code.catch) {
         try {
           result = func.apply(obj, args)
@@ -367,8 +368,10 @@ function step(state: State) {
         }
       }
 
-      let result: any
+      // push ebp here instead of inside functions
+      // to avoid a wrong ebp list caused by throwing error in functions
       state.ebpList.push(stack.length)
+      let result: any
       if (code.catch) {
         try {
           result = new ctor(...args)
@@ -383,8 +386,6 @@ function step(state: State) {
       stack.push(result)
       break
     }
-    case OP.BRK: break
-    case OP.CONTI: break
     case OP.RET: signal = SIGNAL.RET; break
     case OP.YIELD: signal = SIGNAL.YIELD; break
     case OP.AWAIT: signal = SIGNAL.AWAIT; break

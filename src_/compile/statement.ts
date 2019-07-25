@@ -33,11 +33,11 @@ export function ReturnStatement(node: estree.ReturnStatement, state: State) {
 }
 
 export function BreakStatement(node: estree.BreakStatement, state: State) {
-  state.opCodes.push({ op: OP.BRK, val: node.label })
+  state.opCodes.push({ op: OP.JMP, val: node.label.name })
 }
 
 export function ContinueStatement(node: estree.ContinueStatement, state: State) {
-  state.opCodes.push({ op: OP.CONTI, val: node.label })
+  state.opCodes.push({ op: OP.JMP, val: node.label.name })
 }
 
 export function IfStatement(node: estree.IfStatement, state: State) {
