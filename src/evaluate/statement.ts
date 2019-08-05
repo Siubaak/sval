@@ -83,7 +83,10 @@ export function* SwitchStatement(node: estree.SwitchStatement, scope: Scope) {
     }
     if (matched) {
       const result = yield* SwitchCase(eachCase, scope)
-      if (result === BREAK || result === CONTINUE || result === RETURN) {
+      if (result === BREAK) {
+        break
+      }
+      if (result === CONTINUE || result === RETURN) {
         return result
       }
     }
