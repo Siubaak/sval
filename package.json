@@ -8,9 +8,9 @@
   "types": "types/index.d.ts",
   "scripts": {
     "build": "npm test && rollup -c && npm run post",
-    "start": "node scripts && rollup -c && npm run post",
+    "start": "rollup -c && npm run post",
     "post": "mv types/src/index.d.ts types && rm -rf types/src",
-    "test": "node scripts && umi-test --coverage",
+    "test": "umi-test --coverage",
     "cov": "cat ./coverage/lcov.info | coveralls"
   },
   "repository": {

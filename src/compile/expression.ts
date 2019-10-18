@@ -1,6 +1,6 @@
 import * as estree from 'estree'
 import State from '../state'
-import compile from '../compile'
+import compile from '.'
 import { OP } from '../share/const'
 import { compileFunc, compileClass, compilePattern } from './helper'
 
@@ -48,11 +48,33 @@ export function ObjectExpression(node: estree.ObjectExpression, state: State) {
 }
 
 export function FunctionExpression(node: estree.FunctionExpression, state: State) {
-  compileFunc(node, state)
+  if (node.id && node.id.name) {
+    state.symbols.pushScope()
+    // allocate a placeholder for a tmp function to use inside the function scope
+    const pointer = state.symbols.set(node.id.name, 'const').pointer
+    state.opCodes.push({ op: OP.LOADK })
+    state.opCodes.push({ op: OP.ALLOC, val: pointer })
+    // compile the function
+    compileFunc(node, state)
+    // store the function into the placeholder above
+    state.opCodes.push({ op: OP.COPY })
+    state.opCodes.push({ op: OP.STORE, val: pointer })
+    state.symbols.popScope()
+  } else {
+    compileFunc(node, state)
+  }
 }
 
 export function UnaryExpression(node: estree.UnaryExpression, state: State) {
-  compile(node.argument, state)
+  if (node.operator === 'typeof' && node.argument.type === 'Identifier') {
+    try {
+      state.opCodes.push({ op: OP.LOADV, val: state.symbols.get(node.argument.name).pointer })
+    } catch (err) {
+      state.opCodes.push({ op: OP.LOADK })
+    }
+  } else {
+    compile(node.argument, state)
+  }
   state.opCodes.push({ op: OP.UNOP, val: node.operator })
 }
 
@@ -230,7 +252,21 @@ export function TaggedTemplateExpression(node: estree.TaggedTemplateExpression, 
 }
 
 export function ClassExpression(node: estree.ClassExpression, state: State) {
-  compileClass(node, state)
+  if (node.id && node.id.name) {
+    state.symbols.pushScope()
+    // allocate a placeholder for a tmp class to use inside the constructor function scope
+    const pointer = state.symbols.set(node.id.name, 'const').pointer
+    state.opCodes.push({ op: OP.LOADK })
+    state.opCodes.push({ op: OP.ALLOC, val: pointer })
+    // compile the class
+    compileClass(node, state)
+    // store the class into the placeholder above
+    state.opCodes.push({ op: OP.COPY })
+    state.opCodes.push({ op: OP.STORE, val: pointer })
+    state.symbols.popScope()
+  } else {
+    compileClass(node, state)
+  }
 }
 
 export function Super(node: estree.Super, state: State) {

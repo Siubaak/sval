@@ -8,10 +8,19 @@ function step(state: State) {
   let signal = SIGNAL.NONE
   switch (code.op) {
     case OP.LOADK: stack.push(code.val); break
-    case OP.LOADV: stack.push(state.context[code.val].store); break
-    case OP.ALLOC: state.context[code.val] = {
-      store: stack.length > state.ebpList[state.ebpList.length - 1] ? stack.pop() : undefined
-    }; break
+    case OP.LOADV: stack.push(state.context[code.val] && state.context[code.val].store); break
+    case OP.ALLOC: {
+        const ebp = state.ebpList[state.ebpList.length - 1]
+        const storeVal = stack.length > ebp ? stack.pop() : undefined
+        state.context[code.val] = { store: storeVal }
+        if (!ebp) {
+          const globalPointer = state.symbols.get('window').pointer
+          const globalVariable = state.context[globalPointer].store
+          const globalVarName = state.symbols.globalVarName[code.val]
+          define(globalVariable, globalVarName, { value: storeVal, writable: true, enumerable: true })
+        }
+        break
+    }
     case OP.STORE: state.context[code.val].store = stack.pop(); break
     case OP.BIOP: {
       const right = stack.pop()
@@ -167,6 +176,7 @@ function step(state: State) {
     case OP.FUNC: {
       const beginPc = state.pc + 1 // the begin pc
       const endPc = code.end // the end pc
+
       const lexicalCtx = state.context.concat() // reserve the lexical context for function
       if (!code.generator && !code.async) {
         const func = function () {
@@ -177,12 +187,12 @@ function step(state: State) {
             stack.push(arguments) // load argument array itself
             stack.push(this) // load this
           }
-  
+
           const resetPc = state.pc // reserve the current pc
           const resetCtx = state.context // reserve the current context
           state.pc = beginPc // offset pc to the function op codes
           state.context = lexicalCtx // set the context as the lexical context of function
-  
+
           let signal = SIGNAL.NONE
           let ret: any
           while (state.pc < endPc) {

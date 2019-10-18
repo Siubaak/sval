@@ -88,7 +88,7 @@ export function ArrayPattern(node: estree.ArrayPattern, state: State) {
 
 export function AssignmentPattern(node: estree.AssignmentPattern, state: State) {
   state.opCodes.push({ op: OP.COPY })
-  state.opCodes.push({ op: OP.LOADK, val: undefined })
+  state.opCodes.push({ op: OP.LOADK })
   state.opCodes.push({ op: OP.BIOP, val: '===' })
   const ifnotCode = { op: OP.IFNOT, val: -1 }
   state.opCodes.push(ifnotCode)

@@ -52,10 +52,21 @@ export function compileFunc(node: FunctionDefinition, state: State) {
       compilePattern(param, state)
     }
   }
-  const body = node.body.type === 'BlockStatement' ? node.body.body : [node.body]
-  for (let i = 0; i < body.length; i++) {
-    compile(body[i], state)
+
+  if (node.body.type === 'BlockStatement') {
+    const block = node.body
+    state.symbols.pushScope()
+    hoist(block, state)
+    for (let i = 0; i < block.body.length; i++) {
+      compile(block.body[i], state)
+      state.opCodes.push({ op: OP.GC })
+    }
+    state.symbols.popScope()
+  } else {
+    compile(node.body, state)
+    state.opCodes.push({ op: OP.GC })
   }
+
   state.catchPcStack.pop()
   state.symbols.popScope()
 
@@ -177,4 +188,93 @@ export function compileForXStatement(node: estree.ForInStatement | estree.ForOfS
   ifnotCode.val = opCodes.length
 
   symbols.popScope()
+}
+
+export function hoist(block: estree.Program | estree.BlockStatement, state: State, onlyBlock: boolean = false) {
+  state.symbols.hoist = true
+  const funcDclrList: any[] = []
+  const funcDclrIdxs: number[] = []
+  for (let i = 0; i < block.body.length; i++) {
+    const statement = block.body[i]
+    if (statement.type === 'FunctionDeclaration') {
+      state.symbols.set(statement.id.name, 'var')
+      funcDclrList.push(statement)
+      funcDclrIdxs.push(i)
+    } else if (
+      statement.type === 'VariableDeclaration'
+      && ['const', 'let'].indexOf(statement.kind) !== -1
+    ) {
+      hoistVarDclr(statement, state)
+    } else if (!onlyBlock) {
+      hoistVar(statement as estree.Statement, state)
+    }
+  }
+  if (funcDclrIdxs.length) {
+    for (let i = funcDclrIdxs.length - 1; i > -1; i--) {
+      block.body.splice(funcDclrIdxs[i], 1)
+    }
+    block.body = funcDclrList.concat(block.body)
+  }
+  state.symbols.hoist = false
+}
+
+function hoistVar(statement: estree.Statement, state: State) {
+  switch (statement.type) {
+    case 'VariableDeclaration':
+      if (statement.kind === 'var') {
+        hoistVarDclr(statement, state)
+      }
+      break
+    case 'WhileStatement':
+    case 'DoWhileStatement':
+    case 'ForStatement':
+    case 'ForInStatement':
+    case 'ForOfStatement':
+      hoistVar(statement.body, state)
+      break
+    case 'BlockStatement':
+      for (let i = 0; i < statement.body.length; i++) {
+        hoistVar(statement.body[i], state)
+      }
+      break
+    case 'SwitchStatement':
+      for (let i = 0; i < statement.cases.length; i++) {
+        for (let j = 0; j < statement.cases[i].consequent.length; j++) {
+          hoistVar(statement.cases[i].consequent[j], state)
+        }
+      }
+      break
+    case 'TryStatement': {
+      const tryBlock = statement.block.body
+      for (let i = 0; i < tryBlock.length; i++) {
+        hoistVar(tryBlock[i], state)
+      }
+      const catchBlock = statement.handler && statement.handler.body.body
+      if (catchBlock) {
+        for (let i = 0; i < catchBlock.length; i++) {
+          hoistVar(catchBlock[i], state)
+        }
+      }
+      const finalBlock = statement.finalizer && statement.finalizer.body
+      if (finalBlock) {
+        for (let i = 0; i < finalBlock.length; i++) {
+          hoistVar(finalBlock[i], state)
+        }
+      }
+      break
+    }
+  }
+}
+
+function hoistVarDclr(node: estree.VariableDeclaration, state: State) {
+  state.symbols.type = node.kind
+  for (let i = 0; i < node.declarations.length; i++) {
+    const declr = node.declarations[i]
+    if (declr.id.type === 'Identifier') {
+      state.symbols.set(declr.id.name)
+    } else {
+      // hoistVar(declr.id, state)
+    }
+  }
+  state.symbols.type = null
 }

@@ -2,7 +2,7 @@ import * as estree from 'estree'
 import State from '../state'
 import compile from '.'
 import { OP } from '../share/const'
-import { compileForXStatement } from './helper'
+import { compileForXStatement, hoist } from './helper'
 
 export function ExpressionStatement(node: estree.ExpressionStatement, state: State) {
   compile(node.expression, state)
@@ -10,6 +10,7 @@ export function ExpressionStatement(node: estree.ExpressionStatement, state: Sta
 
 export function BlockStatement(node: estree.BlockStatement, state: State) {
   state.symbols.pushScope()
+  hoist(node, state, true)
   for (let i = 0; i < node.body.length; i++) {
     compile(node.body[i], state)
     state.opCodes.push({ op: OP.GC })

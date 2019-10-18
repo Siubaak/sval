@@ -1,10 +1,12 @@
-import { getOwnNames, createSandBox, globalObj } from './share/util'
 import { version } from '../package.json'
 import { parse, Options } from 'acorn'
-import Scope from './scope'
+import State from './state'
 
-import { hoist } from './evaluate_n/helper'
-import evaluate from './evaluate_n'
+import execute from './jsvm'
+import compile from './compile'
+import { createSandBox, globalObj, getOwnNames } from './share/utils'
+import { OP } from './share/const'
+import { hoist } from './compile/helper'
 
 export interface SvalOptions {
   ecmaVer?: 3 | 5 | 6 | 7 | 8 | 9 | 10 | 2015 | 2016 | 2017 | 2018 | 2019
@@ -15,7 +17,7 @@ class Sval {
   static version: string = version
 
   private options: Options = {}
-  private scope = new Scope(null, true)
+  private state = new State()
 
   exports: { [name: string]: any } = {}
 
@@ -33,14 +35,19 @@ class Sval {
     if (sandBox) {
       // Shallow clone to create a sandbox
       const win = createSandBox()
-      this.scope.let('window', win)
-      this.scope.let('this', win)
+      if (win.window !== win) {
+        win.window = win
+      }
+      this.import('this', win)
+      this.import(win)
     } else {
-      this.scope.let('window', globalObj)
-      this.scope.let('this', globalObj)
+      if (globalObj.window !== globalObj) {
+        globalObj.window = globalObj
+      }
+      this.import('this', globalObj)
+      this.import(globalObj)
     }
-    
-    this.scope.const('exports', this.exports = {})
+    this.import('exports', this.exports)
   }
 
   import(nameOrModules: string | { [name: string]: any }, mod?: any) {
@@ -51,17 +58,23 @@ class Sval {
     if (typeof nameOrModules !== 'object') return
 
     const names = getOwnNames(nameOrModules)
-    
+ 
     for (let i = 0; i < names.length; i++) {
       const name = names[i]
-      this.scope.var(name, nameOrModules[name])
+      const pointer = this.state.symbols.set(name, 'var').pointer
+      this.state.context[pointer] = { store: nameOrModules[name] }
     }
   }
 
   run(code: string) {
     const ast = parse(code, this.options) as any
-    hoist(ast, this.scope)
-    evaluate(ast, this.scope)
+    hoist(ast, this.state)
+    compile(ast, this.state)
+    // for (let i = 0; i < this.state.opCodes.length; i++) {
+    //   const opCode = this.state.opCodes[i]
+    //   console.log(i, (OP as any)[opCode.op], typeof opCode.val === 'undefined' ? '' : opCode.val)
+    // }
+    execute(this.state)
   }
 }
 
