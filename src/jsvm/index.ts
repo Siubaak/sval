@@ -7,11 +7,11 @@ function step(state: State) {
   const code = state.opCodes[state.pc]
   let signal = SIGNAL.NONE
   switch (code.op) {
-    case OP.LOADK: stack.push(code.val); break
-    case OP.LOADV: stack.push(state.context[code.val] && state.context[code.val].store); break
+    case OP.LOADK: stack[state.esp++] = code.val; break
+    case OP.LOADV: stack[state.esp++] = state.context[code.val] && state.context[code.val].store; break
     case OP.ALLOC: {
         const ebp = state.ebpList[state.ebpList.length - 1]
-        const storeVal = stack.length > ebp ? stack.pop() : undefined
+        const storeVal = state.esp > ebp ? stack[--state.esp] : undefined
         state.context[code.val] = { store: storeVal }
         if (!ebp) {
           const globalPointer = state.symbols.get('window').pointer
@@ -21,62 +21,64 @@ function step(state: State) {
         }
         break
     }
-    case OP.STORE: state.context[code.val].store = stack.pop(); break
+    case OP.STORE: state.context[code.val].store = stack[--state.esp]; break
     case OP.BIOP: {
-      const right = stack.pop()
-      const left = stack.pop()
+      const right = stack[--state.esp]
+      const left = stack[--state.esp]
       switch (code.val) {
         // very often used
-        case '+': stack.push(left + right); break
-        case '-': stack.push(left - right); break
-        case '*': stack.push(left * right); break
-        case '/': stack.push(left / right); break
-        case '==': stack.push(left == right); break
-        case '!=': stack.push(left != right); break
-        case '===': stack.push(left === right); break
-        case '!==': stack.push(left !== right); break
-        case '<': stack.push(left < right); break
-        case '<=': stack.push(left <= right); break
-        case '>': stack.push(left > right); break
-        case '>=': stack.push(left >= right); break
-        case '||': stack.push(left || right); break
-        case '&&': stack.push(left && right); break
-        case 'in': stack.push(left in right); break
-        case 'instanceof': stack.push(left instanceof right); break
+        case '+': stack[state.esp++] = left + right; break
+        case '-': stack[state.esp++] = left - right; break
+        case '*': stack[state.esp++] = left * right; break
+        case '/': stack[state.esp++] = left / right; break
+        case '==': stack[state.esp++] = left == right; break
+        case '!=': stack[state.esp++] = left != right; break
+        case '===': stack[state.esp++] = left === right; break
+        case '!==': stack[state.esp++] = left !== right; break
+        case '<': stack[state.esp++] = left < right; break
+        case '<=': stack[state.esp++] = left <= right; break
+        case '>': stack[state.esp++] = left > right; break
+        case '>=': stack[state.esp++] = left >= right; break
+        case '||': stack[state.esp++] = left || right; break
+        case '&&': stack[state.esp++] = left && right; break
+        case 'in': stack[state.esp++] = left in right; break
+        case 'instanceof': stack[state.esp++] = left instanceof right; break
         // not quite often used
-        case '**': stack.push(left ** right); break
-        case '%': stack.push(left % right); break
-        case '|': stack.push(left | right); break
-        case '^': stack.push(left ^ right); break
-        case '&': stack.push(left & right); break
-        case '<<': stack.push(left << right); break
-        case '>>': stack.push(left >> right); break
-        case '>>>': stack.push(left >>> right); break
+        case '**': stack[state.esp++] = left ** right; break
+        case '%': stack[state.esp++] = left % right; break
+        case '|': stack[state.esp++] = left | right; break
+        case '^': stack[state.esp++] = left ^ right; break
+        case '&': stack[state.esp++] = left & right; break
+        case '<<': stack[state.esp++] = left << right; break
+        case '>>': stack[state.esp++] = left >> right; break
+        case '>>>': stack[state.esp++] = left >>> right; break
         default: throw new SyntaxError(`Unexpected token ${code.val}`)
       }
       break
     }
     case OP.UNOP: {
-      const arg = stack.pop()
+      const arg = stack[--state.esp]
       switch (code.val) {
-        case '+': stack.push(+arg); break
-        case '-': stack.push(-arg); break
-        case '!': stack.push(!arg); break
-        case '~': stack.push(~arg); break
-        case 'void': stack.push(void arg); break
-        case 'typeof': stack.push(typeof arg); break
+        case '+': stack[state.esp++] = +arg; break
+        case '-': stack[state.esp++] = -arg; break
+        case '!': stack[state.esp++] = !arg; break
+        case '~': stack[state.esp++] = ~arg; break
+        case 'void': stack[state.esp++] = void arg; break
+        case 'typeof': stack[state.esp++] = typeof arg; break
         case 'delete': throw new SyntaxError('delete is not implemented')
         default: throw new SyntaxError(`Unexpected token ${code.val}`)
       }
       break
     }
     case OP.JMP: state.pc = code.val - 1; break
-    case OP.IF: stack.pop() && (state.pc = code.val - 1); break
-    case OP.IFNOT: !stack.pop() && (state.pc = code.val - 1); break
-    case OP.CSNE: stack.pop() !== stack[stack.length - 1] && (state.pc = code.val - 1); break
+    case OP.IF: stack[--state.esp] && (state.pc = code.val - 1); break
+    case OP.IFNOT: !stack[--state.esp] && (state.pc = code.val - 1); break
+    case OP.CSNE: stack[--state.esp] !== stack[state.esp - 1] && (state.pc = code.val - 1); break
     case OP.ARR: {
       const spread = code.val.concat()
-      const arrItems = stack.splice(stack.length - spread.pop())
+      const newEsp = state.esp - spread.pop()
+      const arrItems = stack.slice(newEsp, state.esp)
+      state.esp = newEsp
       let arr: any[] = []
       for (let i = 0; i < arrItems.length; i++) {
         if (spread.indexOf(i) === -1) {
@@ -85,13 +87,15 @@ function step(state: State) {
           arr = [...arr, ...arrItems[i]]
         }
       }
-      stack.push(arr)
+      stack[state.esp++] = arr
       break
     }
     case OP.OBJ: {
       const object: any = {}
       const propKinds = code.val
-      const keyValue = stack.splice(stack.length - propKinds.length * 2)
+      const newEsp = state.esp - propKinds.length * 2
+      const keyValue = stack.slice(newEsp, state.esp)
+      state.esp = newEsp
       for (let i = 0; i < propKinds.length * 2; i += 2) {
         const key = keyValue[i]
         const value = keyValue[i + 1]
@@ -118,50 +122,55 @@ function step(state: State) {
           Object.assign(object, value)
         }
       }
-      stack.push(object)
+      stack[state.esp++] = object
       break
     }
     case OP.MGET: {
-      const key = stack.pop()
-      const object = stack.pop()
+      const key = stack[--state.esp]
+      const object = stack[--state.esp]
       if (object == undefined) {
         throw new TypeError(`Cannot read property '${key}' of ${object}`)
       }
       const dptor = getDptor(object, key)
       // if getter, just call
-      dptor && dptor.get ? object[key] : stack.push(object[key])
+      dptor && dptor.get ? object[key] : stack[state.esp++] = object[key]
       break
     }
     case OP.MSET: {
-      const key = stack.pop()
-      const object = stack.pop()
-      const value = stack.pop()
+      const key = stack[--state.esp]
+      const object = stack[--state.esp]
+      const value = stack[--state.esp]
       object[key] = value
       break
     }
     case OP.REST: {
       if (code.val === 'obj') {
-        const rmKeys = stack.splice(stack.length - code.remove)
-        const object = Object.assign({}, stack.pop())
+        const newEsp = state.esp - code.remove
+        const rmKeys = stack.slice(newEsp, state.esp)
+        state.esp = newEsp
+        const object = Object.assign({}, stack[--state.esp])
         for (let i = 0; i < rmKeys.length; i++) {
           delete object[rmKeys[i]]
         }
-        stack.push(object)
+        stack[state.esp++] = object
       } else if (code.val === 'arr') {
-        stack.push(stack.pop().slice(code.remove))
+        const arr = stack[--state.esp].slice(code.remove)
+        stack[state.esp++] = arr
       } else { // code.val === 'func'
-        stack.push(stack.splice(state.ebpList[state.ebpList.length - 1]).reverse())
+        const newEsp = state.ebpList[state.ebpList.length - 1]
+        stack[state.esp++] = stack.slice(newEsp, state.esp).reverse()
+        state.esp = newEsp
       }
       break
     }
     case OP.KOVS: {
       const kovs = []
       if (code.val) {
-        for (const key in stack.pop()) {
+        for (const key in stack[--state.esp]) {
           kovs.push(key)
         }
       } else {
-        const iterator = stack.pop()
+        const iterator = stack[--state.esp]
         if (!iterator[Symbol.iterator]) {
           throw new TypeError(`${JSON.stringify(iterator)} is not iterable`)
         }
@@ -169,8 +178,8 @@ function step(state: State) {
           kovs.push(value)
         }
       }
-      stack.push(kovs)
-      stack.push(kovs.length)
+      stack[state.esp++] = kovs
+      stack[state.esp++] = kovs.length
       break
     }
     case OP.FUNC: {
@@ -181,11 +190,11 @@ function step(state: State) {
       if (!code.generator && !code.async) {
         const func = function () {
           for (let i = arguments.length - 1; i > -1; i--) {
-            stack.push(arguments[i]) // load arguments
+            stack[state.esp++] = arguments[i] // load arguments
           }
           if (!code.arrow) {
-            stack.push(arguments) // load argument array itself
-            stack.push(this) // load this
+            stack[state.esp++] = arguments // load argument array itself
+            stack[state.esp++] = this // load this
           }
 
           const resetPc = state.pc // reserve the current pc
@@ -198,7 +207,7 @@ function step(state: State) {
           while (state.pc < endPc) {
             signal = step(state)
             if (signal === SIGNAL.RET) {
-              ret = stack.pop()
+              ret = stack[--state.esp]
               break
             }
           }
@@ -216,15 +225,15 @@ function step(state: State) {
           value: code.length,
           configurable: true
         })
-        stack.push(func)
+        stack[state.esp++] = func
       } else {
         // const tmpFunc = function* () {
         //   for (let i = arguments.length - 1; i > -1; i--) {
-        //     stack.push(arguments[i]) // load arguments
+        //     stack[state.esp++] = arguments[i] // load arguments
         //   }
         //   if (!code.arrow) {
-        //     stack.push(arguments) // load argument array itself
-        //     stack.push(this) // load this
+        //     stack[state.esp++] = arguments // load argument array itself
+        //     stack[state.esp++] = this // load this
         //   }
   
         //   const resetPc = state.pc // reserve the current pc
@@ -242,7 +251,7 @@ function step(state: State) {
         //   state.context = resetCtx // reset to the current context
         // }
         // if (code.async && code.generator) {
-        //   stack.push(function (): AsyncIterator<any> {
+        //   stack[state.esp++] = function (: AsyncIterator<any> {
         //     const iterator = tmpFunc.apply(void 0, arguments)
         //     let last: Promise<any> = Promise.resolve()
         //     let hasCatch = false
@@ -266,11 +275,11 @@ function step(state: State) {
         //     return asyncIterator
         //   })
         // } else if (code.async) {
-        //   stack.push(function () {
+        //   stack[state.esp++] = function ( {
         //     return runAsync(tmpFunc.apply(void 0, arguments))
         //   })
         // } else {
-        //   stack.push(tmpFunc)
+        //   stack[state.esp++] = tmpFunc
         // }
       }
       state.pc = endPc - 1
@@ -279,7 +288,7 @@ function step(state: State) {
     case OP.CLS: {
       let superClass: any = null
       if (code.inherit) {
-        superClass = stack.pop()
+        superClass = stack[--state.esp]
       }
       let ctor = function () {
         if (superClass) {
@@ -287,7 +296,7 @@ function step(state: State) {
         }
       }
       if (code.constructor) {
-        ctor = stack.pop()
+        ctor = stack[--state.esp]
       }
       if (superClass) {
         inherits(ctor, superClass)
@@ -296,13 +305,13 @@ function step(state: State) {
         value: code.val,
         configurable: true
       })
-      stack.push(ctor)
+      stack[state.esp++] = ctor
       break
     }
     case OP.CMET: {
-      const key = stack.pop()
-      const met = stack.pop()
-      const obj = code.static ? stack[stack.length - 1] : stack[stack.length - 1].prototype
+      const key = stack[--state.esp]
+      const met = stack[--state.esp]
+      const obj = code.static ? stack[state.esp - 1] : stack[state.esp - 1].prototype
       switch (code.val) {
         case 'get': {
           const oriDptor = getDptor(obj, key)
@@ -332,11 +341,13 @@ function step(state: State) {
       break
     }
     case OP.CALL: {
-      const func = stack.pop()
-      const obj = stack.pop()
+      const func = stack[--state.esp]
+      const obj = stack[--state.esp]
 
       const spread = code.val.concat()
-      const argsItems = stack.splice(stack.length - spread.pop())
+      const newEsp = state.esp - spread.pop()
+      const argsItems = stack.slice(newEsp, state.esp)
+      state.esp = newEsp
       let args: any[] = []
       for (let i = 0; i < argsItems.length; i++) {
         if (spread.indexOf(i) === -1) {
@@ -348,7 +359,7 @@ function step(state: State) {
 
       // push ebp here instead of inside functions
       // to avoid a wrong ebp list caused by throwing error in functions
-      state.ebpList.push(stack.length)
+      state.ebpList.push(state.esp)
       let result: any
       if (code.catch) {
         try {
@@ -360,15 +371,17 @@ function step(state: State) {
       } else {
         result = func.apply(obj, args)
       }
-      stack.length = state.ebpList.pop()
-      stack.push(result)
+      state.esp = state.ebpList.pop()
+      stack[state.esp++] = result
       break
     }
     case OP.NEW: {
-      const ctor = stack.pop()
+      const ctor = stack[--state.esp]
       
       const spread = code.val.concat()
-      const argsItems = stack.splice(stack.length - spread.pop())
+      const newEsp = state.esp - spread.pop()
+      const argsItems = stack.slice(newEsp, state.esp)
+      state.esp = newEsp
       let args: any[] = []
       for (let i = 0; i < argsItems.length; i++) {
         if (spread.indexOf(i) === -1) {
@@ -380,7 +393,7 @@ function step(state: State) {
 
       // push ebp here instead of inside functions
       // to avoid a wrong ebp list caused by throwing error in functions
-      state.ebpList.push(stack.length)
+      state.ebpList.push(state.esp)
       let result: any
       if (code.catch) {
         try {
@@ -392,25 +405,29 @@ function step(state: State) {
       } else {
         result = new ctor(...args)
       }
-      stack.length = state.ebpList.pop()
-      stack.push(result)
+      state.esp = state.ebpList.pop()
+      stack[state.esp++] = result
       break
     }
     case OP.RET: signal = SIGNAL.RET; break
     case OP.YIELD: signal = SIGNAL.YIELD; break
     case OP.AWAIT: signal = SIGNAL.AWAIT; break
-    case OP.COPY: stack.push(stack[stack.length - 1]); break
-    case OP.POP: stack.pop(); break
+    case OP.COPY: {
+      const top = stack[state.esp - 1]
+      stack[state.esp++] = top
+      break
+    }
+    case OP.POP: --state.esp; break
     case OP.DBG: debugger; break
     case OP.THROW: {
       if (code.val) {
         state.pc = code.val.pc - 1
         break
       } else {
-        throw stack.pop()
+        throw stack[--state.esp]
       }
     }
-    case OP.GC: stack.length = state.ebpList[state.ebpList.length - 1]; break
+    case OP.GC: state.esp = state.ebpList[state.ebpList.length - 1]; break
     default: throw new Error('Unknown instruct code')
   }
   state.pc++

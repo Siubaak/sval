@@ -1,4 +1,4 @@
-import Sval from '.'
+const Sval = require('../dist/sval')
 
 const interpreter = new Sval()
 interpreter.run(`

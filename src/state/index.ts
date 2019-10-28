@@ -4,6 +4,8 @@ import SymbolTable from './symbols'
 export default class State {
   readonly stack: any[] = []
 
+  esp: number = 0
+
   readonly ebpList: number[] = [0]
 
   readonly symbols: SymbolTable = new SymbolTable()
