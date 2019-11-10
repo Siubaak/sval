@@ -141,14 +141,17 @@ describe('testing src/index.ts', () => {
   it('should throw SyntaxError when declaring multiple times with `let`', () => {  
     const interpreter = new Sval()
 
+    let err
     try {
       interpreter.run(`
         let a = 1
         let a = 2
       `)
-    } catch (err) {
-      expect(err).toBeInstanceOf(SyntaxError)
+    } catch (ex) {
+      err = ex
     }
+
+    expect(err).toBeInstanceOf(SyntaxError)
   })
 
   it('should throw SyntaxError when declaring multiple times with `const`', () => {  
@@ -217,6 +220,7 @@ describe('testing src/index.ts', () => {
   it('should throw SyntaxError when const does not have initializer in sequence', () => {  
     const interpreter = new Sval()
 
+    let err
     try {
       interpreter.run(`
         const ca = 1, cb, cc = function() { return 3 }
@@ -225,9 +229,11 @@ describe('testing src/index.ts', () => {
         exports.cb = cb
         exports.cc = cc
       `)
-    } catch(err) {
-      expect(err).toBeInstanceOf(SyntaxError)
+    } catch(ex) {
+      err = ex
     }
+
+    expect(err).toBeInstanceOf(SyntaxError)
   })
 
   it('should support nested variable definition within global + block', () => {  

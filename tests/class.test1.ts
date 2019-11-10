@@ -175,7 +175,7 @@ describe('testing src/index.ts', () => {
 
   it('should throw TypeError when calling es6 class as function', () => {
     const interpreter = new Sval()
-    let error = null;
+    let error = null
     try {
       interpreter.run(`
         class Foo {
@@ -189,7 +189,7 @@ describe('testing src/index.ts', () => {
     }
 
     expect(error).toBeInstanceOf(TypeError)
-    error = null;
+    error = null
 
     try {
       interpreter.run(`

@@ -270,6 +270,7 @@ export function ClassExpression(node: estree.ClassExpression, state: State) {
 }
 
 export function Super(node: estree.Super, state: State) {
+  state.opCodes.push({ op: OP.LOADV, val: state.symbols.get('super').pointer })
 }
 
 export function YieldExpression(node: estree.YieldExpression, state: State) {
