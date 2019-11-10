@@ -80,8 +80,10 @@ export function UnaryExpression(node: estree.UnaryExpression, state: State) {
 
 export function UpdateExpression(node: estree.UpdateExpression, state: State) {
   if (node.argument.type === 'Identifier') {
+    // load value
     const pointer = state.symbols.get(node.argument.name).pointer
     state.opCodes.push({ op: OP.LOADV, val: pointer })
+    // update value
     if (!node.prefix) {
       state.opCodes.push({ op: OP.COPY })
     }
@@ -90,7 +92,29 @@ export function UpdateExpression(node: estree.UpdateExpression, state: State) {
     if (node.prefix) {
       state.opCodes.push({ op: OP.COPY })
     }
+    // store value
     state.opCodes.push({ op: OP.STORE, val: pointer })
+  } else if (node.argument.type === 'MemberExpression') {
+    // load value
+    compile(node.argument, state)
+    // update value
+    if (!node.prefix) {
+      state.opCodes.push({ op: OP.COPY })
+    }
+    state.opCodes.push({ op: OP.LOADK, val: 1 })
+    state.opCodes.push({ op: OP.BIOP, val: node.operator[0] })
+    if (node.prefix) {
+      state.opCodes.push({ op: OP.COPY })
+    }
+    // store value
+    compile(node.argument.object, state)
+    const property = node.argument.property
+    if (property.type === 'Identifier') {
+      state.opCodes.push({ op: OP.LOADK, val: property.name })
+    } else { // node.computed === true
+      compile(property, state)
+    }
+    state.opCodes.push({ op: OP.MSET })
   }
 }
 
