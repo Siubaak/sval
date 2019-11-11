@@ -116,6 +116,31 @@ export function inherits(subClass: (...args: any[]) => any, superClass: (...args
   })
 }
 
+function getProto(obj: any) {
+  return Object.getPrototypeOf ? Object.getPrototypeOf(obj) : obj.__proto__
+}
+const getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor
+function getGetterOrSetter(method: 'get' | 'set', obj: any, key: string) {
+  while (obj) {
+    const descriptor = getOwnPropertyDescriptor(obj, key)
+    const value = typeof descriptor !== 'undefined'
+      && typeof descriptor.writable === 'undefined'
+      && typeof descriptor[method] === 'function'
+      && descriptor[method]
+    if (value) {
+      return value
+    } else {
+      obj = getProto(obj)
+    }
+  }
+}
+export function getGetter(obj: any, key: string) {
+  return getGetterOrSetter('get', obj, key)
+}
+export function getSetter(obj: any, key: string) {
+  return getGetterOrSetter('set', obj, key)
+}
+
 // export interface runAsyncOptions {
 //   res?: any
 //   err?: any

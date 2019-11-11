@@ -12,10 +12,14 @@ class C extends B {
   constructor() {
     super()
     this.k = 1
-    exports.g = super.g
+    console.log(super.g)
+  }
+
+  get g() {
+    return this.k - 1
   }
 }
-new C()
+console.log(new C())
 `)
 
-// console.log(interprete)
+// console.log(interpreter.exports)

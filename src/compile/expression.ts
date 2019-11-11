@@ -161,13 +161,16 @@ export function LogicalExpression(node: estree.LogicalExpression, state: State) 
 
 export function MemberExpression(node: estree.MemberExpression, state: State) {
   compile(node.object, state)
+  if (node.object.type === 'Super') {
+    state.opCodes.push({ op: OP.LOADV, val: state.symbols.get('this').pointer })
+  }
   const property = node.property
   if (property.type === 'Identifier') {
     state.opCodes.push({ op: OP.LOADK, val: property.name })
   } else { // node.computed === true
     compile(property, state)
   }
-  state.opCodes.push({ op: OP.MGET })
+  state.opCodes.push({ op: OP.MGET, val: node.object.type === 'Super' })
 }
 
 export function ConditionalExpression(node: estree.ConditionalExpression, state: State) {
@@ -199,8 +202,13 @@ export function CallExpression(node: estree.CallExpression, state: State) {
 
   const callee = node.callee
   if (callee.type === 'MemberExpression') {
-    compile(callee.object, state)
-    state.opCodes.push({ op: OP.COPY })
+    if (callee.object.type === 'Super') {
+      state.opCodes.push({ op: OP.LOADV, val: state.symbols.get('this').pointer })
+      compile(callee.object, state)
+    } else {
+      compile(callee.object, state)
+      state.opCodes.push({ op: OP.COPY })
+    }
     const property = callee.property
     if (property.type === 'Identifier') {
       state.opCodes.push({ op: OP.LOADK, val: property.name })
@@ -211,6 +219,10 @@ export function CallExpression(node: estree.CallExpression, state: State) {
   } else {
     state.opCodes.push({ op: OP.LOADV, val: state.symbols.get('this').pointer })
     compile(callee, state)
+    if (callee.type === 'Super') {
+      state.opCodes.push({ op: OP.LOADK, val: 'constructor' })
+      state.opCodes.push({ op: OP.MGET })
+    }
   }
 
   const catchPcStack = state.catchPcStack
@@ -294,7 +306,17 @@ export function ClassExpression(node: estree.ClassExpression, state: State) {
 }
 
 export function Super(node: estree.Super, state: State) {
-  state.opCodes.push({ op: OP.LOADV, val: state.symbols.get('super').pointer })
+  // try {
+  //   // if there is super pointer cache, get a shortcut cache
+  //   state.opCodes.push({ op: OP.LOADV, val: state.symbols.get('super').pointer })
+  // } catch (err) {
+    // no super pointer cache, declare super
+  state.opCodes.push({ op: OP.LOADV, val: state.symbols.get('this').pointer })
+  state.opCodes.push({ op: OP.LOADK, val: '__proto__' })
+  state.opCodes.push({ op: OP.MGET })
+  state.opCodes.push({ op: OP.LOADK, val: '__proto__' })
+  state.opCodes.push({ op: OP.MGET })
+  // }
 }
 
 export function YieldExpression(node: estree.YieldExpression, state: State) {
