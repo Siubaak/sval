@@ -1,6 +1,6 @@
 import State from '../state'
 import { OP, SIGNAL } from '../share/const'
-import { getDptor, define, inherits, getGetter } from '../share/utils'
+import { getDptor, define, inherits, getGetter, getSetter } from '../share/utils'
 
 function step(state: State) {
   const stack = state.stack
@@ -128,10 +128,10 @@ function step(state: State) {
     case OP.MGET: {
       const key = stack[--state.esp]
       const object = stack[--state.esp]
-      const superProto = code.val && stack[--state.esp]
       if (object == undefined) {
         throw new TypeError(`Cannot read property '${key}' of ${object}`)
       }
+      const superProto = code.val && stack[--state.esp]
       const getter = getGetter(superProto || object, key)
       stack[state.esp++] = getter ? getter.call(object) : object[key]
       break
@@ -139,8 +139,13 @@ function step(state: State) {
     case OP.MSET: {
       const key = stack[--state.esp]
       const object = stack[--state.esp]
+      if (object == undefined) {
+        throw new TypeError(`Cannot set property '${key}' of ${object}`)
+      }
+      const superProto = code.val && stack[--state.esp]
       const value = stack[--state.esp]
-      object[key] = value
+      const setter = getSetter(superProto || object, key)
+      setter ? setter.call(object, value) : object[key] = value
       break
     }
     case OP.REST: {

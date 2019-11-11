@@ -141,13 +141,16 @@ export function AssignmentExpression(node: estree.AssignmentExpression, state: S
     state.opCodes.push({ op: OP.STORE, val: symbol.pointer })
   } else if (left.type === 'MemberExpression') {
     compile(left.object, state)
+    if (left.object.type === 'Super') {
+      state.opCodes.push({ op: OP.LOADV, val: state.symbols.get('this').pointer })
+    }
     const property = left.property
     if (property.type === 'Identifier') {
       state.opCodes.push({ op: OP.LOADK, val: property.name })
     } else { // node.computed === true
       compile(property, state)
     }
-    state.opCodes.push({ op: OP.MSET })
+    state.opCodes.push({ op: OP.MSET, val: left.object.type === 'Super' })
   } else {
     compilePattern(left, state)
   }

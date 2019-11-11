@@ -38,13 +38,16 @@ export function compileFunc(node: FunctionDefinition, state: State) {
         state.opCodes.push({ op: OP.ALLOC, val: state.symbols.set(value.name, 'var').pointer })
       } else if (value.type === 'MemberExpression') {
         compile(value.object, state)
+        if (value.object.type === 'Super') {
+          state.opCodes.push({ op: OP.LOADV, val: state.symbols.get('this').pointer })
+        }
         const prop = value.property
         if (prop.type === 'Identifier') {
           state.opCodes.push({ op: OP.LOADK, val: prop.name })
         } else { // node.computed === true
           compile(prop, state)
         }
-        state.opCodes.push({ op: OP.MSET })
+        state.opCodes.push({ op: OP.MSET, val: value.object.type === 'Super' })
       } else {
         compilePattern(value, state)
       }
@@ -171,13 +174,16 @@ export function compileForXStatement(node: estree.ForInStatement | estree.ForOfS
     opCodes.push({ op: OP.STORE, val: symbol.pointer })
   } else if (left.type === 'MemberExpression') {
     compile(left.object, state)
+    if (left.object.type === 'Super') {
+      state.opCodes.push({ op: OP.LOADV, val: state.symbols.get('this').pointer })
+    }
     const property = left.property
     if (property.type === 'Identifier') {
       opCodes.push({ op: OP.LOADK, val: property.name })
     } else { // node.computed === true
       compile(property, state)
     }
-    opCodes.push({ op: OP.MSET })
+    state.opCodes.push({ op: OP.MSET, val: left.object.type === 'Super' })
   } else {
     compile(left, state)
   }

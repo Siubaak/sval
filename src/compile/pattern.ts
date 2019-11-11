@@ -37,13 +37,16 @@ export function ObjectPattern(node: estree.ObjectPattern, state: State) {
       }
     } else if (value.type === 'MemberExpression') {
       compile(value.object, state)
+      if (value.object.type === 'Super') {
+        state.opCodes.push({ op: OP.LOADV, val: state.symbols.get('this').pointer })
+      }
       const prop = value.property
       if (prop.type === 'Identifier') {
         state.opCodes.push({ op: OP.LOADK, val: prop.name })
       } else { // node.computed === true
         compile(prop, state)
       }
-      state.opCodes.push({ op: OP.MSET })
+      state.opCodes.push({ op: OP.MSET, val: value.object.type === 'Super' })
     } else {
       compilePattern(value, state)
     }
@@ -72,13 +75,16 @@ export function ArrayPattern(node: estree.ArrayPattern, state: State) {
       }
     } else if (value.type === 'MemberExpression') {
       compile(value.object, state)
+      if (value.object.type === 'Super') {
+        state.opCodes.push({ op: OP.LOADV, val: state.symbols.get('this').pointer })
+      }
       const prop = value.property
       if (prop.type === 'Identifier') {
         state.opCodes.push({ op: OP.LOADK, val: prop.name })
       } else { // node.computed === true
         compile(prop, state)
       }
-      state.opCodes.push({ op: OP.MSET })
+      state.opCodes.push({ op: OP.MSET, val: value.object.type === 'Super' })
     } else {
       compilePattern(value, state)
     }
