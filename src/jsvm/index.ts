@@ -292,7 +292,7 @@ function step(state: State) {
       }
       let ctor = function () {
         if (superClass) {
-          superClass.apply(this)
+          superClass.apply(this, arguments)
         }
       }
       if (code.constructor) {
