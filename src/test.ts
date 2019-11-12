@@ -3,8 +3,8 @@ import Sval from '.'
 const interpreter = new Sval()
 interpreter.run(`
 class A {
-  set g(v) {
-    this.k = v
+  get g() {
+    return this.k + 1
   }
 }
 class B extends A { }
@@ -12,14 +12,9 @@ class C extends B {
   constructor() {
     super()
     this.k = 1
-    super.g = 3
-  }
-
-  set g(v) {
-    this.k = v + 1
+    exports.g = super.g
   }
 }
-console.log(new C())
+new C()
 `)
-
-// console.log(interpreter.exports)
+console.log(interpreter.exports.g)

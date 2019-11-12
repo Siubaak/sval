@@ -30,6 +30,9 @@ export function FunctionDeclaration(node: estree.FunctionDeclaration, state: Sta
 }
 
 export function ClassDeclaration(node: estree.ClassDeclaration, state: State) {
+  const pointer = state.symbols.set(node.id.name, 'var').pointer
+  state.opCodes.push({ op: OP.LOADK })
+  state.opCodes.push({ op: OP.ALLOC, val: pointer })
   compileClass(node, state)
-  state.opCodes.push({ op: OP.ALLOC, val: state.symbols.set(node.id.name, 'var').pointer })
+  state.opCodes.push({ op: OP.STORE, val: pointer })
 }

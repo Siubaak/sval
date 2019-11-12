@@ -34,10 +34,10 @@ export function ObjectExpression(node: estree.ObjectExpression, state: State) {
     } else {
       // key
       const propKey = property.key
-      if (propKey.type === 'Identifier') {
-        state.opCodes.push({ op: OP.LOADK, val: propKey.name })
-      } else { // property.computed === true
+      if (property.computed) {
         compile(propKey, state)
+      } else {
+        state.opCodes.push({ op: OP.LOADK, val: (propKey as estree.Identifier).name })
       }
       // value
       compile(property.value, state)
@@ -109,10 +109,10 @@ export function UpdateExpression(node: estree.UpdateExpression, state: State) {
     // store value
     compile(node.argument.object, state)
     const property = node.argument.property
-    if (property.type === 'Identifier') {
-      state.opCodes.push({ op: OP.LOADK, val: property.name })
-    } else { // node.computed === true
+    if (node.argument.computed) {
       compile(property, state)
+    } else {
+      state.opCodes.push({ op: OP.LOADK, val: (property as estree.Identifier).name })
     }
     state.opCodes.push({ op: OP.MSET })
   }
@@ -145,10 +145,10 @@ export function AssignmentExpression(node: estree.AssignmentExpression, state: S
       state.opCodes.push({ op: OP.LOADV, val: state.symbols.get('this').pointer })
     }
     const property = left.property
-    if (property.type === 'Identifier') {
-      state.opCodes.push({ op: OP.LOADK, val: property.name })
-    } else { // node.computed === true
+    if (left.computed) {
       compile(property, state)
+    } else {
+      state.opCodes.push({ op: OP.LOADK, val: (property as estree.Identifier).name })
     }
     state.opCodes.push({ op: OP.MSET, val: left.object.type === 'Super' })
   } else {
@@ -168,10 +168,10 @@ export function MemberExpression(node: estree.MemberExpression, state: State) {
     state.opCodes.push({ op: OP.LOADV, val: state.symbols.get('this').pointer })
   }
   const property = node.property
-  if (property.type === 'Identifier') {
-    state.opCodes.push({ op: OP.LOADK, val: property.name })
-  } else { // node.computed === true
+  if (node.computed) {
     compile(property, state)
+  } else {
+    state.opCodes.push({ op: OP.LOADK, val: (property as estree.Identifier).name })
   }
   state.opCodes.push({ op: OP.MGET, val: node.object.type === 'Super' })
 }
@@ -213,10 +213,10 @@ export function CallExpression(node: estree.CallExpression, state: State) {
       state.opCodes.push({ op: OP.COPY })
     }
     const property = callee.property
-    if (property.type === 'Identifier') {
-      state.opCodes.push({ op: OP.LOADK, val: property.name })
-    } else { // node.computed === true
+    if (callee.computed) {
       compile(property, state)
+    } else {
+      state.opCodes.push({ op: OP.LOADK, val: (property as estree.Identifier).name })
     }
     state.opCodes.push({ op: OP.MGET })
   } else {
@@ -232,6 +232,7 @@ export function CallExpression(node: estree.CallExpression, state: State) {
   state.opCodes.push({
     op: OP.CALL,
     val: spread,
+    super: callee.type === 'Super',
     catch: catchPcStack[catchPcStack.length - 1]
   })
 }
@@ -260,6 +261,11 @@ export function NewExpression(node: estree.NewExpression, state: State) {
 }
 
 export function MetaProperty(node: estree.MetaProperty, state: State) {
+  state.opCodes.push({ op: OP.LOADV, val: state.symbols.get('this').pointer })
+  state.opCodes.push({ op: OP.LOADK, val: '__proto__' })
+  state.opCodes.push({ op: OP.MGET })
+  state.opCodes.push({ op: OP.LOADK, val: 'constructor' })
+  state.opCodes.push({ op: OP.MGET })
 }
 
 export function SequenceExpression(node: estree.SequenceExpression, state: State) {
@@ -309,17 +315,11 @@ export function ClassExpression(node: estree.ClassExpression, state: State) {
 }
 
 export function Super(node: estree.Super, state: State) {
-  // try {
-  //   // if there is super pointer cache, get a shortcut cache
-  //   state.opCodes.push({ op: OP.LOADV, val: state.symbols.get('super').pointer })
-  // } catch (err) {
-    // no super pointer cache, declare super
   state.opCodes.push({ op: OP.LOADV, val: state.symbols.get('this').pointer })
   state.opCodes.push({ op: OP.LOADK, val: '__proto__' })
   state.opCodes.push({ op: OP.MGET })
   state.opCodes.push({ op: OP.LOADK, val: '__proto__' })
   state.opCodes.push({ op: OP.MGET })
-  // }
 }
 
 export function YieldExpression(node: estree.YieldExpression, state: State) {

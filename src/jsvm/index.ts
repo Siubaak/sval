@@ -295,13 +295,20 @@ function step(state: State) {
       if (code.inherit) {
         superClass = stack[--state.esp]
       }
-      let ctor = function () {
-        if (superClass) {
-          superClass.apply(this, arguments)
-        }
-      }
+      let classCtor: any = null
       if (code.constructor) {
-        ctor = stack[--state.esp]
+        classCtor = stack[--state.esp]
+      }
+      let ctor = function () {
+        if  (classCtor) {
+          const result = classCtor.apply(this, arguments)
+          if (superClass && !this['#sval_es6_class_super_called#']) {
+            throw new ReferenceError('Must call super constructor in derived class before returning from derived constructor')
+          }
+          return result
+        } else if (superClass) {
+          return superClass.apply(this, arguments)
+        }
       }
       if (superClass) {
         inherits(ctor, superClass)
@@ -310,6 +317,7 @@ function step(state: State) {
         value: code.val,
         configurable: true
       })
+      define(ctor, '#sval_es6_class#', { value: true })
       stack[state.esp++] = ctor
       break
     }
@@ -347,6 +355,11 @@ function step(state: State) {
     }
     case OP.CALL: {
       const func = stack[--state.esp]
+
+      if (!code.super && func['#sval_es6_class#']) {
+        throw new TypeError(`Class constructor ${func.name} cannot be invoked without 'new'`)
+      }
+
       const obj = stack[--state.esp]
 
       const spread = code.val.concat()
@@ -378,6 +391,15 @@ function step(state: State) {
       }
       state.esp = state.ebpList.pop()
       stack[state.esp++] = result
+
+      if (code.super) {
+        if (obj['#sval_es6_class_super_called#']) {
+          throw new ReferenceError('Super constructor may only be called once')
+        } else {
+          define(obj, '#sval_es6_class_super_called#', { value: true })
+        }
+      }
+
       break
     }
     case OP.NEW: {

@@ -42,10 +42,10 @@ export function compileFunc(node: FunctionDefinition, state: State) {
           state.opCodes.push({ op: OP.LOADV, val: state.symbols.get('this').pointer })
         }
         const prop = value.property
-        if (prop.type === 'Identifier') {
-          state.opCodes.push({ op: OP.LOADK, val: prop.name })
-        } else { // node.computed === true
+        if (value.computed) {
           compile(prop, state)
+        } else {
+          state.opCodes.push({ op: OP.LOADK, val: (prop as estree.Identifier).name })
         }
         state.opCodes.push({ op: OP.MSET, val: value.object.type === 'Super' })
       } else {
@@ -80,7 +80,7 @@ type ClassDefinition = estree.ClassDeclaration | estree.ClassExpression
 
 export function compileClass(node: ClassDefinition, state: State) {
   // class constructor
-  const clsCode = { op: OP.CLS, val: node.id.name, constructor: false, inherit: false }
+  const clsCode = { op: OP.CLS, val: node.id && node.id.name, constructor: false, inherit: false }
   const methodBody = node.body.body
   for (let i = 0; i < methodBody.length; i++) {
     if (methodBody[i].kind === 'constructor') {
@@ -103,10 +103,10 @@ export function compileClass(node: ClassDefinition, state: State) {
     compileFunc(met.value, state)
     // key
     const metKey = met.key
-    if (metKey.type === 'Identifier') {
-      state.opCodes.push({ op: OP.LOADK, val: metKey.name })
-    } else { // met.computed === true
+    if (met.computed) {
       compile(metKey, state)
+    } else {
+      state.opCodes.push({ op: OP.LOADK, val: (metKey as estree.Identifier).name })
     }
     // definition
     state.opCodes.push({ op: OP.CMET, val: met.kind, static: met.static })
@@ -178,10 +178,10 @@ export function compileForXStatement(node: estree.ForInStatement | estree.ForOfS
       state.opCodes.push({ op: OP.LOADV, val: state.symbols.get('this').pointer })
     }
     const property = left.property
-    if (property.type === 'Identifier') {
-      opCodes.push({ op: OP.LOADK, val: property.name })
-    } else { // node.computed === true
+    if (left.computed) {
       compile(property, state)
+    } else {
+      opCodes.push({ op: OP.LOADK, val: (property as estree.Identifier).name })
     }
     state.opCodes.push({ op: OP.MSET, val: left.object.type === 'Super' })
   } else {
