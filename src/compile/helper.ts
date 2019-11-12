@@ -231,12 +231,22 @@ function hoistVar(statement: estree.Statement, state: State) {
         hoistVarDclr(statement, state)
       }
       break
-    case 'WhileStatement':
-    case 'DoWhileStatement':
-    case 'ForStatement':
     case 'ForInStatement':
     case 'ForOfStatement':
+      if (statement.left.type === 'VariableDeclaration') {
+        hoistVar(statement.left, state)
+      }
+    case 'ForStatement':
+      if (statement.type === 'ForStatement' && statement.init.type === 'VariableDeclaration') {
+        hoistVar(statement.init, state)
+      }
+    case 'WhileStatement':
+    case 'DoWhileStatement':
       hoistVar(statement.body, state)
+      break
+    case 'IfStatement':
+      hoistVar(statement.consequent, state)
+      hoistVar(statement.alternate, state)
       break
     case 'BlockStatement':
       for (let i = 0; i < statement.body.length; i++) {

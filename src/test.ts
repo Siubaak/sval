@@ -2,19 +2,7 @@ import Sval from '.'
 
 const interpreter = new Sval()
 interpreter.run(`
-class A {
-  get g() {
-    return this.k + 1
-  }
-}
-class B extends A { }
-class C extends B {
-  constructor() {
-    super()
-    this.k = 1
-    exports.g = super.g
-  }
-}
-new C()
+var start = Date.now()
+for (var i = 0; i < 50000000; i++) {}
+console.log((Date.now() - start) / 1000) // 3.45s now :D
 `)
-console.log(interpreter.exports.g)
