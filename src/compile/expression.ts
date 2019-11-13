@@ -28,7 +28,7 @@ export function ObjectExpression(node: estree.ObjectExpression, state: State) {
   for (let i = 0; i < node.properties.length; i++) {
     const property = node.properties[i]
     if (property.type as any === 'SpreadElement') {
-      state.opCodes.push({ op: OP.LOADK, val: null }) // placeholder for spread element
+      state.opCodes.push({ op: OP.LOADK }) // key placeholder for spread element
       compile((property as any).argument, state)
       propKinds.push('sprd')
     } else {
@@ -66,7 +66,22 @@ export function FunctionExpression(node: estree.FunctionExpression, state: State
 }
 
 export function UnaryExpression(node: estree.UnaryExpression, state: State) {
-  if (node.operator === 'typeof' && node.argument.type === 'Identifier') {
+  if (node.operator === 'delete') {
+    if (node.argument.type === 'MemberExpression') {
+      compile(node.argument.object, state)
+      const property = node.argument.property
+      if (node.argument.computed) {
+        compile(property, state)
+      } else {
+        state.opCodes.push({ op: OP.LOADK, val: (property as estree.Identifier).name })
+      }
+    } else if (node.argument.type === 'Identifier') {
+      throw new SyntaxError('Delete of an unqualified identifier')
+    } else {
+      state.opCodes.push({ op: OP.LOADK, val: {} })
+      state.opCodes.push({ op: OP.LOADK, val: '#sval_fake_delete#' })
+    }
+  } else if (node.operator === 'typeof' && node.argument.type === 'Identifier') {
     try {
       state.opCodes.push({ op: OP.LOADV, val: state.symbols.get(node.argument.name).pointer })
     } catch (err) {
@@ -125,34 +140,51 @@ export function BinaryExpression(node: estree.BinaryExpression, state: State) {
 }
 
 export function AssignmentExpression(node: estree.AssignmentExpression, state: State) {
-  compile(node.right, state)
-  state.opCodes.push({ op: OP.COPY })
-  const left = node.left
-  if (left.type === 'Identifier') {
-    const symbol = state.symbols.get(left.name)
+  if (node.left.type === 'Identifier') {
+    const symbol = state.symbols.get(node.left.name)
     if (symbol.type === 'const') {
       throw new TypeError('Assignment to constant variable')
     }
     const binaryOp = node.operator.substring(0, node.operator.length - 1)
     if (binaryOp) {
+      // if any binary operations, load left value first, then right
       state.opCodes.push({ op: OP.LOADV, val: symbol.pointer })
+      compile(node.right, state)
       state.opCodes.push({ op: OP.BIOP, val: binaryOp })
+    } else {
+      compile(node.right, state)
     }
+    state.opCodes.push({ op: OP.COPY })
+    // store value
     state.opCodes.push({ op: OP.STORE, val: symbol.pointer })
-  } else if (left.type === 'MemberExpression') {
-    compile(left.object, state)
-    if (left.object.type === 'Super') {
+  } else if (node.left.type === 'MemberExpression') {
+    const binaryOp = node.operator.substring(0, node.operator.length - 1)
+    if (binaryOp) {
+      // if any binary operations, compile left first, then right
+      compile(node.left, state)
+      compile(node.right, state)
+      state.opCodes.push({ op: OP.BIOP, val: binaryOp })
+    } else {
+      compile(node.right, state)
+    }
+    state.opCodes.push({ op: OP.COPY })
+    // store value
+    compile(node.left.object, state)
+    const leftType = node.left.object.type
+    if (leftType === 'Super') {
       state.opCodes.push({ op: OP.LOADV, val: state.symbols.get('this').pointer })
     }
-    const property = left.property
-    if (left.computed) {
+    const property = node.left.property
+    if (node.left.computed) {
       compile(property, state)
     } else {
       state.opCodes.push({ op: OP.LOADK, val: (property as estree.Identifier).name })
     }
-    state.opCodes.push({ op: OP.MSET, val: left.object.type === 'Super' })
+    state.opCodes.push({ op: OP.MSET, val: leftType === 'Super' })
   } else {
-    compilePattern(left, state)
+    compile(node.right, state)
+    state.opCodes.push({ op: OP.COPY })
+    compilePattern(node.left, state)
   }
 }
 

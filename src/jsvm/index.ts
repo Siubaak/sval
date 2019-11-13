@@ -72,7 +72,11 @@ function step(state: State) {
         case '~': stack[state.esp++] = ~arg; break
         case 'void': stack[state.esp++] = void arg; break
         case 'typeof': stack[state.esp++] = typeof arg; break
-        case 'delete': throw new SyntaxError('delete is not implemented')
+        case 'delete': {
+          const obj = stack[--state.esp]
+          stack[state.esp++] = delete obj[arg]
+          break
+        }
         default: throw new SyntaxError(`Unexpected token ${code.val}`)
       }
       break
