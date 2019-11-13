@@ -5,7 +5,7 @@ import { OP } from '../share/const'
 import { compileFunc, compileClass, compilePattern } from './helper'
 
 export function ThisExpression(node: estree.ThisExpression, state: State) {
-  state.opCodes.push({ op: OP.LOADV, val: state.symbols.get('this').pointer })
+  state.opCodes.push({ op: OP.LOADV, val: state.symbols.get('this').pointer, this: true })
 }
 
 export function ArrayExpression(node: estree.ArrayExpression, state: State) {

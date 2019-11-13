@@ -262,31 +262,31 @@ describe('testing src/index.ts', () => {
     expect(interpreter.exports.y).toBe(1)
   })
 
-  // it('should throw ReferenceError when super() is not called before acessing this', () => {
-  //   const interpreter = new Sval()
-  //   let error = null
-  //   try {
-  //     interpreter.run(`
-  //       class X {
-  //         constructor() {
-  //           this.x = 1
-  //         }
-  //       }
+  it('should throw ReferenceError when super() is not called before acessing this', () => {
+    const interpreter = new Sval()
+    let error = null
+    try {
+      interpreter.run(`
+        class X {
+          constructor() {
+            this.x = 1
+          }
+        }
       
-  //       class Y extends X {
-  //         constructor() {
-  //           this.x = 2
-  //           super()
-  //         }
-  //       }
+        class Y extends X {
+          constructor() {
+            this.x = 2
+            super()
+          }
+        }
       
-  //       const y = new Y()
-  //     `)
-  //   } catch (err) {
-  //     error = err
-  //   }
-  //   expect(error).toBeInstanceOf(ReferenceError)
-  // })
+        const y = new Y()
+      `)
+    } catch (err) {
+      error = err
+    }
+    expect(error).toBeInstanceOf(ReferenceError)
+  })
 
   it('should throw ReferenceError when super() is not called in constructor for derived class', () => {
     const interpreter = new Sval()

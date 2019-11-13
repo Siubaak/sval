@@ -8,7 +8,14 @@ function step(state: State) {
   let signal = SIGNAL.NONE
   switch (code.op) {
     case OP.LOADK: stack[state.esp++] = code.val; break
-    case OP.LOADV: stack[state.esp++] = state.context[code.val] && state.context[code.val].store; break
+    case OP.LOADV: {
+      const value = state.context[code.val] && state.context[code.val].store
+      if (code.this && value['#sval_super_called#'] === false) {
+        throw new ReferenceError("Must call super constructor in derived class before accessing 'this'")
+      }
+      stack[state.esp++] = value
+      break
+    }
     case OP.ALLOC: {
         const ebp = state.ebpList[state.ebpList.length - 1]
         const storeVal = state.esp > ebp ? stack[--state.esp] : undefined
@@ -301,9 +308,15 @@ function step(state: State) {
       }
       let ctor = function () {
         if  (classCtor) {
+          if (superClass) {
+            define(this, '#sval_super_called#', { value: false, configurable: true })
+          }
           const result = classCtor.apply(this, arguments)
-          if (superClass && !this['#sval_es6_class_super_called#']) {
-            throw new ReferenceError('Must call super constructor in derived class before returning from derived constructor')
+          if (superClass) {
+            if (!this['#sval_super_called#']) {
+              throw new ReferenceError('Must call super constructor in derived class before returning from derived constructor')
+            }
+            delete this['#sval_super_called#']
           }
           return result
         } else if (superClass) {
@@ -362,6 +375,13 @@ function step(state: State) {
 
       const obj = stack[--state.esp]
 
+      if (code.super) {
+        if (obj['#sval_super_called#']) {
+          throw new ReferenceError('Super constructor may only be called once')
+        }
+        define(obj, '#sval_super_called#', { value: true, configurable: true })
+      }
+
       const spread = code.val.concat()
       const newEsp = state.esp - spread.pop()
       const argsItems = stack.slice(newEsp, state.esp)
@@ -391,14 +411,6 @@ function step(state: State) {
       }
       state.esp = state.ebpList.pop()
       stack[state.esp++] = result
-
-      if (code.super) {
-        if (obj['#sval_es6_class_super_called#']) {
-          throw new ReferenceError('Super constructor may only be called once')
-        } else {
-          define(obj, '#sval_es6_class_super_called#', { value: true })
-        }
-      }
 
       break
     }
