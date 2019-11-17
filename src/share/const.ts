@@ -1,8 +1,7 @@
 export enum OP {
   LOADK, // push literal into stack (val: literal cooked value)
   LOADV, // push variable value into stack (val: context pointer)
-  ALLOC, // allocate a context item and move data from stack into it, like declaration (val: context pointer)
-  STORE, // move data from stack to context, like assignment (val: context pointer)
+  STORE, // move data from stack to context (val: context pointer, alloc: allocate or just assign)
   BIOP,  // binary operation (val: operator)
   UNOP,  // unary operation (val: operator)
   JMP,   // jump to specified position (val: jumped pc)

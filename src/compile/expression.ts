@@ -53,7 +53,7 @@ export function FunctionExpression(node: estree.FunctionExpression, state: State
     // allocate a placeholder for a tmp function to use inside the function scope
     const pointer = state.symbols.set(node.id.name, 'const').pointer
     state.opCodes.push({ op: OP.LOADK })
-    state.opCodes.push({ op: OP.ALLOC, val: pointer })
+    state.opCodes.push({ op: OP.STORE, val: pointer , alloc: true })
     // compile the function
     compileFunc(node, state)
     // store the function into the placeholder above
@@ -334,7 +334,7 @@ export function ClassExpression(node: estree.ClassExpression, state: State) {
     // allocate a placeholder for a tmp class to use inside the constructor function scope
     const pointer = state.symbols.set(node.id.name, 'const').pointer
     state.opCodes.push({ op: OP.LOADK })
-    state.opCodes.push({ op: OP.ALLOC, val: pointer })
+    state.opCodes.push({ op: OP.STORE, val: pointer , alloc: true })
     // compile the class
     compileClass(node, state)
     // store the class into the placeholder above

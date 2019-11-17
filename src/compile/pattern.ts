@@ -31,7 +31,7 @@ export function ObjectPattern(node: estree.ObjectPattern, state: State) {
     }
     if (value.type === 'Identifier') {
       if (state.symbols.type) {
-        state.opCodes.push({ op: OP.ALLOC, val: state.symbols.set(value.name).pointer })
+        state.opCodes.push({ op: OP.STORE, val: state.symbols.set(value.name).pointer , alloc: true })
       } else {
         state.opCodes.push({ op: OP.STORE, val: state.symbols.get(value.name).pointer })
       }
@@ -69,7 +69,7 @@ export function ArrayPattern(node: estree.ArrayPattern, state: State) {
     }
     if (value.type === 'Identifier') {
       if (state.symbols.type) {
-        state.opCodes.push({ op: OP.ALLOC, val: state.symbols.set(value.name).pointer })
+        state.opCodes.push({ op: OP.STORE, val: state.symbols.set(value.name).pointer , alloc: true })
       } else {
         state.opCodes.push({ op: OP.STORE, val: state.symbols.get(value.name).pointer })
       }
@@ -104,7 +104,7 @@ export function AssignmentPattern(node: estree.AssignmentPattern, state: State) 
   ifnotCode.val = state.opCodes.length
   if (node.left.type === 'Identifier') {
     if (state.symbols.type) {
-      state.opCodes.push({ op: OP.ALLOC, val: state.symbols.set(node.left.name).pointer })
+      state.opCodes.push({ op: OP.STORE, val: state.symbols.set(node.left.name).pointer , alloc: true })
     } else {
       state.opCodes.push({ op: OP.STORE, val: state.symbols.get(node.left.name).pointer })
     }

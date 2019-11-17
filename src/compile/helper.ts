@@ -24,18 +24,18 @@ export function compileFunc(node: FunctionDefinition, state: State) {
   // isolate outer try catch block, call expression will give true runtime catch statement pc
   state.catchPcStack.push(null)
   if (!arrow) {
-    state.opCodes.push({ op: OP.ALLOC, val: state.symbols.set('this', 'const').pointer })
-    state.opCodes.push({ op: OP.ALLOC, val: state.symbols.set('arguments', 'var').pointer })
+    state.opCodes.push({ op: OP.STORE, val: state.symbols.set('this', 'const').pointer , alloc: true })
+    state.opCodes.push({ op: OP.STORE, val: state.symbols.set('arguments', 'var').pointer , alloc: true })
   }
   for (let i = 0; i < node.params.length; i++) {
     const param = node.params[i]
     if (param.type === 'Identifier') {
-      state.opCodes.push({ op: OP.ALLOC, val: state.symbols.set(param.name, 'var').pointer })
+      state.opCodes.push({ op: OP.STORE, val: state.symbols.set(param.name, 'var').pointer , alloc: true })
     } else if (param.type === 'RestElement') {
       state.opCodes.push({ op: OP.REST, val: 'func' })
       const value = param.argument
       if (value.type === 'Identifier') {
-        state.opCodes.push({ op: OP.ALLOC, val: state.symbols.set(value.name, 'var').pointer })
+        state.opCodes.push({ op: OP.STORE, val: state.symbols.set(value.name, 'var').pointer , alloc: true })
       } else if (value.type === 'MemberExpression') {
         compile(value.object, state)
         if (value.object.type === 'Super') {
@@ -144,11 +144,11 @@ export function compileForXStatement(node: estree.ForInStatement | estree.ForOfS
   const opCodes = state.opCodes
   const symbols = state.symbols
 
-  opCodes.push({ op: OP.ALLOC, val: symbols.set(len, 'const').pointer }) // const len = { stack.pop() }
-  opCodes.push({ op: OP.ALLOC, val: symbols.set(kovs, 'const').pointer }) // const kovs = { stack.pop() }
+  opCodes.push({ op: OP.STORE, val: symbols.set(len, 'const').pointer , alloc: true }) // const len = { stack.pop() }
+  opCodes.push({ op: OP.STORE, val: symbols.set(kovs, 'const').pointer , alloc: true }) // const kovs = { stack.pop() }
   // let idx = 0
   opCodes.push({ op: OP.LOADK, val: 0 })
-  opCodes.push({ op: OP.ALLOC, val: symbols.set(idx, 'let').pointer })
+  opCodes.push({ op: OP.STORE, val: symbols.set(idx, 'let').pointer , alloc: true })
   // while (idx < len) {
   const testPc = opCodes.length
   opCodes.push({ op: OP.LOADV, val: symbols.get(idx).pointer })
@@ -177,7 +177,7 @@ export function compileForXStatement(node: estree.ForInStatement | estree.ForOfS
     for (let i = 0; i < left.declarations.length; i++) {
       const declr = left.declarations[i]
       if (declr.id.type === 'Identifier') {
-        state.opCodes.push({ op: OP.ALLOC, val: state.symbols.set(declr.id.name).pointer })
+        state.opCodes.push({ op: OP.STORE, val: state.symbols.set(declr.id.name).pointer , alloc: true })
       } else { // declr.id.type === 'Pattern'
         compilePattern(declr.id, state)
       }

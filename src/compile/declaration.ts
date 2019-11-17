@@ -16,7 +16,7 @@ export function VariableDeclaration(node: estree.VariableDeclaration, state: Sta
       state.opCodes.push({ op: OP.LOADK })
     }
     if (declr.id.type === 'Identifier') {
-      state.opCodes.push({ op: OP.ALLOC, val: state.symbols.set(declr.id.name).pointer })
+      state.opCodes.push({ op: OP.STORE, val: state.symbols.set(declr.id.name).pointer , alloc: true })
     } else { // declr.id.type === 'Pattern'
       compilePattern(declr.id, state)
     }
@@ -26,13 +26,13 @@ export function VariableDeclaration(node: estree.VariableDeclaration, state: Sta
 
 export function FunctionDeclaration(node: estree.FunctionDeclaration, state: State) {
   compileFunc(node, state)
-  state.opCodes.push({ op: OP.ALLOC, val: state.symbols.set(node.id.name, 'var').pointer })
+  state.opCodes.push({ op: OP.STORE, val: state.symbols.set(node.id.name, 'var').pointer , alloc: true })
 }
 
 export function ClassDeclaration(node: estree.ClassDeclaration, state: State) {
   const pointer = state.symbols.set(node.id.name, 'var').pointer
   state.opCodes.push({ op: OP.LOADK })
-  state.opCodes.push({ op: OP.ALLOC, val: pointer })
+  state.opCodes.push({ op: OP.STORE, val: pointer , alloc: true })
   compileClass(node, state)
   state.opCodes.push({ op: OP.STORE, val: pointer })
 }

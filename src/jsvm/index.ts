@@ -19,7 +19,8 @@ function step(state: State) {
       stack[state.esp++] = value
       break
     }
-    case OP.ALLOC: {
+    case OP.STORE: {
+      if (code.alloc) {
         const ebp = state.ebpList[state.ebpList.length - 1]
         const storeVal = state.esp > ebp ? stack[--state.esp] : undefined
         state.context[code.val] = { store: storeVal }
@@ -29,9 +30,11 @@ function step(state: State) {
           const globalVarName = state.symbols.globalVarName[code.val]
           define(globalVariable, globalVarName, { value: storeVal, writable: true, enumerable: true })
         }
-        break
+      } else {
+        state.context[code.val].store = stack[--state.esp]
+      }
+      break
     }
-    case OP.STORE: state.context[code.val].store = stack[--state.esp]; break
     case OP.BIOP: {
       const right = stack[--state.esp]
       const left = stack[--state.esp]
