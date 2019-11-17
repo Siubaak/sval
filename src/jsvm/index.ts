@@ -177,8 +177,9 @@ function step(state: State) {
         stack[state.esp++] = arr
       } else { // code.val === 'func'
         const newEsp = state.ebpList[state.ebpList.length - 1]
-        stack[state.esp++] = stack.slice(newEsp, state.esp).reverse()
+        const args = stack.slice(newEsp, state.esp).reverse()
         state.esp = newEsp
+        stack[state.esp++] = args
       }
       break
     }
@@ -190,9 +191,6 @@ function step(state: State) {
         }
       } else {
         const iterator = stack[--state.esp]
-        if (!iterator[Symbol.iterator]) {
-          throw new TypeError(`${JSON.stringify(iterator)} is not iterable`)
-        }
         for (const value of iterator) {
           kovs.push(value)
         }

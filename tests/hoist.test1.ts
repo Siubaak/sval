@@ -171,7 +171,6 @@ describe('testing src/index.ts', () => {
       var { x: [...f] } = { x: [1, 2] }
       var { ...g } = { a: 1, b: 2 }
     `
-    interpreter.run(`!async function(){${code}}()`) // also test for generator env
     interpreter.run(code)
   })
   it('should hoist const and let and simulate temporal dead zone', () => {  

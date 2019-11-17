@@ -457,32 +457,32 @@ describe('testing src/index.ts', () => {
     expect(interpreter.exports.target).toBe(interpreter.exports.cls)
   })
 
-  // it('should support generator method', () => {
-  //   const interpreter = new Sval()
-  //   interpreter.run(`
-  //     class Foo {
-  //       constructor(...args) {
-  //         this.args = args
-  //       }
-  //       *[Symbol.iterator]() {
-  //         for (let arg of this.args) {
-  //           yield arg
-  //         }
-  //       }
-  //     }
+  it('should support generator method', () => {
+    const interpreter = new Sval()
+    interpreter.run(`
+      class Foo {
+        constructor(...args) {
+          this.args = args
+        }
+        *[Symbol.iterator]() {
+          for (let arg of this.args) {
+            yield arg
+          }
+        }
+      }
       
-  //     const params = ['hello', 'world']
-  //     const result = []
-  //     for (let x of new Foo(...params)) {
-  //       result.push(x)
-  //     }
+      const params = ['hello', 'world']
+      const result = []
+      for (let x of new Foo(...params)) {
+        result.push(x)
+      }
 
-  //     exports.target = params
-  //     exports.actual = result
-  //   `)
+      exports.target = params
+      exports.actual = result
+    `)
 
-  //   expect(interpreter.exports.target).toEqual(interpreter.exports.actual)
-  // })
+    expect(interpreter.exports.target).toEqual(interpreter.exports.actual)
+  })
 
   it('should support property accessing between parent and child class', () => {  
     const interpreter = new Sval()

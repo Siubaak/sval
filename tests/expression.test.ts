@@ -28,7 +28,6 @@ describe('testing src/expression.ts', () => {
       exports.e = delete exports.d
       exports.f = typeof exports.e
     `
-    // interpreter.run(`!async function(){${code}}()`) // also test for generator env
     interpreter.run(code)
 
     expect(interpreter.exports.a).toBeTruthy()
@@ -72,7 +71,6 @@ describe('testing src/expression.ts', () => {
       const c = new b
       exports.v = c instanceof b
     `
-    // interpreter.run(`!async function(){${code}}()`) // also test for generator env
     interpreter.run(code)
     // comparison
     expect(interpreter.exports.a).toBeTruthy()
@@ -132,7 +130,6 @@ describe('testing src/expression.ts', () => {
       expect(exports.a).toBe(0)
     `
     interpreter.import({ expect })
-    // interpreter.run(`!async function(){${code}}()`) // also test for generator env
     interpreter.run(code)
   })
 

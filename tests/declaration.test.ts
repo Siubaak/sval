@@ -53,7 +53,6 @@ describe('testing src/index.ts', () => {
       exports.h3 = h3
       exports.h4 = h4
     `
-    // interpreter.run(`!async function(){${code}}()`) // also test for generator env
     interpreter.run(code)
     expect(interpreter.exports.a).toBe(1)
     expect(interpreter.exports.b).toBe(2)
@@ -83,7 +82,6 @@ describe('testing src/index.ts', () => {
       exports.c = c
       exports.d = d
     `
-    // interpreter.run(`!async function(){${code}}()`) // also test for generator env
     interpreter.run(code)
     expect(interpreter.exports.a).toBe(1)
     expect(interpreter.exports.b).toBeUndefined()
@@ -202,7 +200,6 @@ describe('testing src/index.ts', () => {
       exports.ca = ca
       exports.cb = cb
     `
-    // interpreter.run(`!async function(){${code}}()`) // also test for generator env
     interpreter.run(code)
 
     expect(interpreter.exports.a).toBe(1)
@@ -256,7 +253,6 @@ describe('testing src/index.ts', () => {
       exports.outerB = b
       exports.outerC = c
     `
-    // interpreter.run(`!async function(){${code}}()`) // also test for generator env
     interpreter.run(code)
 
     expect(interpreter.exports.innerA).toBe(6)
