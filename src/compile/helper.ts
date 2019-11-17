@@ -172,6 +172,17 @@ export function compileForXStatement(node: estree.ForInStatement | estree.ForOfS
       throw new TypeError('Assignment to constant variable')
     }
     opCodes.push({ op: OP.STORE, val: symbol.pointer })
+  } else if (left.type === 'VariableDeclaration') {
+    state.symbols.type = left.kind
+    for (let i = 0; i < left.declarations.length; i++) {
+      const declr = left.declarations[i]
+      if (declr.id.type === 'Identifier') {
+        state.opCodes.push({ op: OP.ALLOC, val: state.symbols.set(declr.id.name).pointer })
+      } else { // declr.id.type === 'Pattern'
+        compilePattern(declr.id, state)
+      }
+    }
+    state.symbols.type = null
   } else if (left.type === 'MemberExpression') {
     compile(left.object, state)
     if (left.object.type === 'Super') {
@@ -185,7 +196,7 @@ export function compileForXStatement(node: estree.ForInStatement | estree.ForOfS
     }
     state.opCodes.push({ op: OP.MSET, val: left.object.type === 'Super' })
   } else {
-    compile(left, state)
+    compilePattern(left, state)
   }
 
   compile(node.body, state)

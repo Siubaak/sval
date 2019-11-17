@@ -1,16 +1,19 @@
 import State from '../state'
-import { OP, SIGNAL } from '../share/const'
-import { getDptor, define, inherits, getGetter, getSetter } from '../share/utils'
+import { OP, SIGNAL, Signal } from '../share/const'
+import { getDptor, define, inherits, getGetter, getSetter, runAsync, AWAIT, createSymbol, runAsyncOptions } from '../share/utils'
+
+const ES6_CLASS = createSymbol('class')
+const SUPER_CALLED = createSymbol('super')
 
 function step(state: State) {
   const stack = state.stack
   const code = state.opCodes[state.pc]
-  let signal = SIGNAL.NONE
+  let signal: Signal = { type: SIGNAL.NONE }
   switch (code.op) {
     case OP.LOADK: stack[state.esp++] = code.val; break
     case OP.LOADV: {
       const value = state.context[code.val] && state.context[code.val].store
-      if (code.this && value['#sval_super_called#'] === false) {
+      if (code.this && value[SUPER_CALLED] === false) {
         throw new ReferenceError("Must call super constructor in derived class before accessing 'this'")
       }
       stack[state.esp++] = value
@@ -218,11 +221,11 @@ function step(state: State) {
           state.pc = beginPc // offset pc to the function op codes
           state.context = lexicalCtx // set the context as the lexical context of function
 
-          let signal = SIGNAL.NONE
+          let sig: Signal = { type: SIGNAL.NONE }
           let ret: any
           while (state.pc < endPc) {
-            signal = step(state)
-            if (signal === SIGNAL.RET) {
+            sig = step(state)
+            if (sig.type === SIGNAL.RET) {
               ret = stack[--state.esp]
               break
             }
@@ -233,6 +236,7 @@ function step(state: State) {
 
           return ret
         }
+
         define(func, 'name', {
           value: code.val,
           configurable: true
@@ -241,62 +245,102 @@ function step(state: State) {
           value: code.length,
           configurable: true
         })
+
         stack[state.esp++] = func
       } else {
-        // const tmpFunc = function* () {
-        //   for (let i = arguments.length - 1; i > -1; i--) {
-        //     stack[state.esp++] = arguments[i] // load arguments
-        //   }
-        //   if (!code.arrow) {
-        //     stack[state.esp++] = arguments // load argument array itself
-        //     stack[state.esp++] = this // load this
-        //   }
-  
-        //   const resetPc = state.pc // reserve the current pc
-        //   const resetCtx = state.context // reserve the current context
-        //   state.pc = beginPc // offset pc to the function op codes
-        //   state.context = lexicalCtx // set the context as the lexical context of function
-  
-        //   while (state.pc < endPc) {
-        //     const s = step(state)
-        //     if (s === SIGNAL.RET) break
-        //     else if (s === SIGNAL.YIELD) yield
-        //   }
-  
-        //   state.pc = resetPc // reset to the current pc
-        //   state.context = resetCtx // reset to the current context
-        // }
-        // if (code.async && code.generator) {
-        //   stack[state.esp++] = function (: AsyncIterator<any> {
-        //     const iterator = tmpFunc.apply(void 0, arguments)
-        //     let last: Promise<any> = Promise.resolve()
-        //     let hasCatch = false
-        //     const run = (opts: runAsyncOptions) =>
-        //       last = last
-        //         .then(() => runAsync(iterator, assign({ fullRet: true }, opts)))
-        //         .catch(err => {
-        //           if (!hasCatch) {
-        //             hasCatch = true
-        //             return Promise.reject(err)
-        //           }
-        //         })
-        //     const asyncIterator: AsyncIterator<any> = {
-        //       next: (res?: any) => run({ res }),
-        //       throw: (err?: any) => run({ err }),
-        //       return: (ret?: any) => run({ ret })
-        //     }
-        //     if (typeof Symbol === 'function') {
-        //       (asyncIterator as any)[Symbol.iterator] = function () { return this }
-        //     }
-        //     return asyncIterator
-        //   })
-        // } else if (code.async) {
-        //   stack[state.esp++] = function ( {
-        //     return runAsync(tmpFunc.apply(void 0, arguments))
-        //   })
-        // } else {
-        //   stack[state.esp++] = tmpFunc
-        // }
+        const tmpFunc = function* () {
+          for (let i = arguments.length - 1; i > -1; i--) {
+            stack[state.esp++] = arguments[i] // load arguments
+          }
+          if (!code.arrow) {
+            stack[state.esp++] = arguments // load argument array itself
+            stack[state.esp++] = this // load this
+          }
+
+          let resetPc = state.pc // reserve the current pc
+          let resetCtx = state.context // reserve the current context
+          state.pc = beginPc // offset pc to the function op codes
+          state.context = lexicalCtx // set the context as the lexical context of function
+
+          let sig: Signal = { type: SIGNAL.NONE }
+          let ret: any
+          while (state.pc < endPc) {
+            sig = step(state)
+            if (sig.type === SIGNAL.RET) {
+              ret = stack[--state.esp]
+              break
+            } else if (sig.type === SIGNAL.YIELD) {
+              // resume caller pc and context, and save generator pc and context
+              ;[state.pc, resetPc] = [resetPc, state.pc]
+              ;[state.context, resetCtx] = [resetCtx, state.context]
+              // yield generator
+              const resumeVal = sig.val ? yield* stack[--state.esp] : yield stack[--state.esp]
+              stack[state.esp++] = resumeVal
+              // resume generator pc and context, and save next caller pc and context
+              ;[state.pc, resetPc] = [resetPc, state.pc]
+              ;[state.context, resetCtx] = [resetCtx, state.context]
+            } else if (sig.type === SIGNAL.AWAIT ) {
+              // resume caller pc and context, and save async function pc and context
+              ;[state.pc, resetPc] = [resetPc, state.pc]
+              ;[state.context, resetCtx] = [resetCtx, state.context]
+              // await the result
+              AWAIT.RES = stack[--state.esp]
+              const resumeVal = yield AWAIT
+              stack[state.esp++] = resumeVal
+              // get result, and resume async function pc and context
+              // and save current pc and context
+              ;[state.pc, resetPc] = [resetPc, state.pc]
+              ;[state.context, resetCtx] = [resetCtx, state.context]
+            }
+          }
+          
+          state.pc = resetPc // reset to the current pc
+          state.context = resetCtx // reset to the current context
+
+          return ret
+        }
+
+        let func: any = tmpFunc
+        if (code.async && code.generator) {
+          func = function (): AsyncIterator<any> {
+            const iterator = tmpFunc.apply(this, arguments)
+            let last: Promise<any> = Promise.resolve()
+            let hasCatch = false
+            const run = (opts: runAsyncOptions) =>
+              last = last
+                .then(() => runAsync(iterator, Object.assign({ fullRet: true }, opts)))
+                .catch(err => {
+                  if (!hasCatch) {
+                    hasCatch = true
+                    return Promise.reject(err)
+                  }
+                })
+            const asyncIterator: AsyncIterator<any> = {
+              next: (res?: any) => run({ res }),
+              throw: (err?: any) => run({ err }),
+              return: (ret?: any) => run({ ret })
+            }
+            if (typeof Symbol === 'function') {
+              (asyncIterator as any)[Symbol.iterator] = function () { return this }
+            }
+            return asyncIterator
+          }
+        } else if (code.async) {
+          func = function () {
+            return runAsync(tmpFunc.apply(this, arguments))
+          }
+        }
+
+        define(func, 'name', {
+          value: code.val,
+          configurable: true
+        })
+        define(func, 'length', {
+          value: code.length,
+          configurable: true
+        })
+
+        stack[state.esp++] = func
       }
       state.pc = endPc - 1
       break
@@ -313,14 +357,14 @@ function step(state: State) {
       let ctor = function () {
         if  (classCtor) {
           if (superClass) {
-            define(this, '#sval_super_called#', { value: false, configurable: true })
+            define(this, SUPER_CALLED, { value: false, configurable: true })
           }
           const result = classCtor.apply(this, arguments)
           if (superClass) {
-            if (!this['#sval_super_called#']) {
+            if (!this[SUPER_CALLED]) {
               throw new ReferenceError('Must call super constructor in derived class before returning from derived constructor')
             }
-            delete this['#sval_super_called#']
+            delete this[SUPER_CALLED]
           }
           return result
         } else if (superClass) {
@@ -334,7 +378,7 @@ function step(state: State) {
         value: code.val,
         configurable: true
       })
-      define(ctor, '#sval_es6_class#', { value: true })
+      define(ctor, ES6_CLASS, { value: true })
       stack[state.esp++] = ctor
       break
     }
@@ -373,17 +417,17 @@ function step(state: State) {
     case OP.CALL: {
       const func = stack[--state.esp]
 
-      if (!code.super && func['#sval_es6_class#']) {
+      if (!code.super && func[ES6_CLASS]) {
         throw new TypeError(`Class constructor ${func.name} cannot be invoked without 'new'`)
       }
 
       const obj = stack[--state.esp]
 
       if (code.super) {
-        if (obj['#sval_super_called#']) {
+        if (obj[SUPER_CALLED]) {
           throw new ReferenceError('Super constructor may only be called once')
         }
-        define(obj, '#sval_super_called#', { value: true, configurable: true })
+        define(obj, SUPER_CALLED, { value: true, configurable: true })
       }
 
       const spread = code.val.concat()
@@ -452,9 +496,9 @@ function step(state: State) {
       stack[state.esp++] = result
       break
     }
-    case OP.RET: signal = SIGNAL.RET; break
-    case OP.YIELD: signal = SIGNAL.YIELD; break
-    case OP.AWAIT: signal = SIGNAL.AWAIT; break
+    case OP.RET: signal = { type: SIGNAL.RET }; break
+    case OP.YIELD: signal = { type: SIGNAL.YIELD, val: code.val }; break
+    case OP.AWAIT: signal = { type: SIGNAL.AWAIT }; break
     case OP.COPY: {
       const top = stack[state.esp - 1]
       stack[state.esp++] = top

@@ -60,3 +60,8 @@ export interface OpCode {
   val?: any
   [more: string]: any
 }
+
+export interface Signal {
+  type: number,
+  val?: any
+}
