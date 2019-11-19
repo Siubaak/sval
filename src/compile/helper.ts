@@ -67,6 +67,7 @@ export function compileFunc(node: FunctionDefinition, state: State) {
     state.symbols.popScope()
   } else {
     compile(node.body, state)
+    state.opCodes.push({ op: OP.RET })
     state.opCodes.push({ op: OP.GC })
   }
 
