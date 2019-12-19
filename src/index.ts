@@ -10,7 +10,8 @@ import { hoist } from './compile/helper'
 
 export interface SvalOptions {
   ecmaVer?: 3 | 5 | 6 | 7 | 8 | 9 | 10 | 2015 | 2016 | 2017 | 2018 | 2019
-  sandBox?: boolean
+  sandBox?: boolean,
+  stepLimit?: number
 }
 
 class Sval {
@@ -18,11 +19,14 @@ class Sval {
 
   private options: Options = {}
   private state = new State()
+  private stepLimit: number | null
 
   exports: { [name: string]: any } = {}
 
   constructor(options: SvalOptions = {}) {
-    let { ecmaVer = 9, sandBox = true } = options
+    let { ecmaVer = 9, sandBox = true, stepLimit = null } = options
+
+    this.stepLimit = stepLimit;
 
     ecmaVer -= ecmaVer < 2015 ? 0 : 2009 // format ecma edition
 
@@ -74,7 +78,7 @@ class Sval {
     //   const opCode = this.state.opCodes[i]
     //   console.log(i, (OP as any)[opCode.op], typeof opCode.val === 'undefined' ? '' : opCode.val)
     // }
-    execute(this.state)
+    execute(this.state, this.stepLimit)
   }
 }
 
