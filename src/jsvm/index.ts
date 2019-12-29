@@ -522,20 +522,6 @@ function step(state: State) {
   return signal
 }
 
-export default function execute(state: State, stepLimit: number | null) {
-  if (stepLimit === null) {
+export default function execute(state: State) {
   while (state.pc < state.opCodes.length) step(state)
-  } else {
-    // Restrict number of steps.
-    let stepCounter: number = 0
-
-    while (state.pc < state.opCodes.length && stepCounter < stepLimit) {
-      step(state)
-      stepCounter++
-    }
-
-    if (stepCounter >= stepLimit) {
-      throw new Error('Execution limit exceeded')
-    }
-  }
 }

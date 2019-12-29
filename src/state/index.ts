@@ -18,3 +18,27 @@ export default class State {
 
   readonly catchPcStack: { pc: number }[] = [] // mark catch statement pc for jump of throw statement
 }
+
+export class RateLimitedState extends State {
+  private _pc: number = 0
+  private stepCounter: number = 0;
+  private stepLimit: number;
+
+  constructor(stepLimit: number) {
+    super();
+    this.stepLimit = stepLimit;
+  }
+
+  get pc(): number {
+    return this._pc;
+  }
+
+  set pc(value: number) {
+    this.stepCounter += 1;
+    this._pc = value;
+
+    if (this.stepCounter > this.stepLimit) {
+      throw new Error('Execution limit exceeded');
+    }
+  }
+}
