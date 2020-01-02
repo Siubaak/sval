@@ -22,6 +22,30 @@ describe('testing src/index.ts', () => {
     interpreter.run(`!async function(){${code}}()`)
   })
 
+  it('should support execution limit', () => {
+    const interpreter = new Sval({
+      stepLimit: 100
+    })
+
+    try {
+      interpreter.run(`while(true){}`);
+    } catch (ex) {
+      expect(ex.message).toBe('Execution limit exceeded')
+    }
+  })
+
+  it('should support execution limit in function scope', () => {
+    const interpreter = new Sval({
+      stepLimit: 100
+    })
+
+    try {
+      interpreter.run(`(function () {while (true) {}})();`);
+    } catch (ex) {
+      expect(ex.message).toBe('Execution limit exceeded')
+    }
+  })
+
   it('should support global mode', () => {
     const interpreter = new Sval({
       sandBox: false

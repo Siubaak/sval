@@ -1,6 +1,6 @@
 import { version } from '../package.json'
 import { parse, Options } from 'acorn'
-import State from './state'
+import State, { RateLimitedState } from './state'
 
 import execute from './jsvm'
 import compile from './compile'
@@ -10,7 +10,8 @@ import { hoist } from './compile/helper'
 
 export interface SvalOptions {
   ecmaVer?: 3 | 5 | 6 | 7 | 8 | 9 | 10 | 2015 | 2016 | 2017 | 2018 | 2019
-  sandBox?: boolean
+  sandBox?: boolean,
+  stepLimit?: number
 }
 
 class Sval {
@@ -22,7 +23,11 @@ class Sval {
   exports: { [name: string]: any } = {}
 
   constructor(options: SvalOptions = {}) {
-    let { ecmaVer = 9, sandBox = true } = options
+    let { ecmaVer = 9, sandBox = true, stepLimit = null } = options
+
+    if (stepLimit != null) {
+      this.state = new RateLimitedState(stepLimit);
+    }
 
     ecmaVer -= ecmaVer < 2015 ? 0 : 2009 // format ecma edition
 
