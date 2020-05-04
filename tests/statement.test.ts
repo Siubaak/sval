@@ -10,6 +10,20 @@ describe('testing src/index.ts', () => {
     `)
   })
 
+  it('should break statement in switch run normally', () => {  
+    const interpreter = new Sval()
+    interpreter.run(`
+      exports.a = 0
+      while (exports.a < 10) {
+        exports.a++;
+        switch (2) {
+          case 2: break
+        }
+      }
+    `)
+    expect(interpreter.exports.a).toEqual(10)
+  })
+
   it('should for-in statement run normally', () => {  
     const interpreter = new Sval()
     interpreter.run(`
