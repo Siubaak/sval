@@ -116,7 +116,7 @@ export function* TryStatement(node: estree.TryStatement, scope: Scope) {
       if (param) {
         if (param.type === 'Identifier') {
           const name = param.name
-          subScope.let(name, err)
+          subScope.var(name, err)
         } else {
           yield* pattern(param, scope, { feed: err })
         }

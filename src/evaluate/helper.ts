@@ -143,9 +143,9 @@ export function createFunc(
     for (let i = 0; i < params.length; i++) {
       const param = params[i]
       if (param.type === 'Identifier') {
-        subScope.let(param.name, args[i])
+        subScope.var(param.name, args[i])
       } else if (param.type === 'RestElement') {
-        yield* RestElement(param, subScope, { kind: 'let', feed: args.slice(i) })
+        yield* RestElement(param, subScope, { kind: 'var', feed: args.slice(i) })
       } else {
         yield* pattern(param, subScope, { feed: args[i] })
       }

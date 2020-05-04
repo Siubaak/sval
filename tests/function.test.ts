@@ -15,6 +15,18 @@ describe('testing src/index.ts', () => {
 
     expect(interpreter.exports.x).toBeTruthy()
   })
+  it('should redeclare param inside function by var', () => {
+    const interpreter = new Sval()
+    interpreter.run(`
+      a(1)
+      function a(b) {
+        var b = b + 1
+        exports.b = b
+      }
+    `)
+
+    expect(interpreter.exports.b).toBe(2)
+  })
 
   it('should yield generator normally', () => {  
     const interpreter = new Sval()

@@ -38,11 +38,11 @@ export function* VariableDeclarator(
   scope: Scope,
   options: VariableDeclaratorOptions & VariableDeclarationOptions = {},
 ) {
-  const { kind = 'let', hoist = false, onlyBlock = false, feed } = options
+  const { kind = 'var', hoist = false, onlyBlock = false, feed } = options
   if (hoist) {
     if (onlyBlock || kind === 'var') {
       if (node.id.type === 'Identifier') {
-        scope[onlyBlock ? kind : 'var'](node.id.name, onlyBlock ? DEADZONE : undefined)
+        scope[kind](node.id.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined)
       } else {
         yield* pattern(node.id, scope, { kind, hoist, onlyBlock })
       }
