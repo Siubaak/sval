@@ -474,6 +474,24 @@ describe('testing src/index.ts', () => {
     expect(interpreter.exports.target).toEqual(interpreter.exports.actual)
   })
 
+  it('should support async method', () => {
+    const interpreter = new Sval()
+    interpreter.run(`
+      class Foo {
+        constructor() {
+          this.a = 1
+        }
+        async getA() {
+          return this.a
+        }
+      }
+      exports.Foo = Foo
+    `)
+
+    const instance = new interpreter.exports.Foo();
+    expect(instance.getA()).resolves.toBe(1);
+  })
+
   it('should support property accessing between parent and child class', () => {  
     const interpreter = new Sval()
     interpreter.run(`

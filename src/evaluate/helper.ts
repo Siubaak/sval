@@ -175,7 +175,7 @@ export function createFunc(
   /*<remove>*/
   if (node.async && node.generator) {
     func = function (): AsyncIterator<any> {
-      const iterator = tmpFunc.apply(void 0, arguments)
+      const iterator = tmpFunc.apply(this, arguments)
       let last: Promise<any> = Promise.resolve()
       let hasCatch = false
       const run = (opts: runAsyncOptions) =>
@@ -198,7 +198,7 @@ export function createFunc(
       return asyncIterator
     }
   } else if (node.async) {
-    func = function () { return runAsync(tmpFunc.apply(void 0, arguments)) }
+    func = function () { return runAsync(tmpFunc.apply(this, arguments)) }
   } else {
     func = tmpFunc
   }
