@@ -2,9 +2,10 @@
   typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('acorn')) :
   typeof define === 'function' && define.amd ? define(['acorn'], factory) :
   (global = global || self, global.Sval = factory(global.acorn));
-}(this, function (acorn) { 'use strict';
+}(this, (function (acorn) { 'use strict';
 
   var declaration = /*#__PURE__*/Object.freeze({
+    __proto__: null,
     get FunctionDeclaration () { return FunctionDeclaration; },
     get VariableDeclaration () { return VariableDeclaration; },
     get VariableDeclarator () { return VariableDeclarator; },
@@ -13,6 +14,7 @@
     get MethodDefinition () { return MethodDefinition; }
   });
   var declaration$1 = /*#__PURE__*/Object.freeze({
+    __proto__: null,
     get FunctionDeclaration () { return FunctionDeclaration$1; },
     get VariableDeclaration () { return VariableDeclaration$1; },
     get VariableDeclarator () { return VariableDeclarator$1; },
@@ -380,7 +382,7 @@
       }
   }
 
-  var version = "0.4.6";
+  var version = "0.4.7";
 
   var AWAIT = { RES: undefined };
   var RETURN = { RES: undefined };
@@ -633,6 +635,7 @@
   }
 
   var identifier = /*#__PURE__*/Object.freeze({
+    __proto__: null,
     Identifier: Identifier
   });
 
@@ -641,6 +644,7 @@
   }
 
   var literal = /*#__PURE__*/Object.freeze({
+    __proto__: null,
     Literal: Literal
   });
 
@@ -1100,6 +1104,7 @@
   }
 
   var expression = /*#__PURE__*/Object.freeze({
+    __proto__: null,
     ThisExpression: ThisExpression,
     ArrayExpression: ArrayExpression,
     ObjectExpression: ObjectExpression,
@@ -1176,7 +1181,10 @@
           }
           if (matched) {
               var result = SwitchCase(eachCase, scope);
-              if (result === BREAK || result === CONTINUE || result === RETURN) {
+              if (result === BREAK) {
+                  break;
+              }
+              if (result === CONTINUE || result === RETURN) {
                   return result;
               }
           }
@@ -1204,7 +1212,7 @@
               if (param) {
                   if (param.type === 'Identifier') {
                       var name_1 = param.name;
-                      subScope.let(name_1, err);
+                      subScope.var(name_1, err);
                   }
                   else {
                       pattern$3(param, scope, { feed: err });
@@ -1320,6 +1328,7 @@
   }
 
   var statement = /*#__PURE__*/Object.freeze({
+    __proto__: null,
     ExpressionStatement: ExpressionStatement,
     BlockStatement: BlockStatement,
     EmptyStatement: EmptyStatement,
@@ -1342,7 +1351,7 @@
 
   function ObjectPattern(node, scope, options) {
       if (options === void 0) { options = {}; }
-      var _a = options.kind, kind = _a === void 0 ? 'let' : _a, _b = options.hoist, hoist = _b === void 0 ? false : _b, _c = options.onlyBlock, onlyBlock = _c === void 0 ? false : _c, _d = options.feed, feed = _d === void 0 ? {} : _d;
+      var _a = options.kind, kind = _a === void 0 ? 'var' : _a, _b = options.hoist, hoist = _b === void 0 ? false : _b, _c = options.onlyBlock, onlyBlock = _c === void 0 ? false : _c, _d = options.feed, feed = _d === void 0 ? {} : _d;
       var fedKeys = [];
       for (var i = 0; i < node.properties.length; i++) {
           var property = node.properties[i];
@@ -1351,7 +1360,7 @@
                   if (property.type === 'Property') {
                       var value = property.value;
                       if (value.type === 'Identifier') {
-                          scope[onlyBlock ? kind : 'var'](value.name, onlyBlock ? DEADZONE : undefined);
+                          scope[kind](value.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
                       }
                       else {
                           pattern$3(value, scope, { kind: kind, hoist: hoist, onlyBlock: onlyBlock });
@@ -1398,7 +1407,7 @@
           if (hoist) {
               if (onlyBlock || kind === 'var') {
                   if (element.type === 'Identifier') {
-                      scope[onlyBlock ? kind : 'var'](element.name, onlyBlock ? DEADZONE : undefined);
+                      scope[kind](element.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
                   }
                   else {
                       pattern$3(element, scope, { kind: kind, hoist: hoist, onlyBlock: onlyBlock });
@@ -1433,7 +1442,7 @@
       if (hoist) {
           if (onlyBlock || kind === 'var') {
               if (arg.type === 'Identifier') {
-                  scope[onlyBlock ? kind : 'var'](arg.name, onlyBlock ? DEADZONE : undefined);
+                  scope[kind](arg.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
               }
               else {
                   pattern$3(arg, scope, { kind: kind, hoist: hoist, onlyBlock: onlyBlock });
@@ -1455,12 +1464,12 @@
   }
   function AssignmentPattern(node, scope, options) {
       if (options === void 0) { options = {}; }
-      var _a = options.kind, kind = _a === void 0 ? 'let' : _a, _b = options.hoist, hoist = _b === void 0 ? false : _b, _c = options.onlyBlock, onlyBlock = _c === void 0 ? false : _c, _d = options.feed, feed = _d === void 0 ? evaluate(node.right, scope) : _d;
+      var _a = options.kind, kind = _a === void 0 ? 'var' : _a, _b = options.hoist, hoist = _b === void 0 ? false : _b, _c = options.onlyBlock, onlyBlock = _c === void 0 ? false : _c, _d = options.feed, feed = _d === void 0 ? evaluate(node.right, scope) : _d;
       var left = node.left;
       if (hoist) {
           if (onlyBlock || kind === 'var') {
               if (left.type === 'Identifier') {
-                  scope[onlyBlock ? kind : 'var'](left.name, onlyBlock ? DEADZONE : undefined);
+                  scope[kind](left.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
               }
               else {
                   pattern$3(left, scope, { kind: kind, hoist: hoist, onlyBlock: onlyBlock });
@@ -1476,6 +1485,7 @@
   }
 
   var pattern = /*#__PURE__*/Object.freeze({
+    __proto__: null,
     ObjectPattern: ObjectPattern,
     ArrayPattern: ArrayPattern,
     RestElement: RestElement,
@@ -1489,6 +1499,7 @@
   }
 
   var program = /*#__PURE__*/Object.freeze({
+    __proto__: null,
     Program: Program
   });
 
@@ -1519,11 +1530,11 @@
   }
   function VariableDeclarator(node, scope, options) {
       if (options === void 0) { options = {}; }
-      var _a = options.kind, kind = _a === void 0 ? 'let' : _a, _b = options.hoist, hoist = _b === void 0 ? false : _b, _c = options.onlyBlock, onlyBlock = _c === void 0 ? false : _c, feed = options.feed;
+      var _a = options.kind, kind = _a === void 0 ? 'var' : _a, _b = options.hoist, hoist = _b === void 0 ? false : _b, _c = options.onlyBlock, onlyBlock = _c === void 0 ? false : _c, feed = options.feed;
       if (hoist) {
           if (onlyBlock || kind === 'var') {
               if (node.id.type === 'Identifier') {
-                  scope[onlyBlock ? kind : 'var'](node.id.name, onlyBlock ? DEADZONE : undefined);
+                  scope[kind](node.id.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
               }
               else {
                   pattern$3(node.id, scope, { kind: kind, hoist: hoist, onlyBlock: onlyBlock });
@@ -1643,11 +1654,11 @@
           else {
               return [2, undefined];
           }
-          return [2];
       });
   }
 
   var identifier$1 = /*#__PURE__*/Object.freeze({
+    __proto__: null,
     Identifier: Identifier$1
   });
 
@@ -1658,6 +1669,7 @@
   }
 
   var literal$1 = /*#__PURE__*/Object.freeze({
+    __proto__: null,
     Literal: Literal$1
   });
 
@@ -1672,7 +1684,6 @@
           else {
               return [2, scope.find('this').get()];
           }
-          return [2];
       });
   }
   function ArrayExpression$1(node, scope) {
@@ -1786,7 +1797,6 @@
           else {
               return [2, createFunc(node, scope)];
           }
-          return [2];
       });
   }
   function UnaryExpression$1(node, scope) {
@@ -1870,7 +1880,6 @@
                   else {
                       throw new SyntaxError("Unexpected token " + node.operator);
                   }
-                  return [2];
           }
       });
   }
@@ -1909,7 +1918,6 @@
                       case 'instanceof': return [2, left instanceof right];
                       default: throw new SyntaxError("Unexpected token " + node.operator);
                   }
-                  return [2];
           }
       });
   }
@@ -1981,7 +1989,6 @@
                           return [2, variable.get()];
                       default: throw new SyntaxError("Unexpected token " + node.operator);
                   }
-                  return [2];
           }
       });
   }
@@ -2068,7 +2075,6 @@
                           return [2, object[key]];
                       }
                   }
-                  return [2];
           }
       });
   }
@@ -2398,6 +2404,7 @@
   }
 
   var expression$1 = /*#__PURE__*/Object.freeze({
+    __proto__: null,
     ThisExpression: ThisExpression$1,
     ArrayExpression: ArrayExpression$1,
     ObjectExpression: ObjectExpression$1,
@@ -2552,7 +2559,10 @@
                   return [5, __values(SwitchCase$1(eachCase, scope))];
               case 6:
                   result = _c.sent();
-                  if (result === BREAK || result === CONTINUE || result === RETURN) {
+                  if (result === BREAK) {
+                      return [3, 8];
+                  }
+                  if (result === CONTINUE || result === RETURN) {
                       return [2, result];
                   }
                   _c.label = 7;
@@ -2610,7 +2620,7 @@
                   if (!param) return [3, 5];
                   if (!(param.type === 'Identifier')) return [3, 3];
                   name_1 = param.name;
-                  subScope.let(name_1, err_1);
+                  subScope.var(name_1, err_1);
                   return [3, 5];
               case 3: return [5, __values(pattern$2(param, scope, { feed: err_1 }))];
               case 4:
@@ -2855,6 +2865,7 @@
   }
 
   var statement$1 = /*#__PURE__*/Object.freeze({
+    __proto__: null,
     ExpressionStatement: ExpressionStatement$1,
     BlockStatement: BlockStatement$1,
     EmptyStatement: EmptyStatement$1,
@@ -2881,7 +2892,7 @@
       return __generator(this, function (_e) {
           switch (_e.label) {
               case 0:
-                  _a = options.kind, kind = _a === void 0 ? 'let' : _a, _b = options.hoist, hoist = _b === void 0 ? false : _b, _c = options.onlyBlock, onlyBlock = _c === void 0 ? false : _c, _d = options.feed, feed = _d === void 0 ? {} : _d;
+                  _a = options.kind, kind = _a === void 0 ? 'var' : _a, _b = options.hoist, hoist = _b === void 0 ? false : _b, _c = options.onlyBlock, onlyBlock = _c === void 0 ? false : _c, _d = options.feed, feed = _d === void 0 ? {} : _d;
                   fedKeys = [];
                   i = 0;
                   _e.label = 1;
@@ -2893,7 +2904,7 @@
                   if (!(property.type === 'Property')) return [3, 5];
                   value = property.value;
                   if (!(value.type === 'Identifier')) return [3, 2];
-                  scope[onlyBlock ? kind : 'var'](value.name, onlyBlock ? DEADZONE : undefined);
+                  scope[kind](value.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
                   return [3, 4];
               case 2: return [5, __values(pattern$2(value, scope, { kind: kind, hoist: hoist, onlyBlock: onlyBlock }))];
               case 3:
@@ -2960,7 +2971,7 @@
                   if (!hoist) return [3, 5];
                   if (!(onlyBlock || kind === 'var')) return [3, 4];
                   if (!(element.type === 'Identifier')) return [3, 2];
-                  scope[onlyBlock ? kind : 'var'](element.name, onlyBlock ? DEADZONE : undefined);
+                  scope[kind](element.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
                   return [3, 4];
               case 2: return [5, __values(pattern$2(element, scope, { kind: kind, hoist: hoist, onlyBlock: onlyBlock }))];
               case 3:
@@ -3011,7 +3022,7 @@
                   if (!hoist) return [3, 4];
                   if (!(onlyBlock || kind === 'var')) return [3, 3];
                   if (!(arg.type === 'Identifier')) return [3, 1];
-                  scope[onlyBlock ? kind : 'var'](arg.name, onlyBlock ? DEADZONE : undefined);
+                  scope[kind](arg.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
                   return [3, 3];
               case 1: return [5, __values(pattern$2(arg, scope, { kind: kind, hoist: hoist, onlyBlock: onlyBlock }))];
               case 2:
@@ -3043,7 +3054,7 @@
       return __generator(this, function (_f) {
           switch (_f.label) {
               case 0:
-                  _a = options.kind, kind = _a === void 0 ? 'let' : _a, _b = options.hoist, hoist = _b === void 0 ? false : _b, _c = options.onlyBlock, onlyBlock = _c === void 0 ? false : _c, _d = options.feed;
+                  _a = options.kind, kind = _a === void 0 ? 'var' : _a, _b = options.hoist, hoist = _b === void 0 ? false : _b, _c = options.onlyBlock, onlyBlock = _c === void 0 ? false : _c, _d = options.feed;
                   if (!(_d === void 0)) return [3, 2];
                   return [5, __values(evaluate$1(node.right, scope))];
               case 1:
@@ -3058,7 +3069,7 @@
                   if (!hoist) return [3, 7];
                   if (!(onlyBlock || kind === 'var')) return [3, 6];
                   if (!(left.type === 'Identifier')) return [3, 4];
-                  scope[onlyBlock ? kind : 'var'](left.name, onlyBlock ? DEADZONE : undefined);
+                  scope[kind](left.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
                   return [3, 6];
               case 4: return [5, __values(pattern$2(left, scope, { kind: kind, hoist: hoist, onlyBlock: onlyBlock }))];
               case 5:
@@ -3079,6 +3090,7 @@
   }
 
   var pattern$1 = /*#__PURE__*/Object.freeze({
+    __proto__: null,
     ObjectPattern: ObjectPattern$1,
     ArrayPattern: ArrayPattern$1,
     RestElement: RestElement$1,
@@ -3138,11 +3150,11 @@
       return __generator(this, function (_e) {
           switch (_e.label) {
               case 0:
-                  _a = options.kind, kind = _a === void 0 ? 'let' : _a, _b = options.hoist, hoist = _b === void 0 ? false : _b, _c = options.onlyBlock, onlyBlock = _c === void 0 ? false : _c, feed = options.feed;
+                  _a = options.kind, kind = _a === void 0 ? 'var' : _a, _b = options.hoist, hoist = _b === void 0 ? false : _b, _c = options.onlyBlock, onlyBlock = _c === void 0 ? false : _c, feed = options.feed;
                   if (!hoist) return [3, 4];
                   if (!(onlyBlock || kind === 'var')) return [3, 3];
                   if (!(node.id.type === 'Identifier')) return [3, 1];
-                  scope[onlyBlock ? kind : 'var'](node.id.name, onlyBlock ? DEADZONE : undefined);
+                  scope[kind](node.id.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
                   return [3, 3];
               case 1: return [5, __values(pattern$2(node.id, scope, { kind: kind, hoist: hoist, onlyBlock: onlyBlock }))];
               case 2:
@@ -3538,11 +3550,11 @@
                       if (!(i < params.length)) return [3, 7];
                       param = params[i];
                       if (!(param.type === 'Identifier')) return [3, 2];
-                      subScope.let(param.name, args[i]);
+                      subScope.var(param.name, args[i]);
                       return [3, 6];
                   case 2:
                       if (!(param.type === 'RestElement')) return [3, 4];
-                      return [5, __values(RestElement$1(param, subScope, { kind: 'let', feed: args.slice(i) }))];
+                      return [5, __values(RestElement$1(param, subScope, { kind: 'var', feed: args.slice(i) }))];
                   case 3:
                       _a.sent();
                       return [3, 6];
@@ -3584,7 +3596,7 @@
       var func;
       if (node.async && node.generator) {
           func = function () {
-              var iterator = tmpFunc.apply(void 0, arguments);
+              var iterator = tmpFunc.apply(this, arguments);
               var last = Promise.resolve();
               var hasCatch = false;
               var run = function (opts) {
@@ -3609,7 +3621,7 @@
           };
       }
       else if (node.async) {
-          func = function () { return runAsync(tmpFunc.apply(void 0, arguments)); };
+          func = function () { return runAsync(tmpFunc.apply(this, arguments)); };
       }
       else {
           func = tmpFunc;
@@ -3814,10 +3826,10 @@
           for (var i = 0; i < params.length; i++) {
               var param = params[i];
               if (param.type === 'Identifier') {
-                  subScope.let(param.name, args[i]);
+                  subScope.var(param.name, args[i]);
               }
               else if (param.type === 'RestElement') {
-                  RestElement(param, subScope, { kind: 'let', feed: args.slice(i) });
+                  RestElement(param, subScope, { kind: 'var', feed: args.slice(i) });
               }
               else {
                   pattern$3(param, subScope, { feed: args[i] });
@@ -3944,8 +3956,14 @@
               this.scope.var(name_1, nameOrModules[name_1]);
           }
       };
+      Sval.prototype.parse = function (code, parser) {
+          if (typeof parser === 'function') {
+              return parser(code, assign({}, this.options));
+          }
+          return acorn.parse(code, this.options);
+      };
       Sval.prototype.run = function (code) {
-          var ast = acorn.parse(code, this.options);
+          var ast = typeof code === 'string' ? acorn.parse(code, this.options) : code;
           hoist$1(ast, this.scope);
           evaluate(ast, this.scope);
       };
@@ -3955,4 +3973,4 @@
 
   return Sval;
 
-}));
+})));

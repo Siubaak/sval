@@ -76,7 +76,7 @@ Sval instance has two methods, **import** and **run**.
 
 - **import** is to import modules into your Sval instance scope, expecting a name and a module as arguments like `import(name: string, mod: any)`, or an object which contains the modules as argument like `import({ [name: string]: any })`. The modules will be automatically declared as global variables. This method is more likely to be used in sandbox mode.
 
-- **parse** is to parse the code with internal [Acorn](https://github.com/acornjs/acorn) or custom parser, to get the corresponding AST, like `parse(code: string)` or `parse(code: string, parser: (code: string, options: svalOptions) => estree.Node`
+- **parse** is to parse the code with internal [Acorn](https://github.com/acornjs/acorn) or custom parser, to get the corresponding AST, like `parse(code: string)` or `parse(code: string, parser: (code: string, options: SvalOptions) => estree.Node`
 
 - **run** is to evaluate the code inputed, expecting a string as argument like `run(code: string)`, or an AST followed ESTree Spec as argument like `run(ast: estree.Node)`. If you want to export something, there is a internal global `exports` object for mounting what you want to export.
 
