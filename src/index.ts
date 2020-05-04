@@ -1,6 +1,7 @@
-import { getOwnNames, createSandBox, globalObj } from './share/util'
+import { getOwnNames, createSandBox, globalObj, assign } from './share/util'
 import { version } from '../package.json'
 import { parse, Options } from 'acorn'
+import { Node, Program } from 'estree'
 import Scope from './scope'
 
 import { hoist } from './evaluate_n/helper'
@@ -58,9 +59,16 @@ class Sval {
     }
   }
 
-  run(code: string) {
-    const ast = parse(code, this.options) as any
-    hoist(ast, this.scope)
+  parse(code: string, parser?: (code: string, options: Options) => Node) {
+    if (typeof parser === 'function') {
+      return parser(code, assign({}, this.options))
+    }
+    return parse(code, this.options)
+  }
+
+  run(code: string | Node) {
+    const ast = typeof code === 'string' ? parse(code, this.options) as Node : code
+    hoist(ast as Program, this.scope)
     evaluate(ast, this.scope)
   }
 }
