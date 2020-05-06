@@ -405,8 +405,8 @@ export function* ArrowFunctionExpression(node: estree.ArrowFunctionExpression, s
 }
 
 export function* TemplateLiteral(node: estree.TemplateLiteral, scope: Scope) {
-  const quasis = node.quasis
-  const expressions = node.expressions
+  const quasis = node.quasis.slice();
+  const expressions = node.expressions.slice();
 
   let result = ''
   let temEl: estree.TemplateElement
