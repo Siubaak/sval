@@ -70,7 +70,9 @@ function* hoistVarRecursion(statement: estree.Statement, scope: Scope): Iterable
       break
     case 'IfStatement':
       yield* hoistVarRecursion(statement.consequent, scope)
-      yield* hoistVarRecursion(statement.alternate, scope)
+      if (statement.alternate) {
+        yield* hoistVarRecursion(statement.alternate, scope)
+      }
       break
     case 'BlockStatement':
       for (let i = 0; i < statement.body.length; i++) {
