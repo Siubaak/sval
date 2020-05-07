@@ -55,12 +55,22 @@ function* hoistVarRecursion(statement: estree.Statement, scope: Scope): Iterable
     case 'VariableDeclaration':
       yield* VariableDeclaration(statement, scope, { hoist: true })
       break
-    case 'WhileStatement':
-    case 'DoWhileStatement':
-    case 'ForStatement':
     case 'ForInStatement':
     case 'ForOfStatement':
+      if (statement.left.type === 'VariableDeclaration') {
+        yield* VariableDeclaration(statement.left, scope, { hoist: true })
+      }
+    case 'ForStatement':
+      if (statement.type === 'ForStatement' && statement.init.type === 'VariableDeclaration') {
+        yield* VariableDeclaration(statement.init, scope, { hoist: true })
+      }
+    case 'WhileStatement':
+    case 'DoWhileStatement':
       yield* hoistVarRecursion(statement.body, scope)
+      break
+    case 'IfStatement':
+      yield* hoistVarRecursion(statement.consequent, scope)
+      yield* hoistVarRecursion(statement.alternate, scope)
       break
     case 'BlockStatement':
       for (let i = 0; i < statement.body.length; i++) {
