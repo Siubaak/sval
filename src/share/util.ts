@@ -152,7 +152,8 @@ if (globalObj.Symbol) {
   !globalObj.Symbol.iterator && (globalObj.Symbol.iterator = createSymbol('iterator'))
   !globalObj.Symbol.asyncIterator && (globalObj.Symbol.asyncIterator = createSymbol('asynciterator'))
 }
-const win = Object.create(null)
+export const WINDOW = createSymbol('window')
+const win = Object.create({ WINDOW: globalObj })
 for (let i = 0; i < names.length; i++) {
   const name = names[i]
   try { win[name] = globalObj[name] } catch (err) { /* empty */ }

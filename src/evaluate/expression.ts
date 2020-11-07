@@ -1,4 +1,4 @@
-import { define, freeze, getGetter, getSetter, createSymbol, assign, getDptor } from '../share/util'
+import { define, freeze, getGetter, getSetter, createSymbol, assign, getDptor, WINDOW } from '../share/util'
 import { SUPER, NOCTOR, AWAIT, CLSCTOR, NEWTARGET, SUPERCALL } from '../share/const'
 import { pattern, createFunc, createClass } from './helper'
 import { Variable, Prop } from '../scope/variable'
@@ -351,6 +351,11 @@ export function* CallExpression(node: estree.CallExpression, scope: Scope) {
     } else {
       scope.find(SUPERCALL).set(true)
     }
+  }
+
+  if (object && object[WINDOW] && func.toString().indexOf('[native code]') !== -1) {
+    // you will get "TypeError: Illegal invocation" if not binding native function with window
+    return func.apply(object[WINDOW], args)
   }
 
   return func.apply(object, args)
