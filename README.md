@@ -72,7 +72,7 @@ Sval constructor has options with two fields, **ecmaVer** and **sandBox**.
 
 - **sandBox** is true for sandbox mode or false for invasived mode. Sandbox mode will run code in an isolated sandbox and won't pollute your global scope. Invasived mode allows you run code in the same global scope of your current environment. The default setting is true.
 
-Sval instance has two methods, **import** and **run**.
+Sval instance has three methods, **import**, **parse** and **run**.
 
 - **import** is to import modules into your Sval instance scope, expecting a name and a module as arguments like `import(name: string, mod: any)`, or an object which contains the modules as argument like `import({ [name: string]: any })`. The modules will be automatically declared as global variables. This method is more likely to be used in sandbox mode.
 
