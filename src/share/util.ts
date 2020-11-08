@@ -43,7 +43,7 @@ export function getSetter(obj: any, key: string) {
   return getGetterOrSetter('set', obj, key)
 }
 
-const create = Object.create
+export const create = Object.create
 export function inherits(
   subClass: (...args: any[]) => any,
   superClass: (...args: any[]) => any,
@@ -72,7 +72,7 @@ export const assign = Object.assign ||  _assign
 
 declare let WebAssembly: any // Avoid typescript error
 let names: string[] = []
-export let globalObj = Object.create(null)
+export let globalObj = create(null)
 try {
   // Browser environment
   if (!(window as any).Object) throw 0
@@ -152,14 +152,14 @@ if (globalObj.Symbol) {
   !globalObj.Symbol.iterator && (globalObj.Symbol.iterator = createSymbol('iterator'))
   !globalObj.Symbol.asyncIterator && (globalObj.Symbol.asyncIterator = createSymbol('asynciterator'))
 }
-export const WINDOW = createSymbol('window')
-const win = Object.create({ WINDOW: globalObj })
+const win = create({})
 for (let i = 0; i < names.length; i++) {
   const name = names[i]
   try { win[name] = globalObj[name] } catch (err) { /* empty */ }
 }
+export const WINDOW = createSymbol('window')
 export function createSandBox() {
-  return assign(Object.create(null), win)
+  return assign(create({ [WINDOW]: globalObj }), win)
 }
 
 export function createSymbol(key: string) {

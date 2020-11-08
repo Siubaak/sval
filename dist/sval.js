@@ -84,7 +84,7 @@
   }
   var assign = Object.assign || _assign;
   var names = [];
-  var globalObj = Object.create(null);
+  var globalObj = create(null);
   try {
       if (!window.Object)
           throw 0;
@@ -344,7 +344,7 @@
       !globalObj.Symbol.iterator && (globalObj.Symbol.iterator = createSymbol('iterator'));
       !globalObj.Symbol.asyncIterator && (globalObj.Symbol.asyncIterator = createSymbol('asynciterator'));
   }
-  var win = Object.create(null);
+  var win = create({});
   for (var i = 0; i < names.length; i++) {
       var name_1 = names[i];
       try {
@@ -352,8 +352,10 @@
       }
       catch (err) { }
   }
+  var WINDOW = createSymbol('window');
   function createSandBox() {
-      return assign(Object.create(null), win);
+      var _a;
+      return assign(create((_a = {}, _a[WINDOW] = globalObj, _a)), win);
   }
   function createSymbol(key) {
       return key + Math.random().toString(36).substring(2);
@@ -382,7 +384,7 @@
       }
   }
 
-  var version = "0.4.7";
+  var version = "0.4.8";
 
   var AWAIT = { RES: undefined };
   var RETURN = { RES: undefined };
@@ -436,7 +438,7 @@
       function Scope(parent, isolated) {
           if (parent === void 0) { parent = null; }
           if (isolated === void 0) { isolated = false; }
-          this.context = Object.create(null);
+          this.context = create(null);
           this.parent = parent;
           this.isolated = isolated;
       }
@@ -1000,6 +1002,9 @@
               scope.find(SUPERCALL).set(true);
           }
       }
+      if (object && object[WINDOW] && func.toString().indexOf('[native code]') !== -1) {
+          return func.apply(object[WINDOW], args);
+      }
       return func.apply(object, args);
   }
   function NewExpression(node, scope) {
@@ -1048,8 +1053,8 @@
       return createFunc$1(node, scope);
   }
   function TemplateLiteral(node, scope) {
-      var quasis = node.quasis;
-      var expressions = node.expressions;
+      var quasis = node.quasis.slice();
+      var expressions = node.expressions.slice();
       var result = '';
       var temEl;
       var expr;
@@ -2187,6 +2192,9 @@
                           scope.find(SUPERCALL).set(true);
                       }
                   }
+                  if (object && object[WINDOW] && func.toString().indexOf('[native code]') !== -1) {
+                      return [2, func.apply(object[WINDOW], args)];
+                  }
                   return [2, func.apply(object, args)];
           }
       });
@@ -2275,8 +2283,8 @@
       return __generator(this, function (_c) {
           switch (_c.label) {
               case 0:
-                  quasis = node.quasis;
-                  expressions = node.expressions;
+                  quasis = node.quasis.slice();
+                  expressions = node.expressions.slice();
                   result = '';
                   _c.label = 1;
               case 1:
@@ -3393,100 +3401,122 @@
                   _a = statement.type;
                   switch (_a) {
                       case 'VariableDeclaration': return [3, 1];
-                      case 'WhileStatement': return [3, 3];
-                      case 'DoWhileStatement': return [3, 3];
-                      case 'ForStatement': return [3, 3];
                       case 'ForInStatement': return [3, 3];
                       case 'ForOfStatement': return [3, 3];
-                      case 'BlockStatement': return [3, 5];
-                      case 'SwitchStatement': return [3, 10];
-                      case 'TryStatement': return [3, 17];
+                      case 'ForStatement': return [3, 5];
+                      case 'WhileStatement': return [3, 7];
+                      case 'DoWhileStatement': return [3, 7];
+                      case 'IfStatement': return [3, 9];
+                      case 'BlockStatement': return [3, 13];
+                      case 'SwitchStatement': return [3, 18];
+                      case 'TryStatement': return [3, 25];
                   }
-                  return [3, 30];
+                  return [3, 38];
               case 1: return [5, __values(VariableDeclaration$1(statement, scope, { hoist: true }))];
               case 2:
                   _b.sent();
-                  return [3, 30];
-              case 3: return [5, __values(hoistVarRecursion(statement.body, scope))];
+                  return [3, 38];
+              case 3:
+                  if (!(statement.left.type === 'VariableDeclaration')) return [3, 5];
+                  return [5, __values(VariableDeclaration$1(statement.left, scope, { hoist: true }))];
               case 4:
                   _b.sent();
-                  return [3, 30];
+                  _b.label = 5;
               case 5:
-                  i = 0;
-                  _b.label = 6;
+                  if (!(statement.type === 'ForStatement' && statement.init.type === 'VariableDeclaration')) return [3, 7];
+                  return [5, __values(VariableDeclaration$1(statement.init, scope, { hoist: true }))];
               case 6:
-                  if (!(i < statement.body.length)) return [3, 9];
-                  return [5, __values(hoistVarRecursion(statement.body[i], scope))];
-              case 7:
                   _b.sent();
-                  _b.label = 8;
+                  _b.label = 7;
+              case 7: return [5, __values(hoistVarRecursion(statement.body, scope))];
               case 8:
-                  i++;
-                  return [3, 6];
-              case 9: return [3, 30];
-              case 10:
-                  i = 0;
-                  _b.label = 11;
-              case 11:
-                  if (!(i < statement.cases.length)) return [3, 16];
-                  j = 0;
-                  _b.label = 12;
-              case 12:
-                  if (!(j < statement.cases[i].consequent.length)) return [3, 15];
-                  return [5, __values(hoistVarRecursion(statement.cases[i].consequent[j], scope))];
-              case 13:
                   _b.sent();
+                  return [3, 38];
+              case 9: return [5, __values(hoistVarRecursion(statement.consequent, scope))];
+              case 10:
+                  _b.sent();
+                  if (!statement.alternate) return [3, 12];
+                  return [5, __values(hoistVarRecursion(statement.alternate, scope))];
+              case 11:
+                  _b.sent();
+                  _b.label = 12;
+              case 12: return [3, 38];
+              case 13:
+                  i = 0;
                   _b.label = 14;
               case 14:
-                  j++;
-                  return [3, 12];
+                  if (!(i < statement.body.length)) return [3, 17];
+                  return [5, __values(hoistVarRecursion(statement.body[i], scope))];
               case 15:
-                  i++;
-                  return [3, 11];
-              case 16: return [3, 30];
-              case 17:
-                  tryBlock = statement.block.body;
-                  i = 0;
-                  _b.label = 18;
-              case 18:
-                  if (!(i < tryBlock.length)) return [3, 21];
-                  return [5, __values(hoistVarRecursion(tryBlock[i], scope))];
-              case 19:
                   _b.sent();
+                  _b.label = 16;
+              case 16:
+                  i++;
+                  return [3, 14];
+              case 17: return [3, 38];
+              case 18:
+                  i = 0;
+                  _b.label = 19;
+              case 19:
+                  if (!(i < statement.cases.length)) return [3, 24];
+                  j = 0;
                   _b.label = 20;
               case 20:
-                  i++;
-                  return [3, 18];
+                  if (!(j < statement.cases[i].consequent.length)) return [3, 23];
+                  return [5, __values(hoistVarRecursion(statement.cases[i].consequent[j], scope))];
               case 21:
-                  catchBlock = statement.handler && statement.handler.body.body;
-                  if (!catchBlock) return [3, 25];
-                  i = 0;
+                  _b.sent();
                   _b.label = 22;
               case 22:
-                  if (!(i < catchBlock.length)) return [3, 25];
-                  return [5, __values(hoistVarRecursion(catchBlock[i], scope))];
+                  j++;
+                  return [3, 20];
               case 23:
-                  _b.sent();
-                  _b.label = 24;
-              case 24:
                   i++;
-                  return [3, 22];
+                  return [3, 19];
+              case 24: return [3, 38];
               case 25:
-                  finalBlock = statement.finalizer && statement.finalizer.body;
-                  if (!finalBlock) return [3, 29];
+                  tryBlock = statement.block.body;
                   i = 0;
                   _b.label = 26;
               case 26:
-                  if (!(i < finalBlock.length)) return [3, 29];
-                  return [5, __values(hoistVarRecursion(finalBlock[i], scope))];
+                  if (!(i < tryBlock.length)) return [3, 29];
+                  return [5, __values(hoistVarRecursion(tryBlock[i], scope))];
               case 27:
                   _b.sent();
                   _b.label = 28;
               case 28:
                   i++;
                   return [3, 26];
-              case 29: return [3, 30];
-              case 30: return [2];
+              case 29:
+                  catchBlock = statement.handler && statement.handler.body.body;
+                  if (!catchBlock) return [3, 33];
+                  i = 0;
+                  _b.label = 30;
+              case 30:
+                  if (!(i < catchBlock.length)) return [3, 33];
+                  return [5, __values(hoistVarRecursion(catchBlock[i], scope))];
+              case 31:
+                  _b.sent();
+                  _b.label = 32;
+              case 32:
+                  i++;
+                  return [3, 30];
+              case 33:
+                  finalBlock = statement.finalizer && statement.finalizer.body;
+                  if (!finalBlock) return [3, 37];
+                  i = 0;
+                  _b.label = 34;
+              case 34:
+                  if (!(i < finalBlock.length)) return [3, 37];
+                  return [5, __values(hoistVarRecursion(finalBlock[i], scope))];
+              case 35:
+                  _b.sent();
+                  _b.label = 36;
+              case 36:
+                  i++;
+                  return [3, 34];
+              case 37: return [3, 38];
+              case 38: return [2];
           }
       });
   }
@@ -3744,12 +3774,24 @@
           case 'VariableDeclaration':
               VariableDeclaration(statement, scope, { hoist: true });
               break;
-          case 'WhileStatement':
-          case 'DoWhileStatement':
-          case 'ForStatement':
           case 'ForInStatement':
           case 'ForOfStatement':
+              if (statement.left.type === 'VariableDeclaration') {
+                  VariableDeclaration(statement.left, scope, { hoist: true });
+              }
+          case 'ForStatement':
+              if (statement.type === 'ForStatement' && statement.init.type === 'VariableDeclaration') {
+                  VariableDeclaration(statement.init, scope, { hoist: true });
+              }
+          case 'WhileStatement':
+          case 'DoWhileStatement':
               hoistVarRecursion$1(statement.body, scope);
+              break;
+          case 'IfStatement':
+              hoistVarRecursion$1(statement.consequent, scope);
+              if (statement.alternate) {
+                  hoistVarRecursion$1(statement.alternate, scope);
+              }
               break;
           case 'BlockStatement':
               for (var i = 0; i < statement.body.length; i++) {

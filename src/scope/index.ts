@@ -1,6 +1,6 @@
 import { NOINIT, DEADZONE } from '../share/const'
 import { Variable, Var, Prop } from './variable'
-import { define } from '../share/util'
+import { create, define } from '../share/util'
 
 /**
  * Scope simulation class
@@ -25,7 +25,7 @@ export default class Scope {
    * @private
    * @readonly
    */
-  private readonly context: { [key: string]: Var } = Object.create(null)
+  private readonly context: { [key: string]: Var } = create(null)
 
   /**
    * Create a simulated scope

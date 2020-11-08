@@ -84,7 +84,7 @@
   }
   const assign = Object.assign || _assign;
   let names = [];
-  let globalObj = Object.create(null);
+  let globalObj = create(null);
   try {
       if (!window.Object)
           throw 0;
@@ -344,7 +344,7 @@
       !globalObj.Symbol.iterator && (globalObj.Symbol.iterator = createSymbol('iterator'));
       !globalObj.Symbol.asyncIterator && (globalObj.Symbol.asyncIterator = createSymbol('asynciterator'));
   }
-  const win = Object.create(null);
+  const win = create({});
   for (let i = 0; i < names.length; i++) {
       const name = names[i];
       try {
@@ -352,8 +352,9 @@
       }
       catch (err) { }
   }
+  const WINDOW = createSymbol('window');
   function createSandBox() {
-      return assign(Object.create(null), win);
+      return assign(create({ [WINDOW]: globalObj }), win);
   }
   function createSymbol(key) {
       return key + Math.random().toString(36).substring(2);
@@ -382,7 +383,7 @@
       }
   }
 
-  var version = "0.4.7";
+  var version = "0.4.8";
 
   const AWAIT = { RES: undefined };
   const RETURN = { RES: undefined };
@@ -432,7 +433,7 @@
 
   class Scope {
       constructor(parent = null, isolated = false) {
-          this.context = Object.create(null);
+          this.context = create(null);
           this.parent = parent;
           this.isolated = isolated;
       }
@@ -916,6 +917,9 @@
               scope.find(SUPERCALL).set(true);
           }
       }
+      if (object && object[WINDOW] && func.toString().indexOf('[native code]') !== -1) {
+          return func.apply(object[WINDOW], args);
+      }
       return func.apply(object, args);
   }
   function NewExpression(node, scope) {
@@ -964,8 +968,8 @@
       return createFunc$1(node, scope);
   }
   function TemplateLiteral(node, scope) {
-      const quasis = node.quasis;
-      const expressions = node.expressions;
+      const quasis = node.quasis.slice();
+      const expressions = node.expressions.slice();
       let result = '';
       let temEl;
       let expr;
@@ -1913,6 +1917,9 @@
               scope.find(SUPERCALL).set(true);
           }
       }
+      if (object && object[WINDOW] && func.toString().indexOf('[native code]') !== -1) {
+          return func.apply(object[WINDOW], args);
+      }
       return func.apply(object, args);
   }
   function* NewExpression$1(node, scope) {
@@ -1961,8 +1968,8 @@
       return createFunc(node, scope);
   }
   function* TemplateLiteral$1(node, scope) {
-      const quasis = node.quasis;
-      const expressions = node.expressions;
+      const quasis = node.quasis.slice();
+      const expressions = node.expressions.slice();
       let result = '';
       let temEl;
       let expr;
@@ -2610,12 +2617,24 @@
           case 'VariableDeclaration':
               yield* VariableDeclaration$1(statement, scope, { hoist: true });
               break;
-          case 'WhileStatement':
-          case 'DoWhileStatement':
-          case 'ForStatement':
           case 'ForInStatement':
           case 'ForOfStatement':
+              if (statement.left.type === 'VariableDeclaration') {
+                  yield* VariableDeclaration$1(statement.left, scope, { hoist: true });
+              }
+          case 'ForStatement':
+              if (statement.type === 'ForStatement' && statement.init.type === 'VariableDeclaration') {
+                  yield* VariableDeclaration$1(statement.init, scope, { hoist: true });
+              }
+          case 'WhileStatement':
+          case 'DoWhileStatement':
               yield* hoistVarRecursion(statement.body, scope);
+              break;
+          case 'IfStatement':
+              yield* hoistVarRecursion(statement.consequent, scope);
+              if (statement.alternate) {
+                  yield* hoistVarRecursion(statement.alternate, scope);
+              }
               break;
           case 'BlockStatement':
               for (let i = 0; i < statement.body.length; i++) {
@@ -2837,12 +2856,24 @@
           case 'VariableDeclaration':
               VariableDeclaration(statement, scope, { hoist: true });
               break;
-          case 'WhileStatement':
-          case 'DoWhileStatement':
-          case 'ForStatement':
           case 'ForInStatement':
           case 'ForOfStatement':
+              if (statement.left.type === 'VariableDeclaration') {
+                  VariableDeclaration(statement.left, scope, { hoist: true });
+              }
+          case 'ForStatement':
+              if (statement.type === 'ForStatement' && statement.init.type === 'VariableDeclaration') {
+                  VariableDeclaration(statement.init, scope, { hoist: true });
+              }
+          case 'WhileStatement':
+          case 'DoWhileStatement':
               hoistVarRecursion$1(statement.body, scope);
+              break;
+          case 'IfStatement':
+              hoistVarRecursion$1(statement.consequent, scope);
+              if (statement.alternate) {
+                  hoistVarRecursion$1(statement.alternate, scope);
+              }
               break;
           case 'BlockStatement':
               for (let i = 0; i < statement.body.length; i++) {
