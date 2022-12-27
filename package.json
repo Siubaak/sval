@@ -3,8 +3,8 @@
   "version": "0.4.8",
   "description": "A javascript interpreter written in javascript",
   "type": "module",
-  "main": "dist/sval.cjs",
-  "module": "dist/sval.esm.js",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "watch": "tsc --watch",
