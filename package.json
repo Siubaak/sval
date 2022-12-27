@@ -7,7 +7,7 @@
   "unpkg": "dist/sval.min.js",
   "types": "types/index.d.ts",
   "scripts": {
-    "build": "npm test && rollup -c && npm run post",
+    "build": "rollup -c && npm run post",
     "start": "node scripts && rollup -c && npm run post",
     "post": "mv types/src/index.d.ts types && rm -rf types/src",
     "test": "node scripts && umi-test --coverage"
