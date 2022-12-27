@@ -1,9 +1,9 @@
 import typescript from 'rollup-plugin-typescript2'
 /*
-import resolve from 'rollup-plugin-node-resolve'
+import resolve from '@rollup-plugin/node-resolve'
 import { uglify } from 'rollup-plugin-uglify'
 */
-import json from 'rollup-plugin-json'
+import json from '@rollup-plugin/json'
 
 export default [
   {
