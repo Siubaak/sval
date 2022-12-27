@@ -7,6 +7,7 @@
     "removeComments": true,
     "resolveJsonModule": true,
     "downlevelIteration": true,
+    "moduleResolution": "node",
     "declarationDir": "types"
   },
   "include": [
