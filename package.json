@@ -7,6 +7,7 @@
   "module": "dist/sval.mjs",
   "types": "types/index.d.ts",
   "scripts": {
+    "watch": "tsc --watch",
     "build": "rollup -c && npm run post",
     "start": "node scripts && rollup -c && npm run post",
     "post": "mv types/src/index.d.ts types && rm -rf types/src",
