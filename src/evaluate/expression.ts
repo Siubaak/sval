@@ -37,7 +37,7 @@ export function* ObjectExpression(node: estree.ObjectExpression, scope: Scope) {
     const property = node.properties[i]
     if (property.type as any === 'SpreadElement') {
       assign(object, yield* SpreadElement(property as any, scope))
-    } else {
+    } else if (property.type === 'Property') {
       let key: string
       const propKey = property.key
       if (property.computed) {
@@ -487,12 +487,12 @@ export function* SpreadElement(node: estree.SpreadElement, scope: Scope) {
 }
 
 /*<remove>*/
-export function* YieldExpression(node: estree.YieldExpression, scope: Scope) {
+export function* YieldExpression(node: estree.YieldExpression, scope: Scope): any {
   const res = yield* evaluate(node.argument, scope)
   return node.delegate ? yield* res : yield res
 }
 
-export function* AwaitExpression(node: estree.AwaitExpression, scope: Scope) {
+export function* AwaitExpression(node: estree.AwaitExpression, scope: Scope): any {
   AWAIT.RES = yield* evaluate(node.argument, scope)
   return yield AWAIT
 }

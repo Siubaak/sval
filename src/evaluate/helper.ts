@@ -250,7 +250,7 @@ export function* createClass(
   const methodBody = node.body.body
   for (let i = 0; i < methodBody.length; i++) {
     const method = methodBody[i]
-    if (method.kind === 'constructor') {
+    if (method.type === 'MethodDefinition' && method.kind === 'constructor') {
       klass = createFunc(method.value, scope, { superClass, isCtor: true })
       break
     }
