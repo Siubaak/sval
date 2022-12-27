@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
-    "target": "es5",
-    "lib": ["dom", "es6"],
+    "target": "esnext",
+    "lib": ["dom", "esnext"],
     "declaration": true,
     "noImplicitAny": true,
     "removeComments": true,

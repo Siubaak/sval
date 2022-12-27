@@ -2,9 +2,8 @@
   "name": "sval",
   "version": "0.4.8",
   "description": "A javascript interpreter written in javascript",
-  "main": "dist/sval.js",
-  "module": "dist/sval.js",
-  "unpkg": "dist/sval.min.js",
+  "main": "dist/sval.cjs",
+  "module": "dist/sval.mjs",
   "types": "types/index.d.ts",
   "scripts": {
     "build": "rollup -c && npm run post",
