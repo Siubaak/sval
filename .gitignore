@@ -33,7 +33,7 @@ bower_components
 .lock-wscript
 
 # vscode configuration
-.vscode
+#.vscode
 
 # Compiled binary addons (https://nodejs.org/api/addons.html)
 build/Release
