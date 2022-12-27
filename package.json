@@ -4,12 +4,13 @@
   "description": "A javascript interpreter written in javascript",
   "type": "module",
   "main": "dist/sval.cjs",
-  "module": "dist/sval.mjs",
+  "module": "dist/sval.esm.js",
   "types": "types/index.d.ts",
   "scripts": {
     "watch": "tsc --watch",
-    "build": "rollup -c && npm run post",
-    "start": "node scripts && rollup -c && npm run post",
+    "prepare": "vite build && npm run post",
+    "build": "vite build && npm run post",
+    "start": "node scripts && vite build && npm run post",
     "post": "mv types/src/index.d.ts types && rm -rf types/src",
     "test": "node scripts && umi-test --coverage"
   },
@@ -34,15 +35,11 @@
     "acorn": "^8.8.1"
   },
   "devDependencies": {
-    "@rollup/plugin-json": "^6.0.0",
-    "@rollup/plugin-node-resolve": "^15.0.1",
     "@types/estree": "1.0.0",
     "@types/jest": "^29.2.4",
-    "rollup": "^3.8.1",
-    "rollup-plugin-typescript2": "^0.34.1",
-    "rollup-plugin-uglify": "^6.0.4",
     "tslib": "^2.4.1",
     "typescript": "^4.9.4",
-    "umi-test": "^1.9.7"
+    "umi-test": "^1.9.7",
+    "vite": "^4.0.3"
   }
 }
