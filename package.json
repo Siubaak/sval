@@ -2,6 +2,7 @@
   "name": "sval",
   "version": "0.4.8",
   "description": "A javascript interpreter written in javascript",
+  "type": "module",
   "main": "dist/sval.cjs",
   "module": "dist/sval.mjs",
   "types": "types/index.d.ts",
