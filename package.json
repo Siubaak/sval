@@ -41,6 +41,7 @@
     "rollup-plugin-node-resolve": "^4.2.4",
     "rollup-plugin-typescript2": "^0.21.2",
     "rollup-plugin-uglify": "^6.0.4",
+    "tslib": "^2.4.1",
     "typescript": "^3.8.3",
     "umi-test": "^1.9.6"
   }
