@@ -15,7 +15,9 @@ export interface SvalOptions {
 class Sval {
   static version: string = version
 
-  private options: Options = {}
+  private options: Options = {
+    ecmaVersion: 2019,
+  }
   private scope = new Scope(null, true)
 
   exports: { [name: string]: any } = {}
@@ -59,7 +61,7 @@ class Sval {
     }
   }
 
-  parse(code: string, parser?: (code: string, options: SvalOptions) => Node) {
+  parse(code: string, parser?: (code: string, options: Options) => Node) {
     if (typeof parser === 'function') {
       return parser(code, assign({}, this.options))
     }

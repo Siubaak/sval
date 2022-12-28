@@ -20,7 +20,7 @@ export interface hoistOptions {
   onlyBlock?: boolean
 }
 
-export function* hoist(
+export function hoist(
   block: estree.Program | estree.BlockStatement,
   scope: Scope,
   options: hoistOptions = {}
@@ -37,9 +37,9 @@ export function* hoist(
       statement.type === 'VariableDeclaration'
       && ['const', 'let'].indexOf(statement.kind) !== -1
     ) {
-      yield* VariableDeclaration(statement, scope, { hoist: true, onlyBlock: true })
+      VariableDeclaration(statement, scope, { hoist: true, onlyBlock: true })
     } else if (!onlyBlock) {
-      yield* hoistVarRecursion(statement as estree.Statement, scope)
+      hoistVarRecursion(statement as estree.Statement, scope)
     }
   }
   if (funcDclrIdxs.length) {
@@ -50,57 +50,57 @@ export function* hoist(
   }
 }
 
-function* hoistVarRecursion(statement: estree.Statement, scope: Scope): IterableIterator<any> {
+function hoistVarRecursion(statement: estree.Statement, scope: Scope): any {
   switch (statement.type) {
     case 'VariableDeclaration':
-      yield* VariableDeclaration(statement, scope, { hoist: true })
+      VariableDeclaration(statement, scope, { hoist: true })
       break
     case 'ForInStatement':
     case 'ForOfStatement':
       if (statement.left.type === 'VariableDeclaration') {
-        yield* VariableDeclaration(statement.left, scope, { hoist: true })
+        VariableDeclaration(statement.left, scope, { hoist: true })
       }
     case 'ForStatement':
       if (statement.type === 'ForStatement' && statement.init.type === 'VariableDeclaration') {
-        yield* VariableDeclaration(statement.init, scope, { hoist: true })
+        VariableDeclaration(statement.init, scope, { hoist: true })
       }
     case 'WhileStatement':
     case 'DoWhileStatement':
-      yield* hoistVarRecursion(statement.body, scope)
+      hoistVarRecursion(statement.body, scope)
       break
     case 'IfStatement':
-      yield* hoistVarRecursion(statement.consequent, scope)
+      hoistVarRecursion(statement.consequent, scope)
       if (statement.alternate) {
-        yield* hoistVarRecursion(statement.alternate, scope)
+        hoistVarRecursion(statement.alternate, scope)
       }
       break
     case 'BlockStatement':
       for (let i = 0; i < statement.body.length; i++) {
-        yield* hoistVarRecursion(statement.body[i], scope)
+        hoistVarRecursion(statement.body[i], scope)
       }
       break
     case 'SwitchStatement':
       for (let i = 0; i < statement.cases.length; i++) {
         for (let j = 0; j < statement.cases[i].consequent.length; j++) {
-          yield* hoistVarRecursion(statement.cases[i].consequent[j], scope)
+          hoistVarRecursion(statement.cases[i].consequent[j], scope)
         }
       }
       break
     case 'TryStatement': {
       const tryBlock = statement.block.body
       for (let i = 0; i < tryBlock.length; i++) {
-        yield* hoistVarRecursion(tryBlock[i], scope)
+        hoistVarRecursion(tryBlock[i], scope)
       }
       const catchBlock = statement.handler && statement.handler.body.body
       if (catchBlock) {
         for (let i = 0; i < catchBlock.length; i++) {
-          yield* hoistVarRecursion(catchBlock[i], scope)
+          hoistVarRecursion(catchBlock[i], scope)
         }
       }
       const finalBlock = statement.finalizer && statement.finalizer.body
       if (finalBlock) {
         for (let i = 0; i < finalBlock.length; i++) {
-          yield* hoistVarRecursion(finalBlock[i], scope)
+          hoistVarRecursion(finalBlock[i], scope)
         }
       }
       break
@@ -108,16 +108,16 @@ function* hoistVarRecursion(statement: estree.Statement, scope: Scope): Iterable
   }
 }
 
-export function* pattern(node: estree.Pattern, scope: Scope, options: PatternOptions = {}): IterableIterator<any> {
+export function pattern(node: estree.Pattern, scope: Scope, options: PatternOptions = {}): any {
   switch (node.type) {
     case 'ObjectPattern':
-      return yield* ObjectPattern(node, scope, options)
+      return ObjectPattern(node, scope, options)
     case 'ArrayPattern':
-      return yield* ArrayPattern(node, scope, options)
+      return ArrayPattern(node, scope, options)
     case 'RestElement':
-      return yield* RestElement(node, scope, options)
+      return RestElement(node, scope, options)
     case 'AssignmentPattern':
-      return yield* AssignmentPattern(node, scope, options)
+      return AssignmentPattern(node, scope, options)
     default:
       throw new SyntaxError('Unexpected token')
   }
@@ -128,19 +128,19 @@ export interface CtorOptions {
   isCtor?: boolean
 }
 
-import { createFunc as createAnotherFunc } from /*<replace by:='../evaluate/helper'>*/'../evaluate_n/helper'/*</replace>*/
+import { createFunc as createAnotherFunc } from '../evaluate/helper'
 export function createFunc(
   node: estree.FunctionDeclaration | estree.FunctionExpression | estree.ArrowFunctionExpression,
   scope: Scope,
   options: CtorOptions = {}
 ): any {
-  if (/*<replace by:=node.generator\s||\snode.async>*/!node.generator && !node.async/*</replace>*/) {
+  if (node.generator || node.async) {
     return createAnotherFunc(node, scope, options)
   }
 
   const { superClass, isCtor } = options
   const params = node.params
-  const tmpFunc = function* (...args: any[]) {
+  const tmpFunc = function (...args: any[]) {
     const subScope: Scope = new Scope(scope, true)
     if (node.type !== 'ArrowFunctionExpression') {
       subScope.const('this', this)
@@ -157,21 +157,21 @@ export function createFunc(
       if (param.type === 'Identifier') {
         subScope.var(param.name, args[i])
       } else if (param.type === 'RestElement') {
-        yield* RestElement(param, subScope, { kind: 'var', feed: args.slice(i) })
+        RestElement(param, subScope, { kind: 'var', feed: args.slice(i) })
       } else {
-        yield* pattern(param, subScope, { feed: args[i] })
+        pattern(param, subScope, { feed: args[i] })
       }
     }
 
     let result: any
     if (node.body.type === 'BlockStatement') {
-      yield* hoist(node.body, subScope)
-      result = yield* BlockStatement(node.body, subScope, {
+      hoist(node.body, subScope)
+      result = BlockStatement(node.body, subScope, {
         invasived: true,
         hoisted: true
       })
     } else {
-      result = yield* evaluate(node.body, subScope)
+      result = evaluate(node.body, subScope)
       if (node.type === 'ArrowFunctionExpression') {
         RETURN.RES = result
         result = RETURN
@@ -183,44 +183,13 @@ export function createFunc(
     }
   }
 
-  let func: any /*<add>*//*= tmpFunc*//*</add>*/
-  /*<remove>*/
-  if (node.async && node.generator) {
-    func = function (): AsyncIterator<any> {
-      const iterator = tmpFunc.apply(this, arguments)
-      let last: Promise<any> = Promise.resolve()
-      let hasCatch = false
-      const run = (opts: runAsyncOptions) =>
-        last = last
-          .then(() => runAsync(iterator, assign({ fullRet: true }, opts)))
-          .catch(err => {
-            if (!hasCatch) {
-              hasCatch = true
-              return Promise.reject(err)
-            }
-          })
-      const asyncIterator: AsyncIterator<any> = {
-        next: (res?: any) => run({ res }),
-        throw: (err?: any) => run({ err }),
-        return: (ret?: any) => run({ ret })
-      }
-      if (typeof Symbol === 'function') {
-        (asyncIterator as any)[Symbol.iterator] = function () { return this }
-      }
-      return asyncIterator
-    }
-  } else if (node.async) {
-    func = function () { return runAsync(tmpFunc.apply(this, arguments)) }
-  } else {
-    func = tmpFunc
-  }
-  define(func, NOCTOR, { value: true })
-  /*</remove>*/
-  /*<add>*//*
+  let func: any = tmpFunc
+  
+  
   if (node.type === 'ArrowFunctionExpression') {
     define(func, NOCTOR, { value: true })
   }
-  *//*</add>*/
+  
 
   define(func, 'name', {
     value: (node as estree.FunctionDeclaration).id
@@ -236,11 +205,11 @@ export function createFunc(
   return func
 }
 
-export function* createClass(
+export function createClass(
   node: estree.ClassDeclaration | estree.ClassExpression,
   scope: Scope,
 ) {
-  const superClass = yield* evaluate(node.superClass, scope)
+  const superClass = evaluate(node.superClass, scope)
 
   let klass = function () {
     if (superClass) {
@@ -260,7 +229,7 @@ export function* createClass(
     inherits(klass, superClass)
   }
 
-  yield* ClassBody(node.body, scope, { klass, superClass })
+  ClassBody(node.body, scope, { klass, superClass })
 
   define(klass, CLSCTOR, { value: true })
   define(klass, 'name', {
@@ -275,7 +244,7 @@ export interface ForXHandlerOptions {
   value: any
 }
 
-export function* ForXHandler(
+export function ForXHandler(
   node: estree.ForInStatement | estree.ForOfStatement,
   scope: Scope,
   options: ForXHandlerOptions
@@ -285,19 +254,19 @@ export function* ForXHandler(
 
   const subScope = new Scope(scope)
   if (left.type === 'VariableDeclaration') {
-    yield* VariableDeclaration(left, subScope, { feed: value })
+    VariableDeclaration(left, subScope, { feed: value })
   } else if (left.type === 'Identifier') {
-    const variable = yield* Identifier(left, scope, { getVar: true })
+    const variable = Identifier(left, scope, { getVar: true })
     variable.set(value)
   } else {
-    yield* pattern(left, scope, { feed: value })
+    pattern(left, scope, { feed: value })
   }
 
   let result: any
   if (node.body.type === 'BlockStatement') {
-    result = yield* BlockStatement(node.body, subScope, { invasived: true })
+    result = BlockStatement(node.body, subScope, { invasived: true })
   } else {
-    result = yield* evaluate(node.body, subScope)
+    result = evaluate(node.body, subScope)
   }
   return result
 }

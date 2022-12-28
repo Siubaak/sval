@@ -6,10 +6,10 @@ import * as estree from 'estree'
 import Scope from '../scope'
 import evaluate from '.'
 
-export function* FunctionDeclaration(
+export function FunctionDeclaration(
   node: estree.FunctionDeclaration,
   scope: Scope
-): IterableIterator<any> {
+): any {
   scope.func(node.id.name, createFunc(node, scope))
 }
 
@@ -19,13 +19,13 @@ export interface VariableDeclarationOptions {
   feed?: any
 }
 
-export function* VariableDeclaration(
+export function VariableDeclaration(
   node: estree.VariableDeclaration,
   scope: Scope,
   options: VariableDeclarationOptions = {},
 ) {
   for (let i = 0; i < node.declarations.length; i++) {
-    yield* VariableDeclarator(node.declarations[i], scope, assign({ kind: node.kind }, options))
+    VariableDeclarator(node.declarations[i], scope, assign({ kind: node.kind }, options))
   }
 }
 
@@ -33,7 +33,7 @@ export interface VariableDeclaratorOptions {
   kind?: VarKind
 }
 
-export function* VariableDeclarator(
+export function VariableDeclarator(
   node: estree.VariableDeclarator,
   scope: Scope,
   options: VariableDeclaratorOptions & VariableDeclarationOptions = {},
@@ -44,12 +44,12 @@ export function* VariableDeclarator(
       if (node.id.type === 'Identifier') {
         scope[kind](node.id.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined)
       } else {
-        yield* pattern(node.id, scope, { kind, hoist, onlyBlock })
+        pattern(node.id, scope, { kind, hoist, onlyBlock })
       }
     }
   } else {
     const hasFeed = 'feed' in options
-    const value = hasFeed ? feed : yield* evaluate(node.init, scope)
+    const value = hasFeed ? feed : evaluate(node.init, scope)
     if (node.id.type === 'Identifier') {
       const name = node.id.name
       if (kind === 'var' && !node.init && !hasFeed) {
@@ -69,16 +69,16 @@ export function* VariableDeclarator(
         })
       }
     } else {
-      yield* pattern(node.id, scope, { kind, feed: value })
+      pattern(node.id, scope, { kind, feed: value })
     }
   }
 }
 
-export function* ClassDeclaration(
+export function ClassDeclaration(
   node: estree.ClassDeclaration,
   scope: Scope
-): IterableIterator<any> {
-  scope.func(node.id.name, yield* createClass(node, scope))
+): any {
+  scope.func(node.id.name, createClass(node, scope))
 }
 
 export interface ClassOptions {
@@ -86,24 +86,24 @@ export interface ClassOptions {
   superClass?: (...args: any[]) => void
 }
 
-export function* ClassBody(node: estree.ClassBody, scope: Scope, options: ClassOptions = {}) {
+export function ClassBody(node: estree.ClassBody, scope: Scope, options: ClassOptions = {}) {
   const { klass, superClass } = options
 
   for (let i = 0; i < node.body.length; i++) {
     const n = node.body[i]
     if (n.type === 'MethodDefinition') {
-      yield* MethodDefinition(n, scope, { klass, superClass })
+      MethodDefinition(n, scope, { klass, superClass })
     }
     // TODO PropertyDefinition, StaticBlock
   }
 }
 
-export function* MethodDefinition(node: estree.MethodDefinition, scope: Scope, options: ClassOptions = {}) {
+export function MethodDefinition(node: estree.MethodDefinition, scope: Scope, options: ClassOptions = {}) {
   const { klass, superClass } = options
 
   let key: string
   if (node.computed) {
-    key = yield* evaluate(node.key, scope)
+    key = evaluate(node.key, scope)
   } else if (node.key.type === 'Identifier') {
     key = node.key.name
   } else {

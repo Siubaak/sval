@@ -204,7 +204,7 @@ export function* ForInStatement(node: estree.ForInStatement, scope: Scope) {
   }
 }
 
-export function* ForOfStatement(node: estree.ForOfStatement, scope: Scope) {
+export function* ForOfStatement(node: estree.ForOfStatement, scope: Scope): any {
   const right = yield* evaluate(node.right, scope)
   /*<remove>*/
   if ((node as any).await) {

@@ -2,14 +2,13 @@
   "name": "sval",
   "version": "0.4.8",
   "description": "A javascript interpreter written in javascript",
-  "main": "dist/sval.js",
-  "module": "dist/sval.js",
-  "unpkg": "dist/sval.min.js",
-  "types": "types/index.d.ts",
+  "type": "module",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "build": "npm test && rollup -c && npm run post",
-    "start": "node scripts && rollup -c && npm run post",
-    "post": "mv types/src/index.d.ts types && rm -rf types/src",
+    "watch": "tsc --watch",
+    "build": "tsup src/index.ts --format cjs,esm --dts",
     "test": "node scripts && umi-test --coverage"
   },
   "repository": {
@@ -30,18 +29,13 @@
   },
   "homepage": "https://github.com/Siubaak/sval#readme",
   "dependencies": {
-    "acorn": "^6.4.1"
+    "acorn": "^8.8.1"
   },
   "devDependencies": {
-    "@types/acorn": "^4.0.5",
-    "@types/estree": "0.0.39",
-    "@types/jest": "^24.9.1",
-    "rollup": "^1.32.1",
-    "rollup-plugin-json": "^3.1.0",
-    "rollup-plugin-node-resolve": "^4.2.4",
-    "rollup-plugin-typescript2": "^0.21.2",
-    "rollup-plugin-uglify": "^6.0.4",
-    "typescript": "^3.8.3",
-    "umi-test": "^1.9.6"
+    "@types/estree": "1.0.0",
+    "@types/jest": "^29.2.4",
+    "tsup": "^6.5.0",
+    "typescript": "^4.9.4",
+    "umi-test": "^1.9.7"
   }
 }

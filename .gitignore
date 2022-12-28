@@ -1,5 +1,5 @@
 # Useless directories
-/src/evaluate_n
+#/src/evaluate_n
 
 # Logs
 logs
@@ -33,7 +33,7 @@ bower_components
 .lock-wscript
 
 # vscode configuration
-.vscode
+#.vscode
 
 # Compiled binary addons (https://nodejs.org/api/addons.html)
 build/Release
@@ -68,3 +68,5 @@ typings/
 
 # next.js build output
 .next
+types/src/
+#dist/
