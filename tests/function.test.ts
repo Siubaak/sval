@@ -306,5 +306,14 @@ describe('testing src/index.ts', () => {
     }
     expect(error).toBeInstanceOf(TypeError)
   })
-
+  // https://github.com/Siubaak/sval/issues/94
+  it('should accept function destructured parameters', () => {  
+    const interpreter = new Sval()
+    interpreter.import({ expect })
+    interpreter.run(`
+    expect((([a, b, c]) => a + b + c)([1, 2, 3])).toEqual(6)
+    expect((([a, [b, { c }]]) => a + b + c)([1, [2, { c: 3 }]])).toEqual(6)
+    expect((({ b, c: [, e] }) => b + e)({ a: 1, b: 2, c: [3, 4] })).toEqual(6)
+    `)
+  })
 })

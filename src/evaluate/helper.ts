@@ -159,7 +159,7 @@ export function createFunc(
       } else if (param.type === 'RestElement') {
         yield* RestElement(param, subScope, { kind: 'var', feed: args.slice(i) })
       } else {
-        yield* pattern(param, subScope, { feed: args[i] })
+        yield* pattern(param, subScope, { kind: 'var', feed: args[i] })
       }
     }
 
