@@ -82,7 +82,7 @@ export function* ClassDeclaration(
 }
 
 export interface ClassOptions {
-  klass?: (...args: any[]) => void,
+  klass?: any,
   superClass?: (...args: any[]) => void
 }
 
@@ -93,6 +93,8 @@ export function* ClassBody(node: acorn.ClassBody, scope: Scope, options: ClassOp
     const def = node.body[i]
     if (def.type === 'MethodDefinition') {
       yield* MethodDefinition(def, scope, { klass, superClass })
+    } else if (def.type === 'PropertyDefinition' && def.static) {
+      yield* PropertyDefinition(def, scope, { klass, superClass })
     } else if (def.type === 'StaticBlock') {
       yield* StaticBlock(def, scope, { klass, superClass })
     }
@@ -149,12 +151,8 @@ export function* MethodDefinition(node: acorn.MethodDefinition, scope: Scope, op
   } 
 }
 
-export interface PropDefOptions {
-  object: any
-}
-
-export function* PropertyDefinition(node: acorn.PropertyDefinition, scope: Scope, options: PropDefOptions & ClassOptions) {
-  const { klass, superClass, object } = options
+export function* PropertyDefinition(node: acorn.PropertyDefinition, scope: Scope, options: ClassOptions = {}) {
+  const { klass, superClass } = options
 
   let key: string
   if (node.computed) {
@@ -167,11 +165,10 @@ export function* PropertyDefinition(node: acorn.PropertyDefinition, scope: Scope
     throw new SyntaxError('Unexpected token')
   }
 
-  const obj = node.static ? klass : object
   if (node.value.type === 'FunctionExpression' || node.value.type === 'ArrowFunctionExpression') {
-    obj[key] = createFunc(node.value, scope, { superClass, propDef: true })
+    klass[key] = createFunc(node.value, scope, { superClass, propDef: true })
   } else {
-    obj[key] = yield* evaluate(node.value, scope)
+    klass[key] = yield* evaluate(node.value, scope)
   }
 }
 

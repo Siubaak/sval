@@ -250,8 +250,8 @@ export function* createClass(
   const construct = function* (object: any) {
     for (let i = 0; i < methodBody.length; i++) {
       const def = methodBody[i]
-      if (def.type === 'PropertyDefinition') {
-        yield* PropertyDefinition(def, scope, { klass, superClass, object })
+      if (def.type === 'PropertyDefinition' && !def.static) {
+        yield* PropertyDefinition(def, scope, { klass: object, superClass })
       }
     }
   }
