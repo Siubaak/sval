@@ -383,7 +383,7 @@
       }
   }
 
-  var version = "0.4.8";
+  var version = "0.4.9";
 
   const AWAIT = { RES: undefined };
   const RETURN = { RES: undefined };
@@ -2710,7 +2710,7 @@
                   yield* RestElement$1(param, subScope, { kind: 'var', feed: args.slice(i) });
               }
               else {
-                  yield* pattern$2(param, subScope, { feed: args[i] });
+                  yield* pattern$2(param, subScope, { kind: 'var', feed: args[i] });
               }
           }
           let result;
@@ -2949,7 +2949,7 @@
                   RestElement(param, subScope, { kind: 'var', feed: args.slice(i) });
               }
               else {
-                  pattern$3(param, subScope, { feed: args[i] });
+                  pattern$3(param, subScope, { kind: 'var', feed: args[i] });
               }
           }
           let result;

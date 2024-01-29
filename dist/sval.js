@@ -384,7 +384,7 @@
       }
   }
 
-  var version = "0.4.8";
+  var version = "0.4.9";
 
   var AWAIT = { RES: undefined };
   var RETURN = { RES: undefined };
@@ -3588,7 +3588,7 @@
                   case 3:
                       _a.sent();
                       return [3, 6];
-                  case 4: return [5, __values(pattern$2(param, subScope, { feed: args[i] }))];
+                  case 4: return [5, __values(pattern$2(param, subScope, { kind: 'var', feed: args[i] }))];
                   case 5:
                       _a.sent();
                       _a.label = 6;
@@ -3874,7 +3874,7 @@
                   RestElement(param, subScope, { kind: 'var', feed: args.slice(i) });
               }
               else {
-                  pattern$3(param, subScope, { feed: args[i] });
+                  pattern$3(param, subScope, { kind: 'var', feed: args[i] });
               }
           }
           var result;
