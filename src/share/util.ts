@@ -128,6 +128,7 @@ try {
     try { globalObj.WeakSet = WeakSet                       } catch (err) { /* empty */ }
     try { globalObj.Proxy = Proxy                           } catch (err) { /* empty */ }
     try { globalObj.Reflect = Reflect                       } catch (err) { /* empty */ }
+    try { globalObj.BigInt = BigInt                         } catch (err) { /* empty */ }
     try { globalObj.decodeURI = decodeURI                   } catch (err) { /* empty */ }
     try { globalObj.decodeURIComponent = decodeURIComponent } catch (err) { /* empty */ }
     try { globalObj.encodeURI = encodeURI                   } catch (err) { /* empty */ }
