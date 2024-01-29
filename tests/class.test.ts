@@ -534,6 +534,7 @@ describe('testing src/index.ts', () => {
 
   it('should create class with field normally', () => {
     const interpreter = new Sval()
+    interpreter.import('expect', expect)
     interpreter.run(`
       class A {
         a = 1
@@ -542,19 +543,20 @@ describe('testing src/index.ts', () => {
         #d = () => this.#b + 2
         constructor() {
           this.e = this.a + this.#b + 2
+          expect(this.a).toBe(1)
+          expect(this.#b).toBe(2)
+          expect(this.c()).toBe(3)
+          expect(this.#d()).toBe(4)
+          expect(this.e).toBe(5)
+          expect(A.f).toBe(6)
+          expect(A.#g).toBe(7)
+          expect(A.h()).toBe(8)
         }
         static f = 6
-        static g = () => A.f + 1
+        static #g = 7
+        static h = () => A.#g + 1
       }
-      exports.klass = A
-      exports.inst = new A()
+      new A()
     `)
-    expect(interpreter.exports.inst.a).toBe(1)
-    expect(interpreter.exports.inst[PRIVATEPROP + 'b']).toBe(2)
-    expect(interpreter.exports.inst.c()).toBe(3)
-    expect(interpreter.exports.inst[PRIVATEPROP + 'd']()).toBe(4)
-    expect(interpreter.exports.inst.e).toBe(5)
-    expect(interpreter.exports.klass.f).toBe(6)
-    expect(interpreter.exports.klass.g()).toBe(7)
   })
 })

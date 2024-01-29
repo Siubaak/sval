@@ -314,6 +314,8 @@ export function* CallExpression(node: acorn.CallExpression, scope: Scope) {
     let key: string
     if (node.callee.computed) {
       key = yield* evaluate(node.callee.property, scope)
+    } else if (node.callee.property.type === 'PrivateIdentifier') {
+      key = PRIVATEPROP + node.callee.property.name
     } else {
       key = (node.callee.property as acorn.Identifier).name
     }

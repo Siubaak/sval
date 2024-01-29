@@ -126,7 +126,7 @@ export function* pattern(node: acorn.Pattern, scope: Scope, options: PatternOpti
 export interface CtorOptions {
   construct?: (object: any) => Generator
   superClass?: (...args: any[]) => any
-  propDef?: boolean
+  defProp?: boolean
 }
 
 import { createFunc as createAnotherFunc } from /*<replace by:='../evaluate/helper'>*/'../evaluate_n/helper'/*</replace>*/
@@ -139,11 +139,11 @@ export function createFunc(
     return createAnotherFunc(node, scope, options)
   }
 
-  const { superClass, construct, propDef } = options
+  const { superClass, construct, defProp } = options
   const params = node.params
   const tmpFunc = function* (...args: any[]) {
     const subScope: Scope = new Scope(scope, true)
-    if (node.type !== 'ArrowFunctionExpression' || propDef) {
+    if (node.type !== 'ArrowFunctionExpression' || defProp) {
       subScope.const('this', this)
       subScope.let('arguments', arguments)
       subScope.const(NEWTARGET, new.target)
