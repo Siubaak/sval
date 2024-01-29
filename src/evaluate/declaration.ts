@@ -122,7 +122,7 @@ export function* MethodDefinition(node: acorn.MethodDefinition, scope: Scope, op
 
   if (priv) {
     if (!obj[PRIVATE]) {
-      obj[PRIVATE] = Object.create(null)
+      define(obj, PRIVATE, { value: Object.create(null) });
     }
     obj = obj[PRIVATE]
   }
@@ -183,7 +183,7 @@ export function* PropertyDefinition(node: acorn.PropertyDefinition, scope: Scope
 
   if (priv) {
     if (!obj[PRIVATE]) {
-      obj[PRIVATE] = Object.create(null)
+      define(obj, PRIVATE, { value: Object.create(null) });
     }
     obj = obj[PRIVATE]
   }

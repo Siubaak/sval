@@ -264,9 +264,6 @@ export function* MemberExpression(
   }
 
   if (priv) {
-    if (!object[PRIVATE]) {
-      object[PRIVATE] = Object.create(null)
-    }
     object = object[PRIVATE]
   }
 
@@ -336,9 +333,6 @@ export function* CallExpression(node: acorn.CallExpression, scope: Scope) {
     let obj = object
 
     if (priv) {
-      if (!obj[PRIVATE]) {
-        obj[PRIVATE] = Object.create(null)
-      }
       obj = obj[PRIVATE]
     }
 
