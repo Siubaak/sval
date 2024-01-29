@@ -1,4 +1,4 @@
-import { PRIVATEPROP } from '../src/share/const'
+import { PRIVATE } from '../src/share/const'
 import Sval from '../src'
 
 describe('testing src/index.ts', () => {

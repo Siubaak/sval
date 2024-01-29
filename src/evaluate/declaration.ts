@@ -1,4 +1,4 @@
-import { NOINIT, DEADZONE, PRIVATEPROP } from '../share/const'
+import { NOINIT, DEADZONE, PRIVATE } from '../share/const'
 import { pattern, createFunc, createClass } from './helper'
 import { define, getDptor, assign } from '../share/util'
 import { VarKind } from '../scope/variable'
@@ -105,17 +105,28 @@ export function* MethodDefinition(node: acorn.MethodDefinition, scope: Scope, op
   const { klass, superClass } = options
 
   let key: string
+  let priv: boolean = false
+
   if (node.computed) {
     key = yield* evaluate(node.key, scope)
   } else if (node.key.type === 'Identifier') {
     key = node.key.name
   } else if (node.key.type === 'PrivateIdentifier') {
-    key = PRIVATEPROP + node.key.name
+    key = node.key.name
+    priv = true
   } else {
     throw new SyntaxError('Unexpected token')
   }
 
-  const obj = node.static ? klass : klass.prototype
+  let obj = node.static ? klass : klass.prototype
+
+  if (priv) {
+    if (!obj[PRIVATE]) {
+      obj[PRIVATE] = Object.create(null)
+    }
+    obj = obj[PRIVATE]
+  }
+
   const value = createFunc(node.value, scope, { superClass })
 
   switch (node.kind) {
@@ -155,20 +166,32 @@ export function* PropertyDefinition(node: acorn.PropertyDefinition, scope: Scope
   const { klass, superClass } = options
 
   let key: string
+  let priv: boolean = false
+
   if (node.computed) {
     key = yield* evaluate(node.key, scope)
   } else if (node.key.type === 'Identifier') {
     key = node.key.name
   } else if (node.key.type === 'PrivateIdentifier') {
-    key = PRIVATEPROP + node.key.name
+    key = node.key.name
+    priv = true
   } else {
     throw new SyntaxError('Unexpected token')
   }
 
+  let obj = klass
+
+  if (priv) {
+    if (!obj[PRIVATE]) {
+      obj[PRIVATE] = Object.create(null)
+    }
+    obj = obj[PRIVATE]
+  }
+
   if (node.value.type === 'FunctionExpression' || node.value.type === 'ArrowFunctionExpression') {
-    klass[key] = createFunc(node.value, scope, { superClass, defProp: true })
+    obj[key] = createFunc(node.value, scope, { superClass, defProp: true })
   } else {
-    klass[key] = yield* evaluate(node.value, scope)
+    obj[key] = yield* evaluate(node.value, scope)
   }
 }
 

@@ -1,5 +1,5 @@
 import { define, freeze, getGetter, getSetter, createSymbol, assign, getDptor, WINDOW } from '../share/util'
-import { SUPER, NOCTOR, AWAIT, CLSCTOR, NEWTARGET, SUPERCALL, PRIVATEPROP } from '../share/const'
+import { SUPER, NOCTOR, AWAIT, CLSCTOR, NEWTARGET, SUPERCALL, PRIVATE } from '../share/const'
 import { pattern, createFunc, createClass } from './helper'
 import { Variable, Prop } from '../scope/variable'
 import { Identifier } from './identifier'
@@ -252,12 +252,22 @@ export function* MemberExpression(
   if (getObj) return object
 
   let key: string
+  let priv: boolean = false
+
   if (node.computed) {
     key = yield* evaluate(node.property, scope)
   } else if (node.property.type === 'PrivateIdentifier') {
-    key = PRIVATEPROP + node.property.name
+    key = node.property.name
+    priv = true
   } else {
     key = (node.property as acorn.Identifier).name
+  }
+
+  if (priv) {
+    if (!object[PRIVATE]) {
+      object[PRIVATE] = Object.create(null)
+    }
+    object = object[PRIVATE]
   }
 
   if (getVar) {
@@ -312,20 +322,32 @@ export function* CallExpression(node: acorn.CallExpression, scope: Scope) {
 
     // get key
     let key: string
+    let priv: boolean = false
+
     if (node.callee.computed) {
       key = yield* evaluate(node.callee.property, scope)
     } else if (node.callee.property.type === 'PrivateIdentifier') {
-      key = PRIVATEPROP + node.callee.property.name
+      key = node.callee.property.name
+      priv = true
     } else {
       key = (node.callee.property as acorn.Identifier).name
+    }
+
+    let obj = object
+
+    if (priv) {
+      if (!obj[PRIVATE]) {
+        obj[PRIVATE] = Object.create(null)
+      }
+      obj = obj[PRIVATE]
     }
 
     // right value
     if (node.callee.object.type === 'Super') {
       const thisObject = scope.find('this').get()
-      func = object[key].bind(thisObject)
+      func = obj[key].bind(thisObject)
     } else {
-      func = object[key]
+      func = obj[key]
     }
 
     // if it's optional chaining, check if function is null or undefined, so use ==
