@@ -67,7 +67,7 @@ console.log(interpreter.exports.mod) // Get 'AllKindsOfStuffs'
 
 Sval constructor has options with two fields, **ecmaVer** and **sandBox**.
 
-- **ecmaVer** is the ECMAScript edition of the code. Currently, 5, 6(2015), 7(2016), 8(2017), 9(2018) and 10(2019) are supported, and the default edition is 9.
+- **ecmaVer** is the ECMAScript edition of the code. Currently, 3, 5, 6(2015), 7(2016), 8(2017), 9(2018), 10(2019), 11(2020), 12(2021), 13(2022), 14(2023), 15(2024) and "latest" are supported, and the default edition is "latest".
 
 - **sandBox** is true for sandbox mode or false for invasived mode. Sandbox mode will run code in an isolated sandbox and won't pollute your global scope. Invasived mode allows you run code in the same global scope of your current environment. The default setting is true.
 
