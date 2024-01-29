@@ -41,6 +41,6 @@
     "rollup-plugin-typescript2": "^0.21.2",
     "rollup-plugin-uglify": "^6.0.4",
     "typescript": "^3.8.3",
-    "umi-test": "^1.9.6"
+    "umi-test": "^1.9.7"
   }
 }

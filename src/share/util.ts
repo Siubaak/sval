@@ -75,7 +75,7 @@ let names: string[] = []
 export let globalObj = create(null)
 try {
   // Browser environment
-  if (!(window as any).Object) throw 0
+  if (!window.Object) throw 0
   names = getOwnNames(globalObj = window).filter(n => n !== 'webkitStorageInfo')
 } catch (err) {
   /* istanbul ignore next */

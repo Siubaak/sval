@@ -372,15 +372,19 @@ describe('testing src/expression.ts', () => {
   it('should support optional chaining', () => {  
     const interpreter = new Sval()
     interpreter.run(`
-      var x = { a: { b: 1 }, c: null }
+      var x = { a: { b: 1 }, c: null, e: () => 2 }
 
       exports.has = x.a?.b
       exports.null = x.c?.b
       exports.none = x.d?.b
+      exports.func = x.e?.()
+      exports.funcnone = x.f?.()
     `)
 
     expect(interpreter.exports.has).toBe(1)
     expect(interpreter.exports.null).toBeUndefined();
     expect(interpreter.exports.none).toBeUndefined();
+    expect(interpreter.exports.func).toBe(2)
+    expect(interpreter.exports.funcnone).toBeUndefined();
   })
 })

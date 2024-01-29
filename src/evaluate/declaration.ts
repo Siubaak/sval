@@ -90,7 +90,10 @@ export function* ClassBody(node: estree.ClassBody, scope: Scope, options: ClassO
   const { klass, superClass } = options
 
   for (let i = 0; i < node.body.length; i++) {
-    yield* MethodDefinition(node.body[i], scope, { klass, superClass })
+    const def = node.body[i]
+    if (def.type === 'MethodDefinition') {
+      yield* MethodDefinition(def, scope, { klass, superClass })
+    }
   }
 }
 

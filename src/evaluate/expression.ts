@@ -35,8 +35,8 @@ export function* ObjectExpression(node: estree.ObjectExpression, scope: Scope) {
   const object: { [key: string]: any } = {}
   for (let i = 0; i < node.properties.length; i++) {
     const property = node.properties[i]
-    if (property.type as any === 'SpreadElement') {
-      assign(object, yield* SpreadElement(property as any, scope))
+    if (property.type === 'SpreadElement') {
+      assign(object, yield* SpreadElement(property, scope))
     } else {
       let key: string
       const propKey = property.key
@@ -220,6 +220,8 @@ export function* LogicalExpression(node: estree.LogicalExpression, scope: Scope)
       return (yield* evaluate(node.left, scope)) || (yield* evaluate(node.right, scope))
     case '&&':
       return (yield* evaluate(node.left, scope)) && (yield* evaluate(node.right, scope))
+    case '??':
+      return (yield* evaluate(node.left, scope)) ?? (yield* evaluate(node.right, scope))
     default:
       /* istanbul ignore next */
       throw new SyntaxError(`Unexpected token ${node.operator}`)
@@ -272,10 +274,16 @@ export function* MemberExpression(
     if (node.object.type === 'Super' && getter) {
       const thisObject = scope.find('this').get()
       // if it's optional chaining, check if this ref is null or undefined, so use ==
-      return node.optional && (thisObject == null) ? undefined : getter.call(thisObject)
+      if (node.optional && thisObject == null) {
+        return undefined
+      }
+      return getter.call(thisObject)
     } else {
       // if it's optional chaining, check if object is null or undefined, so use ==
-      return node.optional && (object == null) ? undefined : object[key]
+      if (node.optional && object == null) {
+        return undefined
+      }
+      return object[key]
     }
   }
 }
@@ -286,13 +294,18 @@ export function* ConditionalExpression(node: estree.ConditionalExpression, scope
     : (yield* evaluate(node.alternate, scope))
 }
 
-export function* CallExpression(node: estree.CallExpression, scope: Scope) {
+export function* CallExpression(node: estree.SimpleCallExpression, scope: Scope) {
   let func: any
   let object: any
 
   if (node.callee.type === 'MemberExpression') {
     object = yield* MemberExpression(node.callee, scope, { getObj: true })
-  
+
+    // if it's optional chaining, check if object is null or undefined, so use ==
+    if (node.callee.optional && object == null) {
+      return undefined
+    }
+
     // get key
     let key: string
     if (node.callee.computed) {
@@ -309,6 +322,11 @@ export function* CallExpression(node: estree.CallExpression, scope: Scope) {
       func = object[key]
     }
 
+    // if it's optional chaining, check if function is null or undefined, so use ==
+    if (node.optional && func == null) {
+      return undefined
+    }
+
     if (typeof func !== 'function') {
       throw new TypeError(`${key} is not a function`)
     } else if (func[CLSCTOR]) {
@@ -317,6 +335,12 @@ export function* CallExpression(node: estree.CallExpression, scope: Scope) {
   } else {
     object = scope.find('this').get()
     func = yield* evaluate(node.callee, scope)
+
+    // if it's optional chaining, check if function is null or undefined, so use ==
+    if (node.optional && func == null) {
+      return undefined
+    }
+
     if (typeof func !== 'function' || node.callee.type !== 'Super' && func[CLSCTOR]) {
       let name: string
       if (node.callee.type === 'Identifier') {

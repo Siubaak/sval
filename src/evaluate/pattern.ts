@@ -29,7 +29,7 @@ export function* ObjectPattern(node: estree.ObjectPattern, scope: Scope, options
             yield* pattern(value, scope, { kind, hoist, onlyBlock })
           }
         } else {
-          yield* RestElement(property as any, scope, { kind, hoist, onlyBlock })
+          yield* RestElement(property, scope, { kind, hoist, onlyBlock })
         }
       }
     } else if (property.type === 'Property') {
@@ -50,7 +50,7 @@ export function* ObjectPattern(node: estree.ObjectPattern, scope: Scope, options
     } else {
       const rest = assign({}, feed)
       for (let i = 0; i < fedKeys.length; i++) delete rest[fedKeys[i]]
-      yield* RestElement(property as any, scope, { kind, feed: rest })
+      yield* RestElement(property, scope, { kind, feed: rest })
     }
   }
 }
