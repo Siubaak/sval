@@ -1,6 +1,7 @@
 import { readFileSync, existsSync } from 'fs'
-import Sval, { SvalOptions } from '../src'
+import { ecmaVersion } from 'acorn'
 import { resolve } from 'path'
+import Sval from '../src'
 
 let code: string
 
@@ -54,9 +55,13 @@ describe('testing src/index.ts', () => {
     expect((window as any).y2).toBeUndefined()
   })
 
-  it('should support ecma version 3, 5, 6, 7, 8, 9, 10', () => {
-    const versions = [3, 5, 6, 7, 8, 9, 10, 2015, 2016, 2017, 2018, 2019]
-    versions.forEach((v: SvalOptions['ecmaVer']) => new Sval({ ecmaVer: v }))
+  it('should support all ecma versions', () => {
+    const versions: ecmaVersion[] = [
+      3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+      2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024,
+      'latest'
+    ]
+    versions.forEach((v) => new Sval({ ecmaVer: v }))
 
     try {
       new Sval({ ecmaVer: 4 as any })
@@ -101,7 +106,7 @@ describe('testing src/index.ts', () => {
 
     // other than string / object, other types are not supported
     interpreter.import(2 as any)
-    interpreter.import(undefined)
+    interpreter.import(undefined as any)
     interpreter.import(function() {})
     interpreter.import(true as any)
     interpreter.import(Symbol('hello') as any)

@@ -519,12 +519,12 @@ export function* ChainExpression(node: estree.ChainExpression, scope: Scope) {
 }
 
 /*<remove>*/
-export function* YieldExpression(node: estree.YieldExpression, scope: Scope) {
+export function* YieldExpression(node: estree.YieldExpression, scope: Scope): any {
   const res = yield* evaluate(node.argument, scope)
   return node.delegate ? yield* res : yield res
 }
 
-export function* AwaitExpression(node: estree.AwaitExpression, scope: Scope) {
+export function* AwaitExpression(node: estree.AwaitExpression, scope: Scope): any {
   AWAIT.RES = yield* evaluate(node.argument, scope)
   return yield AWAIT
 }
