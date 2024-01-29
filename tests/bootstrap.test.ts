@@ -4,8 +4,7 @@ import { resolve } from 'path'
 
 let code: string
 
-const codePath = resolve(__dirname, '../dist/sval.js')
-// const codePath = resolve(__dirname, '../dist/sval.min.js') // TODO: Fix cannot read properties of undefined (reading 'nonBinary')
+const codePath = resolve(__dirname, '../dist/sval.min.js')
 if (existsSync(codePath)) {
   code = readFileSync(codePath, 'utf-8')
 } else {

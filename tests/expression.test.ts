@@ -135,7 +135,10 @@ describe('testing src/expression.ts', () => {
       exports.a &&= 1
       expect(exports.a).toBe(0)
       exports.a ||= 1
-      expect(exports.a).toBe(1)
+      expect(exports.a).toBe(1); // ';' should be kept
+
+      (exports.b = { c: { d: 1 } }).c.e = exports.b.c.d
+      expect(exports.b.c.e).toBe(1)
     `
     interpreter.import({ expect })
     interpreter.run(`!async function(){${code}}()`) // also test for generator env
@@ -177,6 +180,7 @@ describe('testing src/expression.ts', () => {
     expect(interpreter.exports.c).toBe(1)
     expect(interpreter.exports.d).toBe(2)
   })
+
   it('should parse regular expression normally', () => {  
     const interpreter = new Sval()
     interpreter.import({ expect })

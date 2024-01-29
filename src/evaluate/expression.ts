@@ -178,10 +178,7 @@ export function* BinaryExpression(node: estree.BinaryExpression, scope: Scope) {
 }
 
 export function* AssignmentExpression(node: estree.AssignmentExpression, scope: Scope) {
-  const value = yield* evaluate(node.right, scope)
-
   const left = node.left
-
   let variable: Variable
   if (left.type === 'Identifier') {
     variable = yield* Identifier(left, scope, { getVar: true, throwErr: false })
@@ -192,9 +189,11 @@ export function* AssignmentExpression(node: estree.AssignmentExpression, scope: 
   } else if (left.type === 'MemberExpression') {
     variable = yield* MemberExpression(left, scope, { getVar: true })
   } else {
+    const value = yield* evaluate(node.right, scope)
     return yield* pattern(left, scope, { feed: value })
   }
 
+  const value = yield* evaluate(node.right, scope)
   switch (node.operator) {
     case '=': variable.set(value); return variable.get()
     case '+=': variable.set(variable.get() + value); return variable.get()
