@@ -1,5 +1,5 @@
 import { RETURN, SUPER, NOCTOR, CLSCTOR, NEWTARGET, SUPERCALL } from '../share/const'
-import { VariableDeclaration, ClassBody } from './declaration'
+import { VariableDeclaration, ClassBody, PropertyDefinition } from './declaration'
 import { runAsync, runAsyncOptions } from '../share/async'
 import { define, inherits, assign } from '../share/util'
 import { Identifier } from '../evaluate_n/identifier'
@@ -124,8 +124,9 @@ export function* pattern(node: acorn.Pattern, scope: Scope, options: PatternOpti
 }
 
 export interface CtorOptions {
+  construct?: (object: any) => Generator
   superClass?: (...args: any[]) => any
-  isCtor?: boolean
+  propDef?: boolean
 }
 
 import { createFunc as createAnotherFunc } from /*<replace by:='../evaluate/helper'>*/'../evaluate_n/helper'/*</replace>*/
@@ -138,17 +139,20 @@ export function createFunc(
     return createAnotherFunc(node, scope, options)
   }
 
-  const { superClass, isCtor } = options
+  const { superClass, construct, propDef } = options
   const params = node.params
   const tmpFunc = function* (...args: any[]) {
     const subScope: Scope = new Scope(scope, true)
-    if (node.type !== 'ArrowFunctionExpression') {
+    if (node.type !== 'ArrowFunctionExpression' || propDef) {
       subScope.const('this', this)
       subScope.let('arguments', arguments)
       subScope.const(NEWTARGET, new.target)
+      if (construct) {
+        yield* construct(this)
+      }
       if (superClass) {
         subScope.const(SUPER, superClass)
-        if (isCtor) subScope.let(SUPERCALL, false)
+        if (construct) subScope.let(SUPERCALL, false)
       }
     }
 
@@ -242,16 +246,26 @@ export function* createClass(
 ) {
   const superClass = yield* evaluate(node.superClass, scope)
 
-  let klass = function () {
+  const methodBody = node.body.body
+  const construct = function* (object: any) {
+    for (let i = 0; i < methodBody.length; i++) {
+      const def = methodBody[i]
+      if (def.type === 'PropertyDefinition') {
+        yield* PropertyDefinition(def, scope, { klass, superClass, object })
+      }
+    }
+  }
+
+  let klass = function* () {
+    yield* construct(this)
     if (superClass) {
       superClass.apply(this)
     }
   }
-  const methodBody = node.body.body
   for (let i = 0; i < methodBody.length; i++) {
     const method = methodBody[i]
     if (method.type === 'MethodDefinition' && method.kind === 'constructor') {
-      klass = createFunc(method.value, scope, { superClass, isCtor: true })
+      klass = createFunc(method.value, scope, { superClass, construct })
       break
     }
   }

@@ -1,3 +1,4 @@
+import { PRIVATEPROP } from '../src/share/const'
 import Sval from '../src'
 
 describe('testing src/index.ts', () => {
@@ -529,5 +530,31 @@ describe('testing src/index.ts', () => {
     expect(interpreter.exports.x).toEqual(6)
     // child reads parent property with this
     expect(interpreter.exports.y).toEqual(7)
+  })
+
+  it('should create class with field normally', () => {
+    const interpreter = new Sval()
+    interpreter.run(`
+      class A {
+        a = 1
+        #b = 2
+        c = () => this.a + 2
+        #d = () => this.#b + 2
+        constructor() {
+          this.e = this.a + this.#b + 2
+        }
+        static f = 6
+        static g = () => A.f + 1
+      }
+      exports.klass = A
+      exports.inst = new A()
+    `)
+    expect(interpreter.exports.inst.a).toBe(1)
+    expect(interpreter.exports.inst[PRIVATEPROP + 'b']).toBe(2)
+    expect(interpreter.exports.inst.c()).toBe(3)
+    expect(interpreter.exports.inst[PRIVATEPROP + 'd']()).toBe(4)
+    expect(interpreter.exports.inst.e).toBe(5)
+    expect(interpreter.exports.klass.f).toBe(6)
+    expect(interpreter.exports.klass.g()).toBe(7)
   })
 })

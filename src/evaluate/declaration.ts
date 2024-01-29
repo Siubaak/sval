@@ -1,6 +1,6 @@
+import { NOINIT, DEADZONE, PRIVATEPROP } from '../share/const'
 import { pattern, createFunc, createClass } from './helper'
 import { define, getDptor, assign } from '../share/util'
-import { NOINIT, DEADZONE } from '../share/const'
 import { VarKind } from '../scope/variable'
 import * as acorn from 'acorn'
 import Scope from '../scope'
@@ -93,6 +93,8 @@ export function* ClassBody(node: acorn.ClassBody, scope: Scope, options: ClassOp
     const def = node.body[i]
     if (def.type === 'MethodDefinition') {
       yield* MethodDefinition(def, scope, { klass, superClass })
+    } else if (def.type === 'StaticBlock') {
+      yield* StaticBlock(def, scope, { klass, superClass })
     }
   }
 }
@@ -105,6 +107,8 @@ export function* MethodDefinition(node: acorn.MethodDefinition, scope: Scope, op
     key = yield* evaluate(node.key, scope)
   } else if (node.key.type === 'Identifier') {
     key = node.key.name
+  } else if (node.key.type === 'PrivateIdentifier') {
+    key = PRIVATEPROP + node.key.name
   } else {
     throw new SyntaxError('Unexpected token')
   }
@@ -143,4 +147,34 @@ export function* MethodDefinition(node: acorn.MethodDefinition, scope: Scope, op
     default:
       throw new SyntaxError('Unexpected token')
   } 
+}
+
+export interface PropDefOptions {
+  object: any
+}
+
+export function* PropertyDefinition(node: acorn.PropertyDefinition, scope: Scope, options: PropDefOptions & ClassOptions) {
+  const { klass, superClass, object } = options
+
+  let key: string
+  if (node.computed) {
+    key = yield* evaluate(node.key, scope)
+  } else if (node.key.type === 'Identifier') {
+    key = node.key.name
+  } else if (node.key.type === 'PrivateIdentifier') {
+    key = PRIVATEPROP + node.key.name
+  } else {
+    throw new SyntaxError('Unexpected token')
+  }
+
+  const obj = node.static ? klass : object
+  if (node.value.type === 'FunctionExpression' || node.value.type === 'ArrowFunctionExpression') {
+    obj[key] = createFunc(node.value, scope, { superClass, propDef: true })
+  } else {
+    obj[key] = yield* evaluate(node.value, scope)
+  }
+}
+
+export function* StaticBlock(node: acorn.StaticBlock, scope: Scope, options: ClassOptions = {}) {
+  // TODO
 }

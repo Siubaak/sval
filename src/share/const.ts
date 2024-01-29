@@ -4,6 +4,8 @@ export const AWAIT: { RES: any } = { RES: undefined }
 
 export const RETURN: { RES: any } = { RES: undefined }
 
+export const PRIVATEPROP = '__sval_class_private_property__'
+
 export const CONTINUE = createSymbol('continue')
 
 export const BREAK = createSymbol('break')

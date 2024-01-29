@@ -1,5 +1,5 @@
 import { define, freeze, getGetter, getSetter, createSymbol, assign, getDptor, WINDOW } from '../share/util'
-import { SUPER, NOCTOR, AWAIT, CLSCTOR, NEWTARGET, SUPERCALL } from '../share/const'
+import { SUPER, NOCTOR, AWAIT, CLSCTOR, NEWTARGET, SUPERCALL, PRIVATEPROP } from '../share/const'
 import { pattern, createFunc, createClass } from './helper'
 import { Variable, Prop } from '../scope/variable'
 import { Identifier } from './identifier'
@@ -254,6 +254,8 @@ export function* MemberExpression(
   let key: string
   if (node.computed) {
     key = yield* evaluate(node.property, scope)
+  } else if (node.property.type === 'PrivateIdentifier') {
+    key = PRIVATEPROP + node.property.name
   } else {
     key = (node.property as acorn.Identifier).name
   }
