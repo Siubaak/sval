@@ -1,6 +1,6 @@
 import { getOwnNames, createSandBox, globalObj, assign } from './share/util'
 import { version } from '../package.json'
-import { parse, Options } from 'acorn'
+import { parse, Options, ecmaVersion } from 'acorn'
 import { Node, Program } from 'estree'
 import Scope from './scope'
 
@@ -8,24 +8,28 @@ import { hoist } from './evaluate_n/helper'
 import evaluate from './evaluate_n'
 
 export interface SvalOptions {
-  ecmaVer?: 3 | 5 | 6 | 7 | 8 | 9 | 10 | 2015 | 2016 | 2017 | 2018 | 2019
+  ecmaVer?: ecmaVersion
   sandBox?: boolean
 }
+
+const latestVer = 15
 
 class Sval {
   static version: string = version
 
-  private options: Options = {}
+  private options: Options = { ecmaVersion: 'latest' }
   private scope = new Scope(null, true)
 
   exports: { [name: string]: any } = {}
 
   constructor(options: SvalOptions = {}) {
-    let { ecmaVer = 9, sandBox = true } = options
+    let { ecmaVer = 'latest', sandBox = true } = options
 
-    ecmaVer -= ecmaVer < 2015 ? 0 : 2009 // format ecma edition
+    if (typeof ecmaVer === 'number') {
+      ecmaVer -= ecmaVer < 2015 ? 0 : 2009 // format ecma edition
+    }
 
-    if ([3, 5, 6, 7, 8, 9, 10].indexOf(ecmaVer) === -1) {
+    if (ecmaVer !== 'latest' && ecmaVer !== 3 && (ecmaVer < 5 || ecmaVer > latestVer)) {
       throw new Error(`unsupported ecmaVer`)
     }
 
