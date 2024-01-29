@@ -39,10 +39,10 @@ describe('testing src/index.ts', () => {
         expect(value2).toEqual(50)
       }
 
-      let a = 5;
-      let b = 10;
+      let a = 5
+      let b = 10
 
-      tag\`hello \${ a + b } sval \${ a * b }\`;
+      tag\`hello \${ a + b } sval \${ a * b }\`
     `)
   })
 })

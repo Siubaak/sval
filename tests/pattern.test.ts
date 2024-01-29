@@ -31,7 +31,7 @@ describe('testing src/index.ts', () => {
   it('should parse array pattern normally', () => {  
     const interpreter = new Sval()
     interpreter.run(`
-      let a = 1, b = 2;
+      let a = 1, b = 2; // ';' should be kept
       [a, b] = [b, a]
       exports.a = a
       exports.b = b
@@ -42,7 +42,7 @@ describe('testing src/index.ts', () => {
   it('should parse rest element normally', () => {  
     const interpreter = new Sval()
     interpreter.run(`
-      let a;
+      let a; // ';' should be kept
       [...a] = [1, 2]
       const [...b] = [1, 2, 3]
       const [c, ...d] = [1, 2, 3]

@@ -15,7 +15,7 @@ describe('testing src/index.ts', () => {
     interpreter.run(`
       exports.a = 0
       while (exports.a < 10) {
-        exports.a++;
+        exports.a++
         switch (2) {
           case 2: break
         }
@@ -76,14 +76,14 @@ describe('testing src/index.ts', () => {
     interpreter.run(`
       c()
       function makeIterator(array) {
-        var nextIndex = 0;
+        var nextIndex = 0
         return {
           next: function() {
             return nextIndex < array.length ?
-              {value: array[nextIndex++], done: false} :
-              {value: undefined, done: true};
+              { value: array[nextIndex++], done: false } :
+              { value: undefined, done: true }
           }
-        };
+        }
       }
 
       async function c() {
@@ -142,7 +142,7 @@ describe('testing src/index.ts', () => {
             }
           }
         }
-      };
+      }; // ';' should be kept
       (async function() {
         const res = []
         for await (let num of iterable) {
@@ -165,14 +165,14 @@ describe('testing src/index.ts', () => {
             i: 0,
             next() {
               if (this.i < 3) {
-                return Promise.resolve({ value: this.i++, done: false });
+                return Promise.resolve({ value: this.i++, done: false })
               }
       
               return Promise.resolve({ done: true })
             }
           }
         }
-      };
+      }; // ';' should be kept
       (async function() {
         const res = []
         for await (let num of asyncIterable) {
@@ -191,7 +191,7 @@ describe('testing src/index.ts', () => {
     interpreter.import({ expect, done })
     interpreter.run(`
       async function* asyncGenerator() {
-        var i = 0;
+        var i = 0
         while (i < 3) {
           yield i++
         }

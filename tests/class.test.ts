@@ -11,7 +11,7 @@ describe('testing src/index.ts', () => {
       
       Point.prototype.toString = function () {
         return '(' + this.x + ', ' + this.y + ')'
-      };
+      }
       
       exports.inst = new Point(1, 2)
       exports.cls = Point
@@ -175,7 +175,7 @@ describe('testing src/index.ts', () => {
 
   it('should throw TypeError when calling es6 class as function', () => {
     const interpreter = new Sval()
-    let error = null;
+    let error = null
     try {
       interpreter.run(`
         class Foo {
@@ -189,7 +189,7 @@ describe('testing src/index.ts', () => {
     }
 
     expect(error).toBeInstanceOf(TypeError)
-    error = null;
+    error = null
 
     try {
       interpreter.run(`
@@ -398,7 +398,7 @@ describe('testing src/index.ts', () => {
     const interpreter = new Sval()
     interpreter.run(`
       {
-        let Foo = class {};
+        let Foo = class {}
         class Bar extends Foo {
         }
       }
@@ -488,8 +488,8 @@ describe('testing src/index.ts', () => {
       exports.Foo = Foo
     `)
 
-    const instance = new interpreter.exports.Foo();
-    expect(instance.getA()).resolves.toBe(1);
+    const instance = new interpreter.exports.Foo()
+    expect(instance.getA()).resolves.toBe(1)
   })
 
   it('should support property accessing between parent and child class', () => {  
@@ -526,8 +526,8 @@ describe('testing src/index.ts', () => {
     `)
 
     // parent reads overrided property
-    expect(interpreter.exports.x).toEqual(6);
+    expect(interpreter.exports.x).toEqual(6)
     // child reads parent property with this
-    expect(interpreter.exports.y).toEqual(7);
+    expect(interpreter.exports.y).toEqual(7)
   })
 })

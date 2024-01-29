@@ -252,7 +252,7 @@ describe('testing src/expression.ts', () => {
       exports.a = a
     `)
 
-    const a = interpreter.exports.a;
+    const a = interpreter.exports.a
     expect(Object.keys(a)).toEqual(['x', 'y'])
 
     const xPD = Object.getOwnPropertyDescriptor(a, 'x')
@@ -303,7 +303,7 @@ describe('testing src/expression.ts', () => {
       exports.result = new Y().say()
     `)
 
-    expect(interpreter.exports.result).toEqual(1);
+    expect(interpreter.exports.result).toEqual(1)
   })
 
   it('should support method call with computed name', () => {  
@@ -318,7 +318,7 @@ describe('testing src/expression.ts', () => {
       exports.result = x['say']()
     `)
 
-    expect(interpreter.exports.result).toEqual(1);
+    expect(interpreter.exports.result).toEqual(1)
   })
 
   it('should support method call with computed name', () => {  
@@ -327,7 +327,7 @@ describe('testing src/expression.ts', () => {
       exports.result = 1+!!2
     `)
 
-    expect(interpreter.exports.result).toEqual(2);
+    expect(interpreter.exports.result).toEqual(2)
   })
 
   it('should support all kinds of delete actions', () => {  
@@ -354,7 +354,7 @@ describe('testing src/expression.ts', () => {
 
     expect(interpreter.exports.result).toBeTruthy()
 
-    let error = null;
+    let error = null
     try {
       interpreter.run(`
         // trying to delete a regular identifier in strict mode
@@ -365,7 +365,7 @@ describe('testing src/expression.ts', () => {
       error = ex
     }
 
-    expect(error).toBeInstanceOf(SyntaxError);
+    expect(error).toBeInstanceOf(SyntaxError)
   })
 
   // https://github.com/Siubaak/sval/issues/83
@@ -382,9 +382,9 @@ describe('testing src/expression.ts', () => {
     `)
 
     expect(interpreter.exports.has).toBe(1)
-    expect(interpreter.exports.null).toBeUndefined();
-    expect(interpreter.exports.none).toBeUndefined();
+    expect(interpreter.exports.null).toBeUndefined()
+    expect(interpreter.exports.none).toBeUndefined()
     expect(interpreter.exports.func).toBe(2)
-    expect(interpreter.exports.funcnone).toBeUndefined();
+    expect(interpreter.exports.funcnone).toBeUndefined()
   })
 })
