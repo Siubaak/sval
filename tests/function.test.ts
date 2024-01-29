@@ -306,6 +306,7 @@ describe('testing src/index.ts', () => {
     }
     expect(error).toBeInstanceOf(TypeError)
   })
+
   // https://github.com/Siubaak/sval/issues/94
   it('should accept function destructured parameters', () => {  
     const interpreter = new Sval()

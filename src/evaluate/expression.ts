@@ -271,9 +271,11 @@ export function* MemberExpression(
     const getter = getGetter(object, key)
     if (node.object.type === 'Super' && getter) {
       const thisObject = scope.find('this').get()
-      return getter.call(thisObject)
+      // if it's optional chaining, check if this ref is null or undefined, so use ==
+      return node.optional && (thisObject == null) ? undefined : getter.call(thisObject)
     } else {
-      return object[key]
+      // if it's optional chaining, check if object is null or undefined, so use ==
+      return node.optional && (object == null) ? undefined : object[key]
     }
   }
 }
@@ -484,6 +486,10 @@ export function* Super(
 
 export function* SpreadElement(node: estree.SpreadElement, scope: Scope) {
   return yield* evaluate(node.argument, scope)
+}
+
+export function* ChainExpression(node: estree.ChainExpression, scope: Scope) {
+  return yield* evaluate(node.expression, scope)
 }
 
 /*<remove>*/

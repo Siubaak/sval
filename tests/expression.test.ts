@@ -367,4 +367,20 @@ describe('testing src/expression.ts', () => {
 
     expect(error).toBeInstanceOf(SyntaxError);
   })
+
+  // https://github.com/Siubaak/sval/issues/83
+  it('should support optional chaining', () => {  
+    const interpreter = new Sval()
+    interpreter.run(`
+      var x = { a: { b: 1 }, c: null }
+
+      exports.has = x.a?.b
+      exports.null = x.c?.b
+      exports.none = x.d?.b
+    `)
+
+    expect(interpreter.exports.has).toBe(1)
+    expect(interpreter.exports.null).toBeUndefined();
+    expect(interpreter.exports.none).toBeUndefined();
+  })
 })
