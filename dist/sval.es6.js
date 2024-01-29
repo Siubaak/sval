@@ -383,7 +383,7 @@
       }
   }
 
-  var version = "0.4.9";
+  var version = "0.5.0";
 
   const AWAIT = { RES: undefined };
   const RETURN = { RES: undefined };
@@ -733,7 +733,7 @@
       }
   }
   function AssignmentExpression(node, scope) {
-      const value = evaluate(node.right, scope);
+      var _a;
       const left = node.left;
       let variable;
       if (left.type === 'Identifier') {
@@ -747,8 +747,10 @@
           variable = MemberExpression(left, scope, { getVar: true });
       }
       else {
+          const value = evaluate(node.right, scope);
           return pattern$3(left, scope, { feed: value });
       }
+      const value = evaluate(node.right, scope);
       switch (node.operator) {
           case '=':
               variable.set(value);
@@ -789,15 +791,27 @@
           case '&=':
               variable.set(variable.get() & value);
               return variable.get();
+          case '??=':
+              variable.set((_a = variable.get()) !== null && _a !== void 0 ? _a : value);
+              return variable.get();
+          case '&&=':
+              variable.set(variable.get() && value);
+              return variable.get();
+          case '||=':
+              variable.set(variable.get() || value);
+              return variable.get();
           default: throw new SyntaxError(`Unexpected token ${node.operator}`);
       }
   }
   function LogicalExpression(node, scope) {
+      var _a;
       switch (node.operator) {
           case '||':
               return (evaluate(node.left, scope)) || (evaluate(node.right, scope));
           case '&&':
               return (evaluate(node.left, scope)) && (evaluate(node.right, scope));
+          case '??':
+              return (_a = (evaluate(node.left, scope))) !== null && _a !== void 0 ? _a : (evaluate(node.right, scope));
           default:
               throw new SyntaxError(`Unexpected token ${node.operator}`);
       }
@@ -836,9 +850,15 @@
           const getter = getGetter(object, key);
           if (node.object.type === 'Super' && getter) {
               const thisObject = scope.find('this').get();
+              if (node.optional && thisObject == null) {
+                  return undefined;
+              }
               return getter.call(thisObject);
           }
           else {
+              if (node.optional && object == null) {
+                  return undefined;
+              }
               return object[key];
           }
       }
@@ -853,6 +873,9 @@
       let object;
       if (node.callee.type === 'MemberExpression') {
           object = MemberExpression(node.callee, scope, { getObj: true });
+          if (node.callee.optional && object == null) {
+              return undefined;
+          }
           let key;
           if (node.callee.computed) {
               key = evaluate(node.callee.property, scope);
@@ -867,6 +890,9 @@
           else {
               func = object[key];
           }
+          if (node.optional && func == null) {
+              return undefined;
+          }
           if (typeof func !== 'function') {
               throw new TypeError(`${key} is not a function`);
           }
@@ -877,6 +903,9 @@
       else {
           object = scope.find('this').get();
           func = evaluate(node.callee, scope);
+          if (node.optional && func == null) {
+              return undefined;
+          }
           if (typeof func !== 'function' || node.callee.type !== 'Super' && func[CLSCTOR]) {
               let name;
               if (node.callee.type === 'Identifier') {
@@ -1021,6 +1050,9 @@
   function SpreadElement(node, scope) {
       return evaluate(node.argument, scope);
   }
+  function ChainExpression(node, scope) {
+      return evaluate(node.expression, scope);
+  }
 
   var expression = /*#__PURE__*/Object.freeze({
     __proto__: null,
@@ -1045,7 +1077,8 @@
     TemplateElement: TemplateElement,
     ClassExpression: ClassExpression,
     Super: Super,
-    SpreadElement: SpreadElement
+    SpreadElement: SpreadElement,
+    ChainExpression: ChainExpression
   });
 
   function ExpressionStatement(node, scope) {
@@ -1474,7 +1507,10 @@
   function ClassBody(node, scope, options = {}) {
       const { klass, superClass } = options;
       for (let i = 0; i < node.body.length; i++) {
-          MethodDefinition(node.body[i], scope, { klass, superClass });
+          const def = node.body[i];
+          if (def.type === 'MethodDefinition') {
+              MethodDefinition(def, scope, { klass, superClass });
+          }
       }
   }
   function MethodDefinition(node, scope, options = {}) {
@@ -1733,7 +1769,7 @@
       }
   }
   function* AssignmentExpression$1(node, scope) {
-      const value = yield* evaluate$1(node.right, scope);
+      var _a;
       const left = node.left;
       let variable;
       if (left.type === 'Identifier') {
@@ -1747,8 +1783,10 @@
           variable = yield* MemberExpression$1(left, scope, { getVar: true });
       }
       else {
+          const value = yield* evaluate$1(node.right, scope);
           return yield* pattern$2(left, scope, { feed: value });
       }
+      const value = yield* evaluate$1(node.right, scope);
       switch (node.operator) {
           case '=':
               variable.set(value);
@@ -1789,15 +1827,27 @@
           case '&=':
               variable.set(variable.get() & value);
               return variable.get();
+          case '??=':
+              variable.set((_a = variable.get()) !== null && _a !== void 0 ? _a : value);
+              return variable.get();
+          case '&&=':
+              variable.set(variable.get() && value);
+              return variable.get();
+          case '||=':
+              variable.set(variable.get() || value);
+              return variable.get();
           default: throw new SyntaxError(`Unexpected token ${node.operator}`);
       }
   }
   function* LogicalExpression$1(node, scope) {
+      var _a;
       switch (node.operator) {
           case '||':
               return (yield* evaluate$1(node.left, scope)) || (yield* evaluate$1(node.right, scope));
           case '&&':
               return (yield* evaluate$1(node.left, scope)) && (yield* evaluate$1(node.right, scope));
+          case '??':
+              return (_a = (yield* evaluate$1(node.left, scope))) !== null && _a !== void 0 ? _a : (yield* evaluate$1(node.right, scope));
           default:
               throw new SyntaxError(`Unexpected token ${node.operator}`);
       }
@@ -1836,9 +1886,15 @@
           const getter = getGetter(object, key);
           if (node.object.type === 'Super' && getter) {
               const thisObject = scope.find('this').get();
+              if (node.optional && thisObject == null) {
+                  return undefined;
+              }
               return getter.call(thisObject);
           }
           else {
+              if (node.optional && object == null) {
+                  return undefined;
+              }
               return object[key];
           }
       }
@@ -1853,6 +1909,9 @@
       let object;
       if (node.callee.type === 'MemberExpression') {
           object = yield* MemberExpression$1(node.callee, scope, { getObj: true });
+          if (node.callee.optional && object == null) {
+              return undefined;
+          }
           let key;
           if (node.callee.computed) {
               key = yield* evaluate$1(node.callee.property, scope);
@@ -1867,6 +1926,9 @@
           else {
               func = object[key];
           }
+          if (node.optional && func == null) {
+              return undefined;
+          }
           if (typeof func !== 'function') {
               throw new TypeError(`${key} is not a function`);
           }
@@ -1877,6 +1939,9 @@
       else {
           object = scope.find('this').get();
           func = yield* evaluate$1(node.callee, scope);
+          if (node.optional && func == null) {
+              return undefined;
+          }
           if (typeof func !== 'function' || node.callee.type !== 'Super' && func[CLSCTOR]) {
               let name;
               if (node.callee.type === 'Identifier') {
@@ -2021,6 +2086,9 @@
   function* SpreadElement$1(node, scope) {
       return yield* evaluate$1(node.argument, scope);
   }
+  function* ChainExpression$1(node, scope) {
+      return yield* evaluate$1(node.expression, scope);
+  }
   function* YieldExpression(node, scope) {
       const res = yield* evaluate$1(node.argument, scope);
       return node.delegate ? yield* res : yield res;
@@ -2054,6 +2122,7 @@
     ClassExpression: ClassExpression$1,
     Super: Super$1,
     SpreadElement: SpreadElement$1,
+    ChainExpression: ChainExpression$1,
     YieldExpression: YieldExpression,
     AwaitExpression: AwaitExpression
   });
@@ -2491,7 +2560,10 @@
   function* ClassBody$1(node, scope, options = {}) {
       const { klass, superClass } = options;
       for (let i = 0; i < node.body.length; i++) {
-          yield* MethodDefinition$1(node.body[i], scope, { klass, superClass });
+          const def = node.body[i];
+          if (def.type === 'MethodDefinition') {
+              yield* MethodDefinition$1(def, scope, { klass, superClass });
+          }
       }
   }
   function* MethodDefinition$1(node, scope, options = {}) {
@@ -2786,7 +2858,7 @@
       const methodBody = node.body.body;
       for (let i = 0; i < methodBody.length; i++) {
           const method = methodBody[i];
-          if (method.kind === 'constructor') {
+          if (method.type === 'MethodDefinition' && method.kind === 'constructor') {
               klass = createFunc(method.value, scope, { superClass, isCtor: true });
               break;
           }
@@ -2997,7 +3069,7 @@
       const methodBody = node.body.body;
       for (let i = 0; i < methodBody.length; i++) {
           const method = methodBody[i];
-          if (method.kind === 'constructor') {
+          if (method.type === 'MethodDefinition' && method.kind === 'constructor') {
               klass = createFunc$1(method.value, scope, { superClass, isCtor: true });
               break;
           }
@@ -3037,14 +3109,17 @@
       return result;
   }
 
+  const latestVer = 15;
   class Sval {
       constructor(options = {}) {
-          this.options = {};
+          this.options = { ecmaVersion: 'latest' };
           this.scope = new Scope(null, true);
           this.exports = {};
-          let { ecmaVer = 9, sandBox = true } = options;
-          ecmaVer -= ecmaVer < 2015 ? 0 : 2009;
-          if ([3, 5, 6, 7, 8, 9, 10].indexOf(ecmaVer) === -1) {
+          let { ecmaVer = 'latest', sandBox = true } = options;
+          if (typeof ecmaVer === 'number') {
+              ecmaVer -= ecmaVer < 2015 ? 0 : 2009;
+          }
+          if (ecmaVer !== 'latest' && ecmaVer !== 3 && (ecmaVer < 5 || ecmaVer > latestVer)) {
               throw new Error(`unsupported ecmaVer`);
           }
           this.options.ecmaVersion = ecmaVer;

@@ -384,7 +384,7 @@
       }
   }
 
-  var version = "0.4.9";
+  var version = "0.5.0";
 
   var AWAIT = { RES: undefined };
   var RETURN = { RES: undefined };
@@ -817,7 +817,7 @@
       }
   }
   function AssignmentExpression(node, scope) {
-      var value = evaluate(node.right, scope);
+      var _a;
       var left = node.left;
       var variable;
       if (left.type === 'Identifier') {
@@ -831,8 +831,10 @@
           variable = MemberExpression(left, scope, { getVar: true });
       }
       else {
-          return pattern$3(left, scope, { feed: value });
+          var value_1 = evaluate(node.right, scope);
+          return pattern$3(left, scope, { feed: value_1 });
       }
+      var value = evaluate(node.right, scope);
       switch (node.operator) {
           case '=':
               variable.set(value);
@@ -873,15 +875,27 @@
           case '&=':
               variable.set(variable.get() & value);
               return variable.get();
+          case '??=':
+              variable.set((_a = variable.get()) !== null && _a !== void 0 ? _a : value);
+              return variable.get();
+          case '&&=':
+              variable.set(variable.get() && value);
+              return variable.get();
+          case '||=':
+              variable.set(variable.get() || value);
+              return variable.get();
           default: throw new SyntaxError("Unexpected token " + node.operator);
       }
   }
   function LogicalExpression(node, scope) {
+      var _a;
       switch (node.operator) {
           case '||':
               return (evaluate(node.left, scope)) || (evaluate(node.right, scope));
           case '&&':
               return (evaluate(node.left, scope)) && (evaluate(node.right, scope));
+          case '??':
+              return (_a = (evaluate(node.left, scope))) !== null && _a !== void 0 ? _a : (evaluate(node.right, scope));
           default:
               throw new SyntaxError("Unexpected token " + node.operator);
       }
@@ -921,9 +935,15 @@
           var getter = getGetter(object, key);
           if (node.object.type === 'Super' && getter) {
               var thisObject = scope.find('this').get();
+              if (node.optional && thisObject == null) {
+                  return undefined;
+              }
               return getter.call(thisObject);
           }
           else {
+              if (node.optional && object == null) {
+                  return undefined;
+              }
               return object[key];
           }
       }
@@ -938,6 +958,9 @@
       var object;
       if (node.callee.type === 'MemberExpression') {
           object = MemberExpression(node.callee, scope, { getObj: true });
+          if (node.callee.optional && object == null) {
+              return undefined;
+          }
           var key = void 0;
           if (node.callee.computed) {
               key = evaluate(node.callee.property, scope);
@@ -952,6 +975,9 @@
           else {
               func = object[key];
           }
+          if (node.optional && func == null) {
+              return undefined;
+          }
           if (typeof func !== 'function') {
               throw new TypeError(key + " is not a function");
           }
@@ -962,6 +988,9 @@
       else {
           object = scope.find('this').get();
           func = evaluate(node.callee, scope);
+          if (node.optional && func == null) {
+              return undefined;
+          }
           if (typeof func !== 'function' || node.callee.type !== 'Super' && func[CLSCTOR]) {
               var name_1;
               if (node.callee.type === 'Identifier') {
@@ -1107,6 +1136,9 @@
   function SpreadElement(node, scope) {
       return evaluate(node.argument, scope);
   }
+  function ChainExpression(node, scope) {
+      return evaluate(node.expression, scope);
+  }
 
   var expression = /*#__PURE__*/Object.freeze({
     __proto__: null,
@@ -1131,7 +1163,8 @@
     TemplateElement: TemplateElement,
     ClassExpression: ClassExpression,
     Super: Super,
-    SpreadElement: SpreadElement
+    SpreadElement: SpreadElement,
+    ChainExpression: ChainExpression
   });
 
   function ExpressionStatement(node, scope) {
@@ -1579,7 +1612,10 @@
       if (options === void 0) { options = {}; }
       var klass = options.klass, superClass = options.superClass;
       for (var i = 0; i < node.body.length; i++) {
-          MethodDefinition(node.body[i], scope, { klass: klass, superClass: superClass });
+          var def = node.body[i];
+          if (def.type === 'MethodDefinition') {
+              MethodDefinition(def, scope, { klass: klass, superClass: superClass });
+          }
       }
   }
   function MethodDefinition(node, scope, options) {
@@ -1927,31 +1963,35 @@
       });
   }
   function AssignmentExpression$1(node, scope) {
-      var value, left, variable, win;
-      return __generator(this, function (_a) {
-          switch (_a.label) {
-              case 0: return [5, __values(evaluate$1(node.right, scope))];
-              case 1:
-                  value = _a.sent();
+      var left, variable, win, value_1, value;
+      var _a;
+      return __generator(this, function (_b) {
+          switch (_b.label) {
+              case 0:
                   left = node.left;
-                  if (!(left.type === 'Identifier')) return [3, 3];
+                  if (!(left.type === 'Identifier')) return [3, 2];
                   return [5, __values(Identifier$1(left, scope, { getVar: true, throwErr: false }))];
-              case 2:
-                  variable = _a.sent();
+              case 1:
+                  variable = _b.sent();
                   if (!variable) {
                       win = scope.global().find('window').get();
                       variable = new Prop(win, left.name);
                   }
                   return [3, 7];
-              case 3:
-                  if (!(left.type === 'MemberExpression')) return [3, 5];
+              case 2:
+                  if (!(left.type === 'MemberExpression')) return [3, 4];
                   return [5, __values(MemberExpression$1(left, scope, { getVar: true }))];
-              case 4:
-                  variable = _a.sent();
+              case 3:
+                  variable = _b.sent();
                   return [3, 7];
-              case 5: return [5, __values(pattern$2(left, scope, { feed: value }))];
-              case 6: return [2, _a.sent()];
-              case 7:
+              case 4: return [5, __values(evaluate$1(node.right, scope))];
+              case 5:
+                  value_1 = _b.sent();
+                  return [5, __values(pattern$2(left, scope, { feed: value_1 }))];
+              case 6: return [2, _b.sent()];
+              case 7: return [5, __values(evaluate$1(node.right, scope))];
+              case 8:
+                  value = _b.sent();
                   switch (node.operator) {
                       case '=':
                           variable.set(value);
@@ -1992,41 +2032,62 @@
                       case '&=':
                           variable.set(variable.get() & value);
                           return [2, variable.get()];
+                      case '??=':
+                          variable.set((_a = variable.get()) !== null && _a !== void 0 ? _a : value);
+                          return [2, variable.get()];
+                      case '&&=':
+                          variable.set(variable.get() && value);
+                          return [2, variable.get()];
+                      case '||=':
+                          variable.set(variable.get() || value);
+                          return [2, variable.get()];
                       default: throw new SyntaxError("Unexpected token " + node.operator);
                   }
           }
       });
   }
   function LogicalExpression$1(node, scope) {
-      var _a, _b, _c;
-      return __generator(this, function (_d) {
-          switch (_d.label) {
+      var _a, _b, _c, _d;
+      var _e;
+      return __generator(this, function (_f) {
+          switch (_f.label) {
               case 0:
                   _a = node.operator;
                   switch (_a) {
                       case '||': return [3, 1];
                       case '&&': return [3, 5];
+                      case '??': return [3, 9];
                   }
-                  return [3, 9];
+                  return [3, 14];
               case 1: return [5, __values(evaluate$1(node.left, scope))];
               case 2:
-                  _b = (_d.sent());
+                  _b = (_f.sent());
                   if (_b) return [3, 4];
                   return [5, __values(evaluate$1(node.right, scope))];
               case 3:
-                  _b = (_d.sent());
-                  _d.label = 4;
+                  _b = (_f.sent());
+                  _f.label = 4;
               case 4: return [2, _b];
               case 5: return [5, __values(evaluate$1(node.left, scope))];
               case 6:
-                  _c = (_d.sent());
+                  _c = (_f.sent());
                   if (!_c) return [3, 8];
                   return [5, __values(evaluate$1(node.right, scope))];
               case 7:
-                  _c = (_d.sent());
-                  _d.label = 8;
+                  _c = (_f.sent());
+                  _f.label = 8;
               case 8: return [2, _c];
-              case 9: throw new SyntaxError("Unexpected token " + node.operator);
+              case 9: return [5, __values(evaluate$1(node.left, scope))];
+              case 10:
+                  if (!((_e = (_f.sent())) !== null && _e !== void 0)) return [3, 11];
+                  _d = _e;
+                  return [3, 13];
+              case 11: return [5, __values(evaluate$1(node.right, scope))];
+              case 12:
+                  _d = (_f.sent());
+                  _f.label = 13;
+              case 13: return [2, _d];
+              case 14: throw new SyntaxError("Unexpected token " + node.operator);
           }
       });
   }
@@ -2074,9 +2135,15 @@
                       getter = getGetter(object, key);
                       if (node.object.type === 'Super' && getter) {
                           thisObject = scope.find('this').get();
+                          if (node.optional && thisObject == null) {
+                              return [2, undefined];
+                          }
                           return [2, getter.call(thisObject)];
                       }
                       else {
+                          if (node.optional && object == null) {
+                              return [2, undefined];
+                          }
                           return [2, object[key]];
                       }
                   }
@@ -2111,6 +2178,9 @@
                   return [5, __values(MemberExpression$1(node.callee, scope, { getObj: true }))];
               case 1:
                   object = _e.sent();
+                  if (node.callee.optional && object == null) {
+                      return [2, undefined];
+                  }
                   key = void 0;
                   if (!node.callee.computed) return [3, 3];
                   return [5, __values(evaluate$1(node.callee.property, scope))];
@@ -2128,6 +2198,9 @@
                   else {
                       func = object[key];
                   }
+                  if (node.optional && func == null) {
+                      return [2, undefined];
+                  }
                   if (typeof func !== 'function') {
                       throw new TypeError(key + " is not a function");
                   }
@@ -2140,6 +2213,9 @@
                   return [5, __values(evaluate$1(node.callee, scope))];
               case 6:
                   func = _e.sent();
+                  if (node.optional && func == null) {
+                      return [2, undefined];
+                  }
                   if (typeof func !== 'function' || node.callee.type !== 'Super' && func[CLSCTOR]) {
                       if (node.callee.type === 'Identifier') {
                           name_1 = node.callee.name;
@@ -2376,6 +2452,14 @@
           }
       });
   }
+  function ChainExpression$1(node, scope) {
+      return __generator(this, function (_a) {
+          switch (_a.label) {
+              case 0: return [5, __values(evaluate$1(node.expression, scope))];
+              case 1: return [2, _a.sent()];
+          }
+      });
+  }
   function YieldExpression(node, scope) {
       var res, _a;
       return __generator(this, function (_b) {
@@ -2435,6 +2519,7 @@
     ClassExpression: ClassExpression$1,
     Super: Super$1,
     SpreadElement: SpreadElement$1,
+    ChainExpression: ChainExpression$1,
     YieldExpression: YieldExpression,
     AwaitExpression: AwaitExpression
   });
@@ -3221,7 +3306,7 @@
       });
   }
   function ClassBody$1(node, scope, options) {
-      var klass, superClass, i;
+      var klass, superClass, i, def;
       if (options === void 0) { options = {}; }
       return __generator(this, function (_a) {
           switch (_a.label) {
@@ -3231,7 +3316,9 @@
                   _a.label = 1;
               case 1:
                   if (!(i < node.body.length)) return [3, 4];
-                  return [5, __values(MethodDefinition$1(node.body[i], scope, { klass: klass, superClass: superClass }))];
+                  def = node.body[i];
+                  if (!(def.type === 'MethodDefinition')) return [3, 3];
+                  return [5, __values(MethodDefinition$1(def, scope, { klass: klass, superClass: superClass }))];
               case 2:
                   _a.sent();
                   _a.label = 3;
@@ -3684,7 +3771,7 @@
                   methodBody = node.body.body;
                   for (i = 0; i < methodBody.length; i++) {
                       method = methodBody[i];
-                      if (method.kind === 'constructor') {
+                      if (method.type === 'MethodDefinition' && method.kind === 'constructor') {
                           klass = createFunc(method.value, scope, { superClass: superClass, isCtor: true });
                           break;
                       }
@@ -3922,7 +4009,7 @@
       var methodBody = node.body.body;
       for (var i = 0; i < methodBody.length; i++) {
           var method = methodBody[i];
-          if (method.kind === 'constructor') {
+          if (method.type === 'MethodDefinition' && method.kind === 'constructor') {
               klass = createFunc$1(method.value, scope, { superClass: superClass, isCtor: true });
               break;
           }
@@ -3962,15 +4049,18 @@
       return result;
   }
 
+  var latestVer = 15;
   var Sval = (function () {
       function Sval(options) {
           if (options === void 0) { options = {}; }
-          this.options = {};
+          this.options = { ecmaVersion: 'latest' };
           this.scope = new Scope(null, true);
           this.exports = {};
-          var _a = options.ecmaVer, ecmaVer = _a === void 0 ? 9 : _a, _b = options.sandBox, sandBox = _b === void 0 ? true : _b;
-          ecmaVer -= ecmaVer < 2015 ? 0 : 2009;
-          if ([3, 5, 6, 7, 8, 9, 10].indexOf(ecmaVer) === -1) {
+          var _a = options.ecmaVer, ecmaVer = _a === void 0 ? 'latest' : _a, _b = options.sandBox, sandBox = _b === void 0 ? true : _b;
+          if (typeof ecmaVer === 'number') {
+              ecmaVer -= ecmaVer < 2015 ? 0 : 2009;
+          }
+          if (ecmaVer !== 'latest' && ecmaVer !== 3 && (ecmaVer < 5 || ecmaVer > latestVer)) {
               throw new Error("unsupported ecmaVer");
           }
           this.options.ecmaVersion = ecmaVer;
