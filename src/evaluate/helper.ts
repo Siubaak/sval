@@ -4,7 +4,7 @@ import { runAsync, runAsyncOptions } from '../share/async'
 import { define, inherits, assign } from '../share/util'
 import { Identifier } from '../evaluate_n/identifier'
 import { BlockStatement } from './statement'
-import * as estree from 'estree'
+import * as acorn from 'acorn'
 import Scope from '../scope'
 import evaluate from '.'
 
@@ -21,7 +21,7 @@ export interface hoistOptions {
 }
 
 export function* hoist(
-  block: estree.Program | estree.BlockStatement,
+  block: acorn.Program | acorn.BlockStatement,
   scope: Scope,
   options: hoistOptions = {}
 ) {
@@ -39,7 +39,7 @@ export function* hoist(
     ) {
       yield* VariableDeclaration(statement, scope, { hoist: true, onlyBlock: true })
     } else if (!onlyBlock) {
-      yield* hoistVarRecursion(statement as estree.Statement, scope)
+      yield* hoistVarRecursion(statement as acorn.Statement, scope)
     }
   }
   if (funcDclrIdxs.length) {
@@ -50,7 +50,7 @@ export function* hoist(
   }
 }
 
-function* hoistVarRecursion(statement: estree.Statement, scope: Scope): IterableIterator<any> {
+function* hoistVarRecursion(statement: acorn.Statement, scope: Scope): IterableIterator<any> {
   switch (statement.type) {
     case 'VariableDeclaration':
       yield* VariableDeclaration(statement, scope, { hoist: true })
@@ -108,7 +108,7 @@ function* hoistVarRecursion(statement: estree.Statement, scope: Scope): Iterable
   }
 }
 
-export function* pattern(node: estree.Pattern, scope: Scope, options: PatternOptions = {}): IterableIterator<any> {
+export function* pattern(node: acorn.Pattern, scope: Scope, options: PatternOptions = {}): IterableIterator<any> {
   switch (node.type) {
     case 'ObjectPattern':
       return yield* ObjectPattern(node, scope, options)
@@ -130,7 +130,7 @@ export interface CtorOptions {
 
 import { createFunc as createAnotherFunc } from /*<replace by:='../evaluate/helper'>*/'../evaluate_n/helper'/*</replace>*/
 export function createFunc(
-  node: estree.FunctionDeclaration | estree.FunctionExpression | estree.ArrowFunctionExpression,
+  node: acorn.FunctionDeclaration | acorn.FunctionExpression | acorn.ArrowFunctionExpression,
   scope: Scope,
   options: CtorOptions = {}
 ): any {
@@ -223,8 +223,8 @@ export function createFunc(
   *//*</add>*/
 
   define(func, 'name', {
-    value: (node as estree.FunctionDeclaration).id
-      && (node as estree.FunctionDeclaration).id.name
+    value: (node as acorn.FunctionDeclaration).id
+      && (node as acorn.FunctionDeclaration).id.name
       || '',
     configurable: true
   })
@@ -237,7 +237,7 @@ export function createFunc(
 }
 
 export function* createClass(
-  node: estree.ClassDeclaration | estree.ClassExpression,
+  node: acorn.ClassDeclaration | acorn.ClassExpression,
   scope: Scope,
 ) {
   const superClass = yield* evaluate(node.superClass, scope)
@@ -276,7 +276,7 @@ export interface ForXHandlerOptions {
 }
 
 export function* ForXHandler(
-  node: estree.ForInStatement | estree.ForOfStatement,
+  node: acorn.ForInStatement | acorn.ForOfStatement,
   scope: Scope,
   options: ForXHandlerOptions
 ) {

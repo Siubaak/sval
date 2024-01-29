@@ -1,7 +1,6 @@
+import { parse, Options, ecmaVersion, Node, Program } from 'acorn'
 import { getOwnNames, createSandBox, globalObj, assign } from './share/util'
 import { version } from '../package.json'
-import { parse, Options, ecmaVersion } from 'acorn'
-import { Node, Program } from 'estree'
 import Scope from './scope'
 
 import { hoist } from './evaluate_n/helper'

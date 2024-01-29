@@ -3,7 +3,7 @@ import { VarKind } from '../scope/variable'
 import { Identifier } from './identifier'
 import { assign } from '../share/util'
 import { pattern } from './helper'
-import * as estree from 'estree'
+import * as acorn from 'acorn'
 import Scope from '../scope'
 import evaluate from '.'
 
@@ -14,7 +14,7 @@ export interface PatternOptions {
   feed?: any
 }
 
-export function* ObjectPattern(node: estree.ObjectPattern, scope: Scope, options: PatternOptions = {}) {
+export function* ObjectPattern(node: acorn.ObjectPattern, scope: Scope, options: PatternOptions = {}) {
   const { kind = 'var', hoist = false, onlyBlock = false, feed = {} } = options
   const fedKeys: string[] = []
   for (let i = 0; i < node.properties.length; i++) {
@@ -37,7 +37,7 @@ export function* ObjectPattern(node: estree.ObjectPattern, scope: Scope, options
       if (property.computed) {
         key = yield* evaluate(property.key, scope)
       } else {
-        key = (property.key as estree.Identifier).name
+        key = (property.key as acorn.Identifier).name
       }
       fedKeys.push(key)
       
@@ -55,7 +55,7 @@ export function* ObjectPattern(node: estree.ObjectPattern, scope: Scope, options
   }
 }
 
-export function* ArrayPattern(node: estree.ArrayPattern, scope: Scope, options: PatternOptions = {}) {
+export function* ArrayPattern(node: acorn.ArrayPattern, scope: Scope, options: PatternOptions = {}) {
   const { kind, hoist = false, onlyBlock = false, feed = [] } = options
   const result = []
   for (let i = 0; i < node.elements.length; i++) {
@@ -90,7 +90,7 @@ export function* ArrayPattern(node: estree.ArrayPattern, scope: Scope, options: 
   }
 }
 
-export function* RestElement(node: estree.RestElement, scope: Scope, options: PatternOptions = {}) {
+export function* RestElement(node: acorn.RestElement, scope: Scope, options: PatternOptions = {}) {
   const { kind, hoist = false, onlyBlock = false, feed = [] } = options
   const arg = node.argument
   if (hoist) {
@@ -115,7 +115,7 @@ export function* RestElement(node: estree.RestElement, scope: Scope, options: Pa
   }
 }
 
-export function* AssignmentPattern(node: estree.AssignmentPattern, scope: Scope, options: PatternOptions = {}) {
+export function* AssignmentPattern(node: acorn.AssignmentPattern, scope: Scope, options: PatternOptions = {}) {
   const { kind = 'var', hoist = false, onlyBlock = false, feed = yield* evaluate(node.right, scope) } = options
   const left = node.left
   if (hoist) {

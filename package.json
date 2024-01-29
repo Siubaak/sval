@@ -33,7 +33,6 @@
     "acorn": "^8.11.3"
   },
   "devDependencies": {
-    "@types/estree": "^1.0.5",
     "@types/jest": "^24.9.1",
     "rollup": "^1.32.1",
     "rollup-plugin-json": "^3.1.0",

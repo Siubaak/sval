@@ -1,5 +1,5 @@
 import { assign } from '../share/util'
-import { Node } from 'estree'
+import { Node } from 'acorn'
 import Scope from '../scope'
 
 import * as declaration from './declaration'

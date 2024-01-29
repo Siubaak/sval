@@ -1,11 +1,11 @@
 import { BREAK, CONTINUE, RETURN, AWAIT } from '../share/const'
 import { hoist, pattern, ForXHandler } from './helper'
 import { getAsyncIterator } from '../share/util'
-import * as estree from 'estree'
+import * as acorn from 'acorn'
 import Scope from '../scope'
 import evaluate from '.'
 
-export function* ExpressionStatement(node: estree.ExpressionStatement, scope: Scope) {
+export function* ExpressionStatement(node: acorn.ExpressionStatement, scope: Scope) {
   yield* evaluate(node.expression, scope)
 }
 
@@ -15,7 +15,7 @@ export interface BlockOptions {
 }
 
 export function* BlockStatement(
-  block: estree.BlockStatement,
+  block: acorn.BlockStatement,
   scope: Scope,
   options: BlockOptions = {},
 ) {
@@ -46,7 +46,7 @@ export function* DebuggerStatement(): IterableIterator<any> {
   debugger
 }
 
-export function* ReturnStatement(node: estree.ReturnStatement, scope: Scope) {
+export function* ReturnStatement(node: acorn.ReturnStatement, scope: Scope) {
   RETURN.RES = node.argument ? (yield* evaluate(node.argument, scope)) : undefined
   return RETURN
 }
@@ -59,7 +59,7 @@ export function* ContinueStatement() {
   return CONTINUE
 }
 
-export function* IfStatement(node: estree.IfStatement, scope: Scope) {
+export function* IfStatement(node: acorn.IfStatement, scope: Scope) {
   if (yield* evaluate(node.test, scope)) {
     return yield* evaluate(node.consequent, scope)
   } else {
@@ -67,7 +67,7 @@ export function* IfStatement(node: estree.IfStatement, scope: Scope) {
   }
 }
 
-export function* SwitchStatement(node: estree.SwitchStatement, scope: Scope) {
+export function* SwitchStatement(node: acorn.SwitchStatement, scope: Scope) {
   const discriminant = yield* evaluate(node.discriminant, scope)
   let matched = false
   for (let i = 0; i < node.cases.length; i++) {
@@ -93,7 +93,7 @@ export function* SwitchStatement(node: estree.SwitchStatement, scope: Scope) {
   }
 }
 
-export function* SwitchCase(node: estree.SwitchCase, scope: Scope) {
+export function* SwitchCase(node: acorn.SwitchCase, scope: Scope) {
   for (let i = 0; i < node.consequent.length; i++) {
     const result = yield* evaluate(node.consequent[i], scope)
     if (result === BREAK || result === CONTINUE || result === RETURN) {
@@ -102,11 +102,11 @@ export function* SwitchCase(node: estree.SwitchCase, scope: Scope) {
   }
 }
 
-export function* ThrowStatement(node: estree.ThrowStatement, scope: Scope) {
+export function* ThrowStatement(node: acorn.ThrowStatement, scope: Scope) {
   throw yield* evaluate(node.argument, scope)
 }
 
-export function* TryStatement(node: estree.TryStatement, scope: Scope) {
+export function* TryStatement(node: acorn.TryStatement, scope: Scope) {
   try {
     return yield* BlockStatement(node.block, scope)
   } catch (err) {
@@ -135,11 +135,11 @@ export function* TryStatement(node: estree.TryStatement, scope: Scope) {
   }
 }
 
-export function* CatchClause(node: estree.CatchClause, scope: Scope) {
+export function* CatchClause(node: acorn.CatchClause, scope: Scope) {
   return yield* BlockStatement(node.body, scope, { invasived: true })
 }
 
-export function* WhileStatement(node: estree.WhileStatement, scope: Scope) {
+export function* WhileStatement(node: acorn.WhileStatement, scope: Scope) {
   while (yield* evaluate(node.test, scope)) {
     const result = yield* evaluate(node.body, scope)
     if (result === BREAK) {
@@ -152,7 +152,7 @@ export function* WhileStatement(node: estree.WhileStatement, scope: Scope) {
   }
 }
 
-export function* DoWhileStatement(node: estree.DoWhileStatement, scope: Scope) {
+export function* DoWhileStatement(node: acorn.DoWhileStatement, scope: Scope) {
   do {
     const result = yield* evaluate(node.body, scope)
     if (result === BREAK) {
@@ -165,7 +165,7 @@ export function* DoWhileStatement(node: estree.DoWhileStatement, scope: Scope) {
   } while (yield* evaluate(node.test, scope))
 }
 
-export function* ForStatement(node: estree.ForStatement, scope: Scope) {
+export function* ForStatement(node: acorn.ForStatement, scope: Scope) {
   const forScope = new Scope(scope)
   
   for (
@@ -191,7 +191,7 @@ export function* ForStatement(node: estree.ForStatement, scope: Scope) {
   }
 }
 
-export function* ForInStatement(node: estree.ForInStatement, scope: Scope) {
+export function* ForInStatement(node: acorn.ForInStatement, scope: Scope) {
   for (const value in yield* evaluate(node.right, scope)) {
     const result = yield* ForXHandler(node, scope, { value })
     if (result === BREAK) {
@@ -204,7 +204,7 @@ export function* ForInStatement(node: estree.ForInStatement, scope: Scope) {
   }
 }
 
-export function* ForOfStatement(node: estree.ForOfStatement, scope: Scope): any {
+export function* ForOfStatement(node: acorn.ForOfStatement, scope: Scope): any {
   const right = yield* evaluate(node.right, scope)
   /*<remove>*/
   if (node.await) {

@@ -1,5 +1,5 @@
 import { DEADZONE } from '../share/const'
-import * as estree from 'estree'
+import * as acorn from 'acorn'
 import Scope from '../scope'
 
 export interface IdentifierOptions {
@@ -7,7 +7,7 @@ export interface IdentifierOptions {
   throwErr?: boolean
 }
 
-export function* Identifier(node: estree.Identifier, scope: Scope, options: IdentifierOptions = {}) {
+export function* Identifier(node: acorn.Identifier, scope: Scope, options: IdentifierOptions = {}) {
   const { getVar = false, throwErr = true } = options
 
   if (node.name === 'undefined') {

@@ -1,6 +1,6 @@
-import * as estree from 'estree'
+import * as acorn from 'acorn'
 import Scope from '../scope'
 
-export function* Literal(node: estree.Literal, scope: Scope) {
+export function* Literal(node: acorn.Literal, scope: Scope) {
   return node.value
 }

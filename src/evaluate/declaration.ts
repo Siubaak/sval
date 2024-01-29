@@ -2,12 +2,12 @@ import { pattern, createFunc, createClass } from './helper'
 import { define, getDptor, assign } from '../share/util'
 import { NOINIT, DEADZONE } from '../share/const'
 import { VarKind } from '../scope/variable'
-import * as estree from 'estree'
+import * as acorn from 'acorn'
 import Scope from '../scope'
 import evaluate from '.'
 
 export function* FunctionDeclaration(
-  node: estree.FunctionDeclaration,
+  node: acorn.FunctionDeclaration,
   scope: Scope
 ): IterableIterator<any> {
   scope.func(node.id.name, createFunc(node, scope))
@@ -20,7 +20,7 @@ export interface VariableDeclarationOptions {
 }
 
 export function* VariableDeclaration(
-  node: estree.VariableDeclaration,
+  node: acorn.VariableDeclaration,
   scope: Scope,
   options: VariableDeclarationOptions = {},
 ) {
@@ -34,7 +34,7 @@ export interface VariableDeclaratorOptions {
 }
 
 export function* VariableDeclarator(
-  node: estree.VariableDeclarator,
+  node: acorn.VariableDeclarator,
   scope: Scope,
   options: VariableDeclaratorOptions & VariableDeclarationOptions = {},
 ) {
@@ -75,7 +75,7 @@ export function* VariableDeclarator(
 }
 
 export function* ClassDeclaration(
-  node: estree.ClassDeclaration,
+  node: acorn.ClassDeclaration,
   scope: Scope
 ): IterableIterator<any> {
   scope.func(node.id.name, yield* createClass(node, scope))
@@ -86,7 +86,7 @@ export interface ClassOptions {
   superClass?: (...args: any[]) => void
 }
 
-export function* ClassBody(node: estree.ClassBody, scope: Scope, options: ClassOptions = {}) {
+export function* ClassBody(node: acorn.ClassBody, scope: Scope, options: ClassOptions = {}) {
   const { klass, superClass } = options
 
   for (let i = 0; i < node.body.length; i++) {
@@ -97,7 +97,7 @@ export function* ClassBody(node: estree.ClassBody, scope: Scope, options: ClassO
   }
 }
 
-export function* MethodDefinition(node: estree.MethodDefinition, scope: Scope, options: ClassOptions = {}) {
+export function* MethodDefinition(node: acorn.MethodDefinition, scope: Scope, options: ClassOptions = {}) {
   const { klass, superClass } = options
 
   let key: string
