@@ -130,6 +130,12 @@ describe('testing src/expression.ts', () => {
       expect(exports.a).toBe(1)
       exports.a ^= 1
       expect(exports.a).toBe(0)
+      exports.a ??= 1
+      expect(exports.a).toBe(0)
+      exports.a &&= 1
+      expect(exports.a).toBe(0)
+      exports.a ||= 1
+      expect(exports.a).toBe(1)
     `
     interpreter.import({ expect })
     interpreter.run(`!async function(){${code}}()`) // also test for generator env
@@ -263,7 +269,7 @@ describe('testing src/expression.ts', () => {
       writable: true
     })
     
-    const yPD = Object.getOwnPropertyDescriptor(a, 'y')
+    const yPD = Object.getOwnPropertyDescriptor(a, 'y')!
     expect({
       configurable: yPD.configurable,
       enumerable: yPD.enumerable,
@@ -281,7 +287,9 @@ describe('testing src/expression.ts', () => {
       const y = true
 
       expect(x && y).toBe(0)
-      expect(x || y).toBe(true)
+      expect(x || y).toBeTruthy()
+      expect(x ?? y).toBe(0)
+      expect(null ?? x).toBe(0)
     `)
   })
 

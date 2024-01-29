@@ -209,6 +209,9 @@ export function* AssignmentExpression(node: estree.AssignmentExpression, scope: 
     case '|=': variable.set(variable.get() | value); return variable.get()
     case '^=': variable.set(variable.get() ^ value); return variable.get()
     case '&=': variable.set(variable.get() & value); return variable.get()
+    case '??=': variable.set(variable.get() ?? value); return variable.get()
+    case '&&=': variable.set(variable.get() && value); return variable.get()
+    case '||=': variable.set(variable.get() || value); return variable.get()
     /* istanbul ignore next */
     default: throw new SyntaxError(`Unexpected token ${node.operator}`)
   }
