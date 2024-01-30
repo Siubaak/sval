@@ -21,7 +21,7 @@ class Sval {
   private options: Options = { ecmaVersion: 'latest' }
   private scope = new Scope(null, true)
 
-  exports: { [name: string]: any } = {}
+  exports: Record<string, any> = {}
 
   constructor(options: SvalOptions = {}) {
     let { ecmaVer = 'latest', sandBox = true, sourceType = 'script' } = options
@@ -50,7 +50,7 @@ class Sval {
     this.scope.const(sourceType === 'module' ? EXPORTS : 'exports', this.exports = {})
   }
 
-  import(nameOrModules: string | { [name: string]: any }, mod?: any) {
+  import(nameOrModules: string | Record<string, any>, mod?: any) {
     if (typeof nameOrModules === 'string') {
       nameOrModules = { [nameOrModules]: mod }
     }
