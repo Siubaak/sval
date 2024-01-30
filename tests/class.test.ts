@@ -526,9 +526,9 @@ describe('testing src/index.ts', () => {
     `)
 
     // parent reads overrided property
-    expect(interpreter.exports.x).toEqual(6)
+    expect(interpreter.exports.x).toBe(6)
     // child reads parent property with this
-    expect(interpreter.exports.y).toEqual(7)
+    expect(interpreter.exports.y).toBe(7)
   })
 
   it('should create class with field normally', () => {
@@ -548,6 +548,7 @@ describe('testing src/index.ts', () => {
           expect(this.#d()).toBe(4)
           expect(this.e).toBe(5)
           expect(A.#g).toBe(7)
+          expect(#b in this).toBeTruthy()
         }
         static f = 6
         static #g = this.f + 1

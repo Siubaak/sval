@@ -146,8 +146,17 @@ export function* UpdateExpression(node: acorn.UpdateExpression, scope: Scope) {
 }
 
 export function* BinaryExpression(node: acorn.BinaryExpression, scope: Scope) {
-  const left = yield* evaluate(node.left, scope)
-  const right = yield* evaluate(node.right, scope)
+  let left: any
+  let right: any
+
+  if (node.left.type === 'PrivateIdentifier') {
+    left = node.left.name
+    right = yield* evaluate(node.right, scope)
+    right = right[PRIVATE]
+  } else {
+    left = yield* evaluate(node.left, scope)
+    right = yield* evaluate(node.right, scope)
+  }
 
   switch (node.operator) {
     case '==': return left == right
