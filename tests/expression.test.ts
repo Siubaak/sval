@@ -399,4 +399,19 @@ describe('testing src/expression.ts', () => {
     expect(interpreter.exports.func).toBe(2)
     expect(interpreter.exports.funcnone).toBeUndefined()
   })
+
+  it('should support dynamic import', done => {  
+    const interpreter = new Sval({ sourceType: 'module' })
+    interpreter.import('done', { default: done })
+    interpreter.import('expect', { default: expect })
+    interpreter.import('module', () => ({ default: 1 }))
+    interpreter.run(`
+      import done from 'done'
+      import expect from 'expect'
+      import('module').then(mod => {
+        expect(mod.default).toBe(1)
+        done()
+      })
+    `)
+  })
 })

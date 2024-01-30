@@ -1,5 +1,5 @@
 import { define, freeze, getGetter, getSetter, createSymbol, assign, getDptor, WINDOW } from '../share/util'
-import { SUPER, NOCTOR, AWAIT, CLSCTOR, NEWTARGET, SUPERCALL, PRIVATE } from '../share/const'
+import { SUPER, NOCTOR, AWAIT, CLSCTOR, NEWTARGET, SUPERCALL, PRIVATE, IMPORT } from '../share/const'
 import { pattern, createFunc, createClass } from './helper'
 import { Variable, Prop } from '../scope/variable'
 import { Identifier } from './identifier'
@@ -549,6 +549,30 @@ export function* SpreadElement(node: acorn.SpreadElement, scope: Scope) {
 
 export function* ChainExpression(node: acorn.ChainExpression, scope: Scope) {
   return yield* evaluate(node.expression, scope)
+}
+
+export function* ImportExpression(node: acorn.ImportExpression, scope: Scope) {
+  const globalScope = scope.global()
+
+  const source = yield* evaluate(node.source, scope)
+  const module = globalScope.find(IMPORT + source)
+  let value: any
+  if (module) {
+    const result = module.get()
+    if (result) {
+      if (typeof result === 'function') {
+        value = result()
+      } else if (typeof result === 'object') {
+        value = result
+      }
+    }
+  }
+
+  if (!value || typeof value !== 'object') {
+    return Promise.reject(new TypeError(`Failed to resolve module specifier "${source}"`))
+  }
+
+  return Promise.resolve(value)
 }
 
 /*<remove>*/
