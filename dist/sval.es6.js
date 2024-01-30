@@ -4,6 +4,27 @@
   (global = global || self, global.Sval = factory(global.acorn));
 }(this, (function (acorn) { 'use strict';
 
+  var statement = /*#__PURE__*/Object.freeze({
+    __proto__: null,
+    get ExpressionStatement () { return ExpressionStatement; },
+    get BlockStatement () { return BlockStatement; },
+    get EmptyStatement () { return EmptyStatement; },
+    get DebuggerStatement () { return DebuggerStatement; },
+    get ReturnStatement () { return ReturnStatement; },
+    get BreakStatement () { return BreakStatement; },
+    get ContinueStatement () { return ContinueStatement; },
+    get IfStatement () { return IfStatement; },
+    get SwitchStatement () { return SwitchStatement; },
+    get SwitchCase () { return SwitchCase; },
+    get ThrowStatement () { return ThrowStatement; },
+    get TryStatement () { return TryStatement; },
+    get CatchClause () { return CatchClause; },
+    get WhileStatement () { return WhileStatement; },
+    get DoWhileStatement () { return DoWhileStatement; },
+    get ForStatement () { return ForStatement; },
+    get ForInStatement () { return ForInStatement; },
+    get ForOfStatement () { return ForOfStatement; }
+  });
   var declaration = /*#__PURE__*/Object.freeze({
     __proto__: null,
     get FunctionDeclaration () { return FunctionDeclaration; },
@@ -11,7 +32,34 @@
     get VariableDeclarator () { return VariableDeclarator; },
     get ClassDeclaration () { return ClassDeclaration; },
     get ClassBody () { return ClassBody; },
-    get MethodDefinition () { return MethodDefinition; }
+    get MethodDefinition () { return MethodDefinition; },
+    get PropertyDefinition () { return PropertyDefinition; },
+    get StaticBlock () { return StaticBlock; },
+    get ImportDeclaration () { return ImportDeclaration; },
+    get ExportDefaultDeclaration () { return ExportDefaultDeclaration; },
+    get ExportNamedDeclaration () { return ExportNamedDeclaration; },
+    get ExportAllDeclaration () { return ExportAllDeclaration; }
+  });
+  var statement$1 = /*#__PURE__*/Object.freeze({
+    __proto__: null,
+    get ExpressionStatement () { return ExpressionStatement$1; },
+    get BlockStatement () { return BlockStatement$1; },
+    get EmptyStatement () { return EmptyStatement$1; },
+    get DebuggerStatement () { return DebuggerStatement$1; },
+    get ReturnStatement () { return ReturnStatement$1; },
+    get BreakStatement () { return BreakStatement$1; },
+    get ContinueStatement () { return ContinueStatement$1; },
+    get IfStatement () { return IfStatement$1; },
+    get SwitchStatement () { return SwitchStatement$1; },
+    get SwitchCase () { return SwitchCase$1; },
+    get ThrowStatement () { return ThrowStatement$1; },
+    get TryStatement () { return TryStatement$1; },
+    get CatchClause () { return CatchClause$1; },
+    get WhileStatement () { return WhileStatement$1; },
+    get DoWhileStatement () { return DoWhileStatement$1; },
+    get ForStatement () { return ForStatement$1; },
+    get ForInStatement () { return ForInStatement$1; },
+    get ForOfStatement () { return ForOfStatement$1; }
   });
   var declaration$1 = /*#__PURE__*/Object.freeze({
     __proto__: null,
@@ -20,7 +68,13 @@
     get VariableDeclarator () { return VariableDeclarator$1; },
     get ClassDeclaration () { return ClassDeclaration$1; },
     get ClassBody () { return ClassBody$1; },
-    get MethodDefinition () { return MethodDefinition$1; }
+    get MethodDefinition () { return MethodDefinition$1; },
+    get PropertyDefinition () { return PropertyDefinition$1; },
+    get StaticBlock () { return StaticBlock$1; },
+    get ImportDeclaration () { return ImportDeclaration$1; },
+    get ExportDefaultDeclaration () { return ExportDefaultDeclaration$1; },
+    get ExportNamedDeclaration () { return ExportNamedDeclaration$1; },
+    get ExportAllDeclaration () { return ExportAllDeclaration$1; }
   });
 
   const freeze = Object.freeze;
@@ -270,6 +324,10 @@
           }
           catch (err) { }
           try {
+              globalObj.BigInt = BigInt;
+          }
+          catch (err) { }
+          try {
               globalObj.decodeURI = decodeURI;
           }
           catch (err) { }
@@ -383,8 +441,6 @@
       }
   }
 
-  var version = "0.5.0";
-
   const AWAIT = { RES: undefined };
   const RETURN = { RES: undefined };
   const CONTINUE = createSymbol('continue');
@@ -394,8 +450,13 @@
   const NOCTOR = createSymbol('noctor');
   const CLSCTOR = createSymbol('clsctor');
   const NEWTARGET = createSymbol('newtarget');
+  const PRIVATE = createSymbol('private');
   const NOINIT = createSymbol('noinit');
   const DEADZONE = createSymbol('deadzone');
+  const IMPORT = createSymbol('import');
+  const EXPORTS = createSymbol('exports');
+
+  var version = "0.5.1";
 
   class Var {
       constructor(kind, value) {
@@ -704,8 +765,17 @@
       }
   }
   function BinaryExpression(node, scope) {
-      const left = evaluate(node.left, scope);
-      const right = evaluate(node.right, scope);
+      let left;
+      let right;
+      if (node.left.type === 'PrivateIdentifier') {
+          left = node.left.name;
+          right = evaluate(node.right, scope);
+          right = right[PRIVATE];
+      }
+      else {
+          left = evaluate(node.left, scope);
+          right = evaluate(node.right, scope);
+      }
       switch (node.operator) {
           case '==': return left == right;
           case '!=': return left != right;
@@ -828,11 +898,19 @@
       if (getObj)
           return object;
       let key;
+      let priv = false;
       if (node.computed) {
           key = evaluate(node.property, scope);
       }
+      else if (node.property.type === 'PrivateIdentifier') {
+          key = node.property.name;
+          priv = true;
+      }
       else {
           key = node.property.name;
+      }
+      if (priv) {
+          object = object[PRIVATE];
       }
       if (getVar) {
           const setter = getSetter(object, key);
@@ -877,18 +955,27 @@
               return undefined;
           }
           let key;
+          let priv = false;
           if (node.callee.computed) {
               key = evaluate(node.callee.property, scope);
+          }
+          else if (node.callee.property.type === 'PrivateIdentifier') {
+              key = node.callee.property.name;
+              priv = true;
           }
           else {
               key = node.callee.property.name;
           }
+          let obj = object;
+          if (priv) {
+              obj = obj[PRIVATE];
+          }
           if (node.callee.object.type === 'Super') {
               const thisObject = scope.find('this').get();
-              func = object[key].bind(thisObject);
+              func = obj[key].bind(thisObject);
           }
           else {
-              func = object[key];
+              func = obj[key];
           }
           if (node.optional && func == null) {
               return undefined;
@@ -984,7 +1071,12 @@
       return new constructor(...args);
   }
   function MetaProperty(node, scope) {
-      return scope.find(NEWTARGET).get();
+      if (node.meta.name === 'new' && node.property.name === 'target') {
+          return scope.find(NEWTARGET).get();
+      }
+      else if (node.meta.name === 'import' && node.property.name === 'meta') {
+          return { url: '' };
+      }
   }
   function SequenceExpression(node, scope) {
       let result;
@@ -1053,6 +1145,27 @@
   function ChainExpression(node, scope) {
       return evaluate(node.expression, scope);
   }
+  function ImportExpression(node, scope) {
+      const globalScope = scope.global();
+      const source = evaluate(node.source, scope);
+      const module = globalScope.find(IMPORT + source);
+      let value;
+      if (module) {
+          const result = module.get();
+          if (result) {
+              if (typeof result === 'function') {
+                  value = result();
+              }
+              else if (typeof result === 'object') {
+                  value = result;
+              }
+          }
+      }
+      if (!value || typeof value !== 'object') {
+          return Promise.reject(new TypeError(`Failed to resolve module specifier "${source}"`));
+      }
+      return Promise.resolve(value);
+  }
 
   var expression = /*#__PURE__*/Object.freeze({
     __proto__: null,
@@ -1078,8 +1191,175 @@
     ClassExpression: ClassExpression,
     Super: Super,
     SpreadElement: SpreadElement,
-    ChainExpression: ChainExpression
+    ChainExpression: ChainExpression,
+    ImportExpression: ImportExpression
   });
+
+  function ObjectPattern(node, scope, options = {}) {
+      const { kind = 'var', hoist = false, onlyBlock = false, feed = {} } = options;
+      const fedKeys = [];
+      for (let i = 0; i < node.properties.length; i++) {
+          const property = node.properties[i];
+          if (hoist) {
+              if (onlyBlock || kind === 'var') {
+                  if (property.type === 'Property') {
+                      const value = property.value;
+                      if (value.type === 'Identifier') {
+                          scope[kind](value.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
+                      }
+                      else {
+                          pattern$3(value, scope, { kind, hoist, onlyBlock });
+                      }
+                  }
+                  else {
+                      RestElement(property, scope, { kind, hoist, onlyBlock });
+                  }
+              }
+          }
+          else if (property.type === 'Property') {
+              let key;
+              if (property.computed) {
+                  key = evaluate(property.key, scope);
+              }
+              else {
+                  key = property.key.name;
+              }
+              fedKeys.push(key);
+              const value = property.value;
+              if (value.type === 'Identifier') {
+                  scope[kind](value.name, feed[key]);
+              }
+              else {
+                  pattern$3(value, scope, { kind, feed: feed[key] });
+              }
+          }
+          else {
+              const rest = assign({}, feed);
+              for (let i = 0; i < fedKeys.length; i++)
+                  delete rest[fedKeys[i]];
+              RestElement(property, scope, { kind, feed: rest });
+          }
+      }
+  }
+  function ArrayPattern(node, scope, options = {}) {
+      const { kind, hoist = false, onlyBlock = false, feed = [] } = options;
+      const result = [];
+      for (let i = 0; i < node.elements.length; i++) {
+          const element = node.elements[i];
+          if (!element)
+              continue;
+          if (hoist) {
+              if (onlyBlock || kind === 'var') {
+                  if (element.type === 'Identifier') {
+                      scope[kind](element.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
+                  }
+                  else {
+                      pattern$3(element, scope, { kind, hoist, onlyBlock });
+                  }
+              }
+          }
+          else if (element.type === 'Identifier') {
+              if (kind) {
+                  scope[kind](element.name, feed[i]);
+              }
+              else {
+                  const variable = Identifier(element, scope, { getVar: true });
+                  variable.set(feed[i]);
+                  result.push(variable.get());
+              }
+          }
+          else if (element.type === 'RestElement') {
+              RestElement(element, scope, { kind, feed: feed.slice(i) });
+          }
+          else {
+              pattern$3(element, scope, { kind, feed: feed[i] });
+          }
+      }
+      if (result.length) {
+          return result;
+      }
+  }
+  function RestElement(node, scope, options = {}) {
+      const { kind, hoist = false, onlyBlock = false, feed = [] } = options;
+      const arg = node.argument;
+      if (hoist) {
+          if (onlyBlock || kind === 'var') {
+              if (arg.type === 'Identifier') {
+                  scope[kind](arg.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
+              }
+              else {
+                  pattern$3(arg, scope, { kind, hoist, onlyBlock });
+              }
+          }
+      }
+      else if (arg.type === 'Identifier') {
+          if (kind) {
+              scope[kind](arg.name, feed);
+          }
+          else {
+              const variable = Identifier(arg, scope, { getVar: true });
+              variable.set(feed);
+          }
+      }
+      else {
+          pattern$3(arg, scope, { kind, feed });
+      }
+  }
+  function AssignmentPattern(node, scope, options = {}) {
+      const { kind = 'var', hoist = false, onlyBlock = false, feed = evaluate(node.right, scope) } = options;
+      const left = node.left;
+      if (hoist) {
+          if (onlyBlock || kind === 'var') {
+              if (left.type === 'Identifier') {
+                  scope[kind](left.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
+              }
+              else {
+                  pattern$3(left, scope, { kind, hoist, onlyBlock });
+              }
+          }
+      }
+      else if (left.type === 'Identifier') {
+          scope[kind](left.name, feed);
+      }
+      else {
+          pattern$3(left, scope, { kind, feed });
+      }
+  }
+
+  var pattern = /*#__PURE__*/Object.freeze({
+    __proto__: null,
+    ObjectPattern: ObjectPattern,
+    ArrayPattern: ArrayPattern,
+    RestElement: RestElement,
+    AssignmentPattern: AssignmentPattern
+  });
+
+  function Program(program, scope) {
+      for (let i = 0; i < program.body.length; i++) {
+          evaluate(program.body[i], scope);
+      }
+  }
+
+  var program = /*#__PURE__*/Object.freeze({
+    __proto__: null,
+    Program: Program
+  });
+
+  let evaluateOps;
+  function evaluate(node, scope) {
+      if (!node)
+          return;
+      if (!evaluateOps) {
+          evaluateOps = assign({}, declaration, expression, identifier, statement, literal, pattern, program);
+      }
+      const handler = evaluateOps[node.type];
+      if (handler) {
+          return handler(node, scope);
+      }
+      else {
+          throw new Error(`${node.type} isn't implemented`);
+      }
+  }
 
   function ExpressionStatement(node, scope) {
       evaluate(node.expression, scope);
@@ -1267,194 +1547,6 @@
       }
   }
 
-  var statement = /*#__PURE__*/Object.freeze({
-    __proto__: null,
-    ExpressionStatement: ExpressionStatement,
-    BlockStatement: BlockStatement,
-    EmptyStatement: EmptyStatement,
-    DebuggerStatement: DebuggerStatement,
-    ReturnStatement: ReturnStatement,
-    BreakStatement: BreakStatement,
-    ContinueStatement: ContinueStatement,
-    IfStatement: IfStatement,
-    SwitchStatement: SwitchStatement,
-    SwitchCase: SwitchCase,
-    ThrowStatement: ThrowStatement,
-    TryStatement: TryStatement,
-    CatchClause: CatchClause,
-    WhileStatement: WhileStatement,
-    DoWhileStatement: DoWhileStatement,
-    ForStatement: ForStatement,
-    ForInStatement: ForInStatement,
-    ForOfStatement: ForOfStatement
-  });
-
-  function ObjectPattern(node, scope, options = {}) {
-      const { kind = 'var', hoist = false, onlyBlock = false, feed = {} } = options;
-      const fedKeys = [];
-      for (let i = 0; i < node.properties.length; i++) {
-          const property = node.properties[i];
-          if (hoist) {
-              if (onlyBlock || kind === 'var') {
-                  if (property.type === 'Property') {
-                      const value = property.value;
-                      if (value.type === 'Identifier') {
-                          scope[kind](value.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
-                      }
-                      else {
-                          pattern$3(value, scope, { kind, hoist, onlyBlock });
-                      }
-                  }
-                  else {
-                      RestElement(property, scope, { kind, hoist, onlyBlock });
-                  }
-              }
-          }
-          else if (property.type === 'Property') {
-              let key;
-              if (property.computed) {
-                  key = evaluate(property.key, scope);
-              }
-              else {
-                  key = property.key.name;
-              }
-              fedKeys.push(key);
-              const value = property.value;
-              if (value.type === 'Identifier') {
-                  scope[kind](value.name, feed[key]);
-              }
-              else {
-                  pattern$3(value, scope, { kind, feed: feed[key] });
-              }
-          }
-          else {
-              const rest = assign({}, feed);
-              for (let i = 0; i < fedKeys.length; i++)
-                  delete rest[fedKeys[i]];
-              RestElement(property, scope, { kind, feed: rest });
-          }
-      }
-  }
-  function ArrayPattern(node, scope, options = {}) {
-      const { kind, hoist = false, onlyBlock = false, feed = [] } = options;
-      const result = [];
-      for (let i = 0; i < node.elements.length; i++) {
-          const element = node.elements[i];
-          if (!element)
-              continue;
-          if (hoist) {
-              if (onlyBlock || kind === 'var') {
-                  if (element.type === 'Identifier') {
-                      scope[kind](element.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
-                  }
-                  else {
-                      pattern$3(element, scope, { kind, hoist, onlyBlock });
-                  }
-              }
-          }
-          else if (element.type === 'Identifier') {
-              if (kind) {
-                  scope[kind](element.name, feed[i]);
-              }
-              else {
-                  const variable = Identifier(element, scope, { getVar: true });
-                  variable.set(feed[i]);
-                  result.push(variable.get());
-              }
-          }
-          else if (element.type === 'RestElement') {
-              RestElement(element, scope, { kind, feed: feed.slice(i) });
-          }
-          else {
-              pattern$3(element, scope, { kind, feed: feed[i] });
-          }
-      }
-      if (result.length) {
-          return result;
-      }
-  }
-  function RestElement(node, scope, options = {}) {
-      const { kind, hoist = false, onlyBlock = false, feed = [] } = options;
-      const arg = node.argument;
-      if (hoist) {
-          if (onlyBlock || kind === 'var') {
-              if (arg.type === 'Identifier') {
-                  scope[kind](arg.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
-              }
-              else {
-                  pattern$3(arg, scope, { kind, hoist, onlyBlock });
-              }
-          }
-      }
-      else if (arg.type === 'Identifier') {
-          if (kind) {
-              scope[kind](arg.name, feed);
-          }
-          else {
-              const variable = Identifier(arg, scope, { getVar: true });
-              variable.set(feed);
-          }
-      }
-      else {
-          pattern$3(arg, scope, { kind, feed });
-      }
-  }
-  function AssignmentPattern(node, scope, options = {}) {
-      const { kind = 'var', hoist = false, onlyBlock = false, feed = evaluate(node.right, scope) } = options;
-      const left = node.left;
-      if (hoist) {
-          if (onlyBlock || kind === 'var') {
-              if (left.type === 'Identifier') {
-                  scope[kind](left.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
-              }
-              else {
-                  pattern$3(left, scope, { kind, hoist, onlyBlock });
-              }
-          }
-      }
-      else if (left.type === 'Identifier') {
-          scope[kind](left.name, feed);
-      }
-      else {
-          pattern$3(left, scope, { kind, feed });
-      }
-  }
-
-  var pattern = /*#__PURE__*/Object.freeze({
-    __proto__: null,
-    ObjectPattern: ObjectPattern,
-    ArrayPattern: ArrayPattern,
-    RestElement: RestElement,
-    AssignmentPattern: AssignmentPattern
-  });
-
-  function Program(program, scope) {
-      for (let i = 0; i < program.body.length; i++) {
-          evaluate(program.body[i], scope);
-      }
-  }
-
-  var program = /*#__PURE__*/Object.freeze({
-    __proto__: null,
-    Program: Program
-  });
-
-  let evaluateOps;
-  function evaluate(node, scope) {
-      if (!node)
-          return;
-      if (!evaluateOps) {
-          evaluateOps = assign({}, declaration, expression, identifier, statement, literal, pattern, program);
-      }
-      const handler = evaluateOps[node.type];
-      if (handler) {
-          return handler(node, scope);
-      }
-      else {
-          throw new Error(`${node.type} isn't implemented`);
-      }
-  }
-
   function FunctionDeclaration(node, scope) {
       scope.func(node.id.name, createFunc$1(node, scope));
   }
@@ -1511,21 +1603,38 @@
           if (def.type === 'MethodDefinition') {
               MethodDefinition(def, scope, { klass, superClass });
           }
+          else if (def.type === 'PropertyDefinition' && def.static) {
+              PropertyDefinition(def, scope, { klass, superClass });
+          }
+          else if (def.type === 'StaticBlock') {
+              StaticBlock(def, scope, { klass, superClass });
+          }
       }
   }
   function MethodDefinition(node, scope, options = {}) {
       const { klass, superClass } = options;
       let key;
+      let priv = false;
       if (node.computed) {
           key = evaluate(node.key, scope);
       }
       else if (node.key.type === 'Identifier') {
           key = node.key.name;
       }
+      else if (node.key.type === 'PrivateIdentifier') {
+          key = node.key.name;
+          priv = true;
+      }
       else {
           throw new SyntaxError('Unexpected token');
       }
-      const obj = node.static ? klass : klass.prototype;
+      let obj = node.static ? klass : klass.prototype;
+      if (priv) {
+          if (!obj[PRIVATE]) {
+              define(obj, PRIVATE, { value: {} });
+          }
+          obj = obj[PRIVATE];
+      }
       const value = createFunc$1(node.value, scope, { superClass });
       switch (node.kind) {
           case 'constructor':
@@ -1557,6 +1666,191 @@
           }
           default:
               throw new SyntaxError('Unexpected token');
+      }
+  }
+  function PropertyDefinition(node, scope, options = {}) {
+      const { klass, superClass } = options;
+      let key;
+      let priv = false;
+      if (node.computed) {
+          key = evaluate(node.key, scope);
+      }
+      else if (node.key.type === 'Identifier') {
+          key = node.key.name;
+      }
+      else if (node.key.type === 'PrivateIdentifier') {
+          key = node.key.name;
+          priv = true;
+      }
+      else {
+          throw new SyntaxError('Unexpected token');
+      }
+      const subScope = new Scope(scope, true);
+      subScope.const('this', klass);
+      let obj = klass;
+      if (priv) {
+          if (!obj[PRIVATE]) {
+              define(obj, PRIVATE, { value: {} });
+          }
+          obj = obj[PRIVATE];
+      }
+      if (node.value.type === 'FunctionExpression' || node.value.type === 'ArrowFunctionExpression') {
+          obj[key] = createFunc$1(node.value, subScope, { superClass });
+      }
+      else {
+          obj[key] = evaluate(node.value, subScope);
+      }
+  }
+  function StaticBlock(node, scope, options = {}) {
+      const { klass } = options;
+      const subScope = new Scope(scope, true);
+      subScope.const('this', klass);
+      return BlockStatement(node, subScope, { invasived: true });
+  }
+  function ImportDeclaration(node, scope) {
+      const globalScope = scope.global();
+      const module = globalScope.find(IMPORT + node.source.value);
+      let value;
+      if (module) {
+          const result = module.get();
+          if (result) {
+              if (typeof result === 'function') {
+                  value = result();
+              }
+              else if (typeof result === 'object') {
+                  value = result;
+              }
+          }
+      }
+      if (!value || typeof value !== 'object') {
+          throw new TypeError(`Failed to resolve module specifier "${node.source.value}"`);
+      }
+      for (let i = 0; i < node.specifiers.length; i++) {
+          const spec = node.specifiers[i];
+          let name;
+          if (spec.type === 'ImportSpecifier') {
+              name = spec.imported.type === 'Identifier'
+                  ? spec.imported.name : spec.imported.value;
+          }
+          else if (spec.type === 'ImportDefaultSpecifier') {
+              name = 'default';
+          }
+          else if (spec.type === 'ImportNamespaceSpecifier') {
+              name = '*';
+          }
+          if (name !== '*' && !hasOwn(value, name)) {
+              throw new SyntaxError(`The requested module "${node.source.value}" does not provide an export named "${name}"`);
+          }
+          scope.var(spec.local.name, name === '*' ? assign({}, value) : value[name]);
+      }
+  }
+  function ExportDefaultDeclaration(node, scope) {
+      const globalScope = scope.global();
+      let value;
+      if (node.declaration.type === 'FunctionDeclaration') {
+          value = createFunc$1(node.declaration, scope);
+          scope.func(node.declaration.id.name, value);
+      }
+      else if (node.declaration.type === 'ClassDeclaration') {
+          value = createClass$1(node.declaration, scope);
+          scope.func(node.declaration.id.name, value);
+      }
+      else {
+          value = evaluate(node.declaration, scope);
+      }
+      const variable = globalScope.find(EXPORTS);
+      if (variable) {
+          const exports = variable.get();
+          if (exports && typeof exports === 'object') {
+              exports.default = value;
+          }
+      }
+  }
+  function ExportNamedDeclaration(node, scope) {
+      const globalScope = scope.global();
+      if (node.declaration) {
+          if (node.declaration.type === 'FunctionDeclaration') {
+              const value = createFunc$1(node.declaration, scope);
+              scope.func(node.declaration.id.name, value);
+              const variable = globalScope.find(EXPORTS);
+              if (variable) {
+                  const exports = variable.get();
+                  if (exports && typeof exports === 'object') {
+                      exports[node.declaration.id.name] = value;
+                  }
+              }
+          }
+          else if (node.declaration.type === 'ClassDeclaration') {
+              const value = createClass$1(node.declaration, scope);
+              scope.func(node.declaration.id.name, value);
+              const variable = globalScope.find(EXPORTS);
+              if (variable) {
+                  const exports = variable.get();
+                  if (exports && typeof exports === 'object') {
+                      exports[node.declaration.id.name] = value;
+                  }
+              }
+          }
+          else if (node.declaration.type === 'VariableDeclaration') {
+              VariableDeclaration(node.declaration, scope);
+              const variable = globalScope.find(EXPORTS);
+              if (variable) {
+                  const exports = variable.get();
+                  if (exports && typeof exports === 'object') {
+                      for (let i = 0; i < node.declaration.declarations.length; i++) {
+                          const name = node.declaration.declarations[i].id.name;
+                          const item = scope.find(name);
+                          if (item) {
+                              exports[name] = item.get();
+                          }
+                      }
+                  }
+              }
+          }
+      }
+      else if (node.specifiers) {
+          const variable = globalScope.find(EXPORTS);
+          if (variable) {
+              const exports = variable.get();
+              if (exports && typeof exports === 'object') {
+                  for (let i = 0; i < node.specifiers.length; i++) {
+                      const spec = node.specifiers[i];
+                      const name = spec.local.type === 'Identifier'
+                          ? spec.local.name : spec.local.value;
+                      const item = scope.find(name);
+                      if (item) {
+                          exports[spec.exported.type === 'Identifier'
+                              ? spec.exported.name : spec.exported.value] = item.get();
+                      }
+                  }
+              }
+          }
+      }
+  }
+  function ExportAllDeclaration(node, scope) {
+      const globalScope = scope.global();
+      const module = globalScope.find(IMPORT + node.source.value);
+      let value;
+      if (module) {
+          const result = module.get();
+          if (result) {
+              if (typeof result === 'function') {
+                  value = result();
+              }
+              else if (typeof result === 'object') {
+                  value = result;
+              }
+          }
+      }
+      if (!value || typeof value !== 'object') {
+          throw new TypeError(`Failed to resolve module specifier "${node.source.value}"`);
+      }
+      const variable = globalScope.find(EXPORTS);
+      if (variable) {
+          const exports = variable.get();
+          if (exports && typeof exports === 'object') {
+              assign(exports, value);
+          }
       }
   }
 
@@ -1740,8 +2034,17 @@
       }
   }
   function* BinaryExpression$1(node, scope) {
-      const left = yield* evaluate$1(node.left, scope);
-      const right = yield* evaluate$1(node.right, scope);
+      let left;
+      let right;
+      if (node.left.type === 'PrivateIdentifier') {
+          left = node.left.name;
+          right = yield* evaluate$1(node.right, scope);
+          right = right[PRIVATE];
+      }
+      else {
+          left = yield* evaluate$1(node.left, scope);
+          right = yield* evaluate$1(node.right, scope);
+      }
       switch (node.operator) {
           case '==': return left == right;
           case '!=': return left != right;
@@ -1864,11 +2167,19 @@
       if (getObj)
           return object;
       let key;
+      let priv = false;
       if (node.computed) {
           key = yield* evaluate$1(node.property, scope);
       }
+      else if (node.property.type === 'PrivateIdentifier') {
+          key = node.property.name;
+          priv = true;
+      }
       else {
           key = node.property.name;
+      }
+      if (priv) {
+          object = object[PRIVATE];
       }
       if (getVar) {
           const setter = getSetter(object, key);
@@ -1913,18 +2224,27 @@
               return undefined;
           }
           let key;
+          let priv = false;
           if (node.callee.computed) {
               key = yield* evaluate$1(node.callee.property, scope);
+          }
+          else if (node.callee.property.type === 'PrivateIdentifier') {
+              key = node.callee.property.name;
+              priv = true;
           }
           else {
               key = node.callee.property.name;
           }
+          let obj = object;
+          if (priv) {
+              obj = obj[PRIVATE];
+          }
           if (node.callee.object.type === 'Super') {
               const thisObject = scope.find('this').get();
-              func = object[key].bind(thisObject);
+              func = obj[key].bind(thisObject);
           }
           else {
-              func = object[key];
+              func = obj[key];
           }
           if (node.optional && func == null) {
               return undefined;
@@ -2020,7 +2340,12 @@
       return new constructor(...args);
   }
   function* MetaProperty$1(node, scope) {
-      return scope.find(NEWTARGET).get();
+      if (node.meta.name === 'new' && node.property.name === 'target') {
+          return scope.find(NEWTARGET).get();
+      }
+      else if (node.meta.name === 'import' && node.property.name === 'meta') {
+          return { url: '' };
+      }
   }
   function* SequenceExpression$1(node, scope) {
       let result;
@@ -2089,6 +2414,27 @@
   function* ChainExpression$1(node, scope) {
       return yield* evaluate$1(node.expression, scope);
   }
+  function* ImportExpression$1(node, scope) {
+      const globalScope = scope.global();
+      const source = yield* evaluate$1(node.source, scope);
+      const module = globalScope.find(IMPORT + source);
+      let value;
+      if (module) {
+          const result = module.get();
+          if (result) {
+              if (typeof result === 'function') {
+                  value = result();
+              }
+              else if (typeof result === 'object') {
+                  value = result;
+              }
+          }
+      }
+      if (!value || typeof value !== 'object') {
+          return Promise.reject(new TypeError(`Failed to resolve module specifier "${source}"`));
+      }
+      return Promise.resolve(value);
+  }
   function* YieldExpression(node, scope) {
       const res = yield* evaluate$1(node.argument, scope);
       return node.delegate ? yield* res : yield res;
@@ -2123,9 +2469,165 @@
     Super: Super$1,
     SpreadElement: SpreadElement$1,
     ChainExpression: ChainExpression$1,
+    ImportExpression: ImportExpression$1,
     YieldExpression: YieldExpression,
     AwaitExpression: AwaitExpression
   });
+
+  function* ObjectPattern$1(node, scope, options = {}) {
+      const { kind = 'var', hoist = false, onlyBlock = false, feed = {} } = options;
+      const fedKeys = [];
+      for (let i = 0; i < node.properties.length; i++) {
+          const property = node.properties[i];
+          if (hoist) {
+              if (onlyBlock || kind === 'var') {
+                  if (property.type === 'Property') {
+                      const value = property.value;
+                      if (value.type === 'Identifier') {
+                          scope[kind](value.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
+                      }
+                      else {
+                          yield* pattern$2(value, scope, { kind, hoist, onlyBlock });
+                      }
+                  }
+                  else {
+                      yield* RestElement$1(property, scope, { kind, hoist, onlyBlock });
+                  }
+              }
+          }
+          else if (property.type === 'Property') {
+              let key;
+              if (property.computed) {
+                  key = yield* evaluate$1(property.key, scope);
+              }
+              else {
+                  key = property.key.name;
+              }
+              fedKeys.push(key);
+              const value = property.value;
+              if (value.type === 'Identifier') {
+                  scope[kind](value.name, feed[key]);
+              }
+              else {
+                  yield* pattern$2(value, scope, { kind, feed: feed[key] });
+              }
+          }
+          else {
+              const rest = assign({}, feed);
+              for (let i = 0; i < fedKeys.length; i++)
+                  delete rest[fedKeys[i]];
+              yield* RestElement$1(property, scope, { kind, feed: rest });
+          }
+      }
+  }
+  function* ArrayPattern$1(node, scope, options = {}) {
+      const { kind, hoist = false, onlyBlock = false, feed = [] } = options;
+      const result = [];
+      for (let i = 0; i < node.elements.length; i++) {
+          const element = node.elements[i];
+          if (!element)
+              continue;
+          if (hoist) {
+              if (onlyBlock || kind === 'var') {
+                  if (element.type === 'Identifier') {
+                      scope[kind](element.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
+                  }
+                  else {
+                      yield* pattern$2(element, scope, { kind, hoist, onlyBlock });
+                  }
+              }
+          }
+          else if (element.type === 'Identifier') {
+              if (kind) {
+                  scope[kind](element.name, feed[i]);
+              }
+              else {
+                  const variable = yield* Identifier$1(element, scope, { getVar: true });
+                  variable.set(feed[i]);
+                  result.push(variable.get());
+              }
+          }
+          else if (element.type === 'RestElement') {
+              yield* RestElement$1(element, scope, { kind, feed: feed.slice(i) });
+          }
+          else {
+              yield* pattern$2(element, scope, { kind, feed: feed[i] });
+          }
+      }
+      if (result.length) {
+          return result;
+      }
+  }
+  function* RestElement$1(node, scope, options = {}) {
+      const { kind, hoist = false, onlyBlock = false, feed = [] } = options;
+      const arg = node.argument;
+      if (hoist) {
+          if (onlyBlock || kind === 'var') {
+              if (arg.type === 'Identifier') {
+                  scope[kind](arg.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
+              }
+              else {
+                  yield* pattern$2(arg, scope, { kind, hoist, onlyBlock });
+              }
+          }
+      }
+      else if (arg.type === 'Identifier') {
+          if (kind) {
+              scope[kind](arg.name, feed);
+          }
+          else {
+              const variable = yield* Identifier$1(arg, scope, { getVar: true });
+              variable.set(feed);
+          }
+      }
+      else {
+          yield* pattern$2(arg, scope, { kind, feed });
+      }
+  }
+  function* AssignmentPattern$1(node, scope, options = {}) {
+      const { kind = 'var', hoist = false, onlyBlock = false, feed = yield* evaluate$1(node.right, scope) } = options;
+      const left = node.left;
+      if (hoist) {
+          if (onlyBlock || kind === 'var') {
+              if (left.type === 'Identifier') {
+                  scope[kind](left.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
+              }
+              else {
+                  yield* pattern$2(left, scope, { kind, hoist, onlyBlock });
+              }
+          }
+      }
+      else if (left.type === 'Identifier') {
+          scope[kind](left.name, feed);
+      }
+      else {
+          yield* pattern$2(left, scope, { kind, feed });
+      }
+  }
+
+  var pattern$1 = /*#__PURE__*/Object.freeze({
+    __proto__: null,
+    ObjectPattern: ObjectPattern$1,
+    ArrayPattern: ArrayPattern$1,
+    RestElement: RestElement$1,
+    AssignmentPattern: AssignmentPattern$1
+  });
+
+  let evaluateOps$1;
+  function* evaluate$1(node, scope) {
+      if (!node)
+          return;
+      if (!evaluateOps$1) {
+          evaluateOps$1 = assign({}, declaration$1, expression$1, identifier$1, statement$1, literal$1, pattern$1);
+      }
+      const handler = evaluateOps$1[node.type];
+      if (handler) {
+          return yield* handler(node, scope);
+      }
+      else {
+          throw new Error(`${node.type} isn't implemented`);
+      }
+  }
 
   function* ExpressionStatement$1(node, scope) {
       yield* evaluate$1(node.expression, scope);
@@ -2331,183 +2833,6 @@
       }
   }
 
-  var statement$1 = /*#__PURE__*/Object.freeze({
-    __proto__: null,
-    ExpressionStatement: ExpressionStatement$1,
-    BlockStatement: BlockStatement$1,
-    EmptyStatement: EmptyStatement$1,
-    DebuggerStatement: DebuggerStatement$1,
-    ReturnStatement: ReturnStatement$1,
-    BreakStatement: BreakStatement$1,
-    ContinueStatement: ContinueStatement$1,
-    IfStatement: IfStatement$1,
-    SwitchStatement: SwitchStatement$1,
-    SwitchCase: SwitchCase$1,
-    ThrowStatement: ThrowStatement$1,
-    TryStatement: TryStatement$1,
-    CatchClause: CatchClause$1,
-    WhileStatement: WhileStatement$1,
-    DoWhileStatement: DoWhileStatement$1,
-    ForStatement: ForStatement$1,
-    ForInStatement: ForInStatement$1,
-    ForOfStatement: ForOfStatement$1
-  });
-
-  function* ObjectPattern$1(node, scope, options = {}) {
-      const { kind = 'var', hoist = false, onlyBlock = false, feed = {} } = options;
-      const fedKeys = [];
-      for (let i = 0; i < node.properties.length; i++) {
-          const property = node.properties[i];
-          if (hoist) {
-              if (onlyBlock || kind === 'var') {
-                  if (property.type === 'Property') {
-                      const value = property.value;
-                      if (value.type === 'Identifier') {
-                          scope[kind](value.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
-                      }
-                      else {
-                          yield* pattern$2(value, scope, { kind, hoist, onlyBlock });
-                      }
-                  }
-                  else {
-                      yield* RestElement$1(property, scope, { kind, hoist, onlyBlock });
-                  }
-              }
-          }
-          else if (property.type === 'Property') {
-              let key;
-              if (property.computed) {
-                  key = yield* evaluate$1(property.key, scope);
-              }
-              else {
-                  key = property.key.name;
-              }
-              fedKeys.push(key);
-              const value = property.value;
-              if (value.type === 'Identifier') {
-                  scope[kind](value.name, feed[key]);
-              }
-              else {
-                  yield* pattern$2(value, scope, { kind, feed: feed[key] });
-              }
-          }
-          else {
-              const rest = assign({}, feed);
-              for (let i = 0; i < fedKeys.length; i++)
-                  delete rest[fedKeys[i]];
-              yield* RestElement$1(property, scope, { kind, feed: rest });
-          }
-      }
-  }
-  function* ArrayPattern$1(node, scope, options = {}) {
-      const { kind, hoist = false, onlyBlock = false, feed = [] } = options;
-      const result = [];
-      for (let i = 0; i < node.elements.length; i++) {
-          const element = node.elements[i];
-          if (!element)
-              continue;
-          if (hoist) {
-              if (onlyBlock || kind === 'var') {
-                  if (element.type === 'Identifier') {
-                      scope[kind](element.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
-                  }
-                  else {
-                      yield* pattern$2(element, scope, { kind, hoist, onlyBlock });
-                  }
-              }
-          }
-          else if (element.type === 'Identifier') {
-              if (kind) {
-                  scope[kind](element.name, feed[i]);
-              }
-              else {
-                  const variable = yield* Identifier$1(element, scope, { getVar: true });
-                  variable.set(feed[i]);
-                  result.push(variable.get());
-              }
-          }
-          else if (element.type === 'RestElement') {
-              yield* RestElement$1(element, scope, { kind, feed: feed.slice(i) });
-          }
-          else {
-              yield* pattern$2(element, scope, { kind, feed: feed[i] });
-          }
-      }
-      if (result.length) {
-          return result;
-      }
-  }
-  function* RestElement$1(node, scope, options = {}) {
-      const { kind, hoist = false, onlyBlock = false, feed = [] } = options;
-      const arg = node.argument;
-      if (hoist) {
-          if (onlyBlock || kind === 'var') {
-              if (arg.type === 'Identifier') {
-                  scope[kind](arg.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
-              }
-              else {
-                  yield* pattern$2(arg, scope, { kind, hoist, onlyBlock });
-              }
-          }
-      }
-      else if (arg.type === 'Identifier') {
-          if (kind) {
-              scope[kind](arg.name, feed);
-          }
-          else {
-              const variable = yield* Identifier$1(arg, scope, { getVar: true });
-              variable.set(feed);
-          }
-      }
-      else {
-          yield* pattern$2(arg, scope, { kind, feed });
-      }
-  }
-  function* AssignmentPattern$1(node, scope, options = {}) {
-      const { kind = 'var', hoist = false, onlyBlock = false, feed = yield* evaluate$1(node.right, scope) } = options;
-      const left = node.left;
-      if (hoist) {
-          if (onlyBlock || kind === 'var') {
-              if (left.type === 'Identifier') {
-                  scope[kind](left.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
-              }
-              else {
-                  yield* pattern$2(left, scope, { kind, hoist, onlyBlock });
-              }
-          }
-      }
-      else if (left.type === 'Identifier') {
-          scope[kind](left.name, feed);
-      }
-      else {
-          yield* pattern$2(left, scope, { kind, feed });
-      }
-  }
-
-  var pattern$1 = /*#__PURE__*/Object.freeze({
-    __proto__: null,
-    ObjectPattern: ObjectPattern$1,
-    ArrayPattern: ArrayPattern$1,
-    RestElement: RestElement$1,
-    AssignmentPattern: AssignmentPattern$1
-  });
-
-  let evaluateOps$1;
-  function* evaluate$1(node, scope) {
-      if (!node)
-          return;
-      if (!evaluateOps$1) {
-          evaluateOps$1 = assign({}, declaration$1, expression$1, identifier$1, statement$1, literal$1, pattern$1);
-      }
-      const handler = evaluateOps$1[node.type];
-      if (handler) {
-          return yield* handler(node, scope);
-      }
-      else {
-          throw new Error(`${node.type} isn't implemented`);
-      }
-  }
-
   function* FunctionDeclaration$1(node, scope) {
       scope.func(node.id.name, createFunc(node, scope));
   }
@@ -2564,21 +2889,38 @@
           if (def.type === 'MethodDefinition') {
               yield* MethodDefinition$1(def, scope, { klass, superClass });
           }
+          else if (def.type === 'PropertyDefinition' && def.static) {
+              yield* PropertyDefinition$1(def, scope, { klass, superClass });
+          }
+          else if (def.type === 'StaticBlock') {
+              yield* StaticBlock$1(def, scope, { klass, superClass });
+          }
       }
   }
   function* MethodDefinition$1(node, scope, options = {}) {
       const { klass, superClass } = options;
       let key;
+      let priv = false;
       if (node.computed) {
           key = yield* evaluate$1(node.key, scope);
       }
       else if (node.key.type === 'Identifier') {
           key = node.key.name;
       }
+      else if (node.key.type === 'PrivateIdentifier') {
+          key = node.key.name;
+          priv = true;
+      }
       else {
           throw new SyntaxError('Unexpected token');
       }
-      const obj = node.static ? klass : klass.prototype;
+      let obj = node.static ? klass : klass.prototype;
+      if (priv) {
+          if (!obj[PRIVATE]) {
+              define(obj, PRIVATE, { value: {} });
+          }
+          obj = obj[PRIVATE];
+      }
       const value = createFunc(node.value, scope, { superClass });
       switch (node.kind) {
           case 'constructor':
@@ -2610,6 +2952,191 @@
           }
           default:
               throw new SyntaxError('Unexpected token');
+      }
+  }
+  function* PropertyDefinition$1(node, scope, options = {}) {
+      const { klass, superClass } = options;
+      let key;
+      let priv = false;
+      if (node.computed) {
+          key = yield* evaluate$1(node.key, scope);
+      }
+      else if (node.key.type === 'Identifier') {
+          key = node.key.name;
+      }
+      else if (node.key.type === 'PrivateIdentifier') {
+          key = node.key.name;
+          priv = true;
+      }
+      else {
+          throw new SyntaxError('Unexpected token');
+      }
+      const subScope = new Scope(scope, true);
+      subScope.const('this', klass);
+      let obj = klass;
+      if (priv) {
+          if (!obj[PRIVATE]) {
+              define(obj, PRIVATE, { value: {} });
+          }
+          obj = obj[PRIVATE];
+      }
+      if (node.value.type === 'FunctionExpression' || node.value.type === 'ArrowFunctionExpression') {
+          obj[key] = createFunc(node.value, subScope, { superClass });
+      }
+      else {
+          obj[key] = yield* evaluate$1(node.value, subScope);
+      }
+  }
+  function* StaticBlock$1(node, scope, options = {}) {
+      const { klass } = options;
+      const subScope = new Scope(scope, true);
+      subScope.const('this', klass);
+      return yield* BlockStatement$1(node, subScope, { invasived: true });
+  }
+  function* ImportDeclaration$1(node, scope) {
+      const globalScope = scope.global();
+      const module = globalScope.find(IMPORT + node.source.value);
+      let value;
+      if (module) {
+          const result = module.get();
+          if (result) {
+              if (typeof result === 'function') {
+                  value = result();
+              }
+              else if (typeof result === 'object') {
+                  value = result;
+              }
+          }
+      }
+      if (!value || typeof value !== 'object') {
+          throw new TypeError(`Failed to resolve module specifier "${node.source.value}"`);
+      }
+      for (let i = 0; i < node.specifiers.length; i++) {
+          const spec = node.specifiers[i];
+          let name;
+          if (spec.type === 'ImportSpecifier') {
+              name = spec.imported.type === 'Identifier'
+                  ? spec.imported.name : spec.imported.value;
+          }
+          else if (spec.type === 'ImportDefaultSpecifier') {
+              name = 'default';
+          }
+          else if (spec.type === 'ImportNamespaceSpecifier') {
+              name = '*';
+          }
+          if (name !== '*' && !hasOwn(value, name)) {
+              throw new SyntaxError(`The requested module "${node.source.value}" does not provide an export named "${name}"`);
+          }
+          scope.var(spec.local.name, name === '*' ? assign({}, value) : value[name]);
+      }
+  }
+  function* ExportDefaultDeclaration$1(node, scope) {
+      const globalScope = scope.global();
+      let value;
+      if (node.declaration.type === 'FunctionDeclaration') {
+          value = createFunc(node.declaration, scope);
+          scope.func(node.declaration.id.name, value);
+      }
+      else if (node.declaration.type === 'ClassDeclaration') {
+          value = yield* createClass(node.declaration, scope);
+          scope.func(node.declaration.id.name, value);
+      }
+      else {
+          value = yield* evaluate$1(node.declaration, scope);
+      }
+      const variable = globalScope.find(EXPORTS);
+      if (variable) {
+          const exports = variable.get();
+          if (exports && typeof exports === 'object') {
+              exports.default = value;
+          }
+      }
+  }
+  function* ExportNamedDeclaration$1(node, scope) {
+      const globalScope = scope.global();
+      if (node.declaration) {
+          if (node.declaration.type === 'FunctionDeclaration') {
+              const value = createFunc(node.declaration, scope);
+              scope.func(node.declaration.id.name, value);
+              const variable = globalScope.find(EXPORTS);
+              if (variable) {
+                  const exports = variable.get();
+                  if (exports && typeof exports === 'object') {
+                      exports[node.declaration.id.name] = value;
+                  }
+              }
+          }
+          else if (node.declaration.type === 'ClassDeclaration') {
+              const value = yield* createClass(node.declaration, scope);
+              scope.func(node.declaration.id.name, value);
+              const variable = globalScope.find(EXPORTS);
+              if (variable) {
+                  const exports = variable.get();
+                  if (exports && typeof exports === 'object') {
+                      exports[node.declaration.id.name] = value;
+                  }
+              }
+          }
+          else if (node.declaration.type === 'VariableDeclaration') {
+              yield* VariableDeclaration$1(node.declaration, scope);
+              const variable = globalScope.find(EXPORTS);
+              if (variable) {
+                  const exports = variable.get();
+                  if (exports && typeof exports === 'object') {
+                      for (let i = 0; i < node.declaration.declarations.length; i++) {
+                          const name = node.declaration.declarations[i].id.name;
+                          const item = scope.find(name);
+                          if (item) {
+                              exports[name] = item.get();
+                          }
+                      }
+                  }
+              }
+          }
+      }
+      else if (node.specifiers) {
+          const variable = globalScope.find(EXPORTS);
+          if (variable) {
+              const exports = variable.get();
+              if (exports && typeof exports === 'object') {
+                  for (let i = 0; i < node.specifiers.length; i++) {
+                      const spec = node.specifiers[i];
+                      const name = spec.local.type === 'Identifier'
+                          ? spec.local.name : spec.local.value;
+                      const item = scope.find(name);
+                      if (item) {
+                          exports[spec.exported.type === 'Identifier'
+                              ? spec.exported.name : spec.exported.value] = item.get();
+                      }
+                  }
+              }
+          }
+      }
+  }
+  function* ExportAllDeclaration$1(node, scope) {
+      const globalScope = scope.global();
+      const module = globalScope.find(IMPORT + node.source.value);
+      let value;
+      if (module) {
+          const result = module.get();
+          if (result) {
+              if (typeof result === 'function') {
+                  value = result();
+              }
+              else if (typeof result === 'object') {
+                  value = result;
+              }
+          }
+      }
+      if (!value || typeof value !== 'object') {
+          throw new TypeError(`Failed to resolve module specifier "${node.source.value}"`);
+      }
+      const variable = globalScope.find(EXPORTS);
+      if (variable) {
+          const exports = variable.get();
+          if (exports && typeof exports === 'object') {
+              assign(exports, value);
+          }
       }
   }
 
@@ -2759,7 +3286,7 @@
       if (!node.generator && !node.async) {
           return createFunc$1(node, scope, options);
       }
-      const { superClass, isCtor } = options;
+      const { superClass, construct } = options;
       const params = node.params;
       const tmpFunc = function* (...args) {
           const subScope = new Scope(scope, true);
@@ -2767,9 +3294,12 @@
               subScope.const('this', this);
               subScope.let('arguments', arguments);
               subScope.const(NEWTARGET, new.target);
+              if (construct) {
+                  yield* construct(this);
+              }
               if (superClass) {
                   subScope.const(SUPER, superClass);
-                  if (isCtor)
+                  if (construct)
                       subScope.let(SUPERCALL, false);
               }
           }
@@ -2850,16 +3380,25 @@
   }
   function* createClass(node, scope) {
       const superClass = yield* evaluate$1(node.superClass, scope);
-      let klass = function () {
+      const methodBody = node.body.body;
+      const construct = function* (object) {
+          for (let i = 0; i < methodBody.length; i++) {
+              const def = methodBody[i];
+              if (def.type === 'PropertyDefinition' && !def.static) {
+                  yield* PropertyDefinition$1(def, scope, { klass: object, superClass });
+              }
+          }
+      };
+      let klass = function* () {
+          yield* construct(this);
           if (superClass) {
               superClass.apply(this);
           }
       };
-      const methodBody = node.body.body;
       for (let i = 0; i < methodBody.length; i++) {
           const method = methodBody[i];
           if (method.type === 'MethodDefinition' && method.kind === 'constructor') {
-              klass = createFunc(method.value, scope, { superClass, isCtor: true });
+              klass = createFunc(method.value, scope, { superClass, construct });
               break;
           }
       }
@@ -2998,7 +3537,7 @@
       if (node.generator || node.async) {
           return createFunc(node, scope, options);
       }
-      const { superClass, isCtor } = options;
+      const { superClass, construct } = options;
       const params = node.params;
       const tmpFunc = function (...args) {
           const subScope = new Scope(scope, true);
@@ -3006,9 +3545,12 @@
               subScope.const('this', this);
               subScope.let('arguments', arguments);
               subScope.const(NEWTARGET, new.target);
+              if (construct) {
+                  construct(this);
+              }
               if (superClass) {
                   subScope.const(SUPER, superClass);
-                  if (isCtor)
+                  if (construct)
                       subScope.let(SUPERCALL, false);
               }
           }
@@ -3061,16 +3603,25 @@
   }
   function createClass$1(node, scope) {
       const superClass = evaluate(node.superClass, scope);
+      const methodBody = node.body.body;
+      const construct = function (object) {
+          for (let i = 0; i < methodBody.length; i++) {
+              const def = methodBody[i];
+              if (def.type === 'PropertyDefinition' && !def.static) {
+                  PropertyDefinition(def, scope, { klass: object, superClass });
+              }
+          }
+      };
       let klass = function () {
+          construct(this);
           if (superClass) {
               superClass.apply(this);
           }
       };
-      const methodBody = node.body.body;
       for (let i = 0; i < methodBody.length; i++) {
           const method = methodBody[i];
           if (method.type === 'MethodDefinition' && method.kind === 'constructor') {
-              klass = createFunc$1(method.value, scope, { superClass, isCtor: true });
+              klass = createFunc$1(method.value, scope, { superClass, construct });
               break;
           }
       }
@@ -3115,7 +3666,7 @@
           this.options = { ecmaVersion: 'latest' };
           this.scope = new Scope(null, true);
           this.exports = {};
-          let { ecmaVer = 'latest', sandBox = true } = options;
+          let { ecmaVer = 'latest', sandBox = true, sourceType = 'script' } = options;
           if (typeof ecmaVer === 'number') {
               ecmaVer -= ecmaVer < 2015 ? 0 : 2009;
           }
@@ -3123,16 +3674,19 @@
               throw new Error(`unsupported ecmaVer`);
           }
           this.options.ecmaVersion = ecmaVer;
+          this.options.sourceType = sourceType;
           if (sandBox) {
               const win = createSandBox();
+              this.scope.let('globalThis', win);
               this.scope.let('window', win);
               this.scope.let('this', win);
           }
           else {
+              this.scope.let('globalThis', globalObj);
               this.scope.let('window', globalObj);
               this.scope.let('this', globalObj);
           }
-          this.scope.const('exports', this.exports = {});
+          this.scope.const(sourceType === 'module' ? EXPORTS : 'exports', this.exports = {});
       }
       import(nameOrModules, mod) {
           if (typeof nameOrModules === 'string') {
@@ -3143,7 +3697,8 @@
           const names = getOwnNames(nameOrModules);
           for (let i = 0; i < names.length; i++) {
               const name = names[i];
-              this.scope.var(name, nameOrModules[name]);
+              const modName = this.options.sourceType === 'module' ? IMPORT + name : name;
+              this.scope.var(modName, nameOrModules[name]);
           }
       }
       parse(code, parser) {
