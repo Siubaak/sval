@@ -1,7 +1,7 @@
 import { getOwnNames, createSandBox, globalObj, assign } from './share/util'
 import { parse, Options, Node, Program } from 'acorn'
+import { EXPORTS, IMPORT } from './share/const'
 import { version } from '../package.json'
-import { MODULE } from './share/const'
 import Scope from './scope'
 
 import { hoist } from './evaluate_n/helper'
@@ -46,8 +46,8 @@ class Sval {
       this.scope.let('window', globalObj)
       this.scope.let('this', globalObj)
     }
-    
-    this.scope.const('exports', this.exports = {})
+
+    this.scope.const(sourceType === 'module' ? EXPORTS : 'exports', this.exports = {})
   }
 
   import(nameOrModules: string | { [name: string]: any }, mod?: any) {
@@ -60,8 +60,9 @@ class Sval {
     const names = getOwnNames(nameOrModules)
 
     for (let i = 0; i < names.length; i++) {
-      const name = this.options.sourceType === 'module' ? MODULE + names[i] : names[i]
-      this.scope.var(name, nameOrModules[name])
+      const name = names[i]
+      const modName = this.options.sourceType === 'module' ? IMPORT + name : name
+      this.scope.var(modName, nameOrModules[name])
     }
   }
 

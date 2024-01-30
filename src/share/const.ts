@@ -24,4 +24,6 @@ export const NOINIT = createSymbol('noinit')
 
 export const DEADZONE = createSymbol('deadzone')
 
-export const MODULE = createSymbol('module')
+export const IMPORT = createSymbol('import')
+
+export const EXPORTS = createSymbol('exports')

@@ -1,6 +1,6 @@
-import { NOINIT, DEADZONE, PRIVATE } from '../share/const'
+import { NOINIT, DEADZONE, PRIVATE, IMPORT, EXPORTS } from '../share/const'
+import { define, getDptor, assign, hasOwn } from '../share/util'
 import { pattern, createFunc, createClass } from './helper'
-import { define, getDptor, assign } from '../share/util'
 import { BlockStatement } from './statement'
 import { VarKind } from '../scope/variable'
 import * as acorn from 'acorn'
@@ -123,7 +123,7 @@ export function* MethodDefinition(node: acorn.MethodDefinition, scope: Scope, op
 
   if (priv) {
     if (!obj[PRIVATE]) {
-      define(obj, PRIVATE, { value: Object.create(null) })
+      define(obj, PRIVATE, { value: {} })
     }
     obj = obj[PRIVATE]
   }
@@ -187,7 +187,7 @@ export function* PropertyDefinition(node: acorn.PropertyDefinition, scope: Scope
 
   if (priv) {
     if (!obj[PRIVATE]) {
-      define(obj, PRIVATE, { value: Object.create(null) })
+      define(obj, PRIVATE, { value: {} })
     }
     obj = obj[PRIVATE]
   }
@@ -208,9 +208,48 @@ export function* StaticBlock(node: acorn.StaticBlock, scope: Scope, options: Cla
   return yield* BlockStatement(node, subScope, { invasived: true })
 }
 
-export function* ExportDefaultDeclaration(node: acorn.ExportDefaultDeclaration, scope: Scope) {
-  let value: any
+export function* ImportDeclaration(node: acorn.ImportDeclaration, scope: Scope) {
+  const globalScope = scope.global()
 
+  const module = globalScope.find(IMPORT + node.source.value)
+  let value: any
+  if (module) {
+    const result = module.get()
+    if (result) {
+      if (typeof result === 'function') {
+        value = result()
+      } else if (typeof result === 'object') {
+        value = result
+      }
+    }
+  }
+
+  if (!value || typeof value !== 'object') {
+    throw new TypeError(`Failed to resolve module specifier "${node.source.value}"`)
+  }
+
+  for (let i = 0; i < node.specifiers.length; i++) {
+    const spec = node.specifiers[i]
+    let name: string
+    if (spec.type === 'ImportSpecifier') {
+      name = spec.imported.type === 'Identifier'
+        ? spec.imported.name : spec.imported.value as string
+    } else if (spec.type === 'ImportDefaultSpecifier') {
+      name = 'default'
+    } else if (spec.type === 'ImportNamespaceSpecifier') {
+      name = '*'
+    }
+    if (name !== '*' && !hasOwn(value, name)) {
+      throw new SyntaxError(`The requested module "${node.source.value}" does not provide an export named "${name}"`)
+    }
+    scope.var(spec.local.name, name === '*' ? assign({}, value) : value[name])
+  }
+}
+
+export function* ExportDefaultDeclaration(node: acorn.ExportDefaultDeclaration, scope: Scope) {
+  const globalScope = scope.global()
+
+  let value: any
   if (node.declaration.type === 'FunctionDeclaration') {
     value = createFunc(node.declaration, scope)
     scope.func(node.declaration.id.name, value)
@@ -221,7 +260,7 @@ export function* ExportDefaultDeclaration(node: acorn.ExportDefaultDeclaration, 
     value = yield* evaluate(node.declaration, scope)
   }
 
-  const variable = scope.global().find('exports')
+  const variable = globalScope.find(EXPORTS)
   if (variable) {
     const exports = variable.get()
     if (exports && typeof exports === 'object') {
@@ -230,10 +269,93 @@ export function* ExportDefaultDeclaration(node: acorn.ExportDefaultDeclaration, 
   }
 }
 
-export function* ExportNamedDeclaration(node: acorn.ExportDefaultDeclaration, scope: Scope) {
-  // TODO
+export function* ExportNamedDeclaration(node: acorn.ExportNamedDeclaration, scope: Scope) {
+  const globalScope = scope.global()
+
+  if (node.declaration) {
+    if (node.declaration.type === 'FunctionDeclaration') {
+      const value = createFunc(node.declaration, scope)
+      scope.func(node.declaration.id.name, value)
+      const variable = globalScope.find(EXPORTS)
+      if (variable) {
+        const exports = variable.get()
+        if (exports && typeof exports === 'object') {
+          exports[node.declaration.id.name] = value
+        }
+      }
+    } else if (node.declaration.type === 'ClassDeclaration') {
+      const value = yield* createClass(node.declaration, scope)
+      scope.func(node.declaration.id.name, value)
+      const variable = globalScope.find(EXPORTS)
+      if (variable) {
+        const exports = variable.get()
+        if (exports && typeof exports === 'object') {
+          exports[node.declaration.id.name] = value
+        }
+      }
+    } else if (node.declaration.type === 'VariableDeclaration') {
+      yield* VariableDeclaration(node.declaration, scope)
+      const variable = globalScope.find(EXPORTS)
+      if (variable) {
+        const exports = variable.get()
+        if (exports && typeof exports === 'object') {
+          for (let i = 0; i < node.declaration.declarations.length; i++) {
+            const name = (node.declaration.declarations[i].id as acorn.Identifier).name
+            const item = scope.find(name)
+            if (item) {
+              exports[name] = item.get()
+            }
+          }
+        }
+      }
+    }
+  } else if (node.specifiers) {
+    const variable = globalScope.find(EXPORTS)
+    if (variable) {
+      const exports = variable.get()
+      if (exports && typeof exports === 'object') {
+        for (let i = 0; i < node.specifiers.length; i++) {
+          const spec = node.specifiers[i]
+          const name = spec.local.type === 'Identifier'
+            ? spec.local.name : spec.local.value as string
+          const item = scope.find(name)
+          if (item) {
+            exports[
+              spec.exported.type === 'Identifier'
+                ? spec.exported.name : spec.exported.value as string
+            ] = item.get()
+          }
+        }
+      }
+    }
+  }
 }
 
 export function* ExportAllDeclaration(node: acorn.ExportAllDeclaration, scope: Scope) {
-  // TODO
+  const globalScope = scope.global()
+
+  const module = globalScope.find(IMPORT + node.source.value)
+  let value: any
+  if (module) {
+    const result = module.get()
+    if (result) {
+      if (typeof result === 'function') {
+        value = result()
+      } else if (typeof result === 'object') {
+        value = result
+      }
+    }
+  }
+
+  if (!value || typeof value !== 'object') {
+    throw new TypeError(`Failed to resolve module specifier "${node.source.value}"`)
+  }
+
+  const variable = globalScope.find(EXPORTS)
+  if (variable) {
+    const exports = variable.get()
+    if (exports && typeof exports === 'object') {
+      assign(exports, value)
+    }
+  }
 }

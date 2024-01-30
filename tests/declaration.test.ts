@@ -308,4 +308,33 @@ describe('testing src/index.ts', () => {
     // can be visited in function itself
     expect(typeof interpreter.exports.func).toBe('function')
   })
+
+  it('should support module import and export', () => {  
+    const interpreter = new Sval({ sourceType: 'module' })
+
+    interpreter.import('expect', { default: expect })
+    interpreter.import('module', () => ({ default: 1, x: 2 }))
+    interpreter.run(`
+      import expect from 'expect'
+      import a, { x as b } from 'module'
+      import * as c from 'module'
+
+      expect(a).toBe(1)
+      expect(b).toBe(2)
+      expect(c.x).toBe(2)
+      expect(c.default).toBe(1)
+
+      export * from 'module'
+      export { a as d }
+      export const e = 3, f = 4
+      export function y() { return 5 }
+    `)
+
+    expect(interpreter.exports.default).toBe(1)
+    expect(interpreter.exports.x).toBe(2)
+    expect(interpreter.exports.d).toBe(1)
+    expect(interpreter.exports.e).toBe(3)
+    expect(interpreter.exports.f).toBe(4)
+    expect(interpreter.exports.y()).toBe(5)
+  })
 })

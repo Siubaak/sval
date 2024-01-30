@@ -27,59 +27,99 @@ Simply source from [unpkg](https://unpkg.com/sval). Or, download from [releases]
 <script type="text/javascript" src="https://unpkg.com/sval"></script>
 ```
 
-## Usage
+## Get Started
 
 ```js
 import Sval from 'sval'
 
-// Sval options
-const options = {
+// Create a interpreter
+const interpreter = new Sval({
   // ECMA Version of the code
   // 3 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15
   // or 2015 | 2016 | 2017 | 2018 | 2019 | 2020 | 2021 | 2022 | 2023 | 2024
   // or "latest"
   ecmaVer: 'latest',
+  // Code source type
+  // "script" or "module"
+  sourceType: 'script',
   // Whether the code runs in a sandbox
   sandBox: true,
-}
-
-// Create a interpreter
-const interpreter = new Sval(options)
-
-// Add global modules in interpreter
-interpreter.import('importWhatYouNeed', 'AllKindsOfStuffs')
-// Or interpreter.import({ importWhatYouNeed: 'AllKindsOfStuffs' })
+})
 
 // Parse and run the code
 interpreter.run(`
-  const msg = 'Hello World'
-  exports.msg = msg // Export any you want
+  console.log('Hello World')
 `)
-
-interpreter.run(`
-  exports.mod = importWhatYouNeed // Export again and merge
-`)
-
-// Get exports from runs
-console.log(interpreter.exports.msg) // Get 'Hello World'
-console.log(interpreter.exports.mod) // Get 'AllKindsOfStuffs'
 ```
 
-Sval constructor has options with two fields, **ecmaVer** and **sandBox**.
+## Usage
+
+Sval constructor has three options: **ecmaVer**, **sourceType** and **sandBox**.
 
 - **ecmaVer** is the ECMAScript edition of the code. Currently, 3, 5, 6(2015), 7(2016), 8(2017), 9(2018), 10(2019), 11(2020), 12(2021), 13(2022), 14(2023), 15(2024) and "latest" are supported, and the default edition is "latest".
 
+- **sourceType** is ethier "script" or "module", which is to declare how Sval handle the code. The "script" means the code will be treated as a normal script, while the "module" means the code will be treated as an ES module with global strict mode and parsing of import and export declarations. The default type is "script".
+
 - **sandBox** is true for sandbox mode or false for invasived mode. Sandbox mode will run code in an isolated sandbox and won't pollute your global scope. Invasived mode allows you run code in the same global scope of your current environment. The default setting is true.
 
-Sval instance has three methods, **import**, **parse** and **run**.
+Sval instance has two main methods: **parse** and **run**.
 
-- **import** is to import modules into your Sval instance scope, expecting a name and a module as arguments like `import(name: string, mod: any)`, or an object which contains the modules as argument like `import({ [name: string]: any })`. The modules will be automatically declared as global variables. This method is more likely to be used in sandbox mode.
+- **parse** is to parse the code with internal [Acorn](https://github.com/acornjs/acorn) or custom parser, to get the corresponding AST, like `parse(code: string)` or `parse(code: string, parser: (code: string, options: SvalOptions) => estree.Node`.
 
-- **parse** is to parse the code with internal [Acorn](https://github.com/acornjs/acorn) or custom parser, to get the corresponding AST, like `parse(code: string)` or `parse(code: string, parser: (code: string, options: SvalOptions) => estree.Node`
+- **run** is to evaluate the code inputed, expecting a string as argument like `run(code: string)`, or an AST followed ESTree Spec as argument like `run(ast: estree.Node)`.
 
-- **run** is to evaluate the code inputed, expecting a string as argument like `run(code: string)`, or an AST followed ESTree Spec as argument like `run(ast: estree.Node)`. If you want to export something, there is a internal global `exports` object for mounting what you want to export.
+Besides, Sval instance also has one method, **import**, and one object, **exports**, for modularization.
 
-Sval instance also has a field, **exports**, to get what you exported from runs, merged if several runs have exports.
+- **import** is to import modules into your Sval instance scope. This method has different behaviors for different `sourceType`.
+
+  For "script", this method expecting a name and a module as arguments like `import(name: string, mod: any)`, or an object which contains the modules as argument like `import({ [name: string]: any })`. The modules will be automatically declared as global variables in Sval instance scope. This method is more likely to be used in sandbox mode.
+
+  For "module", this method expecting a path and a module declaration as arguments like `import(path: string, mod: Module)`, or an object which contains the module declarations as argument like `import({ [path: string]: Module })`. The `Module` is either an ES module exported object like `{ default?: any, [name: string]: any }` or a function return an ES module exported object like `() => ({ default?: any, [name: string]: any })` which is more helpful for dynamic import. The modules will not be automatically declared as global variables in Sval instance scope, and the code should use import declarations to import the module.
+
+- **exports** is to get what you exported from runs, merged if several runs have exports. Also, this object has different behaviors for different `sourceType`.
+
+  For "script", this object will be automatically declared as global variables in Sval instance scope, and the code can just simple mount properties on it for export.
+
+  For "module", this object will not be automatically declared as global variables in Sval instance scope, and the code needs to use export declarations for export.
+
+Here are a example for **import** and **exports** below:
+
+```js
+import Sval from 'sval'
+
+// Create a interpreter for script
+const scriptInterpreter = new Sval({ sourceType: 'script' })
+
+// Add global modules in interpreter
+scriptInterpreter.import('importWhatYouNeed', 'AllKindsOfStuffs')
+// Or scriptInterpreter.import({ importWhatYouNeed: 'AllKindsOfStuffs' })
+
+// Parse and run the code
+scriptInterpreter.run(`
+  exports.mod = importWhatYouNeed
+`)
+
+// Get exports from runs
+console.log(scriptInterpreter.exports.mod) // Get 'AllKindsOfStuffs'
+
+// Create a interpreter for module
+const moduleInterpreter = new Sval({ sourceType: 'script' })
+
+// Add global modules in interpreter
+moduleInterpreter.import('./import-what-you-need', { default: 'AllKindsOfStuffs' })
+// Or moduleInterpreter.import('./import-what-you-need', () => ({ default: 'AllKindsOfStuffs' }))
+// Or moduleInterpreter.import({ './import-what-you-need': { default: 'AllKindsOfStuffs' } })
+// Or moduleInterpreter.import({ './import-what-you-need': () => ({ default: 'AllKindsOfStuffs' }) })
+
+// Parse and run the code
+moduleInterpreter.run(`
+  import importWhatYouNeed from './import-what-you-need'
+  export { importWhatYouNeed as mod }
+`)
+
+// Get exports from runs
+console.log(moduleInterpreter.exports.mod) // Get 'AllKindsOfStuffs'
+```
 
 ## Note
 
