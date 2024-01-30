@@ -547,15 +547,42 @@ describe('testing src/index.ts', () => {
           expect(this.c).toBe(3)
           expect(this.#d()).toBe(4)
           expect(this.e).toBe(5)
-          expect(A.f).toBe(6)
           expect(A.#g).toBe(7)
-          expect(A.h()).toBe(8)
         }
         static f = 6
         static #g = this.f + 1
         static h = () => this.#g + 1
       }
+      expect(A.f).toBe(6)
+      expect(A.h()).toBe(8)
       new A()
+    `)
+  })
+
+  it('should support class static block', () => {
+    const interpreter = new Sval()
+    interpreter.import('expect', expect)
+    interpreter.run(`
+      class A {
+        static l = []
+        static {
+          this.l.push(1)
+        }
+        static {
+          this.l.push(2)
+        }
+      }
+      class B extends A {
+        static l = []
+        static {
+          expect(A.l).toEqual([1, 2])
+          this.l.push(3)
+        }
+        static {
+          this.l.push(4)
+        }
+      }
+      expect(B.l).toEqual([3, 4])
     `)
   })
 })

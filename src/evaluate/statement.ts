@@ -15,7 +15,7 @@ export interface BlockOptions {
 }
 
 export function* BlockStatement(
-  block: acorn.BlockStatement,
+  block: acorn.BlockStatement | acorn.StaticBlock,
   scope: Scope,
   options: BlockOptions = {},
 ) {

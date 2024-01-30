@@ -21,7 +21,7 @@ export interface hoistOptions {
 }
 
 export function* hoist(
-  block: acorn.Program | acorn.BlockStatement,
+  block: acorn.Program | acorn.BlockStatement | acorn.StaticBlock,
   scope: Scope,
   options: hoistOptions = {}
 ) {

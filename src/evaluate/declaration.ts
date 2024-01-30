@@ -1,6 +1,7 @@
 import { NOINIT, DEADZONE, PRIVATE } from '../share/const'
 import { pattern, createFunc, createClass } from './helper'
 import { define, getDptor, assign } from '../share/util'
+import { BlockStatement } from './statement'
 import { VarKind } from '../scope/variable'
 import * as acorn from 'acorn'
 import Scope from '../scope'
@@ -199,5 +200,10 @@ export function* PropertyDefinition(node: acorn.PropertyDefinition, scope: Scope
 }
 
 export function* StaticBlock(node: acorn.StaticBlock, scope: Scope, options: ClassOptions = {}) {
-  // TODO
+  const { klass } = options
+
+  const subScope: Scope = new Scope(scope, true)
+  subScope.const('this', klass)
+
+  return yield* BlockStatement(node, subScope, { invasived: true })
 }
