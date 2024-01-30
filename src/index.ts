@@ -1,13 +1,15 @@
-import { parse, Options, ecmaVersion, Node, Program } from 'acorn'
 import { getOwnNames, createSandBox, globalObj, assign } from './share/util'
+import { parse, Options, Node, Program } from 'acorn'
 import { version } from '../package.json'
+import { MODULE } from './share/const'
 import Scope from './scope'
 
 import { hoist } from './evaluate_n/helper'
 import evaluate from './evaluate_n'
 
 export interface SvalOptions {
-  ecmaVer?: ecmaVersion
+  ecmaVer?: Options['ecmaVersion']
+  sourceType?: Options['sourceType']
   sandBox?: boolean
 }
 
@@ -22,7 +24,7 @@ class Sval {
   exports: { [name: string]: any } = {}
 
   constructor(options: SvalOptions = {}) {
-    let { ecmaVer = 'latest', sandBox = true } = options
+    let { ecmaVer = 'latest', sandBox = true, sourceType = 'script' } = options
 
     if (typeof ecmaVer === 'number') {
       ecmaVer -= ecmaVer < 2015 ? 0 : 2009 // format ecma edition
@@ -33,6 +35,7 @@ class Sval {
     }
 
     this.options.ecmaVersion = ecmaVer as Options['ecmaVersion']
+    this.options.sourceType = sourceType
 
     if (sandBox) {
       // Shallow clone to create a sandbox
@@ -55,9 +58,9 @@ class Sval {
     if (typeof nameOrModules !== 'object') return
 
     const names = getOwnNames(nameOrModules)
-    
+
     for (let i = 0; i < names.length; i++) {
-      const name = names[i]
+      const name = this.options.sourceType === 'module' ? MODULE + names[i] : names[i]
       this.scope.var(name, nameOrModules[name])
     }
   }

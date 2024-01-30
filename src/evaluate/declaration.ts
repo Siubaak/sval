@@ -207,3 +207,33 @@ export function* StaticBlock(node: acorn.StaticBlock, scope: Scope, options: Cla
 
   return yield* BlockStatement(node, subScope, { invasived: true })
 }
+
+export function* ExportDefaultDeclaration(node: acorn.ExportDefaultDeclaration, scope: Scope) {
+  let value: any
+
+  if (node.declaration.type === 'FunctionDeclaration') {
+    value = createFunc(node.declaration, scope)
+    scope.func(node.declaration.id.name, value)
+  } else if (node.declaration.type === 'ClassDeclaration') {
+    value = yield* createClass(node.declaration, scope)
+    scope.func(node.declaration.id.name, value)
+  } else {
+    value = yield* evaluate(node.declaration, scope)
+  }
+
+  const variable = scope.global().find('exports')
+  if (variable) {
+    const exports = variable.get()
+    if (exports && typeof exports === 'object') {
+      exports.default = value
+    }
+  }
+}
+
+export function* ExportNamedDeclaration(node: acorn.ExportDefaultDeclaration, scope: Scope) {
+  // TODO
+}
+
+export function* ExportAllDeclaration(node: acorn.ExportAllDeclaration, scope: Scope) {
+  // TODO
+}

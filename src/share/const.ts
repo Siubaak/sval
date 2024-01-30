@@ -23,3 +23,5 @@ export const PRIVATE = createSymbol('private') // private props
 export const NOINIT = createSymbol('noinit')
 
 export const DEADZONE = createSymbol('deadzone')
+
+export const MODULE = createSymbol('module')

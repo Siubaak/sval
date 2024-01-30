@@ -45,7 +45,7 @@ export default class Scope {
    */
   global(): Scope {
     let scope: Scope = this
-    while(scope.parent) {
+    while (scope.parent) {
       scope = scope.parent
     }
     return scope
@@ -97,7 +97,7 @@ export default class Scope {
     let scope: Scope = this
 
     // Find the closest function scope
-    while(scope.parent && !scope.isolated) {
+    while (scope.parent && !scope.isolated) {
       scope = scope.parent
     }
 
