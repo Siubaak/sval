@@ -122,7 +122,7 @@ export function* MethodDefinition(node: acorn.MethodDefinition, scope: Scope, op
 
   if (priv) {
     if (!obj[PRIVATE]) {
-      define(obj, PRIVATE, { value: Object.create(null) });
+      define(obj, PRIVATE, { value: Object.create(null) })
     }
     obj = obj[PRIVATE]
   }
@@ -179,19 +179,22 @@ export function* PropertyDefinition(node: acorn.PropertyDefinition, scope: Scope
     throw new SyntaxError('Unexpected token')
   }
 
+  const subScope: Scope = new Scope(scope, true)
+  subScope.const('this', klass)
+
   let obj = klass
 
   if (priv) {
     if (!obj[PRIVATE]) {
-      define(obj, PRIVATE, { value: Object.create(null) });
+      define(obj, PRIVATE, { value: Object.create(null) })
     }
     obj = obj[PRIVATE]
   }
 
   if (node.value.type === 'FunctionExpression' || node.value.type === 'ArrowFunctionExpression') {
-    obj[key] = createFunc(node.value, scope, { superClass, defProp: true })
+    obj[key] = createFunc(node.value, subScope, { superClass })
   } else {
-    obj[key] = yield* evaluate(node.value, scope)
+    obj[key] = yield* evaluate(node.value, subScope)
   }
 }
 
