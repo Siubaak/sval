@@ -74,7 +74,7 @@ Besides, Sval instance also has one method, **import**, and one object, **export
 
   For "script", this method expecting a name and a module as arguments like `import(name: string, mod: any)`, or an object which contains the modules as argument like `import({ [name: string]: any })`. The modules will be automatically declared as global variables in Sval instance scope. This method is more likely to be used in sandbox mode.
 
-  For "module", this method expecting a path and a module declaration as arguments like `import(path: string, mod: Module)`, or an object which contains the module declarations as argument like `import({ [path: string]: Module })`. The `Module` is either an ES module exported object like `{ default?: any, [name: string]: any }` or a function return an ES module exported object like `() => ({ default?: any, [name: string]: any } | Promise<{ default?: any, [name: string]: any }>)`. The function way is more helpful for dynamic import. The modules will not be automatically declared as global variables in Sval instance scope, and the code should use import declarations to import the module.
+  For "module", this method expecting a path and a module declaration as arguments like `import(path: string, mod: Module)`, or an object which contains the module declarations as argument like `import({ [path: string]: Module })`. The `Module` is either an ES module exported object like `{ default?: any, [name: string]: any }` or a function returning an ES module exported object like `() => ({ default?: any, [name: string]: any })`. The `Module` can also be a promise or a function returning a promise if importing a module by dynamic import. The modules will not be automatically declared as global variables in Sval instance scope, and the code should use import declarations to import the module.
 
 - **exports** is to get what you exported from runs, merged if several runs have exports. Also, this object has different behaviors for different `sourceType`.
 
@@ -82,7 +82,9 @@ Besides, Sval instance also has one method, **import**, and one object, **export
 
   For "module", this object will not be automatically declared as global variables in Sval instance scope, and the code needs to use export declarations for export.
 
-Here are a example for **import** and **exports** below:
+Here are examples for **import** and **exports** below:
+
+Example for "script":
 
 ```js
 import Sval from 'sval'
@@ -101,11 +103,17 @@ scriptInterpreter.run(`
 
 // Get exports from runs
 console.log(scriptInterpreter.exports.mod) // Get 'AllKindsOfStuffs'
+```
+
+Example for "module":
+
+```js
+import Sval from 'sval'
 
 // Create a interpreter for module
-const moduleInterpreter = new Sval({ sourceType: 'script' })
+const moduleInterpreter = new Sval({ sourceType: 'module' })
 
-// Add global modules in interpreter
+// Add ES modules for interpreter
 moduleInterpreter.import('./import-what-you-need', { default: 'AllKindsOfStuffs' })
 // Or moduleInterpreter.import('./import-what-you-need', () => ({ default: 'AllKindsOfStuffs' }))
 // Or moduleInterpreter.import({ './import-what-you-need': { default: 'AllKindsOfStuffs' } })
