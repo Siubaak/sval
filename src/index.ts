@@ -40,9 +40,11 @@ class Sval {
     if (sandBox) {
       // Shallow clone to create a sandbox
       const win = createSandBox()
+      this.scope.let('globalThis', win)
       this.scope.let('window', win)
       this.scope.let('this', win)
     } else {
+      this.scope.let('globalThis', globalObj)
       this.scope.let('window', globalObj)
       this.scope.let('this', globalObj)
     }
