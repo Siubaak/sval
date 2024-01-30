@@ -451,7 +451,11 @@ export function* NewExpression(node: acorn.NewExpression, scope: Scope) {
 }
 
 export function* MetaProperty(node: acorn.MetaProperty, scope: Scope) {
-  return scope.find(NEWTARGET).get()
+  if (node.meta.name === 'new' && node.property.name === 'target') {
+    return scope.find(NEWTARGET).get()
+  } else if (node.meta.name === 'import' && node.property.name === 'meta') {
+    return { url: '' }
+  }
 }
 
 export function* SequenceExpression(node: acorn.SequenceExpression, scope: Scope) {
