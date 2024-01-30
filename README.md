@@ -113,15 +113,19 @@ import Sval from 'sval'
 // Create a interpreter for module
 const moduleInterpreter = new Sval({ sourceType: 'module' })
 
-// Add ES modules for interpreter
+// Add ES modules in interpreter
 moduleInterpreter.import('./import-what-you-need', { default: 'AllKindsOfStuffs' })
 // Or moduleInterpreter.import('./import-what-you-need', () => ({ default: 'AllKindsOfStuffs' }))
 // Or moduleInterpreter.import({ './import-what-you-need': { default: 'AllKindsOfStuffs' } })
 // Or moduleInterpreter.import({ './import-what-you-need': () => ({ default: 'AllKindsOfStuffs' }) })
 
+// Add ES modules in interpreter for dynamic import
+moduleInterpreter.import('./dynamic-import-what-you-need', Promise.resolve({ default: 'AllKindsOfStuffs' }))
+
 // Parse and run the code
 moduleInterpreter.run(`
   import importWhatYouNeed from './import-what-you-need'
+  import('./dynamic-import-what-you-need').then(m => console.log(m.default)) // Get 'AllKindsOfStuffs'
   export { importWhatYouNeed as mod }
 `)
 
