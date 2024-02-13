@@ -72,11 +72,11 @@ class Sval {
     if (typeof parser === 'function') {
       return parser(code, assign({} as SvalOptions, this.options))
     }
-    return parse(code, this.options)
+    return parse(code, { ...this.options, locations: true, sourceFile: code })
   }
 
   run(code: string | Node) {
-    const ast = typeof code === 'string' ? parse(code, this.options) as Node : code
+    const ast = typeof code === 'string' ? this.parse(code) : code
     hoist(ast as Program, this.scope)
     evaluate(ast, this.scope)
   }

@@ -3283,6 +3283,7 @@
       }
   }
   function createFunc(node, scope, options = {}) {
+      var _a;
       if (!node.generator && !node.async) {
           return createFunc$1(node, scope, options);
       }
@@ -3376,6 +3377,13 @@
           value: params.length,
           configurable: true
       });
+      const source = (_a = node.loc) === null || _a === void 0 ? void 0 : _a.source;
+      if (source) {
+          define(func, 'toString', {
+              value: () => source.substring(node.start, node.end),
+              configurable: true
+          });
+      }
       return func;
   }
   function* createClass(node, scope) {
@@ -3534,6 +3542,7 @@
       }
   }
   function createFunc$1(node, scope, options = {}) {
+      var _a;
       if (node.generator || node.async) {
           return createFunc(node, scope, options);
       }
@@ -3599,6 +3608,13 @@
           value: params.length,
           configurable: true
       });
+      const source = (_a = node.loc) === null || _a === void 0 ? void 0 : _a.source;
+      if (source) {
+          define(func, 'toString', {
+              value: () => source.substring(node.start, node.end),
+              configurable: true
+          });
+      }
       return func;
   }
   function createClass$1(node, scope) {
@@ -3705,10 +3721,10 @@
           if (typeof parser === 'function') {
               return parser(code, assign({}, this.options));
           }
-          return acorn.parse(code, this.options);
+          return acorn.parse(code, Object.assign(Object.assign({}, this.options), { locations: true, sourceFile: code }));
       }
       run(code) {
-          const ast = typeof code === 'string' ? acorn.parse(code, this.options) : code;
+          const ast = typeof code === 'string' ? this.parse(code) : code;
           hoist$1(ast, this.scope);
           evaluate(ast, this.scope);
       }
