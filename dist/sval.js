@@ -1226,7 +1226,8 @@
       return getProto ? superClass.prototype : superClass;
   }
   function SpreadElement(node, scope) {
-      return evaluate(node.argument, scope);
+      var result = evaluate(node.argument, scope);
+      return typeof result === 'string' ? __spread(result) : result;
   }
   function ChainExpression(node, scope) {
       return evaluate(node.expression, scope);
@@ -2778,10 +2779,13 @@
       });
   }
   function SpreadElement$1(node, scope) {
+      var result;
       return __generator(this, function (_a) {
           switch (_a.label) {
               case 0: return [5, __values(evaluate$1(node.argument, scope))];
-              case 1: return [2, _a.sent()];
+              case 1:
+                  result = _a.sent();
+                  return [2, typeof result === 'string' ? __spread(result) : result];
           }
       });
   }

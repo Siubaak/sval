@@ -1140,7 +1140,8 @@
       return getProto ? superClass.prototype : superClass;
   }
   function SpreadElement(node, scope) {
-      return evaluate(node.argument, scope);
+      const result = evaluate(node.argument, scope);
+      return typeof result === 'string' ? [...result] : result;
   }
   function ChainExpression(node, scope) {
       return evaluate(node.expression, scope);
@@ -2409,7 +2410,8 @@
       return getProto ? superClass.prototype : superClass;
   }
   function* SpreadElement$1(node, scope) {
-      return yield* evaluate$1(node.argument, scope);
+      const result = yield* evaluate$1(node.argument, scope);
+      return typeof result === 'string' ? [...result] : result;
   }
   function* ChainExpression$1(node, scope) {
       return yield* evaluate$1(node.expression, scope);
