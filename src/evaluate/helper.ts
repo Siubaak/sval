@@ -236,6 +236,14 @@ export function createFunc(
     configurable: true
   })
 
+  const source = node.loc?.source
+  if (source) {
+    define(func, 'toString', {
+      value: () => source.substring(node.start, node.end),
+      configurable: true
+    })
+  }
+
   return func
 }
 
