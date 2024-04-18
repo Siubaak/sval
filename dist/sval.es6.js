@@ -456,7 +456,7 @@
   const IMPORT = createSymbol('import');
   const EXPORTS = createSymbol('exports');
 
-  var version = "0.5.1";
+  var version = "0.5.2";
 
   class Var {
       constructor(kind, value) {
