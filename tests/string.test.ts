@@ -45,4 +45,13 @@ describe('testing src/index.ts', () => {
       tag\`hello \${ a + b } sval \${ a * b }\`
     `)
   })
+
+  it('should convert string to char array', () => {
+    const interpreter = new Sval()
+    interpreter.import({ expect })
+    interpreter.run(`
+      const word = 'word'
+      expect([...word]).toEqual(['w','o','r','d'])
+    `)
+  })
 })

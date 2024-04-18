@@ -544,7 +544,8 @@ export function* Super(
 }
 
 export function* SpreadElement(node: acorn.SpreadElement, scope: Scope) {
-  return yield* evaluate(node.argument, scope)
+  const result = yield* evaluate(node.argument, scope)
+  return typeof result === 'string' ? [...result] : result; 
 }
 
 export function* ChainExpression(node: acorn.ChainExpression, scope: Scope) {
