@@ -51,7 +51,13 @@ describe('testing src/index.ts', () => {
     interpreter.import({ expect })
     interpreter.run(`
       const word = 'word'
-      expect([...word]).toEqual(['w','o','r','d'])
+      expect([...word]).toEqual(['w', 'o', 'r', 'd'])
+      expect({...word}).toEqual({ 0: 'w', 1: 'o', 2: 'r', 3: 'd' })
+
+      function spread(w, o, r, d) {
+        expect([w, o, r, d]).toEqual(['w', 'o', 'r', 'd'])
+      }
+      spread(...word)
     `)
   })
 })
