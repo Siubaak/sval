@@ -146,6 +146,7 @@ try {
     try { globalObj.setInterval = setInterval               } catch (err) { /* empty */ }
     try { globalObj.setTimeout = setTimeout                 } catch (err) { /* empty */ }
     try { globalObj.crypto = crypto                         } catch (err) { /* empty */ }
+    try { globalObj.URL = URL                               } catch (err) { /* empty */ }
     names = getOwnNames(globalObj)
   }
 }
