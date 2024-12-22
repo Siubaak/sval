@@ -410,12 +410,21 @@ export function* CallExpression(node: acorn.CallExpression, scope: Scope) {
     }
   }
 
-  if (object && object[WINDOW] && func.toString().indexOf('[native code]') !== -1) {
-    // you will get "TypeError: Illegal invocation" if not binding native function with window
-    return func.apply(object[WINDOW], args)
+  try {
+    return func.apply(object, args)
+  } catch (err) {
+    if (
+      err instanceof TypeError && err.message === 'Illegal invocation'
+      && func.toString().indexOf('[native code]') !== -1
+    ) {
+      // you will get "TypeError: Illegal invocation" if not binding native function with window
+      const win = scope.global().find('window').get()
+      if (win && win[WINDOW]) {
+        return func.apply(win[WINDOW], args)
+      }
+    }
+    throw err
   }
-
-  return func.apply(object, args)
 }
 
 export function* NewExpression(node: acorn.NewExpression, scope: Scope) {

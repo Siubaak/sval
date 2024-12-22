@@ -1,45 +1,9 @@
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('acorn')) :
   typeof define === 'function' && define.amd ? define(['acorn'], factory) :
-  (global = global || self, global.Sval = factory(global.acorn));
-}(this, (function (acorn) { 'use strict';
+  (global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.Sval = factory(global.acorn));
+})(this, (function (acorn) { 'use strict';
 
-  var statement = /*#__PURE__*/Object.freeze({
-    __proto__: null,
-    get ExpressionStatement () { return ExpressionStatement; },
-    get BlockStatement () { return BlockStatement; },
-    get EmptyStatement () { return EmptyStatement; },
-    get DebuggerStatement () { return DebuggerStatement; },
-    get ReturnStatement () { return ReturnStatement; },
-    get BreakStatement () { return BreakStatement; },
-    get ContinueStatement () { return ContinueStatement; },
-    get IfStatement () { return IfStatement; },
-    get SwitchStatement () { return SwitchStatement; },
-    get SwitchCase () { return SwitchCase; },
-    get ThrowStatement () { return ThrowStatement; },
-    get TryStatement () { return TryStatement; },
-    get CatchClause () { return CatchClause; },
-    get WhileStatement () { return WhileStatement; },
-    get DoWhileStatement () { return DoWhileStatement; },
-    get ForStatement () { return ForStatement; },
-    get ForInStatement () { return ForInStatement; },
-    get ForOfStatement () { return ForOfStatement; }
-  });
-  var declaration = /*#__PURE__*/Object.freeze({
-    __proto__: null,
-    get FunctionDeclaration () { return FunctionDeclaration; },
-    get VariableDeclaration () { return VariableDeclaration; },
-    get VariableDeclarator () { return VariableDeclarator; },
-    get ClassDeclaration () { return ClassDeclaration; },
-    get ClassBody () { return ClassBody; },
-    get MethodDefinition () { return MethodDefinition; },
-    get PropertyDefinition () { return PropertyDefinition; },
-    get StaticBlock () { return StaticBlock; },
-    get ImportDeclaration () { return ImportDeclaration; },
-    get ExportDefaultDeclaration () { return ExportDefaultDeclaration; },
-    get ExportNamedDeclaration () { return ExportNamedDeclaration; },
-    get ExportAllDeclaration () { return ExportAllDeclaration; }
-  });
   var statement$1 = /*#__PURE__*/Object.freeze({
     __proto__: null,
     get ExpressionStatement () { return ExpressionStatement$1; },
@@ -75,6 +39,42 @@
     get ExportDefaultDeclaration () { return ExportDefaultDeclaration$1; },
     get ExportNamedDeclaration () { return ExportNamedDeclaration$1; },
     get ExportAllDeclaration () { return ExportAllDeclaration$1; }
+  });
+  var statement = /*#__PURE__*/Object.freeze({
+    __proto__: null,
+    get ExpressionStatement () { return ExpressionStatement; },
+    get BlockStatement () { return BlockStatement; },
+    get EmptyStatement () { return EmptyStatement; },
+    get DebuggerStatement () { return DebuggerStatement; },
+    get ReturnStatement () { return ReturnStatement; },
+    get BreakStatement () { return BreakStatement; },
+    get ContinueStatement () { return ContinueStatement; },
+    get IfStatement () { return IfStatement; },
+    get SwitchStatement () { return SwitchStatement; },
+    get SwitchCase () { return SwitchCase; },
+    get ThrowStatement () { return ThrowStatement; },
+    get TryStatement () { return TryStatement; },
+    get CatchClause () { return CatchClause; },
+    get WhileStatement () { return WhileStatement; },
+    get DoWhileStatement () { return DoWhileStatement; },
+    get ForStatement () { return ForStatement; },
+    get ForInStatement () { return ForInStatement; },
+    get ForOfStatement () { return ForOfStatement; }
+  });
+  var declaration = /*#__PURE__*/Object.freeze({
+    __proto__: null,
+    get FunctionDeclaration () { return FunctionDeclaration; },
+    get VariableDeclaration () { return VariableDeclaration; },
+    get VariableDeclarator () { return VariableDeclarator; },
+    get ClassDeclaration () { return ClassDeclaration; },
+    get ClassBody () { return ClassBody; },
+    get MethodDefinition () { return MethodDefinition; },
+    get PropertyDefinition () { return PropertyDefinition; },
+    get StaticBlock () { return StaticBlock; },
+    get ImportDeclaration () { return ImportDeclaration; },
+    get ExportDefaultDeclaration () { return ExportDefaultDeclaration; },
+    get ExportNamedDeclaration () { return ExportNamedDeclaration; },
+    get ExportAllDeclaration () { return ExportAllDeclaration; }
   });
 
   var freeze = Object.freeze;
@@ -668,7 +668,7 @@
       return ar;
   }
 
-  function Identifier(node, scope, options) {
+  function Identifier$1(node, scope, options) {
       if (options === void 0) { options = {}; }
       var _a = options.getVar, getVar = _a === void 0 ? false : _a, _b = options.throwErr, throwErr = _b === void 0 ? true : _b;
       if (node.name === 'undefined') {
@@ -697,21 +697,21 @@
       }
   }
 
-  var identifier = /*#__PURE__*/Object.freeze({
+  var identifier$1 = /*#__PURE__*/Object.freeze({
     __proto__: null,
-    Identifier: Identifier
+    Identifier: Identifier$1
   });
 
-  function Literal(node, scope) {
+  function Literal$1(node, scope) {
       return node.value;
   }
 
-  var literal = /*#__PURE__*/Object.freeze({
+  var literal$1 = /*#__PURE__*/Object.freeze({
     __proto__: null,
-    Literal: Literal
+    Literal: Literal$1
   });
 
-  function ThisExpression(node, scope) {
+  function ThisExpression$1(node, scope) {
       var superCall = scope.find(SUPERCALL);
       if (superCall && !superCall.get()) {
           throw new ReferenceError('Must call super constructor in derived class '
@@ -721,41 +721,41 @@
           return scope.find('this').get();
       }
   }
-  function ArrayExpression(node, scope) {
+  function ArrayExpression$1(node, scope) {
       var results = [];
       for (var i = 0; i < node.elements.length; i++) {
           var item = node.elements[i];
           if (item.type === 'SpreadElement') {
-              results = results.concat(SpreadElement(item, scope));
+              results = results.concat(SpreadElement$1(item, scope));
           }
           else {
-              results.push(evaluate(item, scope));
+              results.push(evaluate$1(item, scope));
           }
       }
       return results;
   }
-  function ObjectExpression(node, scope) {
+  function ObjectExpression$1(node, scope) {
       var object = {};
       for (var i = 0; i < node.properties.length; i++) {
           var property = node.properties[i];
           if (property.type === 'SpreadElement') {
-              assign(object, SpreadElement(property, scope));
+              assign(object, SpreadElement$1(property, scope));
           }
           else {
               var key = void 0;
               var propKey = property.key;
               if (property.computed) {
-                  key = evaluate(propKey, scope);
+                  key = evaluate$1(propKey, scope);
               }
               else {
                   if (propKey.type === 'Identifier') {
                       key = propKey.name;
                   }
                   else {
-                      key = '' + (Literal(propKey));
+                      key = '' + (Literal$1(propKey));
                   }
               }
-              var value = evaluate(property.value, scope);
+              var value = evaluate$1(property.value, scope);
               var propKind = property.kind;
               if (propKind === 'init') {
                   object[key] = value;
@@ -782,55 +782,55 @@
       }
       return object;
   }
-  function FunctionExpression(node, scope) {
+  function FunctionExpression$1(node, scope) {
       if (node.id && node.id.name) {
           var tmpScope = new Scope(scope);
-          var func = createFunc$1(node, tmpScope);
+          var func = createFunc(node, tmpScope);
           tmpScope.const(node.id.name, func);
           return func;
       }
       else {
-          return createFunc$1(node, scope);
+          return createFunc(node, scope);
       }
   }
-  function UnaryExpression(node, scope) {
+  function UnaryExpression$1(node, scope) {
       var arg = node.argument;
       switch (node.operator) {
-          case '+': return +(evaluate(arg, scope));
-          case '-': return -(evaluate(arg, scope));
-          case '!': return !(evaluate(arg, scope));
-          case '~': return ~(evaluate(arg, scope));
-          case 'void': return void (evaluate(arg, scope));
+          case '+': return +(evaluate$1(arg, scope));
+          case '-': return -(evaluate$1(arg, scope));
+          case '!': return !(evaluate$1(arg, scope));
+          case '~': return ~(evaluate$1(arg, scope));
+          case 'void': return void (evaluate$1(arg, scope));
           case 'typeof':
               if (arg.type === 'Identifier') {
-                  return typeof (Identifier(arg, scope, { throwErr: false }));
+                  return typeof (Identifier$1(arg, scope, { throwErr: false }));
               }
               else {
-                  return typeof (evaluate(arg, scope));
+                  return typeof (evaluate$1(arg, scope));
               }
           case 'delete':
               if (arg.type === 'MemberExpression') {
-                  var variable = MemberExpression(arg, scope, { getVar: true });
+                  var variable = MemberExpression$1(arg, scope, { getVar: true });
                   return variable.del();
               }
               else if (arg.type === 'Identifier') {
                   throw new SyntaxError('Delete of an unqualified identifier in strict mode');
               }
               else {
-                  evaluate(arg, scope);
+                  evaluate$1(arg, scope);
                   return true;
               }
           default: throw new SyntaxError("Unexpected token " + node.operator);
       }
   }
-  function UpdateExpression(node, scope) {
+  function UpdateExpression$1(node, scope) {
       var arg = node.argument;
       var variable;
       if (arg.type === 'Identifier') {
-          variable = Identifier(arg, scope, { getVar: true });
+          variable = Identifier$1(arg, scope, { getVar: true });
       }
       else if (arg.type === 'MemberExpression') {
-          variable = MemberExpression(arg, scope, { getVar: true });
+          variable = MemberExpression$1(arg, scope, { getVar: true });
       }
       else {
           throw new SyntaxError('Unexpected token');
@@ -848,17 +848,17 @@
           throw new SyntaxError("Unexpected token " + node.operator);
       }
   }
-  function BinaryExpression(node, scope) {
+  function BinaryExpression$1(node, scope) {
       var left;
       var right;
       if (node.left.type === 'PrivateIdentifier') {
           left = node.left.name;
-          right = evaluate(node.right, scope);
+          right = evaluate$1(node.right, scope);
           right = right[PRIVATE];
       }
       else {
-          left = evaluate(node.left, scope);
-          right = evaluate(node.right, scope);
+          left = evaluate$1(node.left, scope);
+          right = evaluate$1(node.right, scope);
       }
       switch (node.operator) {
           case '==': return left == right;
@@ -886,25 +886,25 @@
           default: throw new SyntaxError("Unexpected token " + node.operator);
       }
   }
-  function AssignmentExpression(node, scope) {
+  function AssignmentExpression$1(node, scope) {
       var _a;
       var left = node.left;
       var variable;
       if (left.type === 'Identifier') {
-          variable = Identifier(left, scope, { getVar: true, throwErr: false });
+          variable = Identifier$1(left, scope, { getVar: true, throwErr: false });
           if (!variable) {
               var win = scope.global().find('window').get();
               variable = new Prop(win, left.name);
           }
       }
       else if (left.type === 'MemberExpression') {
-          variable = MemberExpression(left, scope, { getVar: true });
+          variable = MemberExpression$1(left, scope, { getVar: true });
       }
       else {
-          var value_1 = evaluate(node.right, scope);
-          return pattern$3(left, scope, { feed: value_1 });
+          var value_1 = evaluate$1(node.right, scope);
+          return pattern(left, scope, { feed: value_1 });
       }
-      var value = evaluate(node.right, scope);
+      var value = evaluate$1(node.right, scope);
       switch (node.operator) {
           case '=':
               variable.set(value);
@@ -957,35 +957,35 @@
           default: throw new SyntaxError("Unexpected token " + node.operator);
       }
   }
-  function LogicalExpression(node, scope) {
+  function LogicalExpression$1(node, scope) {
       var _a;
       switch (node.operator) {
           case '||':
-              return (evaluate(node.left, scope)) || (evaluate(node.right, scope));
+              return (evaluate$1(node.left, scope)) || (evaluate$1(node.right, scope));
           case '&&':
-              return (evaluate(node.left, scope)) && (evaluate(node.right, scope));
+              return (evaluate$1(node.left, scope)) && (evaluate$1(node.right, scope));
           case '??':
-              return (_a = (evaluate(node.left, scope))) !== null && _a !== void 0 ? _a : (evaluate(node.right, scope));
+              return (_a = (evaluate$1(node.left, scope))) !== null && _a !== void 0 ? _a : (evaluate$1(node.right, scope));
           default:
               throw new SyntaxError("Unexpected token " + node.operator);
       }
   }
-  function MemberExpression(node, scope, options) {
+  function MemberExpression$1(node, scope, options) {
       if (options === void 0) { options = {}; }
       var _a = options.getObj, getObj = _a === void 0 ? false : _a, _b = options.getVar, getVar = _b === void 0 ? false : _b;
       var object;
       if (node.object.type === 'Super') {
-          object = Super(node.object, scope, { getProto: true });
+          object = Super$1(node.object, scope, { getProto: true });
       }
       else {
-          object = evaluate(node.object, scope);
+          object = evaluate$1(node.object, scope);
       }
       if (getObj)
           return object;
       var key;
       var priv = false;
       if (node.computed) {
-          key = evaluate(node.property, scope);
+          key = evaluate$1(node.property, scope);
       }
       else if (node.property.type === 'PrivateIdentifier') {
           key = node.property.name;
@@ -1026,23 +1026,23 @@
           }
       }
   }
-  function ConditionalExpression(node, scope) {
-      return (evaluate(node.test, scope))
-          ? (evaluate(node.consequent, scope))
-          : (evaluate(node.alternate, scope));
+  function ConditionalExpression$1(node, scope) {
+      return (evaluate$1(node.test, scope))
+          ? (evaluate$1(node.consequent, scope))
+          : (evaluate$1(node.alternate, scope));
   }
-  function CallExpression(node, scope) {
+  function CallExpression$1(node, scope) {
       var func;
       var object;
       if (node.callee.type === 'MemberExpression') {
-          object = MemberExpression(node.callee, scope, { getObj: true });
+          object = MemberExpression$1(node.callee, scope, { getObj: true });
           if (node.callee.optional && object == null) {
               return undefined;
           }
           var key = void 0;
           var priv = false;
           if (node.callee.computed) {
-              key = evaluate(node.callee.property, scope);
+              key = evaluate$1(node.callee.property, scope);
           }
           else if (node.callee.property.type === 'PrivateIdentifier') {
               key = node.callee.property.name;
@@ -1074,7 +1074,7 @@
       }
       else {
           object = scope.find('this').get();
-          func = evaluate(node.callee, scope);
+          func = evaluate$1(node.callee, scope);
           if (node.optional && func == null) {
               return undefined;
           }
@@ -1103,10 +1103,10 @@
       for (var i = 0; i < node.arguments.length; i++) {
           var arg = node.arguments[i];
           if (arg.type === 'SpreadElement') {
-              args = args.concat(SpreadElement(arg, scope));
+              args = args.concat(SpreadElement$1(arg, scope));
           }
           else {
-              args.push(evaluate(arg, scope));
+              args.push(evaluate$1(arg, scope));
           }
       }
       if (node.callee.type === 'Super') {
@@ -1118,13 +1118,22 @@
               scope.find(SUPERCALL).set(true);
           }
       }
-      if (object && object[WINDOW] && func.toString().indexOf('[native code]') !== -1) {
-          return func.apply(object[WINDOW], args);
+      try {
+          return func.apply(object, args);
       }
-      return func.apply(object, args);
+      catch (err) {
+          if (err instanceof TypeError && err.message === 'Illegal invocation'
+              && func.toString().indexOf('[native code]') !== -1) {
+              var win = scope.global().find('window').get();
+              if (win && win[WINDOW]) {
+                  return func.apply(win[WINDOW], args);
+              }
+          }
+          throw err;
+      }
   }
-  function NewExpression(node, scope) {
-      var constructor = evaluate(node.callee, scope);
+  function NewExpression$1(node, scope) {
+      var constructor = evaluate$1(node.callee, scope);
       if (typeof constructor !== 'function') {
           var name_2;
           if (node.callee.type === 'Identifier') {
@@ -1147,15 +1156,15 @@
       for (var i = 0; i < node.arguments.length; i++) {
           var arg = node.arguments[i];
           if (arg.type === 'SpreadElement') {
-              args = args.concat(SpreadElement(arg, scope));
+              args = args.concat(SpreadElement$1(arg, scope));
           }
           else {
-              args.push(evaluate(arg, scope));
+              args.push(evaluate$1(arg, scope));
           }
       }
       return new (constructor.bind.apply(constructor, __spread([void 0], args)))();
   }
-  function MetaProperty(node, scope) {
+  function MetaProperty$1(node, scope) {
       if (node.meta.name === 'new' && node.property.name === 'target') {
           return scope.find(NEWTARGET).get();
       }
@@ -1163,33 +1172,33 @@
           return { url: '' };
       }
   }
-  function SequenceExpression(node, scope) {
+  function SequenceExpression$1(node, scope) {
       var result;
       for (var i = 0; i < node.expressions.length; i++) {
-          result = evaluate(node.expressions[i], scope);
+          result = evaluate$1(node.expressions[i], scope);
       }
       return result;
   }
-  function ArrowFunctionExpression(node, scope) {
-      return createFunc$1(node, scope);
+  function ArrowFunctionExpression$1(node, scope) {
+      return createFunc(node, scope);
   }
-  function TemplateLiteral(node, scope) {
+  function TemplateLiteral$1(node, scope) {
       var quasis = node.quasis.slice();
       var expressions = node.expressions.slice();
       var result = '';
       var temEl;
       var expr;
       while (temEl = quasis.shift()) {
-          result += TemplateElement(temEl);
+          result += TemplateElement$1(temEl);
           expr = expressions.shift();
           if (expr) {
-              result += evaluate(expr, scope);
+              result += evaluate$1(expr, scope);
           }
       }
       return result;
   }
-  function TaggedTemplateExpression(node, scope) {
-      var tagFunc = evaluate(node.tag, scope);
+  function TaggedTemplateExpression$1(node, scope) {
+      var tagFunc = evaluate$1(node.tag, scope);
       var quasis = node.quasi.quasis;
       var str = quasis.map(function (v) { return v.value.cooked; });
       var raw = quasis.map(function (v) { return v.value.raw; });
@@ -1200,41 +1209,41 @@
       var args = [];
       if (expressions) {
           for (var i = 0; i < expressions.length; i++) {
-              args.push(evaluate(expressions[i], scope));
+              args.push(evaluate$1(expressions[i], scope));
           }
       }
       return tagFunc.apply(void 0, __spread([freeze(str)], args));
   }
-  function TemplateElement(node, scope) {
+  function TemplateElement$1(node, scope) {
       return node.value.raw;
   }
-  function ClassExpression(node, scope) {
+  function ClassExpression$1(node, scope) {
       if (node.id && node.id.name) {
           var tmpScope = new Scope(scope);
-          var klass = createClass$1(node, tmpScope);
+          var klass = createClass(node, tmpScope);
           tmpScope.const(node.id.name, klass);
           return klass;
       }
       else {
-          return createClass$1(node, scope);
+          return createClass(node, scope);
       }
   }
-  function Super(node, scope, options) {
+  function Super$1(node, scope, options) {
       if (options === void 0) { options = {}; }
       var _a = options.getProto, getProto = _a === void 0 ? false : _a;
       var superClass = scope.find(SUPER).get();
       return getProto ? superClass.prototype : superClass;
   }
-  function SpreadElement(node, scope) {
-      var result = evaluate(node.argument, scope);
+  function SpreadElement$1(node, scope) {
+      var result = evaluate$1(node.argument, scope);
       return typeof result === 'string' ? __spread(result) : result;
   }
-  function ChainExpression(node, scope) {
-      return evaluate(node.expression, scope);
+  function ChainExpression$1(node, scope) {
+      return evaluate$1(node.expression, scope);
   }
-  function ImportExpression(node, scope) {
+  function ImportExpression$1(node, scope) {
       var globalScope = scope.global();
-      var source = evaluate(node.source, scope);
+      var source = evaluate$1(node.source, scope);
       var module = globalScope.find(IMPORT + source);
       var value;
       if (module) {
@@ -1254,35 +1263,35 @@
       return Promise.resolve(value);
   }
 
-  var expression = /*#__PURE__*/Object.freeze({
+  var expression$1 = /*#__PURE__*/Object.freeze({
     __proto__: null,
-    ThisExpression: ThisExpression,
-    ArrayExpression: ArrayExpression,
-    ObjectExpression: ObjectExpression,
-    FunctionExpression: FunctionExpression,
-    UnaryExpression: UnaryExpression,
-    UpdateExpression: UpdateExpression,
-    BinaryExpression: BinaryExpression,
-    AssignmentExpression: AssignmentExpression,
-    LogicalExpression: LogicalExpression,
-    MemberExpression: MemberExpression,
-    ConditionalExpression: ConditionalExpression,
-    CallExpression: CallExpression,
-    NewExpression: NewExpression,
-    MetaProperty: MetaProperty,
-    SequenceExpression: SequenceExpression,
-    ArrowFunctionExpression: ArrowFunctionExpression,
-    TemplateLiteral: TemplateLiteral,
-    TaggedTemplateExpression: TaggedTemplateExpression,
-    TemplateElement: TemplateElement,
-    ClassExpression: ClassExpression,
-    Super: Super,
-    SpreadElement: SpreadElement,
-    ChainExpression: ChainExpression,
-    ImportExpression: ImportExpression
+    ThisExpression: ThisExpression$1,
+    ArrayExpression: ArrayExpression$1,
+    ObjectExpression: ObjectExpression$1,
+    FunctionExpression: FunctionExpression$1,
+    UnaryExpression: UnaryExpression$1,
+    UpdateExpression: UpdateExpression$1,
+    BinaryExpression: BinaryExpression$1,
+    AssignmentExpression: AssignmentExpression$1,
+    LogicalExpression: LogicalExpression$1,
+    MemberExpression: MemberExpression$1,
+    ConditionalExpression: ConditionalExpression$1,
+    CallExpression: CallExpression$1,
+    NewExpression: NewExpression$1,
+    MetaProperty: MetaProperty$1,
+    SequenceExpression: SequenceExpression$1,
+    ArrowFunctionExpression: ArrowFunctionExpression$1,
+    TemplateLiteral: TemplateLiteral$1,
+    TaggedTemplateExpression: TaggedTemplateExpression$1,
+    TemplateElement: TemplateElement$1,
+    ClassExpression: ClassExpression$1,
+    Super: Super$1,
+    SpreadElement: SpreadElement$1,
+    ChainExpression: ChainExpression$1,
+    ImportExpression: ImportExpression$1
   });
 
-  function ObjectPattern(node, scope, options) {
+  function ObjectPattern$1(node, scope, options) {
       if (options === void 0) { options = {}; }
       var _a = options.kind, kind = _a === void 0 ? 'var' : _a, _b = options.hoist, hoist = _b === void 0 ? false : _b, _c = options.onlyBlock, onlyBlock = _c === void 0 ? false : _c, _d = options.feed, feed = _d === void 0 ? {} : _d;
       var fedKeys = [];
@@ -1296,18 +1305,18 @@
                           scope[kind](value.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
                       }
                       else {
-                          pattern$3(value, scope, { kind: kind, hoist: hoist, onlyBlock: onlyBlock });
+                          pattern(value, scope, { kind: kind, hoist: hoist, onlyBlock: onlyBlock });
                       }
                   }
                   else {
-                      RestElement(property, scope, { kind: kind, hoist: hoist, onlyBlock: onlyBlock });
+                      RestElement$1(property, scope, { kind: kind, hoist: hoist, onlyBlock: onlyBlock });
                   }
               }
           }
           else if (property.type === 'Property') {
               var key = void 0;
               if (property.computed) {
-                  key = evaluate(property.key, scope);
+                  key = evaluate$1(property.key, scope);
               }
               else {
                   key = property.key.name;
@@ -1318,18 +1327,18 @@
                   scope[kind](value.name, feed[key]);
               }
               else {
-                  pattern$3(value, scope, { kind: kind, feed: feed[key] });
+                  pattern(value, scope, { kind: kind, feed: feed[key] });
               }
           }
           else {
               var rest = assign({}, feed);
               for (var i_1 = 0; i_1 < fedKeys.length; i_1++)
                   delete rest[fedKeys[i_1]];
-              RestElement(property, scope, { kind: kind, feed: rest });
+              RestElement$1(property, scope, { kind: kind, feed: rest });
           }
       }
   }
-  function ArrayPattern(node, scope, options) {
+  function ArrayPattern$1(node, scope, options) {
       if (options === void 0) { options = {}; }
       var kind = options.kind, _a = options.hoist, hoist = _a === void 0 ? false : _a, _b = options.onlyBlock, onlyBlock = _b === void 0 ? false : _b, _c = options.feed, feed = _c === void 0 ? [] : _c;
       var result = [];
@@ -1343,7 +1352,7 @@
                       scope[kind](element.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
                   }
                   else {
-                      pattern$3(element, scope, { kind: kind, hoist: hoist, onlyBlock: onlyBlock });
+                      pattern(element, scope, { kind: kind, hoist: hoist, onlyBlock: onlyBlock });
                   }
               }
           }
@@ -1352,23 +1361,23 @@
                   scope[kind](element.name, feed[i]);
               }
               else {
-                  var variable = Identifier(element, scope, { getVar: true });
+                  var variable = Identifier$1(element, scope, { getVar: true });
                   variable.set(feed[i]);
                   result.push(variable.get());
               }
           }
           else if (element.type === 'RestElement') {
-              RestElement(element, scope, { kind: kind, feed: feed.slice(i) });
+              RestElement$1(element, scope, { kind: kind, feed: feed.slice(i) });
           }
           else {
-              pattern$3(element, scope, { kind: kind, feed: feed[i] });
+              pattern(element, scope, { kind: kind, feed: feed[i] });
           }
       }
       if (result.length) {
           return result;
       }
   }
-  function RestElement(node, scope, options) {
+  function RestElement$1(node, scope, options) {
       if (options === void 0) { options = {}; }
       var kind = options.kind, _a = options.hoist, hoist = _a === void 0 ? false : _a, _b = options.onlyBlock, onlyBlock = _b === void 0 ? false : _b, _c = options.feed, feed = _c === void 0 ? [] : _c;
       var arg = node.argument;
@@ -1378,7 +1387,7 @@
                   scope[kind](arg.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
               }
               else {
-                  pattern$3(arg, scope, { kind: kind, hoist: hoist, onlyBlock: onlyBlock });
+                  pattern(arg, scope, { kind: kind, hoist: hoist, onlyBlock: onlyBlock });
               }
           }
       }
@@ -1387,17 +1396,17 @@
               scope[kind](arg.name, feed);
           }
           else {
-              var variable = Identifier(arg, scope, { getVar: true });
+              var variable = Identifier$1(arg, scope, { getVar: true });
               variable.set(feed);
           }
       }
       else {
-          pattern$3(arg, scope, { kind: kind, feed: feed });
+          pattern(arg, scope, { kind: kind, feed: feed });
       }
   }
-  function AssignmentPattern(node, scope, options) {
+  function AssignmentPattern$1(node, scope, options) {
       if (options === void 0) { options = {}; }
-      var _a = options.kind, kind = _a === void 0 ? 'var' : _a, _b = options.hoist, hoist = _b === void 0 ? false : _b, _c = options.onlyBlock, onlyBlock = _c === void 0 ? false : _c, _d = options.feed, feed = _d === void 0 ? evaluate(node.right, scope) : _d;
+      var _a = options.kind, kind = _a === void 0 ? 'var' : _a, _b = options.hoist, hoist = _b === void 0 ? false : _b, _c = options.onlyBlock, onlyBlock = _c === void 0 ? false : _c, _d = options.feed, feed = _d === void 0 ? evaluate$1(node.right, scope) : _d;
       var left = node.left;
       if (hoist) {
           if (onlyBlock || kind === 'var') {
@@ -1405,7 +1414,7 @@
                   scope[kind](left.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
               }
               else {
-                  pattern$3(left, scope, { kind: kind, hoist: hoist, onlyBlock: onlyBlock });
+                  pattern(left, scope, { kind: kind, hoist: hoist, onlyBlock: onlyBlock });
               }
           }
       }
@@ -1413,21 +1422,21 @@
           scope[kind](left.name, feed);
       }
       else {
-          pattern$3(left, scope, { kind: kind, feed: feed });
+          pattern(left, scope, { kind: kind, feed: feed });
       }
   }
 
-  var pattern = /*#__PURE__*/Object.freeze({
+  var pattern$3 = /*#__PURE__*/Object.freeze({
     __proto__: null,
-    ObjectPattern: ObjectPattern,
-    ArrayPattern: ArrayPattern,
-    RestElement: RestElement,
-    AssignmentPattern: AssignmentPattern
+    ObjectPattern: ObjectPattern$1,
+    ArrayPattern: ArrayPattern$1,
+    RestElement: RestElement$1,
+    AssignmentPattern: AssignmentPattern$1
   });
 
   function Program(program, scope) {
       for (var i = 0; i < program.body.length; i++) {
-          evaluate(program.body[i], scope);
+          evaluate$1(program.body[i], scope);
       }
   }
 
@@ -1436,14 +1445,14 @@
     Program: Program
   });
 
-  var evaluateOps;
-  function evaluate(node, scope) {
+  var evaluateOps$1;
+  function evaluate$1(node, scope) {
       if (!node)
           return;
-      if (!evaluateOps) {
-          evaluateOps = assign({}, declaration, expression, identifier, statement, literal, pattern, program);
+      if (!evaluateOps$1) {
+          evaluateOps$1 = assign({}, declaration$1, expression$1, identifier$1, statement$1, literal$1, pattern$3, program);
       }
-      var handler = evaluateOps[node.type];
+      var handler = evaluateOps$1[node.type];
       if (handler) {
           return handler(node, scope);
       }
@@ -1452,58 +1461,58 @@
       }
   }
 
-  function ExpressionStatement(node, scope) {
-      evaluate(node.expression, scope);
+  function ExpressionStatement$1(node, scope) {
+      evaluate$1(node.expression, scope);
   }
-  function BlockStatement(block, scope, options) {
+  function BlockStatement$1(block, scope, options) {
       if (options === void 0) { options = {}; }
       var _a = options.invasived, invasived = _a === void 0 ? false : _a, _b = options.hoisted, hoisted = _b === void 0 ? false : _b;
       var subScope = invasived ? scope : new Scope(scope);
       if (!hoisted) {
-          hoist$1(block, subScope, { onlyBlock: true });
+          hoist(block, subScope, { onlyBlock: true });
       }
       for (var i = 0; i < block.body.length; i++) {
-          var result = evaluate(block.body[i], subScope);
+          var result = evaluate$1(block.body[i], subScope);
           if (result === BREAK || result === CONTINUE || result === RETURN) {
               return result;
           }
       }
   }
-  function EmptyStatement() {
+  function EmptyStatement$1() {
   }
-  function DebuggerStatement() {
+  function DebuggerStatement$1() {
       debugger;
   }
-  function ReturnStatement(node, scope) {
-      RETURN.RES = node.argument ? (evaluate(node.argument, scope)) : undefined;
+  function ReturnStatement$1(node, scope) {
+      RETURN.RES = node.argument ? (evaluate$1(node.argument, scope)) : undefined;
       return RETURN;
   }
-  function BreakStatement() {
+  function BreakStatement$1() {
       return BREAK;
   }
-  function ContinueStatement() {
+  function ContinueStatement$1() {
       return CONTINUE;
   }
-  function IfStatement(node, scope) {
-      if (evaluate(node.test, scope)) {
-          return evaluate(node.consequent, scope);
+  function IfStatement$1(node, scope) {
+      if (evaluate$1(node.test, scope)) {
+          return evaluate$1(node.consequent, scope);
       }
       else {
-          return evaluate(node.alternate, scope);
+          return evaluate$1(node.alternate, scope);
       }
   }
-  function SwitchStatement(node, scope) {
-      var discriminant = evaluate(node.discriminant, scope);
+  function SwitchStatement$1(node, scope) {
+      var discriminant = evaluate$1(node.discriminant, scope);
       var matched = false;
       for (var i = 0; i < node.cases.length; i++) {
           var eachCase = node.cases[i];
           if (!matched
               && (!eachCase.test
-                  || (evaluate(eachCase.test, scope)) === discriminant)) {
+                  || (evaluate$1(eachCase.test, scope)) === discriminant)) {
               matched = true;
           }
           if (matched) {
-              var result = SwitchCase(eachCase, scope);
+              var result = SwitchCase$1(eachCase, scope);
               if (result === BREAK) {
                   break;
               }
@@ -1513,20 +1522,20 @@
           }
       }
   }
-  function SwitchCase(node, scope) {
+  function SwitchCase$1(node, scope) {
       for (var i = 0; i < node.consequent.length; i++) {
-          var result = evaluate(node.consequent[i], scope);
+          var result = evaluate$1(node.consequent[i], scope);
           if (result === BREAK || result === CONTINUE || result === RETURN) {
               return result;
           }
       }
   }
-  function ThrowStatement(node, scope) {
-      throw evaluate(node.argument, scope);
+  function ThrowStatement$1(node, scope) {
+      throw evaluate$1(node.argument, scope);
   }
-  function TryStatement(node, scope) {
+  function TryStatement$1(node, scope) {
       try {
-          return BlockStatement(node.block, scope);
+          return BlockStatement$1(node.block, scope);
       }
       catch (err) {
           if (node.handler) {
@@ -1538,10 +1547,10 @@
                       subScope.var(name_1, err);
                   }
                   else {
-                      pattern$3(param, scope, { feed: err });
+                      pattern(param, scope, { feed: err });
                   }
               }
-              return CatchClause(node.handler, subScope);
+              return CatchClause$1(node.handler, subScope);
           }
           else {
               throw err;
@@ -1549,19 +1558,19 @@
       }
       finally {
           if (node.finalizer) {
-              var result = BlockStatement(node.finalizer, scope);
+              var result = BlockStatement$1(node.finalizer, scope);
               if (result === BREAK || result === CONTINUE || result === RETURN) {
                   return result;
               }
           }
       }
   }
-  function CatchClause(node, scope) {
-      return BlockStatement(node.body, scope, { invasived: true });
+  function CatchClause$1(node, scope) {
+      return BlockStatement$1(node.body, scope, { invasived: true });
   }
-  function WhileStatement(node, scope) {
-      while (evaluate(node.test, scope)) {
-          var result = evaluate(node.body, scope);
+  function WhileStatement$1(node, scope) {
+      while (evaluate$1(node.test, scope)) {
+          var result = evaluate$1(node.body, scope);
           if (result === BREAK) {
               break;
           }
@@ -1573,9 +1582,9 @@
           }
       }
   }
-  function DoWhileStatement(node, scope) {
+  function DoWhileStatement$1(node, scope) {
       do {
-          var result = evaluate(node.body, scope);
+          var result = evaluate$1(node.body, scope);
           if (result === BREAK) {
               break;
           }
@@ -1585,18 +1594,18 @@
           else if (result === RETURN) {
               return result;
           }
-      } while (evaluate(node.test, scope));
+      } while (evaluate$1(node.test, scope));
   }
-  function ForStatement(node, scope) {
+  function ForStatement$1(node, scope) {
       var forScope = new Scope(scope);
-      for (evaluate(node.init, forScope); node.test ? (evaluate(node.test, forScope)) : true; evaluate(node.update, forScope)) {
+      for (evaluate$1(node.init, forScope); node.test ? (evaluate$1(node.test, forScope)) : true; evaluate$1(node.update, forScope)) {
           var subScope = new Scope(forScope);
           var result = void 0;
           if (node.body.type === 'BlockStatement') {
-              result = BlockStatement(node.body, subScope, { invasived: true });
+              result = BlockStatement$1(node.body, subScope, { invasived: true });
           }
           else {
-              result = evaluate(node.body, subScope);
+              result = evaluate$1(node.body, subScope);
           }
           if (result === BREAK) {
               break;
@@ -1609,9 +1618,9 @@
           }
       }
   }
-  function ForInStatement(node, scope) {
-      for (var value in evaluate(node.right, scope)) {
-          var result = ForXHandler$1(node, scope, { value: value });
+  function ForInStatement$1(node, scope) {
+      for (var value in evaluate$1(node.right, scope)) {
+          var result = ForXHandler(node, scope, { value: value });
           if (result === BREAK) {
               break;
           }
@@ -1623,13 +1632,13 @@
           }
       }
   }
-  function ForOfStatement(node, scope) {
+  function ForOfStatement$1(node, scope) {
       var e_1, _a;
-      var right = evaluate(node.right, scope);
+      var right = evaluate$1(node.right, scope);
       try {
           for (var right_1 = __values(right), right_1_1 = right_1.next(); !right_1_1.done; right_1_1 = right_1.next()) {
               var value = right_1_1.value;
-              var result = ForXHandler$1(node, scope, { value: value });
+              var result = ForXHandler(node, scope, { value: value });
               if (result === BREAK) {
                   break;
               }
@@ -1650,16 +1659,16 @@
       }
   }
 
-  function FunctionDeclaration(node, scope) {
-      scope.func(node.id.name, createFunc$1(node, scope));
+  function FunctionDeclaration$1(node, scope) {
+      scope.func(node.id.name, createFunc(node, scope));
   }
-  function VariableDeclaration(node, scope, options) {
+  function VariableDeclaration$1(node, scope, options) {
       if (options === void 0) { options = {}; }
       for (var i = 0; i < node.declarations.length; i++) {
-          VariableDeclarator(node.declarations[i], scope, assign({ kind: node.kind }, options));
+          VariableDeclarator$1(node.declarations[i], scope, assign({ kind: node.kind }, options));
       }
   }
-  function VariableDeclarator(node, scope, options) {
+  function VariableDeclarator$1(node, scope, options) {
       if (options === void 0) { options = {}; }
       var _a = options.kind, kind = _a === void 0 ? 'var' : _a, _b = options.hoist, hoist = _b === void 0 ? false : _b, _c = options.onlyBlock, onlyBlock = _c === void 0 ? false : _c, feed = options.feed;
       if (hoist) {
@@ -1668,13 +1677,13 @@
                   scope[kind](node.id.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
               }
               else {
-                  pattern$3(node.id, scope, { kind: kind, hoist: hoist, onlyBlock: onlyBlock });
+                  pattern(node.id, scope, { kind: kind, hoist: hoist, onlyBlock: onlyBlock });
               }
           }
       }
       else {
           var hasFeed = 'feed' in options;
-          var value = hasFeed ? feed : evaluate(node.init, scope);
+          var value = hasFeed ? feed : evaluate$1(node.init, scope);
           if (node.id.type === 'Identifier') {
               var name_1 = node.id.name;
               if (kind === 'var' && !node.init && !hasFeed) {
@@ -1694,36 +1703,36 @@
               }
           }
           else {
-              pattern$3(node.id, scope, { kind: kind, feed: value });
+              pattern(node.id, scope, { kind: kind, feed: value });
           }
       }
   }
-  function ClassDeclaration(node, scope) {
-      scope.func(node.id.name, createClass$1(node, scope));
+  function ClassDeclaration$1(node, scope) {
+      scope.func(node.id.name, createClass(node, scope));
   }
-  function ClassBody(node, scope, options) {
+  function ClassBody$1(node, scope, options) {
       if (options === void 0) { options = {}; }
       var klass = options.klass, superClass = options.superClass;
       for (var i = 0; i < node.body.length; i++) {
           var def = node.body[i];
           if (def.type === 'MethodDefinition') {
-              MethodDefinition(def, scope, { klass: klass, superClass: superClass });
+              MethodDefinition$1(def, scope, { klass: klass, superClass: superClass });
           }
           else if (def.type === 'PropertyDefinition' && def.static) {
-              PropertyDefinition(def, scope, { klass: klass, superClass: superClass });
+              PropertyDefinition$1(def, scope, { klass: klass, superClass: superClass });
           }
           else if (def.type === 'StaticBlock') {
-              StaticBlock(def, scope, { klass: klass, superClass: superClass });
+              StaticBlock$1(def, scope, { klass: klass, superClass: superClass });
           }
       }
   }
-  function MethodDefinition(node, scope, options) {
+  function MethodDefinition$1(node, scope, options) {
       if (options === void 0) { options = {}; }
       var klass = options.klass, superClass = options.superClass;
       var key;
       var priv = false;
       if (node.computed) {
-          key = evaluate(node.key, scope);
+          key = evaluate$1(node.key, scope);
       }
       else if (node.key.type === 'Identifier') {
           key = node.key.name;
@@ -1742,7 +1751,7 @@
           }
           obj = obj[PRIVATE];
       }
-      var value = createFunc$1(node.value, scope, { superClass: superClass });
+      var value = createFunc(node.value, scope, { superClass: superClass });
       switch (node.kind) {
           case 'constructor':
               break;
@@ -1775,13 +1784,13 @@
               throw new SyntaxError('Unexpected token');
       }
   }
-  function PropertyDefinition(node, scope, options) {
+  function PropertyDefinition$1(node, scope, options) {
       if (options === void 0) { options = {}; }
       var klass = options.klass, superClass = options.superClass;
       var key;
       var priv = false;
       if (node.computed) {
-          key = evaluate(node.key, scope);
+          key = evaluate$1(node.key, scope);
       }
       else if (node.key.type === 'Identifier') {
           key = node.key.name;
@@ -1803,20 +1812,20 @@
           obj = obj[PRIVATE];
       }
       if (node.value.type === 'FunctionExpression' || node.value.type === 'ArrowFunctionExpression') {
-          obj[key] = createFunc$1(node.value, subScope, { superClass: superClass });
+          obj[key] = createFunc(node.value, subScope, { superClass: superClass });
       }
       else {
-          obj[key] = evaluate(node.value, subScope);
+          obj[key] = evaluate$1(node.value, subScope);
       }
   }
-  function StaticBlock(node, scope, options) {
+  function StaticBlock$1(node, scope, options) {
       if (options === void 0) { options = {}; }
       var klass = options.klass;
       var subScope = new Scope(scope, true);
       subScope.const('this', klass);
-      return BlockStatement(node, subScope, { invasived: true });
+      return BlockStatement$1(node, subScope, { invasived: true });
   }
-  function ImportDeclaration(node, scope) {
+  function ImportDeclaration$1(node, scope) {
       var globalScope = scope.global();
       var module = globalScope.find(IMPORT + node.source.value);
       var value;
@@ -1853,19 +1862,19 @@
           scope.var(spec.local.name, name_2 === '*' ? assign({}, value) : value[name_2]);
       }
   }
-  function ExportDefaultDeclaration(node, scope) {
+  function ExportDefaultDeclaration$1(node, scope) {
       var globalScope = scope.global();
       var value;
       if (node.declaration.type === 'FunctionDeclaration') {
-          value = createFunc$1(node.declaration, scope);
+          value = createFunc(node.declaration, scope);
           scope.func(node.declaration.id.name, value);
       }
       else if (node.declaration.type === 'ClassDeclaration') {
-          value = createClass$1(node.declaration, scope);
+          value = createClass(node.declaration, scope);
           scope.func(node.declaration.id.name, value);
       }
       else {
-          value = evaluate(node.declaration, scope);
+          value = evaluate$1(node.declaration, scope);
       }
       var variable = globalScope.find(EXPORTS);
       if (variable) {
@@ -1875,11 +1884,11 @@
           }
       }
   }
-  function ExportNamedDeclaration(node, scope) {
+  function ExportNamedDeclaration$1(node, scope) {
       var globalScope = scope.global();
       if (node.declaration) {
           if (node.declaration.type === 'FunctionDeclaration') {
-              var value = createFunc$1(node.declaration, scope);
+              var value = createFunc(node.declaration, scope);
               scope.func(node.declaration.id.name, value);
               var variable = globalScope.find(EXPORTS);
               if (variable) {
@@ -1890,7 +1899,7 @@
               }
           }
           else if (node.declaration.type === 'ClassDeclaration') {
-              var value = createClass$1(node.declaration, scope);
+              var value = createClass(node.declaration, scope);
               scope.func(node.declaration.id.name, value);
               var variable = globalScope.find(EXPORTS);
               if (variable) {
@@ -1901,7 +1910,7 @@
               }
           }
           else if (node.declaration.type === 'VariableDeclaration') {
-              VariableDeclaration(node.declaration, scope);
+              VariableDeclaration$1(node.declaration, scope);
               var variable = globalScope.find(EXPORTS);
               if (variable) {
                   var exports_4 = variable.get();
@@ -1936,7 +1945,7 @@
           }
       }
   }
-  function ExportAllDeclaration(node, scope) {
+  function ExportAllDeclaration$1(node, scope) {
       var globalScope = scope.global();
       var module = globalScope.find(IMPORT + node.source.value);
       var value;
@@ -1963,7 +1972,7 @@
       }
   }
 
-  function Identifier$1(node, scope, options) {
+  function Identifier(node, scope, options) {
       var _a, getVar, _b, throwErr, variable, value;
       if (options === void 0) { options = {}; }
       return __generator(this, function (_c) {
@@ -1995,23 +2004,23 @@
       });
   }
 
-  var identifier$1 = /*#__PURE__*/Object.freeze({
+  var identifier = /*#__PURE__*/Object.freeze({
     __proto__: null,
-    Identifier: Identifier$1
+    Identifier: Identifier
   });
 
-  function Literal$1(node, scope) {
+  function Literal(node, scope) {
       return __generator(this, function (_a) {
           return [2, node.value];
       });
   }
 
-  var literal$1 = /*#__PURE__*/Object.freeze({
+  var literal = /*#__PURE__*/Object.freeze({
     __proto__: null,
-    Literal: Literal$1
+    Literal: Literal
   });
 
-  function ThisExpression$1(node, scope) {
+  function ThisExpression(node, scope) {
       var superCall;
       return __generator(this, function (_a) {
           superCall = scope.find(SUPERCALL);
@@ -2024,7 +2033,7 @@
           }
       });
   }
-  function ArrayExpression$1(node, scope) {
+  function ArrayExpression(node, scope) {
       var results, i, item, _a, _b, _c, _d;
       return __generator(this, function (_e) {
           switch (_e.label) {
@@ -2037,13 +2046,13 @@
                   item = node.elements[i];
                   if (!(item.type === 'SpreadElement')) return [3, 3];
                   _b = (_a = results).concat;
-                  return [5, __values(SpreadElement$1(item, scope))];
+                  return [5, __values(SpreadElement(item, scope))];
               case 2:
                   results = _b.apply(_a, [_e.sent()]);
                   return [3, 5];
               case 3:
                   _d = (_c = results).push;
-                  return [5, __values(evaluate$1(item, scope))];
+                  return [5, __values(evaluate(item, scope))];
               case 4:
                   _d.apply(_c, [_e.sent()]);
                   _e.label = 5;
@@ -2054,7 +2063,7 @@
           }
       });
   }
-  function ObjectExpression$1(node, scope) {
+  function ObjectExpression(node, scope) {
       var object, i, property, _a, _b, key, propKey, _c, value, propKind, oriDptor, oriDptor;
       return __generator(this, function (_d) {
           switch (_d.label) {
@@ -2068,7 +2077,7 @@
                   if (!(property.type === 'SpreadElement')) return [3, 3];
                   _a = assign;
                   _b = [object];
-                  return [5, __values(SpreadElement$1(property, scope))];
+                  return [5, __values(SpreadElement(property, scope))];
               case 2:
                   _a.apply(void 0, _b.concat([_d.sent()]));
                   return [3, 10];
@@ -2076,7 +2085,7 @@
                   key = void 0;
                   propKey = property.key;
                   if (!property.computed) return [3, 5];
-                  return [5, __values(evaluate$1(propKey, scope))];
+                  return [5, __values(evaluate(propKey, scope))];
               case 4:
                   key = _d.sent();
                   return [3, 8];
@@ -2086,11 +2095,11 @@
                   return [3, 8];
               case 6:
                   _c = '';
-                  return [5, __values(Literal$1(propKey))];
+                  return [5, __values(Literal(propKey))];
               case 7:
                   key = _c + (_d.sent());
                   _d.label = 8;
-              case 8: return [5, __values(evaluate$1(property.value, scope))];
+              case 8: return [5, __values(evaluate(property.value, scope))];
               case 9:
                   value = _d.sent();
                   propKind = property.kind;
@@ -2123,21 +2132,21 @@
           }
       });
   }
-  function FunctionExpression$1(node, scope) {
+  function FunctionExpression(node, scope) {
       var tmpScope, func;
       return __generator(this, function (_a) {
           if (node.id && node.id.name) {
               tmpScope = new Scope(scope);
-              func = createFunc(node, tmpScope);
+              func = createFunc$1(node, tmpScope);
               tmpScope.const(node.id.name, func);
               return [2, func];
           }
           else {
-              return [2, createFunc(node, scope)];
+              return [2, createFunc$1(node, scope)];
           }
       });
   }
-  function UnaryExpression$1(node, scope) {
+  function UnaryExpression(node, scope) {
       var arg, _a, variable;
       return __generator(this, function (_b) {
           switch (_b.label) {
@@ -2154,32 +2163,32 @@
                       case 'delete': return [3, 15];
                   }
                   return [3, 20];
-              case 1: return [5, __values(evaluate$1(arg, scope))];
+              case 1: return [5, __values(evaluate(arg, scope))];
               case 2: return [2, +(_b.sent())];
-              case 3: return [5, __values(evaluate$1(arg, scope))];
+              case 3: return [5, __values(evaluate(arg, scope))];
               case 4: return [2, -(_b.sent())];
-              case 5: return [5, __values(evaluate$1(arg, scope))];
+              case 5: return [5, __values(evaluate(arg, scope))];
               case 6: return [2, !(_b.sent())];
-              case 7: return [5, __values(evaluate$1(arg, scope))];
+              case 7: return [5, __values(evaluate(arg, scope))];
               case 8: return [2, ~(_b.sent())];
-              case 9: return [5, __values(evaluate$1(arg, scope))];
+              case 9: return [5, __values(evaluate(arg, scope))];
               case 10: return [2, void (_b.sent())];
               case 11:
                   if (!(arg.type === 'Identifier')) return [3, 13];
-                  return [5, __values(Identifier$1(arg, scope, { throwErr: false }))];
+                  return [5, __values(Identifier(arg, scope, { throwErr: false }))];
               case 12: return [2, typeof (_b.sent())];
-              case 13: return [5, __values(evaluate$1(arg, scope))];
+              case 13: return [5, __values(evaluate(arg, scope))];
               case 14: return [2, typeof (_b.sent())];
               case 15:
                   if (!(arg.type === 'MemberExpression')) return [3, 17];
-                  return [5, __values(MemberExpression$1(arg, scope, { getVar: true }))];
+                  return [5, __values(MemberExpression(arg, scope, { getVar: true }))];
               case 16:
                   variable = _b.sent();
                   return [2, variable.del()];
               case 17:
                   if (!(arg.type === 'Identifier')) return [3, 18];
                   throw new SyntaxError('Delete of an unqualified identifier in strict mode');
-              case 18: return [5, __values(evaluate$1(arg, scope))];
+              case 18: return [5, __values(evaluate(arg, scope))];
               case 19:
                   _b.sent();
                   return [2, true];
@@ -2187,20 +2196,20 @@
           }
       });
   }
-  function UpdateExpression$1(node, scope) {
+  function UpdateExpression(node, scope) {
       var arg, variable, value;
       return __generator(this, function (_a) {
           switch (_a.label) {
               case 0:
                   arg = node.argument;
                   if (!(arg.type === 'Identifier')) return [3, 2];
-                  return [5, __values(Identifier$1(arg, scope, { getVar: true }))];
+                  return [5, __values(Identifier(arg, scope, { getVar: true }))];
               case 1:
                   variable = _a.sent();
                   return [3, 5];
               case 2:
                   if (!(arg.type === 'MemberExpression')) return [3, 4];
-                  return [5, __values(MemberExpression$1(arg, scope, { getVar: true }))];
+                  return [5, __values(MemberExpression(arg, scope, { getVar: true }))];
               case 3:
                   variable = _a.sent();
                   return [3, 5];
@@ -2221,22 +2230,22 @@
           }
       });
   }
-  function BinaryExpression$1(node, scope) {
+  function BinaryExpression(node, scope) {
       var left, right;
       return __generator(this, function (_a) {
           switch (_a.label) {
               case 0:
                   if (!(node.left.type === 'PrivateIdentifier')) return [3, 2];
                   left = node.left.name;
-                  return [5, __values(evaluate$1(node.right, scope))];
+                  return [5, __values(evaluate(node.right, scope))];
               case 1:
                   right = _a.sent();
                   right = right[PRIVATE];
                   return [3, 5];
-              case 2: return [5, __values(evaluate$1(node.left, scope))];
+              case 2: return [5, __values(evaluate(node.left, scope))];
               case 3:
                   left = _a.sent();
-                  return [5, __values(evaluate$1(node.right, scope))];
+                  return [5, __values(evaluate(node.right, scope))];
               case 4:
                   right = _a.sent();
                   _a.label = 5;
@@ -2269,7 +2278,7 @@
           }
       });
   }
-  function AssignmentExpression$1(node, scope) {
+  function AssignmentExpression(node, scope) {
       var left, variable, win, value_1, value;
       var _a;
       return __generator(this, function (_b) {
@@ -2277,7 +2286,7 @@
               case 0:
                   left = node.left;
                   if (!(left.type === 'Identifier')) return [3, 2];
-                  return [5, __values(Identifier$1(left, scope, { getVar: true, throwErr: false }))];
+                  return [5, __values(Identifier(left, scope, { getVar: true, throwErr: false }))];
               case 1:
                   variable = _b.sent();
                   if (!variable) {
@@ -2287,16 +2296,16 @@
                   return [3, 7];
               case 2:
                   if (!(left.type === 'MemberExpression')) return [3, 4];
-                  return [5, __values(MemberExpression$1(left, scope, { getVar: true }))];
+                  return [5, __values(MemberExpression(left, scope, { getVar: true }))];
               case 3:
                   variable = _b.sent();
                   return [3, 7];
-              case 4: return [5, __values(evaluate$1(node.right, scope))];
+              case 4: return [5, __values(evaluate(node.right, scope))];
               case 5:
                   value_1 = _b.sent();
-                  return [5, __values(pattern$2(left, scope, { feed: value_1 }))];
+                  return [5, __values(pattern$1(left, scope, { feed: value_1 }))];
               case 6: return [2, _b.sent()];
-              case 7: return [5, __values(evaluate$1(node.right, scope))];
+              case 7: return [5, __values(evaluate(node.right, scope))];
               case 8:
                   value = _b.sent();
                   switch (node.operator) {
@@ -2353,7 +2362,7 @@
           }
       });
   }
-  function LogicalExpression$1(node, scope) {
+  function LogicalExpression(node, scope) {
       var _a, _b, _c, _d;
       var _e;
       return __generator(this, function (_f) {
@@ -2366,30 +2375,30 @@
                       case '??': return [3, 9];
                   }
                   return [3, 14];
-              case 1: return [5, __values(evaluate$1(node.left, scope))];
+              case 1: return [5, __values(evaluate(node.left, scope))];
               case 2:
                   _b = (_f.sent());
                   if (_b) return [3, 4];
-                  return [5, __values(evaluate$1(node.right, scope))];
+                  return [5, __values(evaluate(node.right, scope))];
               case 3:
                   _b = (_f.sent());
                   _f.label = 4;
               case 4: return [2, _b];
-              case 5: return [5, __values(evaluate$1(node.left, scope))];
+              case 5: return [5, __values(evaluate(node.left, scope))];
               case 6:
                   _c = (_f.sent());
                   if (!_c) return [3, 8];
-                  return [5, __values(evaluate$1(node.right, scope))];
+                  return [5, __values(evaluate(node.right, scope))];
               case 7:
                   _c = (_f.sent());
                   _f.label = 8;
               case 8: return [2, _c];
-              case 9: return [5, __values(evaluate$1(node.left, scope))];
+              case 9: return [5, __values(evaluate(node.left, scope))];
               case 10:
                   if (!((_e = (_f.sent())) !== null && _e !== void 0)) return [3, 11];
                   _d = _e;
                   return [3, 13];
-              case 11: return [5, __values(evaluate$1(node.right, scope))];
+              case 11: return [5, __values(evaluate(node.right, scope))];
               case 12:
                   _d = (_f.sent());
                   _f.label = 13;
@@ -2398,7 +2407,7 @@
           }
       });
   }
-  function MemberExpression$1(node, scope, options) {
+  function MemberExpression(node, scope, options) {
       var _a, getObj, _b, getVar, object, key, priv, setter, thisObject, privateKey, getter, thisObject;
       if (options === void 0) { options = {}; }
       return __generator(this, function (_c) {
@@ -2406,11 +2415,11 @@
               case 0:
                   _a = options.getObj, getObj = _a === void 0 ? false : _a, _b = options.getVar, getVar = _b === void 0 ? false : _b;
                   if (!(node.object.type === 'Super')) return [3, 2];
-                  return [5, __values(Super$1(node.object, scope, { getProto: true }))];
+                  return [5, __values(Super(node.object, scope, { getProto: true }))];
               case 1:
                   object = _c.sent();
                   return [3, 4];
-              case 2: return [5, __values(evaluate$1(node.object, scope))];
+              case 2: return [5, __values(evaluate(node.object, scope))];
               case 3:
                   object = _c.sent();
                   _c.label = 4;
@@ -2419,7 +2428,7 @@
                       return [2, object];
                   priv = false;
                   if (!node.computed) return [3, 6];
-                  return [5, __values(evaluate$1(node.property, scope))];
+                  return [5, __values(evaluate(node.property, scope))];
               case 5:
                   key = _c.sent();
                   return [3, 7];
@@ -2467,18 +2476,18 @@
           }
       });
   }
-  function ConditionalExpression$1(node, scope) {
+  function ConditionalExpression(node, scope) {
       var _a;
       return __generator(this, function (_b) {
           switch (_b.label) {
-              case 0: return [5, __values(evaluate$1(node.test, scope))];
+              case 0: return [5, __values(evaluate(node.test, scope))];
               case 1:
                   if (!(_b.sent())) return [3, 3];
-                  return [5, __values(evaluate$1(node.consequent, scope))];
+                  return [5, __values(evaluate(node.consequent, scope))];
               case 2:
                   _a = (_b.sent());
                   return [3, 5];
-              case 3: return [5, __values(evaluate$1(node.alternate, scope))];
+              case 3: return [5, __values(evaluate(node.alternate, scope))];
               case 4:
                   _a = (_b.sent());
                   _b.label = 5;
@@ -2486,13 +2495,13 @@
           }
       });
   }
-  function CallExpression$1(node, scope) {
-      var func, object, key, priv, obj, thisObject, name_1, args, i, arg, _a, _b, _c, _d, superCall;
+  function CallExpression(node, scope) {
+      var func, object, key, priv, obj, thisObject, name_1, args, i, arg, _a, _b, _c, _d, superCall, win;
       return __generator(this, function (_e) {
           switch (_e.label) {
               case 0:
                   if (!(node.callee.type === 'MemberExpression')) return [3, 5];
-                  return [5, __values(MemberExpression$1(node.callee, scope, { getObj: true }))];
+                  return [5, __values(MemberExpression(node.callee, scope, { getObj: true }))];
               case 1:
                   object = _e.sent();
                   if (node.callee.optional && object == null) {
@@ -2501,7 +2510,7 @@
                   key = void 0;
                   priv = false;
                   if (!node.callee.computed) return [3, 3];
-                  return [5, __values(evaluate$1(node.callee.property, scope))];
+                  return [5, __values(evaluate(node.callee.property, scope))];
               case 2:
                   key = _e.sent();
                   return [3, 4];
@@ -2538,7 +2547,7 @@
                   return [3, 7];
               case 5:
                   object = scope.find('this').get();
-                  return [5, __values(evaluate$1(node.callee, scope))];
+                  return [5, __values(evaluate(node.callee, scope))];
               case 6:
                   func = _e.sent();
                   if (node.optional && func == null) {
@@ -2573,13 +2582,13 @@
                   arg = node.arguments[i];
                   if (!(arg.type === 'SpreadElement')) return [3, 10];
                   _b = (_a = args).concat;
-                  return [5, __values(SpreadElement$1(arg, scope))];
+                  return [5, __values(SpreadElement(arg, scope))];
               case 9:
                   args = _b.apply(_a, [_e.sent()]);
                   return [3, 12];
               case 10:
                   _d = (_c = args).push;
-                  return [5, __values(evaluate$1(arg, scope))];
+                  return [5, __values(evaluate(arg, scope))];
               case 11:
                   _d.apply(_c, [_e.sent()]);
                   _e.label = 12;
@@ -2596,18 +2605,28 @@
                           scope.find(SUPERCALL).set(true);
                       }
                   }
-                  if (object && object[WINDOW] && func.toString().indexOf('[native code]') !== -1) {
-                      return [2, func.apply(object[WINDOW], args)];
+                  try {
+                      return [2, func.apply(object, args)];
                   }
-                  return [2, func.apply(object, args)];
+                  catch (err) {
+                      if (err instanceof TypeError && err.message === 'Illegal invocation'
+                          && func.toString().indexOf('[native code]') !== -1) {
+                          win = scope.global().find('window').get();
+                          if (win && win[WINDOW]) {
+                              return [2, func.apply(win[WINDOW], args)];
+                          }
+                      }
+                      throw err;
+                  }
+                  return [2];
           }
       });
   }
-  function NewExpression$1(node, scope) {
+  function NewExpression(node, scope) {
       var constructor, name_2, args, i, arg, _a, _b, _c, _d;
       return __generator(this, function (_e) {
           switch (_e.label) {
-              case 0: return [5, __values(evaluate$1(node.callee, scope))];
+              case 0: return [5, __values(evaluate(node.callee, scope))];
               case 1:
                   constructor = _e.sent();
                   if (typeof constructor !== 'function') {
@@ -2635,13 +2654,13 @@
                   arg = node.arguments[i];
                   if (!(arg.type === 'SpreadElement')) return [3, 4];
                   _b = (_a = args).concat;
-                  return [5, __values(SpreadElement$1(arg, scope))];
+                  return [5, __values(SpreadElement(arg, scope))];
               case 3:
                   args = _b.apply(_a, [_e.sent()]);
                   return [3, 6];
               case 4:
                   _d = (_c = args).push;
-                  return [5, __values(evaluate$1(arg, scope))];
+                  return [5, __values(evaluate(arg, scope))];
               case 5:
                   _d.apply(_c, [_e.sent()]);
                   _e.label = 6;
@@ -2652,7 +2671,7 @@
           }
       });
   }
-  function MetaProperty$1(node, scope) {
+  function MetaProperty(node, scope) {
       return __generator(this, function (_a) {
           if (node.meta.name === 'new' && node.property.name === 'target') {
               return [2, scope.find(NEWTARGET).get()];
@@ -2663,7 +2682,7 @@
           return [2];
       });
   }
-  function SequenceExpression$1(node, scope) {
+  function SequenceExpression(node, scope) {
       var result, i;
       return __generator(this, function (_a) {
           switch (_a.label) {
@@ -2672,7 +2691,7 @@
                   _a.label = 1;
               case 1:
                   if (!(i < node.expressions.length)) return [3, 4];
-                  return [5, __values(evaluate$1(node.expressions[i], scope))];
+                  return [5, __values(evaluate(node.expressions[i], scope))];
               case 2:
                   result = _a.sent();
                   _a.label = 3;
@@ -2683,12 +2702,12 @@
           }
       });
   }
-  function ArrowFunctionExpression$1(node, scope) {
+  function ArrowFunctionExpression(node, scope) {
       return __generator(this, function (_a) {
-          return [2, createFunc(node, scope)];
+          return [2, createFunc$1(node, scope)];
       });
   }
-  function TemplateLiteral$1(node, scope) {
+  function TemplateLiteral(node, scope) {
       var quasis, expressions, result, temEl, expr, _a, _b;
       return __generator(this, function (_c) {
           switch (_c.label) {
@@ -2700,13 +2719,13 @@
               case 1:
                   if (!(temEl = quasis.shift())) return [3, 5];
                   _a = result;
-                  return [5, __values(TemplateElement$1(temEl))];
+                  return [5, __values(TemplateElement(temEl))];
               case 2:
                   result = _a + _c.sent();
                   expr = expressions.shift();
                   if (!expr) return [3, 4];
                   _b = result;
-                  return [5, __values(evaluate$1(expr, scope))];
+                  return [5, __values(evaluate(expr, scope))];
               case 3:
                   result = _b + _c.sent();
                   _c.label = 4;
@@ -2715,11 +2734,11 @@
           }
       });
   }
-  function TaggedTemplateExpression$1(node, scope) {
+  function TaggedTemplateExpression(node, scope) {
       var tagFunc, quasis, str, raw, expressions, args, i, _a, _b;
       return __generator(this, function (_c) {
           switch (_c.label) {
-              case 0: return [5, __values(evaluate$1(node.tag, scope))];
+              case 0: return [5, __values(evaluate(node.tag, scope))];
               case 1:
                   tagFunc = _c.sent();
                   quasis = node.quasi.quasis;
@@ -2736,7 +2755,7 @@
               case 2:
                   if (!(i < expressions.length)) return [3, 5];
                   _b = (_a = args).push;
-                  return [5, __values(evaluate$1(expressions[i], scope))];
+                  return [5, __values(evaluate(expressions[i], scope))];
               case 3:
                   _b.apply(_a, [_c.sent()]);
                   _c.label = 4;
@@ -2747,29 +2766,29 @@
           }
       });
   }
-  function TemplateElement$1(node, scope) {
+  function TemplateElement(node, scope) {
       return __generator(this, function (_a) {
           return [2, node.value.raw];
       });
   }
-  function ClassExpression$1(node, scope) {
+  function ClassExpression(node, scope) {
       var tmpScope, klass;
       return __generator(this, function (_a) {
           switch (_a.label) {
               case 0:
                   if (!(node.id && node.id.name)) return [3, 2];
                   tmpScope = new Scope(scope);
-                  return [5, __values(createClass(node, tmpScope))];
+                  return [5, __values(createClass$1(node, tmpScope))];
               case 1:
                   klass = _a.sent();
                   tmpScope.const(node.id.name, klass);
                   return [2, klass];
-              case 2: return [5, __values(createClass(node, scope))];
+              case 2: return [5, __values(createClass$1(node, scope))];
               case 3: return [2, _a.sent()];
           }
       });
   }
-  function Super$1(node, scope, options) {
+  function Super(node, scope, options) {
       var _a, getProto, superClass;
       if (options === void 0) { options = {}; }
       return __generator(this, function (_b) {
@@ -2778,32 +2797,32 @@
           return [2, getProto ? superClass.prototype : superClass];
       });
   }
-  function SpreadElement$1(node, scope) {
+  function SpreadElement(node, scope) {
       var result;
       return __generator(this, function (_a) {
           switch (_a.label) {
-              case 0: return [5, __values(evaluate$1(node.argument, scope))];
+              case 0: return [5, __values(evaluate(node.argument, scope))];
               case 1:
                   result = _a.sent();
                   return [2, typeof result === 'string' ? __spread(result) : result];
           }
       });
   }
-  function ChainExpression$1(node, scope) {
+  function ChainExpression(node, scope) {
       return __generator(this, function (_a) {
           switch (_a.label) {
-              case 0: return [5, __values(evaluate$1(node.expression, scope))];
+              case 0: return [5, __values(evaluate(node.expression, scope))];
               case 1: return [2, _a.sent()];
           }
       });
   }
-  function ImportExpression$1(node, scope) {
+  function ImportExpression(node, scope) {
       var globalScope, source, module, value, result;
       return __generator(this, function (_a) {
           switch (_a.label) {
               case 0:
                   globalScope = scope.global();
-                  return [5, __values(evaluate$1(node.source, scope))];
+                  return [5, __values(evaluate(node.source, scope))];
               case 1:
                   source = _a.sent();
                   module = globalScope.find(IMPORT + source);
@@ -2829,7 +2848,7 @@
       var res, _a;
       return __generator(this, function (_b) {
           switch (_b.label) {
-              case 0: return [5, __values(evaluate$1(node.argument, scope))];
+              case 0: return [5, __values(evaluate(node.argument, scope))];
               case 1:
                   res = _b.sent();
                   if (!node.delegate) return [3, 3];
@@ -2851,7 +2870,7 @@
           switch (_b.label) {
               case 0:
                   _a = AWAIT;
-                  return [5, __values(evaluate$1(node.argument, scope))];
+                  return [5, __values(evaluate(node.argument, scope))];
               case 1:
                   _a.RES = _b.sent();
                   return [4, AWAIT];
@@ -2860,37 +2879,37 @@
       });
   }
 
-  var expression$1 = /*#__PURE__*/Object.freeze({
+  var expression = /*#__PURE__*/Object.freeze({
     __proto__: null,
-    ThisExpression: ThisExpression$1,
-    ArrayExpression: ArrayExpression$1,
-    ObjectExpression: ObjectExpression$1,
-    FunctionExpression: FunctionExpression$1,
-    UnaryExpression: UnaryExpression$1,
-    UpdateExpression: UpdateExpression$1,
-    BinaryExpression: BinaryExpression$1,
-    AssignmentExpression: AssignmentExpression$1,
-    LogicalExpression: LogicalExpression$1,
-    MemberExpression: MemberExpression$1,
-    ConditionalExpression: ConditionalExpression$1,
-    CallExpression: CallExpression$1,
-    NewExpression: NewExpression$1,
-    MetaProperty: MetaProperty$1,
-    SequenceExpression: SequenceExpression$1,
-    ArrowFunctionExpression: ArrowFunctionExpression$1,
-    TemplateLiteral: TemplateLiteral$1,
-    TaggedTemplateExpression: TaggedTemplateExpression$1,
-    TemplateElement: TemplateElement$1,
-    ClassExpression: ClassExpression$1,
-    Super: Super$1,
-    SpreadElement: SpreadElement$1,
-    ChainExpression: ChainExpression$1,
-    ImportExpression: ImportExpression$1,
+    ThisExpression: ThisExpression,
+    ArrayExpression: ArrayExpression,
+    ObjectExpression: ObjectExpression,
+    FunctionExpression: FunctionExpression,
+    UnaryExpression: UnaryExpression,
+    UpdateExpression: UpdateExpression,
+    BinaryExpression: BinaryExpression,
+    AssignmentExpression: AssignmentExpression,
+    LogicalExpression: LogicalExpression,
+    MemberExpression: MemberExpression,
+    ConditionalExpression: ConditionalExpression,
+    CallExpression: CallExpression,
+    NewExpression: NewExpression,
+    MetaProperty: MetaProperty,
+    SequenceExpression: SequenceExpression,
+    ArrowFunctionExpression: ArrowFunctionExpression,
+    TemplateLiteral: TemplateLiteral,
+    TaggedTemplateExpression: TaggedTemplateExpression,
+    TemplateElement: TemplateElement,
+    ClassExpression: ClassExpression,
+    Super: Super,
+    SpreadElement: SpreadElement,
+    ChainExpression: ChainExpression,
+    ImportExpression: ImportExpression,
     YieldExpression: YieldExpression,
     AwaitExpression: AwaitExpression
   });
 
-  function ObjectPattern$1(node, scope, options) {
+  function ObjectPattern(node, scope, options) {
       var _a, kind, _b, hoist, _c, onlyBlock, _d, feed, fedKeys, i, property, value, key, value, rest, i_1;
       if (options === void 0) { options = {}; }
       return __generator(this, function (_e) {
@@ -2910,12 +2929,12 @@
                   if (!(value.type === 'Identifier')) return [3, 2];
                   scope[kind](value.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
                   return [3, 4];
-              case 2: return [5, __values(pattern$2(value, scope, { kind: kind, hoist: hoist, onlyBlock: onlyBlock }))];
+              case 2: return [5, __values(pattern$1(value, scope, { kind: kind, hoist: hoist, onlyBlock: onlyBlock }))];
               case 3:
                   _e.sent();
                   _e.label = 4;
               case 4: return [3, 7];
-              case 5: return [5, __values(RestElement$1(property, scope, { kind: kind, hoist: hoist, onlyBlock: onlyBlock }))];
+              case 5: return [5, __values(RestElement(property, scope, { kind: kind, hoist: hoist, onlyBlock: onlyBlock }))];
               case 6:
                   _e.sent();
                   _e.label = 7;
@@ -2924,7 +2943,7 @@
                   if (!(property.type === 'Property')) return [3, 15];
                   key = void 0;
                   if (!property.computed) return [3, 10];
-                  return [5, __values(evaluate$1(property.key, scope))];
+                  return [5, __values(evaluate(property.key, scope))];
               case 9:
                   key = _e.sent();
                   return [3, 11];
@@ -2937,7 +2956,7 @@
                   if (!(value.type === 'Identifier')) return [3, 12];
                   scope[kind](value.name, feed[key]);
                   return [3, 14];
-              case 12: return [5, __values(pattern$2(value, scope, { kind: kind, feed: feed[key] }))];
+              case 12: return [5, __values(pattern$1(value, scope, { kind: kind, feed: feed[key] }))];
               case 13:
                   _e.sent();
                   _e.label = 14;
@@ -2946,7 +2965,7 @@
                   rest = assign({}, feed);
                   for (i_1 = 0; i_1 < fedKeys.length; i_1++)
                       delete rest[fedKeys[i_1]];
-                  return [5, __values(RestElement$1(property, scope, { kind: kind, feed: rest }))];
+                  return [5, __values(RestElement(property, scope, { kind: kind, feed: rest }))];
               case 16:
                   _e.sent();
                   _e.label = 17;
@@ -2957,7 +2976,7 @@
           }
       });
   }
-  function ArrayPattern$1(node, scope, options) {
+  function ArrayPattern(node, scope, options) {
       var kind, _a, hoist, _b, onlyBlock, _c, feed, result, i, element, variable;
       if (options === void 0) { options = {}; }
       return __generator(this, function (_d) {
@@ -2977,7 +2996,7 @@
                   if (!(element.type === 'Identifier')) return [3, 2];
                   scope[kind](element.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
                   return [3, 4];
-              case 2: return [5, __values(pattern$2(element, scope, { kind: kind, hoist: hoist, onlyBlock: onlyBlock }))];
+              case 2: return [5, __values(pattern$1(element, scope, { kind: kind, hoist: hoist, onlyBlock: onlyBlock }))];
               case 3:
                   _d.sent();
                   _d.label = 4;
@@ -2987,7 +3006,7 @@
                   if (!kind) return [3, 6];
                   scope[kind](element.name, feed[i]);
                   return [3, 8];
-              case 6: return [5, __values(Identifier$1(element, scope, { getVar: true }))];
+              case 6: return [5, __values(Identifier(element, scope, { getVar: true }))];
               case 7:
                   variable = _d.sent();
                   variable.set(feed[i]);
@@ -2996,11 +3015,11 @@
               case 8: return [3, 13];
               case 9:
                   if (!(element.type === 'RestElement')) return [3, 11];
-                  return [5, __values(RestElement$1(element, scope, { kind: kind, feed: feed.slice(i) }))];
+                  return [5, __values(RestElement(element, scope, { kind: kind, feed: feed.slice(i) }))];
               case 10:
                   _d.sent();
                   return [3, 13];
-              case 11: return [5, __values(pattern$2(element, scope, { kind: kind, feed: feed[i] }))];
+              case 11: return [5, __values(pattern$1(element, scope, { kind: kind, feed: feed[i] }))];
               case 12:
                   _d.sent();
                   _d.label = 13;
@@ -3015,7 +3034,7 @@
           }
       });
   }
-  function RestElement$1(node, scope, options) {
+  function RestElement(node, scope, options) {
       var kind, _a, hoist, _b, onlyBlock, _c, feed, arg, variable;
       if (options === void 0) { options = {}; }
       return __generator(this, function (_d) {
@@ -3028,7 +3047,7 @@
                   if (!(arg.type === 'Identifier')) return [3, 1];
                   scope[kind](arg.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
                   return [3, 3];
-              case 1: return [5, __values(pattern$2(arg, scope, { kind: kind, hoist: hoist, onlyBlock: onlyBlock }))];
+              case 1: return [5, __values(pattern$1(arg, scope, { kind: kind, hoist: hoist, onlyBlock: onlyBlock }))];
               case 2:
                   _d.sent();
                   _d.label = 3;
@@ -3038,13 +3057,13 @@
                   if (!kind) return [3, 5];
                   scope[kind](arg.name, feed);
                   return [3, 7];
-              case 5: return [5, __values(Identifier$1(arg, scope, { getVar: true }))];
+              case 5: return [5, __values(Identifier(arg, scope, { getVar: true }))];
               case 6:
                   variable = _d.sent();
                   variable.set(feed);
                   _d.label = 7;
               case 7: return [3, 10];
-              case 8: return [5, __values(pattern$2(arg, scope, { kind: kind, feed: feed }))];
+              case 8: return [5, __values(pattern$1(arg, scope, { kind: kind, feed: feed }))];
               case 9:
                   _d.sent();
                   _d.label = 10;
@@ -3052,7 +3071,7 @@
           }
       });
   }
-  function AssignmentPattern$1(node, scope, options) {
+  function AssignmentPattern(node, scope, options) {
       var _a, kind, _b, hoist, _c, onlyBlock, _d, feed, _e, left;
       if (options === void 0) { options = {}; }
       return __generator(this, function (_f) {
@@ -3060,7 +3079,7 @@
               case 0:
                   _a = options.kind, kind = _a === void 0 ? 'var' : _a, _b = options.hoist, hoist = _b === void 0 ? false : _b, _c = options.onlyBlock, onlyBlock = _c === void 0 ? false : _c, _d = options.feed;
                   if (!(_d === void 0)) return [3, 2];
-                  return [5, __values(evaluate$1(node.right, scope))];
+                  return [5, __values(evaluate(node.right, scope))];
               case 1:
                   _e = _f.sent();
                   return [3, 3];
@@ -3075,7 +3094,7 @@
                   if (!(left.type === 'Identifier')) return [3, 4];
                   scope[kind](left.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
                   return [3, 6];
-              case 4: return [5, __values(pattern$2(left, scope, { kind: kind, hoist: hoist, onlyBlock: onlyBlock }))];
+              case 4: return [5, __values(pattern$1(left, scope, { kind: kind, hoist: hoist, onlyBlock: onlyBlock }))];
               case 5:
                   _f.sent();
                   _f.label = 6;
@@ -3084,7 +3103,7 @@
                   if (!(left.type === 'Identifier')) return [3, 8];
                   scope[kind](left.name, feed);
                   return [3, 10];
-              case 8: return [5, __values(pattern$2(left, scope, { kind: kind, feed: feed }))];
+              case 8: return [5, __values(pattern$1(left, scope, { kind: kind, feed: feed }))];
               case 9:
                   _f.sent();
                   _f.label = 10;
@@ -3093,26 +3112,26 @@
       });
   }
 
-  var pattern$1 = /*#__PURE__*/Object.freeze({
+  var pattern$2 = /*#__PURE__*/Object.freeze({
     __proto__: null,
-    ObjectPattern: ObjectPattern$1,
-    ArrayPattern: ArrayPattern$1,
-    RestElement: RestElement$1,
-    AssignmentPattern: AssignmentPattern$1
+    ObjectPattern: ObjectPattern,
+    ArrayPattern: ArrayPattern,
+    RestElement: RestElement,
+    AssignmentPattern: AssignmentPattern
   });
 
-  var evaluateOps$1;
-  function evaluate$1(node, scope) {
+  var evaluateOps;
+  function evaluate(node, scope) {
       var handler;
       return __generator(this, function (_a) {
           switch (_a.label) {
               case 0:
                   if (!node)
                       return [2];
-                  if (!evaluateOps$1) {
-                      evaluateOps$1 = assign({}, declaration$1, expression$1, identifier$1, statement$1, literal$1, pattern$1);
+                  if (!evaluateOps) {
+                      evaluateOps = assign({}, declaration, expression, identifier, statement, literal, pattern$2);
                   }
-                  handler = evaluateOps$1[node.type];
+                  handler = evaluateOps[node.type];
                   if (!handler) return [3, 2];
                   return [5, __values(handler(node, scope))];
               case 1: return [2, _a.sent()];
@@ -3121,17 +3140,17 @@
       });
   }
 
-  function ExpressionStatement$1(node, scope) {
+  function ExpressionStatement(node, scope) {
       return __generator(this, function (_a) {
           switch (_a.label) {
-              case 0: return [5, __values(evaluate$1(node.expression, scope))];
+              case 0: return [5, __values(evaluate(node.expression, scope))];
               case 1:
                   _a.sent();
                   return [2];
           }
       });
   }
-  function BlockStatement$1(block, scope, options) {
+  function BlockStatement(block, scope, options) {
       var _a, invasived, _b, hoisted, subScope, i, result;
       if (options === void 0) { options = {}; }
       return __generator(this, function (_c) {
@@ -3140,7 +3159,7 @@
                   _a = options.invasived, invasived = _a === void 0 ? false : _a, _b = options.hoisted, hoisted = _b === void 0 ? false : _b;
                   subScope = invasived ? scope : new Scope(scope);
                   if (!!hoisted) return [3, 2];
-                  return [5, __values(hoist(block, subScope, { onlyBlock: true }))];
+                  return [5, __values(hoist$1(block, subScope, { onlyBlock: true }))];
               case 1:
                   _c.sent();
                   _c.label = 2;
@@ -3149,7 +3168,7 @@
                   _c.label = 3;
               case 3:
                   if (!(i < block.body.length)) return [3, 6];
-                  return [5, __values(evaluate$1(block.body[i], subScope))];
+                  return [5, __values(evaluate(block.body[i], subScope))];
               case 4:
                   result = _c.sent();
                   if (result === BREAK || result === CONTINUE || result === RETURN) {
@@ -3163,25 +3182,25 @@
           }
       });
   }
-  function EmptyStatement$1() {
+  function EmptyStatement() {
       return __generator(this, function (_a) {
           return [2];
       });
   }
-  function DebuggerStatement$1() {
+  function DebuggerStatement() {
       return __generator(this, function (_a) {
           debugger;
           return [2];
       });
   }
-  function ReturnStatement$1(node, scope) {
+  function ReturnStatement(node, scope) {
       var _a, _b;
       return __generator(this, function (_c) {
           switch (_c.label) {
               case 0:
                   _a = RETURN;
                   if (!node.argument) return [3, 2];
-                  return [5, __values(evaluate$1(node.argument, scope))];
+                  return [5, __values(evaluate(node.argument, scope))];
               case 1:
                   _b = (_c.sent());
                   return [3, 3];
@@ -3194,34 +3213,34 @@
           }
       });
   }
-  function BreakStatement$1() {
+  function BreakStatement() {
       return __generator(this, function (_a) {
           return [2, BREAK];
       });
   }
-  function ContinueStatement$1() {
+  function ContinueStatement() {
       return __generator(this, function (_a) {
           return [2, CONTINUE];
       });
   }
-  function IfStatement$1(node, scope) {
+  function IfStatement(node, scope) {
       return __generator(this, function (_a) {
           switch (_a.label) {
-              case 0: return [5, __values(evaluate$1(node.test, scope))];
+              case 0: return [5, __values(evaluate(node.test, scope))];
               case 1:
                   if (!_a.sent()) return [3, 3];
-                  return [5, __values(evaluate$1(node.consequent, scope))];
+                  return [5, __values(evaluate(node.consequent, scope))];
               case 2: return [2, _a.sent()];
-              case 3: return [5, __values(evaluate$1(node.alternate, scope))];
+              case 3: return [5, __values(evaluate(node.alternate, scope))];
               case 4: return [2, _a.sent()];
           }
       });
   }
-  function SwitchStatement$1(node, scope) {
+  function SwitchStatement(node, scope) {
       var discriminant, matched, i, eachCase, _a, _b, result;
       return __generator(this, function (_c) {
           switch (_c.label) {
-              case 0: return [5, __values(evaluate$1(node.discriminant, scope))];
+              case 0: return [5, __values(evaluate(node.discriminant, scope))];
               case 1:
                   discriminant = _c.sent();
                   matched = false;
@@ -3234,7 +3253,7 @@
                   if (!_a) return [3, 5];
                   _b = !eachCase.test;
                   if (_b) return [3, 4];
-                  return [5, __values(evaluate$1(eachCase.test, scope))];
+                  return [5, __values(evaluate(eachCase.test, scope))];
               case 3:
                   _b = (_c.sent()) === discriminant;
                   _c.label = 4;
@@ -3246,7 +3265,7 @@
                       matched = true;
                   }
                   if (!matched) return [3, 7];
-                  return [5, __values(SwitchCase$1(eachCase, scope))];
+                  return [5, __values(SwitchCase(eachCase, scope))];
               case 6:
                   result = _c.sent();
                   if (result === BREAK) {
@@ -3263,7 +3282,7 @@
           }
       });
   }
-  function SwitchCase$1(node, scope) {
+  function SwitchCase(node, scope) {
       var i, result;
       return __generator(this, function (_a) {
           switch (_a.label) {
@@ -3272,7 +3291,7 @@
                   _a.label = 1;
               case 1:
                   if (!(i < node.consequent.length)) return [3, 4];
-                  return [5, __values(evaluate$1(node.consequent[i], scope))];
+                  return [5, __values(evaluate(node.consequent[i], scope))];
               case 2:
                   result = _a.sent();
                   if (result === BREAK || result === CONTINUE || result === RETURN) {
@@ -3286,21 +3305,21 @@
           }
       });
   }
-  function ThrowStatement$1(node, scope) {
+  function ThrowStatement(node, scope) {
       return __generator(this, function (_a) {
           switch (_a.label) {
-              case 0: return [5, __values(evaluate$1(node.argument, scope))];
+              case 0: return [5, __values(evaluate(node.argument, scope))];
               case 1: throw _a.sent();
           }
       });
   }
-  function TryStatement$1(node, scope) {
+  function TryStatement(node, scope) {
       var err_1, subScope, param, name_1, result;
       return __generator(this, function (_a) {
           switch (_a.label) {
               case 0:
                   _a.trys.push([0, 2, 9, 12]);
-                  return [5, __values(BlockStatement$1(node.block, scope))];
+                  return [5, __values(BlockStatement(node.block, scope))];
               case 1: return [2, _a.sent()];
               case 2:
                   err_1 = _a.sent();
@@ -3312,17 +3331,17 @@
                   name_1 = param.name;
                   subScope.var(name_1, err_1);
                   return [3, 5];
-              case 3: return [5, __values(pattern$2(param, scope, { feed: err_1 }))];
+              case 3: return [5, __values(pattern$1(param, scope, { feed: err_1 }))];
               case 4:
                   _a.sent();
                   _a.label = 5;
-              case 5: return [5, __values(CatchClause$1(node.handler, subScope))];
+              case 5: return [5, __values(CatchClause(node.handler, subScope))];
               case 6: return [2, _a.sent()];
               case 7: throw err_1;
               case 8: return [3, 12];
               case 9:
                   if (!node.finalizer) return [3, 11];
-                  return [5, __values(BlockStatement$1(node.finalizer, scope))];
+                  return [5, __values(BlockStatement(node.finalizer, scope))];
               case 10:
                   result = _a.sent();
                   if (result === BREAK || result === CONTINUE || result === RETURN) {
@@ -3334,22 +3353,22 @@
           }
       });
   }
-  function CatchClause$1(node, scope) {
+  function CatchClause(node, scope) {
       return __generator(this, function (_a) {
           switch (_a.label) {
-              case 0: return [5, __values(BlockStatement$1(node.body, scope, { invasived: true }))];
+              case 0: return [5, __values(BlockStatement(node.body, scope, { invasived: true }))];
               case 1: return [2, _a.sent()];
           }
       });
   }
-  function WhileStatement$1(node, scope) {
+  function WhileStatement(node, scope) {
       var result;
       return __generator(this, function (_a) {
           switch (_a.label) {
-              case 0: return [5, __values(evaluate$1(node.test, scope))];
+              case 0: return [5, __values(evaluate(node.test, scope))];
               case 1:
                   if (!_a.sent()) return [3, 3];
-                  return [5, __values(evaluate$1(node.body, scope))];
+                  return [5, __values(evaluate(node.body, scope))];
               case 2:
                   result = _a.sent();
                   if (result === BREAK) {
@@ -3366,11 +3385,11 @@
           }
       });
   }
-  function DoWhileStatement$1(node, scope) {
+  function DoWhileStatement(node, scope) {
       var result;
       return __generator(this, function (_a) {
           switch (_a.label) {
-              case 0: return [5, __values(evaluate$1(node.body, scope))];
+              case 0: return [5, __values(evaluate(node.body, scope))];
               case 1:
                   result = _a.sent();
                   if (result === BREAK) {
@@ -3383,7 +3402,7 @@
                       return [2, result];
                   }
                   _a.label = 2;
-              case 2: return [5, __values(evaluate$1(node.test, scope))];
+              case 2: return [5, __values(evaluate(node.test, scope))];
               case 3:
                   if (_a.sent()) return [3, 0];
                   _a.label = 4;
@@ -3391,19 +3410,19 @@
           }
       });
   }
-  function ForStatement$1(node, scope) {
+  function ForStatement(node, scope) {
       var forScope, _a, subScope, result;
       return __generator(this, function (_b) {
           switch (_b.label) {
               case 0:
                   forScope = new Scope(scope);
-                  return [5, __values(evaluate$1(node.init, forScope))];
+                  return [5, __values(evaluate(node.init, forScope))];
               case 1:
                   _b.sent();
                   _b.label = 2;
               case 2:
                   if (!node.test) return [3, 4];
-                  return [5, __values(evaluate$1(node.test, forScope))];
+                  return [5, __values(evaluate(node.test, forScope))];
               case 3:
                   _a = (_b.sent());
                   return [3, 5];
@@ -3415,11 +3434,11 @@
                   subScope = new Scope(forScope);
                   result = void 0;
                   if (!(node.body.type === 'BlockStatement')) return [3, 7];
-                  return [5, __values(BlockStatement$1(node.body, subScope, { invasived: true }))];
+                  return [5, __values(BlockStatement(node.body, subScope, { invasived: true }))];
               case 6:
                   result = _b.sent();
                   return [3, 9];
-              case 7: return [5, __values(evaluate$1(node.body, subScope))];
+              case 7: return [5, __values(evaluate(node.body, subScope))];
               case 8:
                   result = _b.sent();
                   _b.label = 9;
@@ -3434,7 +3453,7 @@
                       return [2, result];
                   }
                   _b.label = 10;
-              case 10: return [5, __values(evaluate$1(node.update, forScope))];
+              case 10: return [5, __values(evaluate(node.update, forScope))];
               case 11:
                   _b.sent();
                   return [3, 2];
@@ -3442,13 +3461,13 @@
           }
       });
   }
-  function ForInStatement$1(node, scope) {
+  function ForInStatement(node, scope) {
       var _a, _b, _i, value, result;
       return __generator(this, function (_c) {
           switch (_c.label) {
               case 0:
                   _a = [];
-                  return [5, __values(evaluate$1(node.right, scope))];
+                  return [5, __values(evaluate(node.right, scope))];
               case 1:
                   for (_b in _c.sent())
                       _a.push(_b);
@@ -3457,7 +3476,7 @@
               case 2:
                   if (!(_i < _a.length)) return [3, 5];
                   value = _a[_i];
-                  return [5, __values(ForXHandler(node, scope, { value: value }))];
+                  return [5, __values(ForXHandler$1(node, scope, { value: value }))];
               case 3:
                   result = _c.sent();
                   if (result === BREAK) {
@@ -3477,12 +3496,12 @@
           }
       });
   }
-  function ForOfStatement$1(node, scope) {
+  function ForOfStatement(node, scope) {
       var right, iterator, ret, result, right_1, right_1_1, value, result, e_1_1;
       var e_1, _a;
       return __generator(this, function (_b) {
           switch (_b.label) {
-              case 0: return [5, __values(evaluate$1(node.right, scope))];
+              case 0: return [5, __values(evaluate(node.right, scope))];
               case 1:
                   right = _b.sent();
                   if (!node.await) return [3, 8];
@@ -3495,7 +3514,7 @@
                   _b.label = 3;
               case 3:
                   if (!!ret.done) return [3, 7];
-                  return [5, __values(ForXHandler(node, scope, { value: ret.value }))];
+                  return [5, __values(ForXHandler$1(node, scope, { value: ret.value }))];
               case 4:
                   result = _b.sent();
                   if (result === BREAK) {
@@ -3522,7 +3541,7 @@
               case 9:
                   if (!!right_1_1.done) return [3, 12];
                   value = right_1_1.value;
-                  return [5, __values(ForXHandler(node, scope, { value: value }))];
+                  return [5, __values(ForXHandler$1(node, scope, { value: value }))];
               case 10:
                   result = _b.sent();
                   if (result === BREAK) {
@@ -3554,13 +3573,13 @@
       });
   }
 
-  function FunctionDeclaration$1(node, scope) {
+  function FunctionDeclaration(node, scope) {
       return __generator(this, function (_a) {
-          scope.func(node.id.name, createFunc(node, scope));
+          scope.func(node.id.name, createFunc$1(node, scope));
           return [2];
       });
   }
-  function VariableDeclaration$1(node, scope, options) {
+  function VariableDeclaration(node, scope, options) {
       var i;
       if (options === void 0) { options = {}; }
       return __generator(this, function (_a) {
@@ -3570,7 +3589,7 @@
                   _a.label = 1;
               case 1:
                   if (!(i < node.declarations.length)) return [3, 4];
-                  return [5, __values(VariableDeclarator$1(node.declarations[i], scope, assign({ kind: node.kind }, options)))];
+                  return [5, __values(VariableDeclarator(node.declarations[i], scope, assign({ kind: node.kind }, options)))];
               case 2:
                   _a.sent();
                   _a.label = 3;
@@ -3581,7 +3600,7 @@
           }
       });
   }
-  function VariableDeclarator$1(node, scope, options) {
+  function VariableDeclarator(node, scope, options) {
       var _a, kind, _b, hoist, _c, onlyBlock, feed, hasFeed, value, _d, name_1;
       if (options === void 0) { options = {}; }
       return __generator(this, function (_e) {
@@ -3593,7 +3612,7 @@
                   if (!(node.id.type === 'Identifier')) return [3, 1];
                   scope[kind](node.id.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
                   return [3, 3];
-              case 1: return [5, __values(pattern$2(node.id, scope, { kind: kind, hoist: hoist, onlyBlock: onlyBlock }))];
+              case 1: return [5, __values(pattern$1(node.id, scope, { kind: kind, hoist: hoist, onlyBlock: onlyBlock }))];
               case 2:
                   _e.sent();
                   _e.label = 3;
@@ -3603,7 +3622,7 @@
                   if (!hasFeed) return [3, 5];
                   _d = feed;
                   return [3, 7];
-              case 5: return [5, __values(evaluate$1(node.init, scope))];
+              case 5: return [5, __values(evaluate(node.init, scope))];
               case 6:
                   _d = _e.sent();
                   _e.label = 7;
@@ -3627,7 +3646,7 @@
                       });
                   }
                   return [3, 10];
-              case 8: return [5, __values(pattern$2(node.id, scope, { kind: kind, feed: value }))];
+              case 8: return [5, __values(pattern$1(node.id, scope, { kind: kind, feed: value }))];
               case 9:
                   _e.sent();
                   _e.label = 10;
@@ -3635,21 +3654,21 @@
           }
       });
   }
-  function ClassDeclaration$1(node, scope) {
+  function ClassDeclaration(node, scope) {
       var _a, _b, _c;
       return __generator(this, function (_d) {
           switch (_d.label) {
               case 0:
                   _b = (_a = scope).func;
                   _c = [node.id.name];
-                  return [5, __values(createClass(node, scope))];
+                  return [5, __values(createClass$1(node, scope))];
               case 1:
                   _b.apply(_a, _c.concat([_d.sent()]));
                   return [2];
           }
       });
   }
-  function ClassBody$1(node, scope, options) {
+  function ClassBody(node, scope, options) {
       var klass, superClass, i, def;
       if (options === void 0) { options = {}; }
       return __generator(this, function (_a) {
@@ -3662,19 +3681,19 @@
                   if (!(i < node.body.length)) return [3, 8];
                   def = node.body[i];
                   if (!(def.type === 'MethodDefinition')) return [3, 3];
-                  return [5, __values(MethodDefinition$1(def, scope, { klass: klass, superClass: superClass }))];
+                  return [5, __values(MethodDefinition(def, scope, { klass: klass, superClass: superClass }))];
               case 2:
                   _a.sent();
                   return [3, 7];
               case 3:
                   if (!(def.type === 'PropertyDefinition' && def.static)) return [3, 5];
-                  return [5, __values(PropertyDefinition$1(def, scope, { klass: klass, superClass: superClass }))];
+                  return [5, __values(PropertyDefinition(def, scope, { klass: klass, superClass: superClass }))];
               case 4:
                   _a.sent();
                   return [3, 7];
               case 5:
                   if (!(def.type === 'StaticBlock')) return [3, 7];
-                  return [5, __values(StaticBlock$1(def, scope, { klass: klass, superClass: superClass }))];
+                  return [5, __values(StaticBlock(def, scope, { klass: klass, superClass: superClass }))];
               case 6:
                   _a.sent();
                   _a.label = 7;
@@ -3685,7 +3704,7 @@
           }
       });
   }
-  function MethodDefinition$1(node, scope, options) {
+  function MethodDefinition(node, scope, options) {
       var klass, superClass, key, priv, obj, value, oriDptor, oriDptor;
       if (options === void 0) { options = {}; }
       return __generator(this, function (_a) {
@@ -3694,7 +3713,7 @@
                   klass = options.klass, superClass = options.superClass;
                   priv = false;
                   if (!node.computed) return [3, 2];
-                  return [5, __values(evaluate$1(node.key, scope))];
+                  return [5, __values(evaluate(node.key, scope))];
               case 1:
                   key = _a.sent();
                   return [3, 3];
@@ -3718,7 +3737,7 @@
                       }
                       obj = obj[PRIVATE];
                   }
-                  value = createFunc(node.value, scope, { superClass: superClass });
+                  value = createFunc$1(node.value, scope, { superClass: superClass });
                   switch (node.kind) {
                       case 'constructor':
                           break;
@@ -3754,7 +3773,7 @@
           }
       });
   }
-  function PropertyDefinition$1(node, scope, options) {
+  function PropertyDefinition(node, scope, options) {
       var klass, superClass, key, priv, subScope, obj, _a, _b;
       if (options === void 0) { options = {}; }
       return __generator(this, function (_c) {
@@ -3763,7 +3782,7 @@
                   klass = options.klass, superClass = options.superClass;
                   priv = false;
                   if (!node.computed) return [3, 2];
-                  return [5, __values(evaluate$1(node.key, scope))];
+                  return [5, __values(evaluate(node.key, scope))];
               case 1:
                   key = _c.sent();
                   return [3, 3];
@@ -3790,12 +3809,12 @@
                       obj = obj[PRIVATE];
                   }
                   if (!(node.value.type === 'FunctionExpression' || node.value.type === 'ArrowFunctionExpression')) return [3, 4];
-                  obj[key] = createFunc(node.value, subScope, { superClass: superClass });
+                  obj[key] = createFunc$1(node.value, subScope, { superClass: superClass });
                   return [3, 6];
               case 4:
                   _a = obj;
                   _b = key;
-                  return [5, __values(evaluate$1(node.value, subScope))];
+                  return [5, __values(evaluate(node.value, subScope))];
               case 5:
                   _a[_b] = _c.sent();
                   _c.label = 6;
@@ -3803,7 +3822,7 @@
           }
       });
   }
-  function StaticBlock$1(node, scope, options) {
+  function StaticBlock(node, scope, options) {
       var klass, subScope;
       if (options === void 0) { options = {}; }
       return __generator(this, function (_a) {
@@ -3812,12 +3831,12 @@
                   klass = options.klass;
                   subScope = new Scope(scope, true);
                   subScope.const('this', klass);
-                  return [5, __values(BlockStatement$1(node, subScope, { invasived: true }))];
+                  return [5, __values(BlockStatement(node, subScope, { invasived: true }))];
               case 1: return [2, _a.sent()];
           }
       });
   }
-  function ImportDeclaration$1(node, scope) {
+  function ImportDeclaration(node, scope) {
       var globalScope, module, value, result, i, spec, name_2;
       return __generator(this, function (_a) {
           globalScope = scope.global();
@@ -3857,24 +3876,24 @@
           return [2];
       });
   }
-  function ExportDefaultDeclaration$1(node, scope) {
+  function ExportDefaultDeclaration(node, scope) {
       var globalScope, value, variable, exports_1;
       return __generator(this, function (_a) {
           switch (_a.label) {
               case 0:
                   globalScope = scope.global();
                   if (!(node.declaration.type === 'FunctionDeclaration')) return [3, 1];
-                  value = createFunc(node.declaration, scope);
+                  value = createFunc$1(node.declaration, scope);
                   scope.func(node.declaration.id.name, value);
                   return [3, 5];
               case 1:
                   if (!(node.declaration.type === 'ClassDeclaration')) return [3, 3];
-                  return [5, __values(createClass(node.declaration, scope))];
+                  return [5, __values(createClass$1(node.declaration, scope))];
               case 2:
                   value = _a.sent();
                   scope.func(node.declaration.id.name, value);
                   return [3, 5];
-              case 3: return [5, __values(evaluate$1(node.declaration, scope))];
+              case 3: return [5, __values(evaluate(node.declaration, scope))];
               case 4:
                   value = _a.sent();
                   _a.label = 5;
@@ -3890,7 +3909,7 @@
           }
       });
   }
-  function ExportNamedDeclaration$1(node, scope) {
+  function ExportNamedDeclaration(node, scope) {
       var globalScope, value, variable, exports_2, value, variable, exports_3, variable, exports_4, i, name_3, item, variable, exports_5, i, spec, name_4, item;
       return __generator(this, function (_a) {
           switch (_a.label) {
@@ -3898,7 +3917,7 @@
                   globalScope = scope.global();
                   if (!node.declaration) return [3, 6];
                   if (!(node.declaration.type === 'FunctionDeclaration')) return [3, 1];
-                  value = createFunc(node.declaration, scope);
+                  value = createFunc$1(node.declaration, scope);
                   scope.func(node.declaration.id.name, value);
                   variable = globalScope.find(EXPORTS);
                   if (variable) {
@@ -3910,7 +3929,7 @@
                   return [3, 5];
               case 1:
                   if (!(node.declaration.type === 'ClassDeclaration')) return [3, 3];
-                  return [5, __values(createClass(node.declaration, scope))];
+                  return [5, __values(createClass$1(node.declaration, scope))];
               case 2:
                   value = _a.sent();
                   scope.func(node.declaration.id.name, value);
@@ -3924,7 +3943,7 @@
                   return [3, 5];
               case 3:
                   if (!(node.declaration.type === 'VariableDeclaration')) return [3, 5];
-                  return [5, __values(VariableDeclaration$1(node.declaration, scope))];
+                  return [5, __values(VariableDeclaration(node.declaration, scope))];
               case 4:
                   _a.sent();
                   variable = globalScope.find(EXPORTS);
@@ -3966,7 +3985,7 @@
           }
       });
   }
-  function ExportAllDeclaration$1(node, scope) {
+  function ExportAllDeclaration(node, scope) {
       var globalScope, module, value, result, variable, exports_6;
       return __generator(this, function (_a) {
           globalScope = scope.global();
@@ -4043,7 +4062,7 @@
       });
   }
 
-  function hoist(block, scope, options) {
+  function hoist$1(block, scope, options) {
       var _a, onlyBlock, funcDclrList, funcDclrIdxs, i, statement, i;
       if (options === void 0) { options = {}; }
       return __generator(this, function (_b) {
@@ -4064,13 +4083,13 @@
               case 2:
                   if (!(statement.type === 'VariableDeclaration'
                       && ['const', 'let'].indexOf(statement.kind) !== -1)) return [3, 4];
-                  return [5, __values(VariableDeclaration$1(statement, scope, { hoist: true, onlyBlock: true }))];
+                  return [5, __values(VariableDeclaration(statement, scope, { hoist: true, onlyBlock: true }))];
               case 3:
                   _b.sent();
                   return [3, 6];
               case 4:
                   if (!!onlyBlock) return [3, 6];
-                  return [5, __values(hoistVarRecursion(statement, scope))];
+                  return [5, __values(hoistVarRecursion$1(statement, scope))];
               case 5:
                   _b.sent();
                   _b.label = 6;
@@ -4088,7 +4107,7 @@
           }
       });
   }
-  function hoistVarRecursion(statement, scope) {
+  function hoistVarRecursion$1(statement, scope) {
       var _a, i, i, j, tryBlock, i, catchBlock, i, finalBlock, i;
       return __generator(this, function (_b) {
           switch (_b.label) {
@@ -4107,31 +4126,31 @@
                       case 'TryStatement': return [3, 25];
                   }
                   return [3, 38];
-              case 1: return [5, __values(VariableDeclaration$1(statement, scope, { hoist: true }))];
+              case 1: return [5, __values(VariableDeclaration(statement, scope, { hoist: true }))];
               case 2:
                   _b.sent();
                   return [3, 38];
               case 3:
                   if (!(statement.left.type === 'VariableDeclaration')) return [3, 5];
-                  return [5, __values(VariableDeclaration$1(statement.left, scope, { hoist: true }))];
+                  return [5, __values(VariableDeclaration(statement.left, scope, { hoist: true }))];
               case 4:
                   _b.sent();
                   _b.label = 5;
               case 5:
                   if (!(statement.type === 'ForStatement' && statement.init.type === 'VariableDeclaration')) return [3, 7];
-                  return [5, __values(VariableDeclaration$1(statement.init, scope, { hoist: true }))];
+                  return [5, __values(VariableDeclaration(statement.init, scope, { hoist: true }))];
               case 6:
                   _b.sent();
                   _b.label = 7;
-              case 7: return [5, __values(hoistVarRecursion(statement.body, scope))];
+              case 7: return [5, __values(hoistVarRecursion$1(statement.body, scope))];
               case 8:
                   _b.sent();
                   return [3, 38];
-              case 9: return [5, __values(hoistVarRecursion(statement.consequent, scope))];
+              case 9: return [5, __values(hoistVarRecursion$1(statement.consequent, scope))];
               case 10:
                   _b.sent();
                   if (!statement.alternate) return [3, 12];
-                  return [5, __values(hoistVarRecursion(statement.alternate, scope))];
+                  return [5, __values(hoistVarRecursion$1(statement.alternate, scope))];
               case 11:
                   _b.sent();
                   _b.label = 12;
@@ -4141,7 +4160,7 @@
                   _b.label = 14;
               case 14:
                   if (!(i < statement.body.length)) return [3, 17];
-                  return [5, __values(hoistVarRecursion(statement.body[i], scope))];
+                  return [5, __values(hoistVarRecursion$1(statement.body[i], scope))];
               case 15:
                   _b.sent();
                   _b.label = 16;
@@ -4158,7 +4177,7 @@
                   _b.label = 20;
               case 20:
                   if (!(j < statement.cases[i].consequent.length)) return [3, 23];
-                  return [5, __values(hoistVarRecursion(statement.cases[i].consequent[j], scope))];
+                  return [5, __values(hoistVarRecursion$1(statement.cases[i].consequent[j], scope))];
               case 21:
                   _b.sent();
                   _b.label = 22;
@@ -4175,7 +4194,7 @@
                   _b.label = 26;
               case 26:
                   if (!(i < tryBlock.length)) return [3, 29];
-                  return [5, __values(hoistVarRecursion(tryBlock[i], scope))];
+                  return [5, __values(hoistVarRecursion$1(tryBlock[i], scope))];
               case 27:
                   _b.sent();
                   _b.label = 28;
@@ -4189,7 +4208,7 @@
                   _b.label = 30;
               case 30:
                   if (!(i < catchBlock.length)) return [3, 33];
-                  return [5, __values(hoistVarRecursion(catchBlock[i], scope))];
+                  return [5, __values(hoistVarRecursion$1(catchBlock[i], scope))];
               case 31:
                   _b.sent();
                   _b.label = 32;
@@ -4203,7 +4222,7 @@
                   _b.label = 34;
               case 34:
                   if (!(i < finalBlock.length)) return [3, 37];
-                  return [5, __values(hoistVarRecursion(finalBlock[i], scope))];
+                  return [5, __values(hoistVarRecursion$1(finalBlock[i], scope))];
               case 35:
                   _b.sent();
                   _b.label = 36;
@@ -4215,7 +4234,7 @@
           }
       });
   }
-  function pattern$2(node, scope, options) {
+  function pattern$1(node, scope, options) {
       var _a;
       if (options === void 0) { options = {}; }
       return __generator(this, function (_b) {
@@ -4229,22 +4248,22 @@
                       case 'AssignmentPattern': return [3, 7];
                   }
                   return [3, 9];
-              case 1: return [5, __values(ObjectPattern$1(node, scope, options))];
+              case 1: return [5, __values(ObjectPattern(node, scope, options))];
               case 2: return [2, _b.sent()];
-              case 3: return [5, __values(ArrayPattern$1(node, scope, options))];
+              case 3: return [5, __values(ArrayPattern(node, scope, options))];
               case 4: return [2, _b.sent()];
-              case 5: return [5, __values(RestElement$1(node, scope, options))];
+              case 5: return [5, __values(RestElement(node, scope, options))];
               case 6: return [2, _b.sent()];
-              case 7: return [5, __values(AssignmentPattern$1(node, scope, options))];
+              case 7: return [5, __values(AssignmentPattern(node, scope, options))];
               case 8: return [2, _b.sent()];
               case 9: throw new SyntaxError('Unexpected token');
           }
       });
   }
-  function createFunc(node, scope, options) {
+  function createFunc$1(node, scope, options) {
       if (options === void 0) { options = {}; }
       if (!node.generator && !node.async) {
-          return createFunc$1(node, scope, options);
+          return createFunc(node, scope, options);
       }
       var superClass = options.superClass, construct = options.construct;
       var params = node.params;
@@ -4286,11 +4305,11 @@
                       return [3, 9];
                   case 5:
                       if (!(param.type === 'RestElement')) return [3, 7];
-                      return [5, __values(RestElement$1(param, subScope, { kind: 'var', feed: args.slice(i) }))];
+                      return [5, __values(RestElement(param, subScope, { kind: 'var', feed: args.slice(i) }))];
                   case 6:
                       _a.sent();
                       return [3, 9];
-                  case 7: return [5, __values(pattern$2(param, subScope, { kind: 'var', feed: args[i] }))];
+                  case 7: return [5, __values(pattern$1(param, subScope, { kind: 'var', feed: args[i] }))];
                   case 8:
                       _a.sent();
                       _a.label = 9;
@@ -4299,17 +4318,17 @@
                       return [3, 4];
                   case 10:
                       if (!(node.body.type === 'BlockStatement')) return [3, 13];
-                      return [5, __values(hoist(node.body, subScope))];
+                      return [5, __values(hoist$1(node.body, subScope))];
                   case 11:
                       _a.sent();
-                      return [5, __values(BlockStatement$1(node.body, subScope, {
+                      return [5, __values(BlockStatement(node.body, subScope, {
                               invasived: true,
                               hoisted: true
                           }))];
                   case 12:
                       result = _a.sent();
                       return [3, 15];
-                  case 13: return [5, __values(evaluate$1(node.body, subScope))];
+                  case 13: return [5, __values(evaluate(node.body, subScope))];
                   case 14:
                       result = _a.sent();
                       if (node.type === 'ArrowFunctionExpression') {
@@ -4371,11 +4390,11 @@
       });
       return func;
   }
-  function createClass(node, scope) {
+  function createClass$1(node, scope) {
       var superClass, methodBody, construct, klass, i, method;
       return __generator(this, function (_a) {
           switch (_a.label) {
-              case 0: return [5, __values(evaluate$1(node.superClass, scope))];
+              case 0: return [5, __values(evaluate(node.superClass, scope))];
               case 1:
                   superClass = _a.sent();
                   methodBody = node.body.body;
@@ -4390,7 +4409,7 @@
                                   if (!(i < methodBody.length)) return [3, 4];
                                   def = methodBody[i];
                                   if (!(def.type === 'PropertyDefinition' && !def.static)) return [3, 3];
-                                  return [5, __values(PropertyDefinition$1(def, scope, { klass: object, superClass: superClass }))];
+                                  return [5, __values(PropertyDefinition(def, scope, { klass: object, superClass: superClass }))];
                               case 2:
                                   _a.sent();
                                   _a.label = 3;
@@ -4417,14 +4436,14 @@
                   for (i = 0; i < methodBody.length; i++) {
                       method = methodBody[i];
                       if (method.type === 'MethodDefinition' && method.kind === 'constructor') {
-                          klass = createFunc(method.value, scope, { superClass: superClass, construct: construct });
+                          klass = createFunc$1(method.value, scope, { superClass: superClass, construct: construct });
                           break;
                       }
                   }
                   if (superClass) {
                       inherits(klass, superClass);
                   }
-                  return [5, __values(ClassBody$1(node.body, scope, { klass: klass, superClass: superClass }))];
+                  return [5, __values(ClassBody(node.body, scope, { klass: klass, superClass: superClass }))];
               case 2:
                   _a.sent();
                   define(klass, CLSCTOR, { value: true });
@@ -4436,7 +4455,7 @@
           }
       });
   }
-  function ForXHandler(node, scope, options) {
+  function ForXHandler$1(node, scope, options) {
       var value, left, subScope, variable, result;
       return __generator(this, function (_a) {
           switch (_a.label) {
@@ -4445,28 +4464,28 @@
                   left = node.left;
                   subScope = new Scope(scope);
                   if (!(left.type === 'VariableDeclaration')) return [3, 2];
-                  return [5, __values(VariableDeclaration$1(left, subScope, { feed: value }))];
+                  return [5, __values(VariableDeclaration(left, subScope, { feed: value }))];
               case 1:
                   _a.sent();
                   return [3, 6];
               case 2:
                   if (!(left.type === 'Identifier')) return [3, 4];
-                  return [5, __values(Identifier(left, scope, { getVar: true }))];
+                  return [5, __values(Identifier$1(left, scope, { getVar: true }))];
               case 3:
                   variable = _a.sent();
                   variable.set(value);
                   return [3, 6];
-              case 4: return [5, __values(pattern$2(left, scope, { feed: value }))];
+              case 4: return [5, __values(pattern$1(left, scope, { feed: value }))];
               case 5:
                   _a.sent();
                   _a.label = 6;
               case 6:
                   if (!(node.body.type === 'BlockStatement')) return [3, 8];
-                  return [5, __values(BlockStatement$1(node.body, subScope, { invasived: true }))];
+                  return [5, __values(BlockStatement(node.body, subScope, { invasived: true }))];
               case 7:
                   result = _a.sent();
                   return [3, 10];
-              case 8: return [5, __values(evaluate$1(node.body, subScope))];
+              case 8: return [5, __values(evaluate(node.body, subScope))];
               case 9:
                   result = _a.sent();
                   _a.label = 10;
@@ -4475,7 +4494,7 @@
       });
   }
 
-  function hoist$1(block, scope, options) {
+  function hoist(block, scope, options) {
       if (options === void 0) { options = {}; }
       var _a = options.onlyBlock, onlyBlock = _a === void 0 ? false : _a;
       var funcDclrList = [];
@@ -4488,10 +4507,10 @@
           }
           else if (statement.type === 'VariableDeclaration'
               && ['const', 'let'].indexOf(statement.kind) !== -1) {
-              VariableDeclaration(statement, scope, { hoist: true, onlyBlock: true });
+              VariableDeclaration$1(statement, scope, { hoist: true, onlyBlock: true });
           }
           else if (!onlyBlock) {
-              hoistVarRecursion$1(statement, scope);
+              hoistVarRecursion(statement, scope);
           }
       }
       if (funcDclrIdxs.length) {
@@ -4501,82 +4520,82 @@
           block.body = funcDclrList.concat(block.body);
       }
   }
-  function hoistVarRecursion$1(statement, scope) {
+  function hoistVarRecursion(statement, scope) {
       switch (statement.type) {
           case 'VariableDeclaration':
-              VariableDeclaration(statement, scope, { hoist: true });
+              VariableDeclaration$1(statement, scope, { hoist: true });
               break;
           case 'ForInStatement':
           case 'ForOfStatement':
               if (statement.left.type === 'VariableDeclaration') {
-                  VariableDeclaration(statement.left, scope, { hoist: true });
+                  VariableDeclaration$1(statement.left, scope, { hoist: true });
               }
           case 'ForStatement':
               if (statement.type === 'ForStatement' && statement.init.type === 'VariableDeclaration') {
-                  VariableDeclaration(statement.init, scope, { hoist: true });
+                  VariableDeclaration$1(statement.init, scope, { hoist: true });
               }
           case 'WhileStatement':
           case 'DoWhileStatement':
-              hoistVarRecursion$1(statement.body, scope);
+              hoistVarRecursion(statement.body, scope);
               break;
           case 'IfStatement':
-              hoistVarRecursion$1(statement.consequent, scope);
+              hoistVarRecursion(statement.consequent, scope);
               if (statement.alternate) {
-                  hoistVarRecursion$1(statement.alternate, scope);
+                  hoistVarRecursion(statement.alternate, scope);
               }
               break;
           case 'BlockStatement':
               for (var i = 0; i < statement.body.length; i++) {
-                  hoistVarRecursion$1(statement.body[i], scope);
+                  hoistVarRecursion(statement.body[i], scope);
               }
               break;
           case 'SwitchStatement':
               for (var i = 0; i < statement.cases.length; i++) {
                   for (var j = 0; j < statement.cases[i].consequent.length; j++) {
-                      hoistVarRecursion$1(statement.cases[i].consequent[j], scope);
+                      hoistVarRecursion(statement.cases[i].consequent[j], scope);
                   }
               }
               break;
           case 'TryStatement': {
               var tryBlock = statement.block.body;
               for (var i = 0; i < tryBlock.length; i++) {
-                  hoistVarRecursion$1(tryBlock[i], scope);
+                  hoistVarRecursion(tryBlock[i], scope);
               }
               var catchBlock = statement.handler && statement.handler.body.body;
               if (catchBlock) {
                   for (var i = 0; i < catchBlock.length; i++) {
-                      hoistVarRecursion$1(catchBlock[i], scope);
+                      hoistVarRecursion(catchBlock[i], scope);
                   }
               }
               var finalBlock = statement.finalizer && statement.finalizer.body;
               if (finalBlock) {
                   for (var i = 0; i < finalBlock.length; i++) {
-                      hoistVarRecursion$1(finalBlock[i], scope);
+                      hoistVarRecursion(finalBlock[i], scope);
                   }
               }
               break;
           }
       }
   }
-  function pattern$3(node, scope, options) {
+  function pattern(node, scope, options) {
       if (options === void 0) { options = {}; }
       switch (node.type) {
           case 'ObjectPattern':
-              return ObjectPattern(node, scope, options);
+              return ObjectPattern$1(node, scope, options);
           case 'ArrayPattern':
-              return ArrayPattern(node, scope, options);
+              return ArrayPattern$1(node, scope, options);
           case 'RestElement':
-              return RestElement(node, scope, options);
+              return RestElement$1(node, scope, options);
           case 'AssignmentPattern':
-              return AssignmentPattern(node, scope, options);
+              return AssignmentPattern$1(node, scope, options);
           default:
               throw new SyntaxError('Unexpected token');
       }
   }
-  function createFunc$1(node, scope, options) {
+  function createFunc(node, scope, options) {
       if (options === void 0) { options = {}; }
       if (node.generator || node.async) {
-          return createFunc(node, scope, options);
+          return createFunc$1(node, scope, options);
       }
       var superClass = options.superClass, construct = options.construct;
       var params = node.params;
@@ -4606,22 +4625,22 @@
                   subScope.var(param.name, args[i]);
               }
               else if (param.type === 'RestElement') {
-                  RestElement(param, subScope, { kind: 'var', feed: args.slice(i) });
+                  RestElement$1(param, subScope, { kind: 'var', feed: args.slice(i) });
               }
               else {
-                  pattern$3(param, subScope, { kind: 'var', feed: args[i] });
+                  pattern(param, subScope, { kind: 'var', feed: args[i] });
               }
           }
           var result;
           if (node.body.type === 'BlockStatement') {
-              hoist$1(node.body, subScope);
-              result = BlockStatement(node.body, subScope, {
+              hoist(node.body, subScope);
+              result = BlockStatement$1(node.body, subScope, {
                   invasived: true,
                   hoisted: true
               });
           }
           else {
-              result = evaluate(node.body, subScope);
+              result = evaluate$1(node.body, subScope);
               if (node.type === 'ArrowFunctionExpression') {
                   RETURN.RES = result;
                   result = RETURN;
@@ -4647,14 +4666,14 @@
       });
       return func;
   }
-  function createClass$1(node, scope) {
-      var superClass = evaluate(node.superClass, scope);
+  function createClass(node, scope) {
+      var superClass = evaluate$1(node.superClass, scope);
       var methodBody = node.body.body;
       var construct = function (object) {
           for (var i = 0; i < methodBody.length; i++) {
               var def = methodBody[i];
               if (def.type === 'PropertyDefinition' && !def.static) {
-                  PropertyDefinition(def, scope, { klass: object, superClass: superClass });
+                  PropertyDefinition$1(def, scope, { klass: object, superClass: superClass });
               }
           }
       };
@@ -4667,14 +4686,14 @@
       for (var i = 0; i < methodBody.length; i++) {
           var method = methodBody[i];
           if (method.type === 'MethodDefinition' && method.kind === 'constructor') {
-              klass = createFunc$1(method.value, scope, { superClass: superClass, construct: construct });
+              klass = createFunc(method.value, scope, { superClass: superClass, construct: construct });
               break;
           }
       }
       if (superClass) {
           inherits(klass, superClass);
       }
-      ClassBody(node.body, scope, { klass: klass, superClass: superClass });
+      ClassBody$1(node.body, scope, { klass: klass, superClass: superClass });
       define(klass, CLSCTOR, { value: true });
       define(klass, 'name', {
           value: node.id && node.id.name || '',
@@ -4682,26 +4701,26 @@
       });
       return klass;
   }
-  function ForXHandler$1(node, scope, options) {
+  function ForXHandler(node, scope, options) {
       var value = options.value;
       var left = node.left;
       var subScope = new Scope(scope);
       if (left.type === 'VariableDeclaration') {
-          VariableDeclaration(left, subScope, { feed: value });
+          VariableDeclaration$1(left, subScope, { feed: value });
       }
       else if (left.type === 'Identifier') {
-          var variable = Identifier(left, scope, { getVar: true });
+          var variable = Identifier$1(left, scope, { getVar: true });
           variable.set(value);
       }
       else {
-          pattern$3(left, scope, { feed: value });
+          pattern(left, scope, { feed: value });
       }
       var result;
       if (node.body.type === 'BlockStatement') {
-          result = BlockStatement(node.body, subScope, { invasived: true });
+          result = BlockStatement$1(node.body, subScope, { invasived: true });
       }
       else {
-          result = evaluate(node.body, subScope);
+          result = evaluate$1(node.body, subScope);
       }
       return result;
   }
@@ -4757,8 +4776,8 @@
       };
       Sval.prototype.run = function (code) {
           var ast = typeof code === 'string' ? acorn.parse(code, this.options) : code;
-          hoist$1(ast, this.scope);
-          evaluate(ast, this.scope);
+          hoist(ast, this.scope);
+          evaluate$1(ast, this.scope);
       };
       Sval.version = version;
       return Sval;
@@ -4766,4 +4785,4 @@
 
   return Sval;
 
-})));
+}));
