@@ -1,3 +1,4 @@
+import { parse } from 'acorn'
 import Sval from '../src'
 
 describe('testing src/index.ts', () => {
@@ -316,5 +317,20 @@ describe('testing src/index.ts', () => {
       expect((([a, [b, { c }]]) => a + b + c)([1, [2, { c: 3 }]])).toEqual(6)
       expect((({ b, c: [, e] }) => b + e)({ a: 1, b: 2, c: [3, 4] })).toEqual(6)
     `)
+  })
+
+  it('should serialize functions with toString', () => {  
+    const interpreter = new Sval()
+    interpreter.import({ expect })
+    const parsedCode = interpreter.parse(`
+      expect((function x(a, b) { return a + b }).toString()).toEqual('function x(a, b) { return a + b }')
+      expect((async function x(a, b) { return await a + b }).toString()).toEqual('async function x(a, b) { return await a + b }')
+      // arrow functions don't support generators
+      expect((function* x(a, b) { yield a + b }).toString()).toEqual('function* x(a, b) { yield a + b }')
+      expect(((a, b) => a + b).toString()).toEqual('(a, b) => a + b')
+      expect(((a, b) => { return a + b }).toString()).toEqual('(a, b) => { return a + b }')
+      expect((async (a, b) => { return await a + b }).toString()).toEqual('async (a, b) => { return await a + b }')
+    `, (code) => parse(code, { ecmaVersion: 'latest', locations: true, sourceFile: code }));
+    interpreter.run(parsedCode)
   })
 })
