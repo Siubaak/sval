@@ -1,4 +1,4 @@
-# Sval &middot; [![npm](https://img.shields.io/npm/v/sval.svg?style=flat-square)](https://www.npmjs.com/package/sval) [![github-actions](https://img.shields.io/github/actions/workflow/status/Siubaak/sval/coverage.yml?style=flat-square)](https://github.com/Siubaak/sval/actions/workflows/coverage.yml) [![coveralls](https://img.shields.io/coveralls/github/Siubaak/sval.svg?style=flat-square)](https://coveralls.io/github/Siubaak/sval)
+# Sval &middot; [![npm](https://img.shields.io/npm/v/sval.svg?style=flat-square)](https://www.npmjs.com/package/sval) [![coveralls](https://img.shields.io/coveralls/github/Siubaak/sval.svg?style=flat-square)](https://coveralls.io/github/Siubaak/sval) [![prs-welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://makeapullrequest.com)
 
 A JavaScript interpreter writen in JavaScript, based on parser [Acorn](https://github.com/acornjs/acorn).
 
@@ -137,15 +137,15 @@ console.log(moduleInterpreter.exports.mod) // Get 'AllKindsOfStuffs'
 
 **WithStatement** and **LabeledStatement** aren't implemented and recommended. Please avoid to use them.
 
-## Related Projects
-
-- [sval-rhino-gs](https://github.com/Patrick-ring-motive/sval-rhino-gs) 
-
 ## Reference
 
-- [ESTree](https://github.com/estree/estree)
-- [Acorn](https://github.com/acornjs/acorn)
-- [Jsjs](https://github.com/bramblex/jsjs)
+- [estree](https://github.com/estree/estree)
+- [acorn](https://github.com/acornjs/acorn)
+- [jsjs](https://github.com/bramblex/jsjs)
+
+## Related
+
+- [sval-rhino-gs](https://github.com/Patrick-ring-motive/sval-rhino-gs) 
 
 ## License
 
