@@ -152,7 +152,7 @@ export function* BinaryExpression(node: acorn.BinaryExpression, scope: Scope) {
   if (node.left.type === 'PrivateIdentifier') {
     left = node.left.name
     right = yield* evaluate(node.right, scope)
-    right = right[PRIVATE]
+    right = right[PRIVATE] || {} // compatible with checking by "#private in object"
   } else {
     left = yield* evaluate(node.left, scope)
     right = yield* evaluate(node.right, scope)
