@@ -28,6 +28,12 @@ export default class Scope {
   private readonly context: { [key: string]: Var } = create(null)
 
   /**
+   * To memoize the object for with-statement context
+   * @private
+   */
+  private withContext: object = create(null)
+
+  /**
    * Create a simulated scope
    * @param parent the parent scope along the scope chain (default: null)
    * @param isolated true for function scope or false for block scope (default: false)
@@ -52,18 +58,6 @@ export default class Scope {
   }
 
   /**
-   * Clone current scope
-   */
-  clone(): Scope {
-    const cloneScope = new Scope(this.parent, this.isolated)
-    for (const name in this.context) {
-      const variable = this.context[name]
-      cloneScope[variable.kind](name, variable.get())
-    }
-    return cloneScope
-  }
-
-  /**
    * Find a variable along scope chain
    * @param name variable identifier name
    */
@@ -71,6 +65,9 @@ export default class Scope {
     if (this.context[name]) {
       // The variable locates in the scope
       return this.context[name]
+    } else if (name in this.withContext) {
+      // Find property in with-statement context
+      return new Prop(this.withContext, name)
     } else if (this.parent) {
       // Find variable along the scope chain
       return this.parent.find(name)
@@ -161,6 +158,17 @@ export default class Scope {
       this.context[name] = new Var('var', value)
     } else {
       throw new SyntaxError(`Identifier '${name}' has already been declared`)
+    }
+  }
+
+  /**
+   * Memoize the object for with-statement context
+   * @param value object
+   */
+  with(value: any) {
+    // Use Object.keys to check if the value can be converted to object
+    if (Object.keys(value)) {
+      this.withContext = value
     }
   }
 }

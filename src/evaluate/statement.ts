@@ -59,6 +59,12 @@ export function* ContinueStatement() {
   return CONTINUE
 }
 
+export function* WithStatement(node: acorn.WithStatement, scope: Scope) {
+  const withScope = new Scope(scope)
+  withScope.with(yield* evaluate(node.object, scope))
+  return yield* evaluate(node.body, withScope)
+}
+
 export function* IfStatement(node: acorn.IfStatement, scope: Scope) {
   if (yield* evaluate(node.test, scope)) {
     return yield* evaluate(node.consequent, scope)

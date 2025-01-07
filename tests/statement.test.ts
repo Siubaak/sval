@@ -208,7 +208,7 @@ describe('testing src/index.ts', () => {
       })()
     `)
   })
-  
+
   it('should try statement run normally', () => {  
     const interpreter = new Sval({ ecmaVer: 10 })
     interpreter.run(`
@@ -245,5 +245,33 @@ describe('testing src/index.ts', () => {
     expect(interpreter.exports.b).toBe(2)
     expect(interpreter.exports.c).toBe(3)
     expect(interpreter.exports.d).toBe(4)
+  })
+
+  it('should with statement run normally', () => {  
+    const interpreter = new Sval({ ecmaVer: 10 })
+    interpreter.run(`
+      let x = 0
+      const a = {
+        get b() { return x },
+        set b(v) { x = v }
+      }
+      with (a) {
+        exports.a = b
+        b++
+        exports.b = b
+        exports.c = x
+      }
+      try {
+        exports.d = b
+      } catch (err) {
+        if (err instanceof ReferenceError) {
+          exports.d = true
+        }
+      }
+    `)
+    expect(interpreter.exports.a).toBe(0)
+    expect(interpreter.exports.b).toBe(1)
+    expect(interpreter.exports.c).toBe(1)
+    expect(interpreter.exports.d).toBeTruthy()
   })
 })
