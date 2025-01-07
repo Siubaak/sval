@@ -133,10 +133,6 @@ moduleInterpreter.run(`
 console.log(moduleInterpreter.exports.mod) // Get 'AllKindsOfStuffs'
 ```
 
-## Note
-
-**WithStatement** and **LabeledStatement** aren't implemented and recommended. Please avoid to use them.
-
 ## Reference
 
 - [estree](https://github.com/estree/estree)
