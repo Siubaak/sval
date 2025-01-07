@@ -334,10 +334,36 @@ describe('testing src/index.ts', () => {
         default: x++
       }
       exports.d = x
+
+      e: try {
+        x++
+        break e
+        x++
+      } catch {}
+      exports.e = x
+
+      f: try {
+        throw false
+      } catch {
+        x++
+        break f
+        x++
+      }
+      exports.f = x
+
+      g: try {} finally {
+        x++
+        break g
+        x++
+      }
+      exports.g = x
     `)
     expect(interpreter.exports.a).toBe(1)
     expect(interpreter.exports.b).toBe(2)
     expect(interpreter.exports.c).toBe(3)
     expect(interpreter.exports.d).toBe(4)
+    expect(interpreter.exports.e).toBe(5)
+    expect(interpreter.exports.f).toBe(6)
+    expect(interpreter.exports.g).toBe(7)
   })
 })

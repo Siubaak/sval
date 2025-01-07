@@ -101,6 +101,9 @@ export function* LabeledStatement(node: acorn.LabeledStatement, scope: Scope) {
   if (node.body.type === 'SwitchStatement') {
     return yield* SwitchStatement(node.body, scope, { label })
   }
+  if (node.body.type === 'TryStatement') {
+    return yield* TryStatement(node.body, scope, { label })
+  }
   throw new SyntaxError(`${node.body.type} cannot be labeled`)
 }
 
@@ -124,6 +127,7 @@ export function* IfStatement(node: acorn.IfStatement, scope: Scope, options: Lab
   const result = yield* evaluate(node.test, scope)
     ? yield* evaluate(node.consequent, scope)
     : yield* evaluate(node.alternate, scope)
+
   if (result === BREAK) {
     if (result.LABEL && result.LABEL === options.label) {
       // only labeled break to current if statement doesn't bubble up the result
@@ -178,9 +182,11 @@ export function* ThrowStatement(node: acorn.ThrowStatement, scope: Scope) {
   throw yield* evaluate(node.argument, scope)
 }
 
-export function* TryStatement(node: acorn.TryStatement, scope: Scope) {
+export function* TryStatement(node: acorn.TryStatement, scope: Scope, options: LabelOptions = {}) {
+  let result;
+
   try {
-    return yield* BlockStatement(node.block, scope)
+    result = yield* BlockStatement(node.block, scope)
   } catch (err) {
     if (node.handler) {
       const subScope = new Scope(scope)
@@ -193,17 +199,25 @@ export function* TryStatement(node: acorn.TryStatement, scope: Scope) {
           yield* pattern(param, scope, { feed: err })
         }
       }
-      return yield* CatchClause(node.handler, subScope)
+      result = yield* CatchClause(node.handler, subScope)
     } else {
       throw err
     }
   } finally {
     if (node.finalizer) {
-      const result = yield* BlockStatement(node.finalizer, scope)
-      if (result === BREAK || result === CONTINUE || result === RETURN) {
-        return result
-      }
+      result = yield* BlockStatement(node.finalizer, scope)
     }
+  }
+
+  if (result === BREAK) {
+    if (result.LABEL && result.LABEL === options.label) {
+      // only labeled break to current try statement doesn't bubble up the result
+      return;
+    }
+    return result
+  }
+  if (result === CONTINUE || result === RETURN) {
+    return result
   }
 }
 
