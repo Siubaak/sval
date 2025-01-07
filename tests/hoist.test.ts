@@ -1,14 +1,14 @@
 import Sval from '../src'
 
 describe('testing src/index.ts', () => {
-  it('should hoist function normally', () => {  
+  it('should hoist function normally', () => {
     const interpreter = new Sval()
     interpreter.run(`
       a
       function a() {}
     `)
   })
-  it('should hoist function normally in block', () => {  
+  it('should hoist function normally in block', () => {
     const interpreter = new Sval()
     interpreter.run(`
       {
@@ -38,7 +38,7 @@ describe('testing src/index.ts', () => {
       expect(err).toBeInstanceOf(ReferenceError)
     }
   })
-  it('should hoist function normally in function', () => {  
+  it('should hoist function normally in function', () => {
     const interpreter = new Sval()
     interpreter.run(`
       {
@@ -50,14 +50,14 @@ describe('testing src/index.ts', () => {
       }
     `)
   })
-  it('should hoist var normally', () => {  
+  it('should hoist var normally', () => {
     const interpreter = new Sval()
     interpreter.run(`
       a
       var a = 1
     `)
   })
-  it('should hoist var normally in block', () => {  
+  it('should hoist var normally in block', () => {
     const interpreter = new Sval()
     interpreter.run(`
       a
@@ -66,7 +66,7 @@ describe('testing src/index.ts', () => {
       }
     `)
   })
-  it('should hoist var normally in while', () => {  
+  it('should hoist var normally in while', () => {
     const interpreter = new Sval()
     interpreter.run(`
       a
@@ -76,7 +76,7 @@ describe('testing src/index.ts', () => {
       }
     `)
   })
-  it('should hoist var normally in do-while', () => {  
+  it('should hoist var normally in do-while', () => {
     const interpreter = new Sval()
     interpreter.run(`
       a
@@ -86,7 +86,7 @@ describe('testing src/index.ts', () => {
       } while (--i)
     `)
   })
-  it('should hoist var normally in for', () => {  
+  it('should hoist var normally in for', () => {
     const interpreter = new Sval()
     interpreter.run(`
       a
@@ -95,7 +95,7 @@ describe('testing src/index.ts', () => {
       }
     `)
   })
-  it('should hoist var normally in for-in', () => {  
+  it('should hoist var normally in for-in', () => {
     const interpreter = new Sval()
     interpreter.run(`
       a
@@ -104,7 +104,7 @@ describe('testing src/index.ts', () => {
       }
     `)
   })
-  it('should hoist var normally in switch', () => {  
+  it('should hoist var normally in switch', () => {
     const interpreter = new Sval({ sandBox: false })
     interpreter.run(`
       a
@@ -131,7 +131,7 @@ describe('testing src/index.ts', () => {
     // delete (window as any).b
     // delete (window as any).c
   })
-  it('should hoist var normally in try-catch', () => {  
+  it('should hoist var normally in try-catch', () => {
     const interpreter = new Sval({ sandBox: false })
     interpreter.run(`
       a
@@ -152,7 +152,7 @@ describe('testing src/index.ts', () => {
     // delete (window as any).b
     delete (window as any).c
   })
-  it('should hoist var normally in patterns', () => {  
+  it('should hoist var normally in patterns', () => {
     const interpreter = new Sval()
     const code = `
       a
@@ -174,7 +174,7 @@ describe('testing src/index.ts', () => {
     interpreter.run(`!async function(){${code}}()`) // also test for generator env
     interpreter.run(code)
   })
-  it('should hoist const and let and simulate temporal dead zone', () => {  
+  it('should hoist const and let and simulate temporal dead zone', () => {
     const interpreter = new Sval()
     try {
       interpreter.run(`

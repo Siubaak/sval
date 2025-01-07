@@ -1,7 +1,7 @@
 import Sval from '../src'
 
 describe('testing src/index.ts', () => {
-  it('should for statement run normally', () => {  
+  it('should for statement run normally', () => {
     const interpreter = new Sval()
     interpreter.run(`
       for (let i = 0; i < 5; i++) {
@@ -10,7 +10,7 @@ describe('testing src/index.ts', () => {
     `)
   })
 
-  it('should break statement in switch run normally', () => {  
+  it('should break statement in switch run normally', () => {
     const interpreter = new Sval()
     interpreter.run(`
       exports.a = 0
@@ -24,7 +24,7 @@ describe('testing src/index.ts', () => {
     expect(interpreter.exports.a).toEqual(10)
   })
 
-  it('should for-in statement run normally', () => {  
+  it('should for-in statement run normally', () => {
     const interpreter = new Sval()
     interpreter.run(`
       exports.a = []
@@ -35,7 +35,7 @@ describe('testing src/index.ts', () => {
     expect(interpreter.exports.a).toEqual(['0', '1', '2'])
   })
 
-  it('should for-of statement run normally', () => {  
+  it('should for-of statement run normally', () => {
     const interpreter = new Sval()
     interpreter.run(`
       exports.a = []
@@ -46,7 +46,7 @@ describe('testing src/index.ts', () => {
     expect(interpreter.exports.a).toEqual([1, 2, 3])
   })
 
-  it('should for-await-of statement run normally', done => {  
+  it('should for-await-of statement run normally', done => {
     const interpreter = new Sval()
     interpreter.import({ getItem, expect, done })
     interpreter.run(`
@@ -70,7 +70,7 @@ describe('testing src/index.ts', () => {
     }
   })
 
-  it('should for-await-of with manual iterator run normally', done => {  
+  it('should for-await-of with manual iterator run normally', done => {
     const interpreter = new Sval()
     interpreter.import({ expect, done })
     interpreter.run(`
@@ -97,7 +97,7 @@ describe('testing src/index.ts', () => {
     `)
   })
 
-  it('should support for-await-of with sync iterables', done => {  
+  it('should support for-await-of with sync iterables', done => {
     const interpreter = new Sval()
     interpreter.import({ expect, done })
     interpreter.run(`
@@ -125,7 +125,7 @@ describe('testing src/index.ts', () => {
     `)
   })
 
-  it('should support for-await-of with sync iterator', done => {  
+  it('should support for-await-of with sync iterator', done => {
     const interpreter = new Sval()
     interpreter.import({ expect, done })
     interpreter.run(`
@@ -155,7 +155,7 @@ describe('testing src/index.ts', () => {
     `)
   })
 
-  it('should support for-await-of with async iterator', done => {  
+  it('should support for-await-of with async iterator', done => {
     const interpreter = new Sval()
     interpreter.import({ expect, done })
     interpreter.run(`
@@ -186,7 +186,7 @@ describe('testing src/index.ts', () => {
     `)
   })
 
-  it('should support for-await-of with async generator', done => {  
+  it('should support for-await-of with async generator', done => {
     const interpreter = new Sval()
     interpreter.import({ expect, done })
     interpreter.run(`
@@ -209,7 +209,7 @@ describe('testing src/index.ts', () => {
     `)
   })
 
-  it('should try statement run normally', () => {  
+  it('should try statement run normally', () => {
     const interpreter = new Sval({ ecmaVer: 10 })
     interpreter.run(`
       try {
@@ -247,7 +247,7 @@ describe('testing src/index.ts', () => {
     expect(interpreter.exports.d).toBe(4)
   })
 
-  it('should with statement run normally', () => {  
+  it('should with statement run normally', () => {
     const interpreter = new Sval({ ecmaVer: 10 })
     interpreter.run(`
       let x = 0
@@ -273,5 +273,30 @@ describe('testing src/index.ts', () => {
     expect(interpreter.exports.b).toBe(1)
     expect(interpreter.exports.c).toBe(1)
     expect(interpreter.exports.d).toBeTruthy()
+  })
+
+  it('should labeled statement run normally', () => {
+    const interpreter = new Sval({ ecmaVer: 10 })
+    interpreter.run(`
+      let x = 0
+      a: while (true) {
+        if (x) {
+          x++
+          break
+        }
+        do {
+          b: for (;;) {
+            x++
+            for (const a of [0,1,2,3,4]) {
+              break b
+            }
+          }
+          x++
+          continue a
+        } while (true)
+      }
+      exports.a = x
+    `)
+    expect(interpreter.exports.a).toBe(3)
   })
 })

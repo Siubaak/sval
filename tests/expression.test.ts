@@ -1,7 +1,7 @@
 import Sval from '../src'
 
 describe('testing src/expression.ts', () => {
-  it('should call expression run normally', () => {  
+  it('should call expression run normally', () => {
     const interpreter = new Sval()
 
     class A {
@@ -181,7 +181,7 @@ describe('testing src/expression.ts', () => {
     expect(interpreter.exports.d).toBe(2)
   })
 
-  it('should parse regular expression normally', () => {  
+  it('should parse regular expression normally', () => {
     const interpreter = new Sval()
     interpreter.import({ expect })
     interpreter.run(`
@@ -196,7 +196,7 @@ describe('testing src/expression.ts', () => {
     expect(interpreter.exports.a).toBe('hello world')
   })
 
-  it('should support object expression', () => {  
+  it('should support object expression', () => {
     const interpreter = new Sval()
     interpreter.import({ expect })
     interpreter.run(`
@@ -246,7 +246,7 @@ describe('testing src/expression.ts', () => {
     expect(interpreter.exports.b).toEqual(b)
   })
 
-  it('should support object expression with correct property descriptor', () => {  
+  it('should support object expression with correct property descriptor', () => {
     const interpreter = new Sval()
     interpreter.run(`
       const a = {
@@ -283,7 +283,7 @@ describe('testing src/expression.ts', () => {
     })
   })
 
-  it('should support logic expression', () => {  
+  it('should support logic expression', () => {
     const interpreter = new Sval()
     interpreter.import({ expect })
     interpreter.run(`
@@ -297,7 +297,7 @@ describe('testing src/expression.ts', () => {
     `)
   })
 
-  it('should support method call with super + getter', () => {  
+  it('should support method call with super + getter', () => {
     const interpreter = new Sval()
     interpreter.run(`
       class X {
@@ -318,7 +318,7 @@ describe('testing src/expression.ts', () => {
     expect(interpreter.exports.result).toEqual(1)
   })
 
-  it('should support method call with computed name', () => {  
+  it('should support method call with computed name', () => {
     const interpreter = new Sval()
     interpreter.run(`
       var x = {
@@ -333,7 +333,7 @@ describe('testing src/expression.ts', () => {
     expect(interpreter.exports.result).toEqual(1)
   })
 
-  it('should support method call with computed name', () => {  
+  it('should support method call with computed name', () => {
     const interpreter = new Sval()
     interpreter.run(`
       exports.result = 1+!!2
@@ -342,7 +342,7 @@ describe('testing src/expression.ts', () => {
     expect(interpreter.exports.result).toEqual(2)
   })
 
-  it('should support all kinds of delete actions', () => {  
+  it('should support all kinds of delete actions', () => {
     const interpreter = new Sval()
     interpreter.run(`
       var x = {}
@@ -381,7 +381,7 @@ describe('testing src/expression.ts', () => {
   })
 
   // https://github.com/Siubaak/sval/issues/83
-  it('should support optional chaining', () => {  
+  it('should support optional chaining', () => {
     const interpreter = new Sval()
     interpreter.run(`
       var x = { a: { b: 1 }, c: null, e: () => 2 }
@@ -400,7 +400,7 @@ describe('testing src/expression.ts', () => {
     expect(interpreter.exports.funcnone).toBeUndefined()
   })
 
-  it('should support dynamic import', done => {  
+  it('should support dynamic import', done => {
     const interpreter = new Sval({ sourceType: 'module' })
     interpreter.import('done', { default: done })
     interpreter.import('expect', { default: expect })

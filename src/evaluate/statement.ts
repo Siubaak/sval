@@ -9,6 +9,10 @@ export function* ExpressionStatement(node: acorn.ExpressionStatement, scope: Sco
   yield* evaluate(node.expression, scope)
 }
 
+export interface LabelOptions {
+  label?: string
+}
+
 export interface BlockOptions {
   invasived?: boolean
   hoisted?: boolean
@@ -51,11 +55,13 @@ export function* ReturnStatement(node: acorn.ReturnStatement, scope: Scope) {
   return RETURN
 }
 
-export function* BreakStatement() {
+export function* BreakStatement(node: acorn.BreakStatement) {
+  BREAK.LABEL = node.label?.name
   return BREAK
 }
 
-export function* ContinueStatement() {
+export function* ContinueStatement(node: acorn.ContinueStatement) {
+  CONTINUE.LABEL = node.label?.name
   return CONTINUE
 }
 
@@ -63,6 +69,26 @@ export function* WithStatement(node: acorn.WithStatement, scope: Scope) {
   const withScope = new Scope(scope)
   withScope.with(yield* evaluate(node.object, scope))
   return yield* evaluate(node.body, withScope)
+}
+
+export function* LabeledStatement(node: acorn.LabeledStatement, scope: Scope) {
+  const label = node.label.name
+  if (node.body.type === 'WhileStatement') {
+    return yield* WhileStatement(node.body, scope, { label })
+  }
+  if (node.body.type === 'DoWhileStatement') {
+    return yield* DoWhileStatement(node.body, scope, { label })
+  }
+  if (node.body.type === 'ForStatement') {
+    return yield* ForStatement(node.body, scope, { label })
+  }
+  if (node.body.type === 'ForInStatement') {
+    return yield* ForInStatement(node.body, scope, { label })
+  }
+  if (node.body.type === 'ForOfStatement') {
+    return yield* ForOfStatement(node.body, scope, { label })
+  }
+  throw new SyntaxError(`${node.body.type} cannot be labelled`)
 }
 
 export function* IfStatement(node: acorn.IfStatement, scope: Scope) {
@@ -145,33 +171,45 @@ export function* CatchClause(node: acorn.CatchClause, scope: Scope) {
   return yield* BlockStatement(node.body, scope, { invasived: true })
 }
 
-export function* WhileStatement(node: acorn.WhileStatement, scope: Scope) {
+export function* WhileStatement(node: acorn.WhileStatement, scope: Scope, options: LabelOptions = {}) {
   while (yield* evaluate(node.test, scope)) {
     const result = yield* evaluate(node.body, scope)
     if (result === BREAK) {
-      break
+      if (result.LABEL === options.label) {
+        break
+      }
+      return result
     } else if (result === CONTINUE) {
-      continue
+      if (result.LABEL === options.label) {
+        continue
+      }
+      return result
     } else if (result === RETURN) {
       return result
     }
   }
 }
 
-export function* DoWhileStatement(node: acorn.DoWhileStatement, scope: Scope) {
+export function* DoWhileStatement(node: acorn.DoWhileStatement, scope: Scope, options: LabelOptions = {}) {
   do {
     const result = yield* evaluate(node.body, scope)
     if (result === BREAK) {
-      break
+      if (result.LABEL === options.label) {
+        break
+      }
+      return result
     } else if (result === CONTINUE) {
-      continue
+      if (result.LABEL === options.label) {
+        continue
+      }
+      return result
     } else if (result === RETURN) {
       return result
     }
   } while (yield* evaluate(node.test, scope))
 }
 
-export function* ForStatement(node: acorn.ForStatement, scope: Scope) {
+export function* ForStatement(node: acorn.ForStatement, scope: Scope, options: LabelOptions = {}) {
   const forScope = new Scope(scope)
   
   for (
@@ -188,29 +226,41 @@ export function* ForStatement(node: acorn.ForStatement, scope: Scope) {
     }
 
     if (result === BREAK) {
-      break
+      if (result.LABEL === options.label) {
+        break
+      }
+      return result
     } else if (result === CONTINUE) {
-      continue
+      if (result.LABEL === options.label) {
+        continue
+      }
+      return result
     } else if (result === RETURN) {
       return result
     }
   }
 }
 
-export function* ForInStatement(node: acorn.ForInStatement, scope: Scope) {
+export function* ForInStatement(node: acorn.ForInStatement, scope: Scope, options: LabelOptions = {}) {
   for (const value in yield* evaluate(node.right, scope)) {
     const result = yield* ForXHandler(node, scope, { value })
     if (result === BREAK) {
-      break
+      if (result.LABEL === options.label) {
+        break
+      }
+      return result
     } else if (result === CONTINUE) {
-      continue
+      if (result.LABEL === options.label) {
+        continue
+      }
+      return result
     } else if (result === RETURN) {
       return result
     }
   }
 }
 
-export function* ForOfStatement(node: acorn.ForOfStatement, scope: Scope): any {
+export function* ForOfStatement(node: acorn.ForOfStatement, scope: Scope, options: LabelOptions = {}): any {
   const right = yield* evaluate(node.right, scope)
   /*<remove>*/
   if (node.await) {
@@ -223,9 +273,15 @@ export function* ForOfStatement(node: acorn.ForOfStatement, scope: Scope): any {
     ) {
       const result = yield* ForXHandler(node, scope, { value: ret.value })
       if (result === BREAK) {
-        break
+        if (result.LABEL === options.label) {
+          break
+        }
+        return result
       } else if (result === CONTINUE) {
-        continue
+        if (result.LABEL === options.label) {
+          continue
+        }
+        return result
       } else if (result === RETURN) {
         return result
       }
@@ -235,9 +291,15 @@ export function* ForOfStatement(node: acorn.ForOfStatement, scope: Scope): any {
     for (const value of right) {
       const result = yield* ForXHandler(node, scope, { value })
       if (result === BREAK) {
-        break
+        if (result.LABEL === options.label) {
+          break
+        }
+        return result
       } else if (result === CONTINUE) {
-        continue
+        if (result.LABEL === options.label) {
+          continue
+        }
+        return result
       } else if (result === RETURN) {
         return result
       }

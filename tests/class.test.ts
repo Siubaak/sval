@@ -492,7 +492,7 @@ describe('testing src/index.ts', () => {
     expect(instance.getA()).resolves.toBe(1)
   })
 
-  it('should support property accessing between parent and child class', () => {  
+  it('should support property accessing between parent and child class', () => {
     const interpreter = new Sval()
     interpreter.run(`
       class X {

@@ -1,7 +1,7 @@
 import Sval from '../src'
 
 describe('testing src/index.ts', () => {
-  it('should parse object pattern normally', () => {  
+  it('should parse object pattern normally', () => {
     const interpreter = new Sval()
     interpreter.run(`
       const tmp = 'd'
@@ -18,7 +18,7 @@ describe('testing src/index.ts', () => {
     expect(interpreter.exports.d).toBe(4)
     expect(interpreter.exports.e).toBe(3)
   })
-  it('should parse assign pattern normally', () => {  
+  it('should parse assign pattern normally', () => {
     const interpreter = new Sval()
     interpreter.run(`
       const [a, b] = [1, 2]
@@ -28,7 +28,7 @@ describe('testing src/index.ts', () => {
     expect(interpreter.exports.a).toBe(1)
     expect(interpreter.exports.b).toBe(2)
   })
-  it('should parse array pattern normally', () => {  
+  it('should parse array pattern normally', () => {
     const interpreter = new Sval()
     interpreter.run(`
       let a = 1, b = 2; // ';' should be kept
@@ -39,7 +39,7 @@ describe('testing src/index.ts', () => {
     expect(interpreter.exports.a).toBe(2)
     expect(interpreter.exports.b).toBe(1)
   })
-  it('should parse rest element normally', () => {  
+  it('should parse rest element normally', () => {
     const interpreter = new Sval()
     interpreter.run(`
       let a; // ';' should be kept
@@ -82,7 +82,7 @@ describe('testing src/index.ts', () => {
     expect(interpreter.exports.y).toEqual(6)
     expect(interpreter.exports.z).toEqual(8)
   })
-  it('should parse rest element of function params normally', () => {  
+  it('should parse rest element of function params normally', () => {
     const interpreter = new Sval()
     interpreter.run(`
       a(1, 2)
