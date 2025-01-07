@@ -275,7 +275,7 @@ describe('testing src/index.ts', () => {
     expect(interpreter.exports.d).toBeTruthy()
   })
 
-  it('should labeled statement run normally', () => {
+  it('should labeled loop statement and continue/break run normally', () => {
     const interpreter = new Sval({ ecmaVer: 10 })
     interpreter.run(`
       let x = 0
@@ -298,5 +298,19 @@ describe('testing src/index.ts', () => {
       exports.a = x
     `)
     expect(interpreter.exports.a).toBe(3)
+  })
+
+  it('should labeled statement and break run normally', () => {
+    const interpreter = new Sval({ ecmaVer: 10 })
+    interpreter.run(`
+      let x = 0
+      a: {
+        x++
+        break a
+        x++
+      }
+      exports.a = x
+    `)
+    expect(interpreter.exports.a).toBe(1)
   })
 })

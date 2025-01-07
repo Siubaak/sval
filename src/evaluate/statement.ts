@@ -21,7 +21,7 @@ export interface BlockOptions {
 export function* BlockStatement(
   block: acorn.BlockStatement | acorn.StaticBlock,
   scope: Scope,
-  options: BlockOptions = {},
+  options: BlockOptions & LabelOptions = {},
 ) {
   const {
     invasived = false,
@@ -36,7 +36,13 @@ export function* BlockStatement(
 
   for (let i = 0; i < block.body.length; i++) {
     const result = yield* evaluate(block.body[i], subScope)
-    if (result === BREAK || result === CONTINUE || result === RETURN) {
+    if (result === BREAK) {
+      if (options.label && result.LABEL === options.label) {
+        break
+      }
+      return result
+    }
+    if (result === CONTINUE || result === RETURN) {
       return result
     }
   }
@@ -88,7 +94,10 @@ export function* LabeledStatement(node: acorn.LabeledStatement, scope: Scope) {
   if (node.body.type === 'ForOfStatement') {
     return yield* ForOfStatement(node.body, scope, { label })
   }
-  throw new SyntaxError(`${node.body.type} cannot be labelled`)
+  if (node.body.type === 'BlockStatement') {
+    return yield* BlockStatement(node.body, scope, { label })
+  }
+  throw new SyntaxError(`${node.body.type} cannot be labeled`)
 }
 
 export function* IfStatement(node: acorn.IfStatement, scope: Scope) {
