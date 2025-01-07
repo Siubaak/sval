@@ -465,7 +465,7 @@
   var IMPORT = createSymbol('import');
   var EXPORTS = createSymbol('exports');
 
-  var version = "0.5.3";
+  var version = "0.5.5";
 
   var Var = (function () {
       function Var(kind, value) {
@@ -1563,9 +1563,13 @@
   }
   function IfStatement$1(node, scope, options) {
       if (options === void 0) { options = {}; }
-      var result = evaluate$1(node.test, scope)
-          ? evaluate$1(node.consequent, scope)
-          : evaluate$1(node.alternate, scope);
+      var result;
+      if (evaluate$1(node.test, scope)) {
+          result = evaluate$1(node.consequent, scope);
+      }
+      else {
+          result = evaluate$1(node.alternate, scope);
+      }
       if (result === BREAK) {
           if (result.LABEL && result.LABEL === options.label) {
               return;
@@ -3432,23 +3436,22 @@
       });
   }
   function IfStatement(node, scope, options) {
-      var result, _a;
+      var result;
       if (options === void 0) { options = {}; }
-      return __generator(this, function (_b) {
-          switch (_b.label) {
-              case 0:
-                  if (!evaluate(node.test, scope)) return [3, 2];
-                  return [5, __values(evaluate(node.consequent, scope))];
+      return __generator(this, function (_a) {
+          switch (_a.label) {
+              case 0: return [5, __values(evaluate(node.test, scope))];
               case 1:
-                  _a = _b.sent();
-                  return [3, 4];
-              case 2: return [5, __values(evaluate(node.alternate, scope))];
-              case 3:
-                  _a = _b.sent();
-                  _b.label = 4;
-              case 4: return [5, __values(_a)];
+                  if (!_a.sent()) return [3, 3];
+                  return [5, __values(evaluate(node.consequent, scope))];
+              case 2:
+                  result = _a.sent();
+                  return [3, 5];
+              case 3: return [5, __values(evaluate(node.alternate, scope))];
+              case 4:
+                  result = _a.sent();
+                  _a.label = 5;
               case 5:
-                  result = _b.sent();
                   if (result === BREAK) {
                       if (result.LABEL && result.LABEL === options.label) {
                           return [2];

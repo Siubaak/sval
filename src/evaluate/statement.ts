@@ -114,7 +114,7 @@ export function* WithStatement(node: acorn.WithStatement, scope: Scope, options:
   if (result === BREAK) {
     if (result.LABEL && result.LABEL === options.label) {
       // only labeled break to current with statement doesn't bubble up the result
-      return;
+      return
     }
     return result
   }
@@ -124,14 +124,18 @@ export function* WithStatement(node: acorn.WithStatement, scope: Scope, options:
 }
 
 export function* IfStatement(node: acorn.IfStatement, scope: Scope, options: LabelOptions = {}) {
-  const result = yield* evaluate(node.test, scope)
-    ? yield* evaluate(node.consequent, scope)
-    : yield* evaluate(node.alternate, scope)
+  let result
+
+  if (yield* evaluate(node.test, scope)) {
+    result = yield* evaluate(node.consequent, scope)
+  } else {
+    result = yield* evaluate(node.alternate, scope)
+  }
 
   if (result === BREAK) {
     if (result.LABEL && result.LABEL === options.label) {
       // only labeled break to current if statement doesn't bubble up the result
-      return;
+      return
     }
     return result
   }
@@ -183,7 +187,7 @@ export function* ThrowStatement(node: acorn.ThrowStatement, scope: Scope) {
 }
 
 export function* TryStatement(node: acorn.TryStatement, scope: Scope, options: LabelOptions = {}) {
-  let result;
+  let result
 
   try {
     result = yield* BlockStatement(node.block, scope)
@@ -212,7 +216,7 @@ export function* TryStatement(node: acorn.TryStatement, scope: Scope, options: L
   if (result === BREAK) {
     if (result.LABEL && result.LABEL === options.label) {
       // only labeled break to current try statement doesn't bubble up the result
-      return;
+      return
     }
     return result
   }

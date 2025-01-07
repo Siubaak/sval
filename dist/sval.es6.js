@@ -464,7 +464,7 @@
   const IMPORT = createSymbol('import');
   const EXPORTS = createSymbol('exports');
 
-  var version = "0.5.4";
+  var version = "0.5.5";
 
   class Var {
       constructor(kind, value) {
@@ -1470,9 +1470,13 @@
       }
   }
   function IfStatement$1(node, scope, options = {}) {
-      const result = evaluate$1(node.test, scope)
-          ? evaluate$1(node.consequent, scope)
-          : evaluate$1(node.alternate, scope);
+      let result;
+      if (evaluate$1(node.test, scope)) {
+          result = evaluate$1(node.consequent, scope);
+      }
+      else {
+          result = evaluate$1(node.alternate, scope);
+      }
       if (result === BREAK) {
           if (result.LABEL && result.LABEL === options.label) {
               return;
@@ -2852,9 +2856,13 @@
       }
   }
   function* IfStatement(node, scope, options = {}) {
-      const result = yield* evaluate(node.test, scope)
-          ? yield* evaluate(node.consequent, scope)
-          : yield* evaluate(node.alternate, scope);
+      let result;
+      if (yield* evaluate(node.test, scope)) {
+          result = yield* evaluate(node.consequent, scope);
+      }
+      else {
+          result = yield* evaluate(node.alternate, scope);
+      }
       if (result === BREAK) {
           if (result.LABEL && result.LABEL === options.label) {
               return;
