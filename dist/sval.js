@@ -13,6 +13,8 @@
     get ReturnStatement () { return ReturnStatement$1; },
     get BreakStatement () { return BreakStatement$1; },
     get ContinueStatement () { return ContinueStatement$1; },
+    get LabeledStatement () { return LabeledStatement$1; },
+    get WithStatement () { return WithStatement$1; },
     get IfStatement () { return IfStatement$1; },
     get SwitchStatement () { return SwitchStatement$1; },
     get SwitchCase () { return SwitchCase$1; },
@@ -49,6 +51,8 @@
     get ReturnStatement () { return ReturnStatement; },
     get BreakStatement () { return BreakStatement; },
     get ContinueStatement () { return ContinueStatement; },
+    get LabeledStatement () { return LabeledStatement; },
+    get WithStatement () { return WithStatement; },
     get IfStatement () { return IfStatement; },
     get SwitchStatement () { return SwitchStatement; },
     get SwitchCase () { return SwitchCase; },
@@ -395,6 +399,10 @@
               globalObj.crypto = crypto;
           }
           catch (err) { }
+          try {
+              globalObj.URL = URL;
+          }
+          catch (err) { }
           names = getOwnNames(globalObj);
       }
   }
@@ -444,8 +452,8 @@
 
   var AWAIT = { RES: undefined };
   var RETURN = { RES: undefined };
-  var CONTINUE = createSymbol('continue');
-  var BREAK = createSymbol('break');
+  var CONTINUE = { LABEL: undefined };
+  var BREAK = { LABEL: undefined };
   var SUPER = createSymbol('super');
   var SUPERCALL = createSymbol('supercall');
   var NOCTOR = createSymbol('noctor');
@@ -500,6 +508,7 @@
           if (parent === void 0) { parent = null; }
           if (isolated === void 0) { isolated = false; }
           this.context = create(null);
+          this.withContext = create(null);
           this.parent = parent;
           this.isolated = isolated;
       }
@@ -510,17 +519,12 @@
           }
           return scope;
       };
-      Scope.prototype.clone = function () {
-          var cloneScope = new Scope(this.parent, this.isolated);
-          for (var name_1 in this.context) {
-              var variable = this.context[name_1];
-              cloneScope[variable.kind](name_1, variable.get());
-          }
-          return cloneScope;
-      };
       Scope.prototype.find = function (name) {
           if (this.context[name]) {
               return this.context[name];
+          }
+          else if (name in this.withContext) {
+              return new Prop(this.withContext, name);
           }
           else if (this.parent) {
               return this.parent.find(name);
@@ -586,6 +590,11 @@
           }
           else {
               throw new SyntaxError("Identifier '" + name + "' has already been declared");
+          }
+      };
+      Scope.prototype.with = function (value) {
+          if (Object.keys(value)) {
+              this.withContext = value;
           }
       };
       return Scope;
@@ -1473,7 +1482,13 @@
       }
       for (var i = 0; i < block.body.length; i++) {
           var result = evaluate$1(block.body[i], subScope);
-          if (result === BREAK || result === CONTINUE || result === RETURN) {
+          if (result === BREAK) {
+              if (result.LABEL && result.LABEL === options.label) {
+                  break;
+              }
+              return result;
+          }
+          if (result === CONTINUE || result === RETURN) {
               return result;
           }
       }
@@ -1487,21 +1502,82 @@
       RETURN.RES = node.argument ? (evaluate$1(node.argument, scope)) : undefined;
       return RETURN;
   }
-  function BreakStatement$1() {
+  function BreakStatement$1(node) {
+      var _a;
+      BREAK.LABEL = (_a = node.label) === null || _a === void 0 ? void 0 : _a.name;
       return BREAK;
   }
-  function ContinueStatement$1() {
+  function ContinueStatement$1(node) {
+      var _a;
+      CONTINUE.LABEL = (_a = node.label) === null || _a === void 0 ? void 0 : _a.name;
       return CONTINUE;
   }
-  function IfStatement$1(node, scope) {
-      if (evaluate$1(node.test, scope)) {
-          return evaluate$1(node.consequent, scope);
+  function LabeledStatement$1(node, scope) {
+      var label = node.label.name;
+      if (node.body.type === 'WhileStatement') {
+          return WhileStatement$1(node.body, scope, { label: label });
       }
-      else {
-          return evaluate$1(node.alternate, scope);
+      if (node.body.type === 'DoWhileStatement') {
+          return DoWhileStatement$1(node.body, scope, { label: label });
+      }
+      if (node.body.type === 'ForStatement') {
+          return ForStatement$1(node.body, scope, { label: label });
+      }
+      if (node.body.type === 'ForInStatement') {
+          return ForInStatement$1(node.body, scope, { label: label });
+      }
+      if (node.body.type === 'ForOfStatement') {
+          return ForOfStatement$1(node.body, scope, { label: label });
+      }
+      if (node.body.type === 'BlockStatement') {
+          return BlockStatement$1(node.body, scope, { label: label });
+      }
+      if (node.body.type === 'WithStatement') {
+          return WithStatement$1(node.body, scope, { label: label });
+      }
+      if (node.body.type === 'IfStatement') {
+          return IfStatement$1(node.body, scope, { label: label });
+      }
+      if (node.body.type === 'SwitchStatement') {
+          return SwitchStatement$1(node.body, scope, { label: label });
+      }
+      if (node.body.type === 'TryStatement') {
+          return TryStatement$1(node.body, scope, { label: label });
+      }
+      throw new SyntaxError(node.body.type + " cannot be labeled");
+  }
+  function WithStatement$1(node, scope, options) {
+      if (options === void 0) { options = {}; }
+      var withScope = new Scope(scope);
+      withScope.with(evaluate$1(node.object, scope));
+      var result = evaluate$1(node.body, withScope);
+      if (result === BREAK) {
+          if (result.LABEL && result.LABEL === options.label) {
+              return;
+          }
+          return result;
+      }
+      if (result === CONTINUE || result === RETURN) {
+          return result;
       }
   }
-  function SwitchStatement$1(node, scope) {
+  function IfStatement$1(node, scope, options) {
+      if (options === void 0) { options = {}; }
+      var result = evaluate$1(node.test, scope)
+          ? evaluate$1(node.consequent, scope)
+          : evaluate$1(node.alternate, scope);
+      if (result === BREAK) {
+          if (result.LABEL && result.LABEL === options.label) {
+              return;
+          }
+          return result;
+      }
+      if (result === CONTINUE || result === RETURN) {
+          return result;
+      }
+  }
+  function SwitchStatement$1(node, scope, options) {
+      if (options === void 0) { options = {}; }
       var discriminant = evaluate$1(node.discriminant, scope);
       var matched = false;
       for (var i = 0; i < node.cases.length; i++) {
@@ -1514,7 +1590,10 @@
           if (matched) {
               var result = SwitchCase$1(eachCase, scope);
               if (result === BREAK) {
-                  break;
+                  if (result.LABEL === options.label) {
+                      break;
+                  }
+                  return result;
               }
               if (result === CONTINUE || result === RETURN) {
                   return result;
@@ -1533,9 +1612,11 @@
   function ThrowStatement$1(node, scope) {
       throw evaluate$1(node.argument, scope);
   }
-  function TryStatement$1(node, scope) {
+  function TryStatement$1(node, scope, options) {
+      if (options === void 0) { options = {}; }
+      var result;
       try {
-          return BlockStatement$1(node.block, scope);
+          result = BlockStatement$1(node.block, scope);
       }
       catch (err) {
           if (node.handler) {
@@ -1550,7 +1631,7 @@
                       pattern(param, scope, { feed: err });
                   }
               }
-              return CatchClause$1(node.handler, subScope);
+              result = CatchClause$1(node.handler, subScope);
           }
           else {
               throw err;
@@ -1558,45 +1639,66 @@
       }
       finally {
           if (node.finalizer) {
-              var result = BlockStatement$1(node.finalizer, scope);
-              if (result === BREAK || result === CONTINUE || result === RETURN) {
-                  return result;
-              }
+              result = BlockStatement$1(node.finalizer, scope);
           }
+      }
+      if (result === BREAK) {
+          if (result.LABEL && result.LABEL === options.label) {
+              return;
+          }
+          return result;
+      }
+      if (result === CONTINUE || result === RETURN) {
+          return result;
       }
   }
   function CatchClause$1(node, scope) {
       return BlockStatement$1(node.body, scope, { invasived: true });
   }
-  function WhileStatement$1(node, scope) {
+  function WhileStatement$1(node, scope, options) {
+      if (options === void 0) { options = {}; }
       while (evaluate$1(node.test, scope)) {
           var result = evaluate$1(node.body, scope);
           if (result === BREAK) {
-              break;
+              if (result.LABEL === options.label) {
+                  break;
+              }
+              return result;
           }
           else if (result === CONTINUE) {
-              continue;
+              if (result.LABEL === options.label) {
+                  continue;
+              }
+              return result;
           }
           else if (result === RETURN) {
               return result;
           }
       }
   }
-  function DoWhileStatement$1(node, scope) {
+  function DoWhileStatement$1(node, scope, options) {
+      if (options === void 0) { options = {}; }
       do {
           var result = evaluate$1(node.body, scope);
           if (result === BREAK) {
-              break;
+              if (result.LABEL === options.label) {
+                  break;
+              }
+              return result;
           }
           else if (result === CONTINUE) {
-              continue;
+              if (result.LABEL === options.label) {
+                  continue;
+              }
+              return result;
           }
           else if (result === RETURN) {
               return result;
           }
       } while (evaluate$1(node.test, scope));
   }
-  function ForStatement$1(node, scope) {
+  function ForStatement$1(node, scope, options) {
+      if (options === void 0) { options = {}; }
       var forScope = new Scope(scope);
       for (evaluate$1(node.init, forScope); node.test ? (evaluate$1(node.test, forScope)) : true; evaluate$1(node.update, forScope)) {
           var subScope = new Scope(forScope);
@@ -1608,42 +1710,62 @@
               result = evaluate$1(node.body, subScope);
           }
           if (result === BREAK) {
-              break;
+              if (result.LABEL === options.label) {
+                  break;
+              }
+              return result;
           }
           else if (result === CONTINUE) {
-              continue;
+              if (result.LABEL === options.label) {
+                  continue;
+              }
+              return result;
           }
           else if (result === RETURN) {
               return result;
           }
       }
   }
-  function ForInStatement$1(node, scope) {
+  function ForInStatement$1(node, scope, options) {
+      if (options === void 0) { options = {}; }
       for (var value in evaluate$1(node.right, scope)) {
           var result = ForXHandler(node, scope, { value: value });
           if (result === BREAK) {
-              break;
+              if (result.LABEL === options.label) {
+                  break;
+              }
+              return result;
           }
           else if (result === CONTINUE) {
-              continue;
+              if (result.LABEL === options.label) {
+                  continue;
+              }
+              return result;
           }
           else if (result === RETURN) {
               return result;
           }
       }
   }
-  function ForOfStatement$1(node, scope) {
+  function ForOfStatement$1(node, scope, options) {
       var e_1, _a;
+      if (options === void 0) { options = {}; }
       var right = evaluate$1(node.right, scope);
       try {
           for (var right_1 = __values(right), right_1_1 = right_1.next(); !right_1_1.done; right_1_1 = right_1.next()) {
               var value = right_1_1.value;
               var result = ForXHandler(node, scope, { value: value });
               if (result === BREAK) {
-                  break;
+                  if (result.LABEL === options.label) {
+                      break;
+                  }
+                  return result;
               }
               else if (result === CONTINUE) {
-                  continue;
+                  if (result.LABEL === options.label) {
+                      continue;
+                  }
+                  return result;
               }
               else if (result === RETURN) {
                   return result;
@@ -3171,7 +3293,13 @@
                   return [5, __values(evaluate(block.body[i], subScope))];
               case 4:
                   result = _c.sent();
-                  if (result === BREAK || result === CONTINUE || result === RETURN) {
+                  if (result === BREAK) {
+                      if (result.LABEL && result.LABEL === options.label) {
+                          return [3, 6];
+                      }
+                      return [2, result];
+                  }
+                  if (result === CONTINUE || result === RETURN) {
                       return [2, result];
                   }
                   _c.label = 5;
@@ -3213,31 +3341,130 @@
           }
       });
   }
-  function BreakStatement() {
-      return __generator(this, function (_a) {
+  function BreakStatement(node) {
+      var _a;
+      return __generator(this, function (_b) {
+          BREAK.LABEL = (_a = node.label) === null || _a === void 0 ? void 0 : _a.name;
           return [2, BREAK];
       });
   }
-  function ContinueStatement() {
-      return __generator(this, function (_a) {
+  function ContinueStatement(node) {
+      var _a;
+      return __generator(this, function (_b) {
+          CONTINUE.LABEL = (_a = node.label) === null || _a === void 0 ? void 0 : _a.name;
           return [2, CONTINUE];
       });
   }
-  function IfStatement(node, scope) {
+  function LabeledStatement(node, scope) {
+      var label;
       return __generator(this, function (_a) {
           switch (_a.label) {
-              case 0: return [5, __values(evaluate(node.test, scope))];
-              case 1:
-                  if (!_a.sent()) return [3, 3];
-                  return [5, __values(evaluate(node.consequent, scope))];
-              case 2: return [2, _a.sent()];
-              case 3: return [5, __values(evaluate(node.alternate, scope))];
-              case 4: return [2, _a.sent()];
+              case 0:
+                  label = node.label.name;
+                  if (!(node.body.type === 'WhileStatement')) return [3, 2];
+                  return [5, __values(WhileStatement(node.body, scope, { label: label }))];
+              case 1: return [2, _a.sent()];
+              case 2:
+                  if (!(node.body.type === 'DoWhileStatement')) return [3, 4];
+                  return [5, __values(DoWhileStatement(node.body, scope, { label: label }))];
+              case 3: return [2, _a.sent()];
+              case 4:
+                  if (!(node.body.type === 'ForStatement')) return [3, 6];
+                  return [5, __values(ForStatement(node.body, scope, { label: label }))];
+              case 5: return [2, _a.sent()];
+              case 6:
+                  if (!(node.body.type === 'ForInStatement')) return [3, 8];
+                  return [5, __values(ForInStatement(node.body, scope, { label: label }))];
+              case 7: return [2, _a.sent()];
+              case 8:
+                  if (!(node.body.type === 'ForOfStatement')) return [3, 10];
+                  return [5, __values(ForOfStatement(node.body, scope, { label: label }))];
+              case 9: return [2, _a.sent()];
+              case 10:
+                  if (!(node.body.type === 'BlockStatement')) return [3, 12];
+                  return [5, __values(BlockStatement(node.body, scope, { label: label }))];
+              case 11: return [2, _a.sent()];
+              case 12:
+                  if (!(node.body.type === 'WithStatement')) return [3, 14];
+                  return [5, __values(WithStatement(node.body, scope, { label: label }))];
+              case 13: return [2, _a.sent()];
+              case 14:
+                  if (!(node.body.type === 'IfStatement')) return [3, 16];
+                  return [5, __values(IfStatement(node.body, scope, { label: label }))];
+              case 15: return [2, _a.sent()];
+              case 16:
+                  if (!(node.body.type === 'SwitchStatement')) return [3, 18];
+                  return [5, __values(SwitchStatement(node.body, scope, { label: label }))];
+              case 17: return [2, _a.sent()];
+              case 18:
+                  if (!(node.body.type === 'TryStatement')) return [3, 20];
+                  return [5, __values(TryStatement(node.body, scope, { label: label }))];
+              case 19: return [2, _a.sent()];
+              case 20: throw new SyntaxError(node.body.type + " cannot be labeled");
           }
       });
   }
-  function SwitchStatement(node, scope) {
+  function WithStatement(node, scope, options) {
+      var withScope, _a, _b, result;
+      if (options === void 0) { options = {}; }
+      return __generator(this, function (_c) {
+          switch (_c.label) {
+              case 0:
+                  withScope = new Scope(scope);
+                  _b = (_a = withScope).with;
+                  return [5, __values(evaluate(node.object, scope))];
+              case 1:
+                  _b.apply(_a, [_c.sent()]);
+                  return [5, __values(evaluate(node.body, withScope))];
+              case 2:
+                  result = _c.sent();
+                  if (result === BREAK) {
+                      if (result.LABEL && result.LABEL === options.label) {
+                          return [2];
+                      }
+                      return [2, result];
+                  }
+                  if (result === CONTINUE || result === RETURN) {
+                      return [2, result];
+                  }
+                  return [2];
+          }
+      });
+  }
+  function IfStatement(node, scope, options) {
+      var result, _a;
+      if (options === void 0) { options = {}; }
+      return __generator(this, function (_b) {
+          switch (_b.label) {
+              case 0:
+                  if (!evaluate(node.test, scope)) return [3, 2];
+                  return [5, __values(evaluate(node.consequent, scope))];
+              case 1:
+                  _a = _b.sent();
+                  return [3, 4];
+              case 2: return [5, __values(evaluate(node.alternate, scope))];
+              case 3:
+                  _a = _b.sent();
+                  _b.label = 4;
+              case 4: return [5, __values(_a)];
+              case 5:
+                  result = _b.sent();
+                  if (result === BREAK) {
+                      if (result.LABEL && result.LABEL === options.label) {
+                          return [2];
+                      }
+                      return [2, result];
+                  }
+                  if (result === CONTINUE || result === RETURN) {
+                      return [2, result];
+                  }
+                  return [2];
+          }
+      });
+  }
+  function SwitchStatement(node, scope, options) {
       var discriminant, matched, i, eachCase, _a, _b, result;
+      if (options === void 0) { options = {}; }
       return __generator(this, function (_c) {
           switch (_c.label) {
               case 0: return [5, __values(evaluate(node.discriminant, scope))];
@@ -3269,7 +3496,10 @@
               case 6:
                   result = _c.sent();
                   if (result === BREAK) {
-                      return [3, 8];
+                      if (result.LABEL === options.label) {
+                          return [3, 8];
+                      }
+                      return [2, result];
                   }
                   if (result === CONTINUE || result === RETURN) {
                       return [2, result];
@@ -3313,14 +3543,17 @@
           }
       });
   }
-  function TryStatement(node, scope) {
-      var err_1, subScope, param, name_1, result;
+  function TryStatement(node, scope, options) {
+      var result, err_1, subScope, param, name_1;
+      if (options === void 0) { options = {}; }
       return __generator(this, function (_a) {
           switch (_a.label) {
               case 0:
                   _a.trys.push([0, 2, 9, 12]);
                   return [5, __values(BlockStatement(node.block, scope))];
-              case 1: return [2, _a.sent()];
+              case 1:
+                  result = _a.sent();
+                  return [3, 12];
               case 2:
                   err_1 = _a.sent();
                   if (!node.handler) return [3, 7];
@@ -3336,7 +3569,9 @@
                   _a.sent();
                   _a.label = 5;
               case 5: return [5, __values(CatchClause(node.handler, subScope))];
-              case 6: return [2, _a.sent()];
+              case 6:
+                  result = _a.sent();
+                  return [3, 8];
               case 7: throw err_1;
               case 8: return [3, 12];
               case 9:
@@ -3344,12 +3579,19 @@
                   return [5, __values(BlockStatement(node.finalizer, scope))];
               case 10:
                   result = _a.sent();
-                  if (result === BREAK || result === CONTINUE || result === RETURN) {
-                      return [2, result];
-                  }
                   _a.label = 11;
               case 11: return [7];
-              case 12: return [2];
+              case 12:
+                  if (result === BREAK) {
+                      if (result.LABEL && result.LABEL === options.label) {
+                          return [2];
+                      }
+                      return [2, result];
+                  }
+                  if (result === CONTINUE || result === RETURN) {
+                      return [2, result];
+                  }
+                  return [2];
           }
       });
   }
@@ -3361,8 +3603,9 @@
           }
       });
   }
-  function WhileStatement(node, scope) {
+  function WhileStatement(node, scope, options) {
       var result;
+      if (options === void 0) { options = {}; }
       return __generator(this, function (_a) {
           switch (_a.label) {
               case 0: return [5, __values(evaluate(node.test, scope))];
@@ -3372,10 +3615,16 @@
               case 2:
                   result = _a.sent();
                   if (result === BREAK) {
-                      return [3, 3];
+                      if (result.LABEL === options.label) {
+                          return [3, 3];
+                      }
+                      return [2, result];
                   }
                   else if (result === CONTINUE) {
-                      return [3, 0];
+                      if (result.LABEL === options.label) {
+                          return [3, 0];
+                      }
+                      return [2, result];
                   }
                   else if (result === RETURN) {
                       return [2, result];
@@ -3385,18 +3634,25 @@
           }
       });
   }
-  function DoWhileStatement(node, scope) {
+  function DoWhileStatement(node, scope, options) {
       var result;
+      if (options === void 0) { options = {}; }
       return __generator(this, function (_a) {
           switch (_a.label) {
               case 0: return [5, __values(evaluate(node.body, scope))];
               case 1:
                   result = _a.sent();
                   if (result === BREAK) {
-                      return [3, 4];
+                      if (result.LABEL === options.label) {
+                          return [3, 4];
+                      }
+                      return [2, result];
                   }
                   else if (result === CONTINUE) {
-                      return [3, 2];
+                      if (result.LABEL === options.label) {
+                          return [3, 2];
+                      }
+                      return [2, result];
                   }
                   else if (result === RETURN) {
                       return [2, result];
@@ -3410,8 +3666,9 @@
           }
       });
   }
-  function ForStatement(node, scope) {
+  function ForStatement(node, scope, options) {
       var forScope, _a, subScope, result;
+      if (options === void 0) { options = {}; }
       return __generator(this, function (_b) {
           switch (_b.label) {
               case 0:
@@ -3444,10 +3701,16 @@
                   _b.label = 9;
               case 9:
                   if (result === BREAK) {
-                      return [3, 12];
+                      if (result.LABEL === options.label) {
+                          return [3, 12];
+                      }
+                      return [2, result];
                   }
                   else if (result === CONTINUE) {
-                      return [3, 10];
+                      if (result.LABEL === options.label) {
+                          return [3, 10];
+                      }
+                      return [2, result];
                   }
                   else if (result === RETURN) {
                       return [2, result];
@@ -3461,8 +3724,9 @@
           }
       });
   }
-  function ForInStatement(node, scope) {
+  function ForInStatement(node, scope, options) {
       var _a, _b, _i, value, result;
+      if (options === void 0) { options = {}; }
       return __generator(this, function (_c) {
           switch (_c.label) {
               case 0:
@@ -3480,10 +3744,16 @@
               case 3:
                   result = _c.sent();
                   if (result === BREAK) {
-                      return [3, 5];
+                      if (result.LABEL === options.label) {
+                          return [3, 5];
+                      }
+                      return [2, result];
                   }
                   else if (result === CONTINUE) {
-                      return [3, 4];
+                      if (result.LABEL === options.label) {
+                          return [3, 4];
+                      }
+                      return [2, result];
                   }
                   else if (result === RETURN) {
                       return [2, result];
@@ -3496,9 +3766,10 @@
           }
       });
   }
-  function ForOfStatement(node, scope) {
+  function ForOfStatement(node, scope, options) {
       var right, iterator, ret, result, right_1, right_1_1, value, result, e_1_1;
       var e_1, _a;
+      if (options === void 0) { options = {}; }
       return __generator(this, function (_b) {
           switch (_b.label) {
               case 0: return [5, __values(evaluate(node.right, scope))];
@@ -3518,10 +3789,16 @@
               case 4:
                   result = _b.sent();
                   if (result === BREAK) {
-                      return [3, 7];
+                      if (result.LABEL === options.label) {
+                          return [3, 7];
+                      }
+                      return [2, result];
                   }
                   else if (result === CONTINUE) {
-                      return [3, 5];
+                      if (result.LABEL === options.label) {
+                          return [3, 5];
+                      }
+                      return [2, result];
                   }
                   else if (result === RETURN) {
                       return [2, result];
@@ -3545,10 +3822,16 @@
               case 10:
                   result = _b.sent();
                   if (result === BREAK) {
-                      return [3, 12];
+                      if (result.LABEL === options.label) {
+                          return [3, 12];
+                      }
+                      return [2, result];
                   }
                   else if (result === CONTINUE) {
-                      return [3, 11];
+                      if (result.LABEL === options.label) {
+                          return [3, 11];
+                      }
+                      return [2, result];
                   }
                   else if (result === RETURN) {
                       return [2, result];
@@ -4261,15 +4544,16 @@
       });
   }
   function createFunc$1(node, scope, options) {
+      var _a;
       if (options === void 0) { options = {}; }
       if (!node.generator && !node.async) {
           return createFunc(node, scope, options);
       }
       var superClass = options.superClass, construct = options.construct;
       var params = node.params;
-      var tmpFunc = function _a() {
+      var tmpFunc = function _b() {
           var _i, subScope, i, param, result;
-          var _newTarget = this && this instanceof _a ? this.constructor : void 0;
+          var _newTarget = this && this instanceof _b ? this.constructor : void 0;
           var args = [];
           for (_i = 0; _i < arguments.length; _i++) {
               args[_i] = arguments[_i];
@@ -4388,6 +4672,13 @@
           value: params.length,
           configurable: true
       });
+      var source = (_a = node.loc) === null || _a === void 0 ? void 0 : _a.source;
+      if (source) {
+          define(func, 'toString', {
+              value: function () { return source.substring(node.start, node.end); },
+              configurable: true
+          });
+      }
       return func;
   }
   function createClass$1(node, scope) {
@@ -4593,14 +4884,15 @@
       }
   }
   function createFunc(node, scope, options) {
+      var _a;
       if (options === void 0) { options = {}; }
       if (node.generator || node.async) {
           return createFunc$1(node, scope, options);
       }
       var superClass = options.superClass, construct = options.construct;
       var params = node.params;
-      var tmpFunc = function _a() {
-          var _newTarget = this && this instanceof _a ? this.constructor : void 0;
+      var tmpFunc = function _b() {
+          var _newTarget = this && this instanceof _b ? this.constructor : void 0;
           var args = [];
           for (var _i = 0; _i < arguments.length; _i++) {
               args[_i] = arguments[_i];
@@ -4664,6 +4956,13 @@
           value: params.length,
           configurable: true
       });
+      var source = (_a = node.loc) === null || _a === void 0 ? void 0 : _a.source;
+      if (source) {
+          define(func, 'toString', {
+              value: function () { return source.substring(node.start, node.end); },
+              configurable: true
+          });
+      }
       return func;
   }
   function createClass(node, scope) {
