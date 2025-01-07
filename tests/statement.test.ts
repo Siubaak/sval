@@ -310,7 +310,15 @@ describe('testing src/index.ts', () => {
         x++
       }
       exports.a = x
+
+      b: if (true) {
+        x++
+        break b
+        x++
+      }
+      exports.b = x
     `)
     expect(interpreter.exports.a).toBe(1)
+    expect(interpreter.exports.b).toBe(2)
   })
 })

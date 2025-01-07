@@ -4,9 +4,9 @@ export const AWAIT: { RES: any } = { RES: undefined }
 
 export const RETURN: { RES: any } = { RES: undefined }
 
-export const CONTINUE: { LABEL: any } = { LABEL: undefined }
+export const CONTINUE: { LABEL: string } = { LABEL: undefined }
 
-export const BREAK: { LABEL: any } = { LABEL: undefined }
+export const BREAK: { LABEL: string } = { LABEL: undefined }
 
 export const SUPER = createSymbol('super')
 

@@ -37,7 +37,7 @@ export function* BlockStatement(
   for (let i = 0; i < block.body.length; i++) {
     const result = yield* evaluate(block.body[i], subScope)
     if (result === BREAK) {
-      if (options.label && result.LABEL === options.label) {
+      if (result.LABEL && result.LABEL === options.label) {
         break
       }
       return result
@@ -97,14 +97,25 @@ export function* LabeledStatement(node: acorn.LabeledStatement, scope: Scope) {
   if (node.body.type === 'BlockStatement') {
     return yield* BlockStatement(node.body, scope, { label })
   }
+  if (node.body.type === 'IfStatement') {
+    return yield* IfStatement(node.body, scope, { label })
+  }
   throw new SyntaxError(`${node.body.type} cannot be labeled`)
 }
 
-export function* IfStatement(node: acorn.IfStatement, scope: Scope) {
-  if (yield* evaluate(node.test, scope)) {
-    return yield* evaluate(node.consequent, scope)
-  } else {
-    return yield* evaluate(node.alternate, scope)
+export function* IfStatement(node: acorn.IfStatement, scope: Scope, options: LabelOptions = {}) {
+  const result = yield* evaluate(node.test, scope)
+    ? yield* evaluate(node.consequent, scope)
+    : yield* evaluate(node.alternate, scope)
+  if (result === BREAK) {
+    if (result.LABEL && result.LABEL === options.label) {
+      // break to current if statement, so don't bubble up the result
+      return;
+    }
+    return result
+  }
+  if (result === CONTINUE || result === RETURN) {
+    return result
   }
 }
 
