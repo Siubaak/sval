@@ -465,7 +465,7 @@
   var IMPORT = createSymbol('import');
   var EXPORTS = createSymbol('exports');
 
-  var version = "0.5.5";
+  var version = "0.5.6";
 
   var Var = (function () {
       function Var(kind, value) {
@@ -1936,6 +1936,9 @@
               define(obj, PRIVATE, { value: {} });
           }
           obj = obj[PRIVATE];
+      }
+      if (!node.value) {
+          obj[key] = undefined;
       }
       if (node.value.type === 'FunctionExpression' || node.value.type === 'ArrowFunctionExpression') {
           obj[key] = createFunc(node.value, subScope, { superClass: superClass });
@@ -4093,6 +4096,9 @@
                           define(obj, PRIVATE, { value: {} });
                       }
                       obj = obj[PRIVATE];
+                  }
+                  if (!node.value) {
+                      obj[key] = undefined;
                   }
                   if (!(node.value.type === 'FunctionExpression' || node.value.type === 'ArrowFunctionExpression')) return [3, 4];
                   obj[key] = createFunc$1(node.value, subScope, { superClass: superClass });

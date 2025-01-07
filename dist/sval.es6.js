@@ -464,7 +464,7 @@
   const IMPORT = createSymbol('import');
   const EXPORTS = createSymbol('exports');
 
-  var version = "0.5.5";
+  var version = "0.5.6";
 
   class Var {
       constructor(kind, value) {
@@ -1820,6 +1820,9 @@
               define(obj, PRIVATE, { value: {} });
           }
           obj = obj[PRIVATE];
+      }
+      if (!node.value) {
+          obj[key] = undefined;
       }
       if (node.value.type === 'FunctionExpression' || node.value.type === 'ArrowFunctionExpression') {
           obj[key] = createFunc(node.value, subScope, { superClass });
@@ -3230,6 +3233,9 @@
               define(obj, PRIVATE, { value: {} });
           }
           obj = obj[PRIVATE];
+      }
+      if (!node.value) {
+          obj[key] = undefined;
       }
       if (node.value.type === 'FunctionExpression' || node.value.type === 'ArrowFunctionExpression') {
           obj[key] = createFunc$1(node.value, subScope, { superClass });
