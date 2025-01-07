@@ -317,8 +317,16 @@ describe('testing src/index.ts', () => {
         x++
       }
       exports.b = x
+
+      c: with (window) {
+        x++
+        break c
+        x++
+      }
+      exports.c = x
     `)
     expect(interpreter.exports.a).toBe(1)
     expect(interpreter.exports.b).toBe(2)
+    expect(interpreter.exports.c).toBe(3)
   })
 })

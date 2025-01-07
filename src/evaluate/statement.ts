@@ -71,12 +71,6 @@ export function* ContinueStatement(node: acorn.ContinueStatement) {
   return CONTINUE
 }
 
-export function* WithStatement(node: acorn.WithStatement, scope: Scope) {
-  const withScope = new Scope(scope)
-  withScope.with(yield* evaluate(node.object, scope))
-  return yield* evaluate(node.body, withScope)
-}
-
 export function* LabeledStatement(node: acorn.LabeledStatement, scope: Scope) {
   const label = node.label.name
   if (node.body.type === 'WhileStatement') {
@@ -97,10 +91,29 @@ export function* LabeledStatement(node: acorn.LabeledStatement, scope: Scope) {
   if (node.body.type === 'BlockStatement') {
     return yield* BlockStatement(node.body, scope, { label })
   }
+  if (node.body.type === 'WithStatement') {
+    return yield* WithStatement(node.body, scope, { label })
+  }
   if (node.body.type === 'IfStatement') {
     return yield* IfStatement(node.body, scope, { label })
   }
   throw new SyntaxError(`${node.body.type} cannot be labeled`)
+}
+
+export function* WithStatement(node: acorn.WithStatement, scope: Scope, options: LabelOptions = {}) {
+  const withScope = new Scope(scope)
+  withScope.with(yield* evaluate(node.object, scope))
+  const result = yield* evaluate(node.body, withScope)
+  if (result === BREAK) {
+    if (result.LABEL && result.LABEL === options.label) {
+      // break to current with statement, so don't bubble up the result
+      return;
+    }
+    return result
+  }
+  if (result === CONTINUE || result === RETURN) {
+    return result
+  }
 }
 
 export function* IfStatement(node: acorn.IfStatement, scope: Scope, options: LabelOptions = {}) {
