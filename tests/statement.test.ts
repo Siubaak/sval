@@ -279,21 +279,21 @@ describe('testing src/index.ts', () => {
     const interpreter = new Sval({ ecmaVer: 10 })
     interpreter.run(`
       let x = 0
-      a: while (true) {
+      a: while (x < 5) {
         if (x) {
           x++
           break
         }
         do {
-          b: for (;;) {
+          b: for (; x < 5;) {
             x++
-            for (const a of [0,1,2,3,4]) {
+            for (const a of [0, 1, 2, 3, 4]) {
               break b
             }
           }
           x++
           continue a
-        } while (true)
+        } while (x < 5)
       }
       exports.a = x
     `)
@@ -324,9 +324,20 @@ describe('testing src/index.ts', () => {
         x++
       }
       exports.c = x
+
+      d: switch (true) {
+        case true:
+          for (;x < 10;) {
+            x++
+            break d
+          }
+        default: x++
+      }
+      exports.d = x
     `)
     expect(interpreter.exports.a).toBe(1)
     expect(interpreter.exports.b).toBe(2)
     expect(interpreter.exports.c).toBe(3)
+    expect(interpreter.exports.d).toBe(4)
   })
 })
