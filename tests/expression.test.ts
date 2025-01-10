@@ -423,9 +423,8 @@ describe('testing src/expression.ts', () => {
     interpreter.run(`
       import done from 'done'
       import expect from 'expect'
-      expect(await new Promise((resolve) => {
-        setTimeout(() => resolve(1), 50)
-      })).toBe(1)
+      const { default: mod } = await import('module')
+      expect(mod).toBe(1)
       done()
     `)
   })
