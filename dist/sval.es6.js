@@ -464,7 +464,7 @@
   const IMPORT = createSymbol('import');
   const EXPORTS = createSymbol('exports');
 
-  var version = "0.5.6";
+  var version = "0.5.7";
 
   class Var {
       constructor(kind, value) {
@@ -594,7 +594,53 @@
       }
   }
 
-  function Identifier$1(node, scope, options = {}) {
+  function runAsync(iterator, options = {}) {
+      const { res, err, ret, fullRet } = options;
+      return new Promise((resolve, reject) => {
+          if ('ret' in options) {
+              return resolve(iterator.return(ret));
+          }
+          if ('err' in options) {
+              onRejected(err);
+          }
+          else {
+              onFulfilled(res);
+          }
+          function onFulfilled(res) {
+              let ret;
+              try {
+                  ret = iterator.next(res);
+              }
+              catch (e) {
+                  return reject(e);
+              }
+              next(ret);
+              return null;
+          }
+          function onRejected(err) {
+              let ret;
+              try {
+                  ret = iterator.throw(err);
+              }
+              catch (e) {
+                  return reject(e);
+              }
+              next(ret);
+          }
+          function next(ret) {
+              if (ret.done)
+                  return resolve(fullRet ? ret : ret.value);
+              if (ret.value !== AWAIT)
+                  return resolve(ret);
+              const awaitValue = ret.value.RES;
+              const value = awaitValue && awaitValue.then === 'function'
+                  ? awaitValue : Promise.resolve(awaitValue);
+              return value.then(onFulfilled, onRejected);
+          }
+      });
+  }
+
+  function* Identifier$1(node, scope, options = {}) {
       const { getVar = false, throwErr = true } = options;
       if (node.name === 'undefined') {
           return undefined;
@@ -627,7 +673,7 @@
     Identifier: Identifier$1
   });
 
-  function Literal$1(node, scope) {
+  function* Literal$1(node, scope) {
       return node.value;
   }
 
@@ -636,7 +682,7 @@
     Literal: Literal$1
   });
 
-  function ThisExpression$1(node, scope) {
+  function* ThisExpression$1(node, scope) {
       const superCall = scope.find(SUPERCALL);
       if (superCall && !superCall.get()) {
           throw new ReferenceError('Must call super constructor in derived class '
@@ -646,41 +692,41 @@
           return scope.find('this').get();
       }
   }
-  function ArrayExpression$1(node, scope) {
+  function* ArrayExpression$1(node, scope) {
       let results = [];
       for (let i = 0; i < node.elements.length; i++) {
           const item = node.elements[i];
           if (item.type === 'SpreadElement') {
-              results = results.concat(SpreadElement$1(item, scope));
+              results = results.concat(yield* SpreadElement$1(item, scope));
           }
           else {
-              results.push(evaluate$1(item, scope));
+              results.push(yield* evaluate$1(item, scope));
           }
       }
       return results;
   }
-  function ObjectExpression$1(node, scope) {
+  function* ObjectExpression$1(node, scope) {
       const object = {};
       for (let i = 0; i < node.properties.length; i++) {
           const property = node.properties[i];
           if (property.type === 'SpreadElement') {
-              assign(object, SpreadElement$1(property, scope));
+              assign(object, yield* SpreadElement$1(property, scope));
           }
           else {
               let key;
               const propKey = property.key;
               if (property.computed) {
-                  key = evaluate$1(propKey, scope);
+                  key = yield* evaluate$1(propKey, scope);
               }
               else {
                   if (propKey.type === 'Identifier') {
                       key = propKey.name;
                   }
                   else {
-                      key = '' + (Literal$1(propKey));
+                      key = '' + (yield* Literal$1(propKey));
                   }
               }
-              const value = evaluate$1(property.value, scope);
+              const value = yield* evaluate$1(property.value, scope);
               const propKind = property.kind;
               if (propKind === 'init') {
                   object[key] = value;
@@ -707,7 +753,7 @@
       }
       return object;
   }
-  function FunctionExpression$1(node, scope) {
+  function* FunctionExpression$1(node, scope) {
       if (node.id && node.id.name) {
           const tmpScope = new Scope(scope);
           const func = createFunc(node, tmpScope);
@@ -718,44 +764,44 @@
           return createFunc(node, scope);
       }
   }
-  function UnaryExpression$1(node, scope) {
+  function* UnaryExpression$1(node, scope) {
       const arg = node.argument;
       switch (node.operator) {
-          case '+': return +(evaluate$1(arg, scope));
-          case '-': return -(evaluate$1(arg, scope));
-          case '!': return !(evaluate$1(arg, scope));
-          case '~': return ~(evaluate$1(arg, scope));
-          case 'void': return void (evaluate$1(arg, scope));
+          case '+': return +(yield* evaluate$1(arg, scope));
+          case '-': return -(yield* evaluate$1(arg, scope));
+          case '!': return !(yield* evaluate$1(arg, scope));
+          case '~': return ~(yield* evaluate$1(arg, scope));
+          case 'void': return void (yield* evaluate$1(arg, scope));
           case 'typeof':
               if (arg.type === 'Identifier') {
-                  return typeof (Identifier$1(arg, scope, { throwErr: false }));
+                  return typeof (yield* Identifier$1(arg, scope, { throwErr: false }));
               }
               else {
-                  return typeof (evaluate$1(arg, scope));
+                  return typeof (yield* evaluate$1(arg, scope));
               }
           case 'delete':
               if (arg.type === 'MemberExpression') {
-                  const variable = MemberExpression$1(arg, scope, { getVar: true });
+                  const variable = yield* MemberExpression$1(arg, scope, { getVar: true });
                   return variable.del();
               }
               else if (arg.type === 'Identifier') {
                   throw new SyntaxError('Delete of an unqualified identifier in strict mode');
               }
               else {
-                  evaluate$1(arg, scope);
+                  yield* evaluate$1(arg, scope);
                   return true;
               }
           default: throw new SyntaxError(`Unexpected token ${node.operator}`);
       }
   }
-  function UpdateExpression$1(node, scope) {
+  function* UpdateExpression$1(node, scope) {
       const arg = node.argument;
       let variable;
       if (arg.type === 'Identifier') {
-          variable = Identifier$1(arg, scope, { getVar: true });
+          variable = yield* Identifier$1(arg, scope, { getVar: true });
       }
       else if (arg.type === 'MemberExpression') {
-          variable = MemberExpression$1(arg, scope, { getVar: true });
+          variable = yield* MemberExpression$1(arg, scope, { getVar: true });
       }
       else {
           throw new SyntaxError('Unexpected token');
@@ -773,17 +819,17 @@
           throw new SyntaxError(`Unexpected token ${node.operator}`);
       }
   }
-  function BinaryExpression$1(node, scope) {
+  function* BinaryExpression$1(node, scope) {
       let left;
       let right;
       if (node.left.type === 'PrivateIdentifier') {
           left = node.left.name;
-          right = evaluate$1(node.right, scope);
-          right = right[PRIVATE];
+          right = yield* evaluate$1(node.right, scope);
+          right = right[PRIVATE] || {};
       }
       else {
-          left = evaluate$1(node.left, scope);
-          right = evaluate$1(node.right, scope);
+          left = yield* evaluate$1(node.left, scope);
+          right = yield* evaluate$1(node.right, scope);
       }
       switch (node.operator) {
           case '==': return left == right;
@@ -811,25 +857,25 @@
           default: throw new SyntaxError(`Unexpected token ${node.operator}`);
       }
   }
-  function AssignmentExpression$1(node, scope) {
+  function* AssignmentExpression$1(node, scope) {
       var _a;
       const left = node.left;
       let variable;
       if (left.type === 'Identifier') {
-          variable = Identifier$1(left, scope, { getVar: true, throwErr: false });
+          variable = yield* Identifier$1(left, scope, { getVar: true, throwErr: false });
           if (!variable) {
               const win = scope.global().find('window').get();
               variable = new Prop(win, left.name);
           }
       }
       else if (left.type === 'MemberExpression') {
-          variable = MemberExpression$1(left, scope, { getVar: true });
+          variable = yield* MemberExpression$1(left, scope, { getVar: true });
       }
       else {
-          const value = evaluate$1(node.right, scope);
-          return pattern(left, scope, { feed: value });
+          const value = yield* evaluate$1(node.right, scope);
+          return yield* pattern(left, scope, { feed: value });
       }
-      const value = evaluate$1(node.right, scope);
+      const value = yield* evaluate$1(node.right, scope);
       switch (node.operator) {
           case '=':
               variable.set(value);
@@ -882,34 +928,34 @@
           default: throw new SyntaxError(`Unexpected token ${node.operator}`);
       }
   }
-  function LogicalExpression$1(node, scope) {
+  function* LogicalExpression$1(node, scope) {
       var _a;
       switch (node.operator) {
           case '||':
-              return (evaluate$1(node.left, scope)) || (evaluate$1(node.right, scope));
+              return (yield* evaluate$1(node.left, scope)) || (yield* evaluate$1(node.right, scope));
           case '&&':
-              return (evaluate$1(node.left, scope)) && (evaluate$1(node.right, scope));
+              return (yield* evaluate$1(node.left, scope)) && (yield* evaluate$1(node.right, scope));
           case '??':
-              return (_a = (evaluate$1(node.left, scope))) !== null && _a !== void 0 ? _a : (evaluate$1(node.right, scope));
+              return (_a = (yield* evaluate$1(node.left, scope))) !== null && _a !== void 0 ? _a : (yield* evaluate$1(node.right, scope));
           default:
               throw new SyntaxError(`Unexpected token ${node.operator}`);
       }
   }
-  function MemberExpression$1(node, scope, options = {}) {
+  function* MemberExpression$1(node, scope, options = {}) {
       const { getObj = false, getVar = false } = options;
       let object;
       if (node.object.type === 'Super') {
-          object = Super$1(node.object, scope, { getProto: true });
+          object = yield* Super$1(node.object, scope, { getProto: true });
       }
       else {
-          object = evaluate$1(node.object, scope);
+          object = yield* evaluate$1(node.object, scope);
       }
       if (getObj)
           return object;
       let key;
       let priv = false;
       if (node.computed) {
-          key = evaluate$1(node.property, scope);
+          key = yield* evaluate$1(node.property, scope);
       }
       else if (node.property.type === 'PrivateIdentifier') {
           key = node.property.name;
@@ -950,23 +996,23 @@
           }
       }
   }
-  function ConditionalExpression$1(node, scope) {
-      return (evaluate$1(node.test, scope))
-          ? (evaluate$1(node.consequent, scope))
-          : (evaluate$1(node.alternate, scope));
+  function* ConditionalExpression$1(node, scope) {
+      return (yield* evaluate$1(node.test, scope))
+          ? (yield* evaluate$1(node.consequent, scope))
+          : (yield* evaluate$1(node.alternate, scope));
   }
-  function CallExpression$1(node, scope) {
+  function* CallExpression$1(node, scope) {
       let func;
       let object;
       if (node.callee.type === 'MemberExpression') {
-          object = MemberExpression$1(node.callee, scope, { getObj: true });
+          object = yield* MemberExpression$1(node.callee, scope, { getObj: true });
           if (node.callee.optional && object == null) {
               return undefined;
           }
           let key;
           let priv = false;
           if (node.callee.computed) {
-              key = evaluate$1(node.callee.property, scope);
+              key = yield* evaluate$1(node.callee.property, scope);
           }
           else if (node.callee.property.type === 'PrivateIdentifier') {
               key = node.callee.property.name;
@@ -998,7 +1044,7 @@
       }
       else {
           object = scope.find('this').get();
-          func = evaluate$1(node.callee, scope);
+          func = yield* evaluate$1(node.callee, scope);
           if (node.optional && func == null) {
               return undefined;
           }
@@ -1027,10 +1073,10 @@
       for (let i = 0; i < node.arguments.length; i++) {
           const arg = node.arguments[i];
           if (arg.type === 'SpreadElement') {
-              args = args.concat(SpreadElement$1(arg, scope));
+              args = args.concat(yield* SpreadElement$1(arg, scope));
           }
           else {
-              args.push(evaluate$1(arg, scope));
+              args.push(yield* evaluate$1(arg, scope));
           }
       }
       if (node.callee.type === 'Super') {
@@ -1056,8 +1102,8 @@
           throw err;
       }
   }
-  function NewExpression$1(node, scope) {
-      const constructor = evaluate$1(node.callee, scope);
+  function* NewExpression$1(node, scope) {
+      const constructor = yield* evaluate$1(node.callee, scope);
       if (typeof constructor !== 'function') {
           let name;
           if (node.callee.type === 'Identifier') {
@@ -1080,15 +1126,15 @@
       for (let i = 0; i < node.arguments.length; i++) {
           const arg = node.arguments[i];
           if (arg.type === 'SpreadElement') {
-              args = args.concat(SpreadElement$1(arg, scope));
+              args = args.concat(yield* SpreadElement$1(arg, scope));
           }
           else {
-              args.push(evaluate$1(arg, scope));
+              args.push(yield* evaluate$1(arg, scope));
           }
       }
       return new constructor(...args);
   }
-  function MetaProperty$1(node, scope) {
+  function* MetaProperty$1(node, scope) {
       if (node.meta.name === 'new' && node.property.name === 'target') {
           return scope.find(NEWTARGET).get();
       }
@@ -1096,33 +1142,33 @@
           return { url: '' };
       }
   }
-  function SequenceExpression$1(node, scope) {
+  function* SequenceExpression$1(node, scope) {
       let result;
       for (let i = 0; i < node.expressions.length; i++) {
-          result = evaluate$1(node.expressions[i], scope);
+          result = yield* evaluate$1(node.expressions[i], scope);
       }
       return result;
   }
-  function ArrowFunctionExpression$1(node, scope) {
+  function* ArrowFunctionExpression$1(node, scope) {
       return createFunc(node, scope);
   }
-  function TemplateLiteral$1(node, scope) {
+  function* TemplateLiteral$1(node, scope) {
       const quasis = node.quasis.slice();
       const expressions = node.expressions.slice();
       let result = '';
       let temEl;
       let expr;
       while (temEl = quasis.shift()) {
-          result += TemplateElement$1(temEl);
+          result += yield* TemplateElement$1(temEl);
           expr = expressions.shift();
           if (expr) {
-              result += evaluate$1(expr, scope);
+              result += yield* evaluate$1(expr, scope);
           }
       }
       return result;
   }
-  function TaggedTemplateExpression$1(node, scope) {
-      const tagFunc = evaluate$1(node.tag, scope);
+  function* TaggedTemplateExpression$1(node, scope) {
+      const tagFunc = yield* evaluate$1(node.tag, scope);
       const quasis = node.quasi.quasis;
       const str = quasis.map(v => v.value.cooked);
       const raw = quasis.map(v => v.value.raw);
@@ -1133,40 +1179,40 @@
       const args = [];
       if (expressions) {
           for (let i = 0; i < expressions.length; i++) {
-              args.push(evaluate$1(expressions[i], scope));
+              args.push(yield* evaluate$1(expressions[i], scope));
           }
       }
       return tagFunc(freeze(str), ...args);
   }
-  function TemplateElement$1(node, scope) {
+  function* TemplateElement$1(node, scope) {
       return node.value.raw;
   }
-  function ClassExpression$1(node, scope) {
+  function* ClassExpression$1(node, scope) {
       if (node.id && node.id.name) {
           const tmpScope = new Scope(scope);
-          const klass = createClass(node, tmpScope);
+          const klass = yield* createClass(node, tmpScope);
           tmpScope.const(node.id.name, klass);
           return klass;
       }
       else {
-          return createClass(node, scope);
+          return yield* createClass(node, scope);
       }
   }
-  function Super$1(node, scope, options = {}) {
+  function* Super$1(node, scope, options = {}) {
       const { getProto = false } = options;
       const superClass = scope.find(SUPER).get();
       return getProto ? superClass.prototype : superClass;
   }
-  function SpreadElement$1(node, scope) {
-      const result = evaluate$1(node.argument, scope);
+  function* SpreadElement$1(node, scope) {
+      const result = yield* evaluate$1(node.argument, scope);
       return typeof result === 'string' ? [...result] : result;
   }
-  function ChainExpression$1(node, scope) {
-      return evaluate$1(node.expression, scope);
+  function* ChainExpression$1(node, scope) {
+      return yield* evaluate$1(node.expression, scope);
   }
-  function ImportExpression$1(node, scope) {
+  function* ImportExpression$1(node, scope) {
       const globalScope = scope.global();
-      const source = evaluate$1(node.source, scope);
+      const source = yield* evaluate$1(node.source, scope);
       const module = globalScope.find(IMPORT + source);
       let value;
       if (module) {
@@ -1184,6 +1230,14 @@
           return Promise.reject(new TypeError(`Failed to resolve module specifier "${source}"`));
       }
       return Promise.resolve(value);
+  }
+  function* YieldExpression(node, scope) {
+      const res = yield* evaluate$1(node.argument, scope);
+      return node.delegate ? yield* res : yield res;
+  }
+  function* AwaitExpression(node, scope) {
+      AWAIT.RES = yield* evaluate$1(node.argument, scope);
+      return yield AWAIT;
   }
 
   var expression$1 = /*#__PURE__*/Object.freeze({
@@ -1211,10 +1265,12 @@
     Super: Super$1,
     SpreadElement: SpreadElement$1,
     ChainExpression: ChainExpression$1,
-    ImportExpression: ImportExpression$1
+    ImportExpression: ImportExpression$1,
+    YieldExpression: YieldExpression,
+    AwaitExpression: AwaitExpression
   });
 
-  function ObjectPattern$1(node, scope, options = {}) {
+  function* ObjectPattern$1(node, scope, options = {}) {
       const { kind = 'var', hoist = false, onlyBlock = false, feed = {} } = options;
       const fedKeys = [];
       for (let i = 0; i < node.properties.length; i++) {
@@ -1227,18 +1283,18 @@
                           scope[kind](value.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
                       }
                       else {
-                          pattern(value, scope, { kind, hoist, onlyBlock });
+                          yield* pattern(value, scope, { kind, hoist, onlyBlock });
                       }
                   }
                   else {
-                      RestElement$1(property, scope, { kind, hoist, onlyBlock });
+                      yield* RestElement$1(property, scope, { kind, hoist, onlyBlock });
                   }
               }
           }
           else if (property.type === 'Property') {
               let key;
               if (property.computed) {
-                  key = evaluate$1(property.key, scope);
+                  key = yield* evaluate$1(property.key, scope);
               }
               else {
                   key = property.key.name;
@@ -1249,18 +1305,18 @@
                   scope[kind](value.name, feed[key]);
               }
               else {
-                  pattern(value, scope, { kind, feed: feed[key] });
+                  yield* pattern(value, scope, { kind, feed: feed[key] });
               }
           }
           else {
               const rest = assign({}, feed);
               for (let i = 0; i < fedKeys.length; i++)
                   delete rest[fedKeys[i]];
-              RestElement$1(property, scope, { kind, feed: rest });
+              yield* RestElement$1(property, scope, { kind, feed: rest });
           }
       }
   }
-  function ArrayPattern$1(node, scope, options = {}) {
+  function* ArrayPattern$1(node, scope, options = {}) {
       const { kind, hoist = false, onlyBlock = false, feed = [] } = options;
       const result = [];
       for (let i = 0; i < node.elements.length; i++) {
@@ -1273,7 +1329,7 @@
                       scope[kind](element.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
                   }
                   else {
-                      pattern(element, scope, { kind, hoist, onlyBlock });
+                      yield* pattern(element, scope, { kind, hoist, onlyBlock });
                   }
               }
           }
@@ -1282,23 +1338,23 @@
                   scope[kind](element.name, feed[i]);
               }
               else {
-                  const variable = Identifier$1(element, scope, { getVar: true });
+                  const variable = yield* Identifier$1(element, scope, { getVar: true });
                   variable.set(feed[i]);
                   result.push(variable.get());
               }
           }
           else if (element.type === 'RestElement') {
-              RestElement$1(element, scope, { kind, feed: feed.slice(i) });
+              yield* RestElement$1(element, scope, { kind, feed: feed.slice(i) });
           }
           else {
-              pattern(element, scope, { kind, feed: feed[i] });
+              yield* pattern(element, scope, { kind, feed: feed[i] });
           }
       }
       if (result.length) {
           return result;
       }
   }
-  function RestElement$1(node, scope, options = {}) {
+  function* RestElement$1(node, scope, options = {}) {
       const { kind, hoist = false, onlyBlock = false, feed = [] } = options;
       const arg = node.argument;
       if (hoist) {
@@ -1307,7 +1363,7 @@
                   scope[kind](arg.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
               }
               else {
-                  pattern(arg, scope, { kind, hoist, onlyBlock });
+                  yield* pattern(arg, scope, { kind, hoist, onlyBlock });
               }
           }
       }
@@ -1316,16 +1372,16 @@
               scope[kind](arg.name, feed);
           }
           else {
-              const variable = Identifier$1(arg, scope, { getVar: true });
+              const variable = yield* Identifier$1(arg, scope, { getVar: true });
               variable.set(feed);
           }
       }
       else {
-          pattern(arg, scope, { kind, feed });
+          yield* pattern(arg, scope, { kind, feed });
       }
   }
-  function AssignmentPattern$1(node, scope, options = {}) {
-      const { kind = 'var', hoist = false, onlyBlock = false, feed = evaluate$1(node.right, scope) } = options;
+  function* AssignmentPattern$1(node, scope, options = {}) {
+      const { kind = 'var', hoist = false, onlyBlock = false, feed = yield* evaluate$1(node.right, scope) } = options;
       const left = node.left;
       if (hoist) {
           if (onlyBlock || kind === 'var') {
@@ -1333,7 +1389,7 @@
                   scope[kind](left.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
               }
               else {
-                  pattern(left, scope, { kind, hoist, onlyBlock });
+                  yield* pattern(left, scope, { kind, hoist, onlyBlock });
               }
           }
       }
@@ -1341,7 +1397,7 @@
           scope[kind](left.name, feed);
       }
       else {
-          pattern(left, scope, { kind, feed });
+          yield* pattern(left, scope, { kind, feed });
       }
   }
 
@@ -1353,44 +1409,44 @@
     AssignmentPattern: AssignmentPattern$1
   });
 
-  function Program(program, scope) {
+  function* Program$1(program, scope) {
       for (let i = 0; i < program.body.length; i++) {
-          evaluate$1(program.body[i], scope);
+          yield* evaluate$1(program.body[i], scope);
       }
   }
 
-  var program = /*#__PURE__*/Object.freeze({
+  var program$1 = /*#__PURE__*/Object.freeze({
     __proto__: null,
-    Program: Program
+    Program: Program$1
   });
 
   let evaluateOps$1;
-  function evaluate$1(node, scope) {
+  function* evaluate$1(node, scope) {
       if (!node)
           return;
       if (!evaluateOps$1) {
-          evaluateOps$1 = assign({}, declaration$1, expression$1, identifier$1, statement$1, literal$1, pattern$3, program);
+          evaluateOps$1 = assign({}, declaration$1, expression$1, identifier$1, statement$1, literal$1, pattern$3, program$1);
       }
       const handler = evaluateOps$1[node.type];
       if (handler) {
-          return handler(node, scope);
+          return yield* handler(node, scope);
       }
       else {
           throw new Error(`${node.type} isn't implemented`);
       }
   }
 
-  function ExpressionStatement$1(node, scope) {
-      evaluate$1(node.expression, scope);
+  function* ExpressionStatement$1(node, scope) {
+      yield* evaluate$1(node.expression, scope);
   }
-  function BlockStatement$1(block, scope, options = {}) {
+  function* BlockStatement$1(block, scope, options = {}) {
       const { invasived = false, hoisted = false, } = options;
       const subScope = invasived ? scope : new Scope(scope);
       if (!hoisted) {
-          hoist(block, subScope, { onlyBlock: true });
+          yield* hoist(block, subScope, { onlyBlock: true });
       }
       for (let i = 0; i < block.body.length; i++) {
-          const result = evaluate$1(block.body[i], subScope);
+          const result = yield* evaluate$1(block.body[i], subScope);
           if (result === BREAK) {
               if (result.LABEL && result.LABEL === options.label) {
                   break;
@@ -1402,63 +1458,63 @@
           }
       }
   }
-  function EmptyStatement$1() {
+  function* EmptyStatement$1() {
   }
-  function DebuggerStatement$1() {
+  function* DebuggerStatement$1() {
       debugger;
   }
-  function ReturnStatement$1(node, scope) {
-      RETURN.RES = node.argument ? (evaluate$1(node.argument, scope)) : undefined;
+  function* ReturnStatement$1(node, scope) {
+      RETURN.RES = node.argument ? (yield* evaluate$1(node.argument, scope)) : undefined;
       return RETURN;
   }
-  function BreakStatement$1(node) {
+  function* BreakStatement$1(node) {
       var _a;
       BREAK.LABEL = (_a = node.label) === null || _a === void 0 ? void 0 : _a.name;
       return BREAK;
   }
-  function ContinueStatement$1(node) {
+  function* ContinueStatement$1(node) {
       var _a;
       CONTINUE.LABEL = (_a = node.label) === null || _a === void 0 ? void 0 : _a.name;
       return CONTINUE;
   }
-  function LabeledStatement$1(node, scope) {
+  function* LabeledStatement$1(node, scope) {
       const label = node.label.name;
       if (node.body.type === 'WhileStatement') {
-          return WhileStatement$1(node.body, scope, { label });
+          return yield* WhileStatement$1(node.body, scope, { label });
       }
       if (node.body.type === 'DoWhileStatement') {
-          return DoWhileStatement$1(node.body, scope, { label });
+          return yield* DoWhileStatement$1(node.body, scope, { label });
       }
       if (node.body.type === 'ForStatement') {
-          return ForStatement$1(node.body, scope, { label });
+          return yield* ForStatement$1(node.body, scope, { label });
       }
       if (node.body.type === 'ForInStatement') {
-          return ForInStatement$1(node.body, scope, { label });
+          return yield* ForInStatement$1(node.body, scope, { label });
       }
       if (node.body.type === 'ForOfStatement') {
-          return ForOfStatement$1(node.body, scope, { label });
+          return yield* ForOfStatement$1(node.body, scope, { label });
       }
       if (node.body.type === 'BlockStatement') {
-          return BlockStatement$1(node.body, scope, { label });
+          return yield* BlockStatement$1(node.body, scope, { label });
       }
       if (node.body.type === 'WithStatement') {
-          return WithStatement$1(node.body, scope, { label });
+          return yield* WithStatement$1(node.body, scope, { label });
       }
       if (node.body.type === 'IfStatement') {
-          return IfStatement$1(node.body, scope, { label });
+          return yield* IfStatement$1(node.body, scope, { label });
       }
       if (node.body.type === 'SwitchStatement') {
-          return SwitchStatement$1(node.body, scope, { label });
+          return yield* SwitchStatement$1(node.body, scope, { label });
       }
       if (node.body.type === 'TryStatement') {
-          return TryStatement$1(node.body, scope, { label });
+          return yield* TryStatement$1(node.body, scope, { label });
       }
       throw new SyntaxError(`${node.body.type} cannot be labeled`);
   }
-  function WithStatement$1(node, scope, options = {}) {
+  function* WithStatement$1(node, scope, options = {}) {
       const withScope = new Scope(scope);
-      withScope.with(evaluate$1(node.object, scope));
-      const result = evaluate$1(node.body, withScope);
+      withScope.with(yield* evaluate$1(node.object, scope));
+      const result = yield* evaluate$1(node.body, withScope);
       if (result === BREAK) {
           if (result.LABEL && result.LABEL === options.label) {
               return;
@@ -1469,13 +1525,13 @@
           return result;
       }
   }
-  function IfStatement$1(node, scope, options = {}) {
+  function* IfStatement$1(node, scope, options = {}) {
       let result;
-      if (evaluate$1(node.test, scope)) {
-          result = evaluate$1(node.consequent, scope);
+      if (yield* evaluate$1(node.test, scope)) {
+          result = yield* evaluate$1(node.consequent, scope);
       }
       else {
-          result = evaluate$1(node.alternate, scope);
+          result = yield* evaluate$1(node.alternate, scope);
       }
       if (result === BREAK) {
           if (result.LABEL && result.LABEL === options.label) {
@@ -1487,18 +1543,18 @@
           return result;
       }
   }
-  function SwitchStatement$1(node, scope, options = {}) {
-      const discriminant = evaluate$1(node.discriminant, scope);
+  function* SwitchStatement$1(node, scope, options = {}) {
+      const discriminant = yield* evaluate$1(node.discriminant, scope);
       let matched = false;
       for (let i = 0; i < node.cases.length; i++) {
           const eachCase = node.cases[i];
           if (!matched
               && (!eachCase.test
-                  || (evaluate$1(eachCase.test, scope)) === discriminant)) {
+                  || (yield* evaluate$1(eachCase.test, scope)) === discriminant)) {
               matched = true;
           }
           if (matched) {
-              const result = SwitchCase$1(eachCase, scope);
+              const result = yield* SwitchCase$1(eachCase, scope);
               if (result === BREAK) {
                   if (result.LABEL === options.label) {
                       break;
@@ -1511,21 +1567,21 @@
           }
       }
   }
-  function SwitchCase$1(node, scope) {
+  function* SwitchCase$1(node, scope) {
       for (let i = 0; i < node.consequent.length; i++) {
-          const result = evaluate$1(node.consequent[i], scope);
+          const result = yield* evaluate$1(node.consequent[i], scope);
           if (result === BREAK || result === CONTINUE || result === RETURN) {
               return result;
           }
       }
   }
-  function ThrowStatement$1(node, scope) {
-      throw evaluate$1(node.argument, scope);
+  function* ThrowStatement$1(node, scope) {
+      throw yield* evaluate$1(node.argument, scope);
   }
-  function TryStatement$1(node, scope, options = {}) {
+  function* TryStatement$1(node, scope, options = {}) {
       let result;
       try {
-          result = BlockStatement$1(node.block, scope);
+          result = yield* BlockStatement$1(node.block, scope);
       }
       catch (err) {
           if (node.handler) {
@@ -1537,10 +1593,10 @@
                       subScope.var(name, err);
                   }
                   else {
-                      pattern(param, scope, { feed: err });
+                      yield* pattern(param, scope, { feed: err });
                   }
               }
-              result = CatchClause$1(node.handler, subScope);
+              result = yield* CatchClause$1(node.handler, subScope);
           }
           else {
               throw err;
@@ -1548,7 +1604,7 @@
       }
       finally {
           if (node.finalizer) {
-              result = BlockStatement$1(node.finalizer, scope);
+              result = yield* BlockStatement$1(node.finalizer, scope);
           }
       }
       if (result === BREAK) {
@@ -1561,12 +1617,12 @@
           return result;
       }
   }
-  function CatchClause$1(node, scope) {
-      return BlockStatement$1(node.body, scope, { invasived: true });
+  function* CatchClause$1(node, scope) {
+      return yield* BlockStatement$1(node.body, scope, { invasived: true });
   }
-  function WhileStatement$1(node, scope, options = {}) {
-      while (evaluate$1(node.test, scope)) {
-          const result = evaluate$1(node.body, scope);
+  function* WhileStatement$1(node, scope, options = {}) {
+      while (yield* evaluate$1(node.test, scope)) {
+          const result = yield* evaluate$1(node.body, scope);
           if (result === BREAK) {
               if (result.LABEL === options.label) {
                   break;
@@ -1584,9 +1640,9 @@
           }
       }
   }
-  function DoWhileStatement$1(node, scope, options = {}) {
+  function* DoWhileStatement$1(node, scope, options = {}) {
       do {
-          const result = evaluate$1(node.body, scope);
+          const result = yield* evaluate$1(node.body, scope);
           if (result === BREAK) {
               if (result.LABEL === options.label) {
                   break;
@@ -1602,18 +1658,18 @@
           else if (result === RETURN) {
               return result;
           }
-      } while (evaluate$1(node.test, scope));
+      } while (yield* evaluate$1(node.test, scope));
   }
-  function ForStatement$1(node, scope, options = {}) {
+  function* ForStatement$1(node, scope, options = {}) {
       const forScope = new Scope(scope);
-      for (evaluate$1(node.init, forScope); node.test ? (evaluate$1(node.test, forScope)) : true; evaluate$1(node.update, forScope)) {
+      for (yield* evaluate$1(node.init, forScope); node.test ? (yield* evaluate$1(node.test, forScope)) : true; yield* evaluate$1(node.update, forScope)) {
           const subScope = new Scope(forScope);
           let result;
           if (node.body.type === 'BlockStatement') {
-              result = BlockStatement$1(node.body, subScope, { invasived: true });
+              result = yield* BlockStatement$1(node.body, subScope, { invasived: true });
           }
           else {
-              result = evaluate$1(node.body, subScope);
+              result = yield* evaluate$1(node.body, subScope);
           }
           if (result === BREAK) {
               if (result.LABEL === options.label) {
@@ -1632,9 +1688,9 @@
           }
       }
   }
-  function ForInStatement$1(node, scope, options = {}) {
-      for (const value in evaluate$1(node.right, scope)) {
-          const result = ForXHandler(node, scope, { value });
+  function* ForInStatement$1(node, scope, options = {}) {
+      for (const value in yield* evaluate$1(node.right, scope)) {
+          const result = yield* ForXHandler(node, scope, { value });
           if (result === BREAK) {
               if (result.LABEL === options.label) {
                   break;
@@ -1652,37 +1708,61 @@
           }
       }
   }
-  function ForOfStatement$1(node, scope, options = {}) {
-      const right = evaluate$1(node.right, scope);
-      for (const value of right) {
-          const result = ForXHandler(node, scope, { value });
-          if (result === BREAK) {
-              if (result.LABEL === options.label) {
-                  break;
+  function* ForOfStatement$1(node, scope, options = {}) {
+      const right = yield* evaluate$1(node.right, scope);
+      if (node.await) {
+          const iterator = getAsyncIterator(right);
+          let ret;
+          for (AWAIT.RES = iterator.next(), ret = yield AWAIT; !ret.done; AWAIT.RES = iterator.next(), ret = yield AWAIT) {
+              const result = yield* ForXHandler(node, scope, { value: ret.value });
+              if (result === BREAK) {
+                  if (result.LABEL === options.label) {
+                      break;
+                  }
+                  return result;
               }
-              return result;
-          }
-          else if (result === CONTINUE) {
-              if (result.LABEL === options.label) {
-                  continue;
+              else if (result === CONTINUE) {
+                  if (result.LABEL === options.label) {
+                      continue;
+                  }
+                  return result;
               }
-              return result;
+              else if (result === RETURN) {
+                  return result;
+              }
           }
-          else if (result === RETURN) {
-              return result;
+      }
+      else {
+          for (const value of right) {
+              const result = yield* ForXHandler(node, scope, { value });
+              if (result === BREAK) {
+                  if (result.LABEL === options.label) {
+                      break;
+                  }
+                  return result;
+              }
+              else if (result === CONTINUE) {
+                  if (result.LABEL === options.label) {
+                      continue;
+                  }
+                  return result;
+              }
+              else if (result === RETURN) {
+                  return result;
+              }
           }
       }
   }
 
-  function FunctionDeclaration$1(node, scope) {
+  function* FunctionDeclaration$1(node, scope) {
       scope.func(node.id.name, createFunc(node, scope));
   }
-  function VariableDeclaration$1(node, scope, options = {}) {
+  function* VariableDeclaration$1(node, scope, options = {}) {
       for (let i = 0; i < node.declarations.length; i++) {
-          VariableDeclarator$1(node.declarations[i], scope, assign({ kind: node.kind }, options));
+          yield* VariableDeclarator$1(node.declarations[i], scope, assign({ kind: node.kind }, options));
       }
   }
-  function VariableDeclarator$1(node, scope, options = {}) {
+  function* VariableDeclarator$1(node, scope, options = {}) {
       const { kind = 'var', hoist = false, onlyBlock = false, feed } = options;
       if (hoist) {
           if (onlyBlock || kind === 'var') {
@@ -1690,13 +1770,13 @@
                   scope[kind](node.id.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
               }
               else {
-                  pattern(node.id, scope, { kind, hoist, onlyBlock });
+                  yield* pattern(node.id, scope, { kind, hoist, onlyBlock });
               }
           }
       }
       else {
           const hasFeed = 'feed' in options;
-          const value = hasFeed ? feed : evaluate$1(node.init, scope);
+          const value = hasFeed ? feed : yield* evaluate$1(node.init, scope);
           if (node.id.type === 'Identifier') {
               const name = node.id.name;
               if (kind === 'var' && !node.init && !hasFeed) {
@@ -1716,34 +1796,34 @@
               }
           }
           else {
-              pattern(node.id, scope, { kind, feed: value });
+              yield* pattern(node.id, scope, { kind, feed: value });
           }
       }
   }
-  function ClassDeclaration$1(node, scope) {
-      scope.func(node.id.name, createClass(node, scope));
+  function* ClassDeclaration$1(node, scope) {
+      scope.func(node.id.name, yield* createClass(node, scope));
   }
-  function ClassBody$1(node, scope, options = {}) {
+  function* ClassBody$1(node, scope, options = {}) {
       const { klass, superClass } = options;
       for (let i = 0; i < node.body.length; i++) {
           const def = node.body[i];
           if (def.type === 'MethodDefinition') {
-              MethodDefinition$1(def, scope, { klass, superClass });
+              yield* MethodDefinition$1(def, scope, { klass, superClass });
           }
           else if (def.type === 'PropertyDefinition' && def.static) {
-              PropertyDefinition$1(def, scope, { klass, superClass });
+              yield* PropertyDefinition$1(def, scope, { klass, superClass });
           }
           else if (def.type === 'StaticBlock') {
-              StaticBlock$1(def, scope, { klass, superClass });
+              yield* StaticBlock$1(def, scope, { klass, superClass });
           }
       }
   }
-  function MethodDefinition$1(node, scope, options = {}) {
+  function* MethodDefinition$1(node, scope, options = {}) {
       const { klass, superClass } = options;
       let key;
       let priv = false;
       if (node.computed) {
-          key = evaluate$1(node.key, scope);
+          key = yield* evaluate$1(node.key, scope);
       }
       else if (node.key.type === 'Identifier') {
           key = node.key.name;
@@ -1795,12 +1875,12 @@
               throw new SyntaxError('Unexpected token');
       }
   }
-  function PropertyDefinition$1(node, scope, options = {}) {
+  function* PropertyDefinition$1(node, scope, options = {}) {
       const { klass, superClass } = options;
       let key;
       let priv = false;
       if (node.computed) {
-          key = evaluate$1(node.key, scope);
+          key = yield* evaluate$1(node.key, scope);
       }
       else if (node.key.type === 'Identifier') {
           key = node.key.name;
@@ -1828,16 +1908,16 @@
           obj[key] = createFunc(node.value, subScope, { superClass });
       }
       else {
-          obj[key] = evaluate$1(node.value, subScope);
+          obj[key] = yield* evaluate$1(node.value, subScope);
       }
   }
-  function StaticBlock$1(node, scope, options = {}) {
+  function* StaticBlock$1(node, scope, options = {}) {
       const { klass } = options;
       const subScope = new Scope(scope, true);
       subScope.const('this', klass);
-      return BlockStatement$1(node, subScope, { invasived: true });
+      return yield* BlockStatement$1(node, subScope, { invasived: true });
   }
-  function ImportDeclaration$1(node, scope) {
+  function* ImportDeclaration$1(node, scope) {
       const globalScope = scope.global();
       const module = globalScope.find(IMPORT + node.source.value);
       let value;
@@ -1874,7 +1954,7 @@
           scope.var(spec.local.name, name === '*' ? assign({}, value) : value[name]);
       }
   }
-  function ExportDefaultDeclaration$1(node, scope) {
+  function* ExportDefaultDeclaration$1(node, scope) {
       const globalScope = scope.global();
       let value;
       if (node.declaration.type === 'FunctionDeclaration') {
@@ -1882,11 +1962,11 @@
           scope.func(node.declaration.id.name, value);
       }
       else if (node.declaration.type === 'ClassDeclaration') {
-          value = createClass(node.declaration, scope);
+          value = yield* createClass(node.declaration, scope);
           scope.func(node.declaration.id.name, value);
       }
       else {
-          value = evaluate$1(node.declaration, scope);
+          value = yield* evaluate$1(node.declaration, scope);
       }
       const variable = globalScope.find(EXPORTS);
       if (variable) {
@@ -1896,7 +1976,7 @@
           }
       }
   }
-  function ExportNamedDeclaration$1(node, scope) {
+  function* ExportNamedDeclaration$1(node, scope) {
       const globalScope = scope.global();
       if (node.declaration) {
           if (node.declaration.type === 'FunctionDeclaration') {
@@ -1911,7 +1991,7 @@
               }
           }
           else if (node.declaration.type === 'ClassDeclaration') {
-              const value = createClass(node.declaration, scope);
+              const value = yield* createClass(node.declaration, scope);
               scope.func(node.declaration.id.name, value);
               const variable = globalScope.find(EXPORTS);
               if (variable) {
@@ -1922,7 +2002,7 @@
               }
           }
           else if (node.declaration.type === 'VariableDeclaration') {
-              VariableDeclaration$1(node.declaration, scope);
+              yield* VariableDeclaration$1(node.declaration, scope);
               const variable = globalScope.find(EXPORTS);
               if (variable) {
                   const exports = variable.get();
@@ -1957,7 +2037,7 @@
           }
       }
   }
-  function ExportAllDeclaration$1(node, scope) {
+  function* ExportAllDeclaration$1(node, scope) {
       const globalScope = scope.global();
       const module = globalScope.find(IMPORT + node.source.value);
       let value;
@@ -1984,7 +2064,7 @@
       }
   }
 
-  function* Identifier(node, scope, options = {}) {
+  function Identifier(node, scope, options = {}) {
       const { getVar = false, throwErr = true } = options;
       if (node.name === 'undefined') {
           return undefined;
@@ -2017,7 +2097,7 @@
     Identifier: Identifier
   });
 
-  function* Literal(node, scope) {
+  function Literal(node, scope) {
       return node.value;
   }
 
@@ -2026,7 +2106,7 @@
     Literal: Literal
   });
 
-  function* ThisExpression(node, scope) {
+  function ThisExpression(node, scope) {
       const superCall = scope.find(SUPERCALL);
       if (superCall && !superCall.get()) {
           throw new ReferenceError('Must call super constructor in derived class '
@@ -2036,41 +2116,41 @@
           return scope.find('this').get();
       }
   }
-  function* ArrayExpression(node, scope) {
+  function ArrayExpression(node, scope) {
       let results = [];
       for (let i = 0; i < node.elements.length; i++) {
           const item = node.elements[i];
           if (item.type === 'SpreadElement') {
-              results = results.concat(yield* SpreadElement(item, scope));
+              results = results.concat(SpreadElement(item, scope));
           }
           else {
-              results.push(yield* evaluate(item, scope));
+              results.push(evaluate(item, scope));
           }
       }
       return results;
   }
-  function* ObjectExpression(node, scope) {
+  function ObjectExpression(node, scope) {
       const object = {};
       for (let i = 0; i < node.properties.length; i++) {
           const property = node.properties[i];
           if (property.type === 'SpreadElement') {
-              assign(object, yield* SpreadElement(property, scope));
+              assign(object, SpreadElement(property, scope));
           }
           else {
               let key;
               const propKey = property.key;
               if (property.computed) {
-                  key = yield* evaluate(propKey, scope);
+                  key = evaluate(propKey, scope);
               }
               else {
                   if (propKey.type === 'Identifier') {
                       key = propKey.name;
                   }
                   else {
-                      key = '' + (yield* Literal(propKey));
+                      key = '' + (Literal(propKey));
                   }
               }
-              const value = yield* evaluate(property.value, scope);
+              const value = evaluate(property.value, scope);
               const propKind = property.kind;
               if (propKind === 'init') {
                   object[key] = value;
@@ -2097,7 +2177,7 @@
       }
       return object;
   }
-  function* FunctionExpression(node, scope) {
+  function FunctionExpression(node, scope) {
       if (node.id && node.id.name) {
           const tmpScope = new Scope(scope);
           const func = createFunc$1(node, tmpScope);
@@ -2108,44 +2188,44 @@
           return createFunc$1(node, scope);
       }
   }
-  function* UnaryExpression(node, scope) {
+  function UnaryExpression(node, scope) {
       const arg = node.argument;
       switch (node.operator) {
-          case '+': return +(yield* evaluate(arg, scope));
-          case '-': return -(yield* evaluate(arg, scope));
-          case '!': return !(yield* evaluate(arg, scope));
-          case '~': return ~(yield* evaluate(arg, scope));
-          case 'void': return void (yield* evaluate(arg, scope));
+          case '+': return +(evaluate(arg, scope));
+          case '-': return -(evaluate(arg, scope));
+          case '!': return !(evaluate(arg, scope));
+          case '~': return ~(evaluate(arg, scope));
+          case 'void': return void (evaluate(arg, scope));
           case 'typeof':
               if (arg.type === 'Identifier') {
-                  return typeof (yield* Identifier(arg, scope, { throwErr: false }));
+                  return typeof (Identifier(arg, scope, { throwErr: false }));
               }
               else {
-                  return typeof (yield* evaluate(arg, scope));
+                  return typeof (evaluate(arg, scope));
               }
           case 'delete':
               if (arg.type === 'MemberExpression') {
-                  const variable = yield* MemberExpression(arg, scope, { getVar: true });
+                  const variable = MemberExpression(arg, scope, { getVar: true });
                   return variable.del();
               }
               else if (arg.type === 'Identifier') {
                   throw new SyntaxError('Delete of an unqualified identifier in strict mode');
               }
               else {
-                  yield* evaluate(arg, scope);
+                  evaluate(arg, scope);
                   return true;
               }
           default: throw new SyntaxError(`Unexpected token ${node.operator}`);
       }
   }
-  function* UpdateExpression(node, scope) {
+  function UpdateExpression(node, scope) {
       const arg = node.argument;
       let variable;
       if (arg.type === 'Identifier') {
-          variable = yield* Identifier(arg, scope, { getVar: true });
+          variable = Identifier(arg, scope, { getVar: true });
       }
       else if (arg.type === 'MemberExpression') {
-          variable = yield* MemberExpression(arg, scope, { getVar: true });
+          variable = MemberExpression(arg, scope, { getVar: true });
       }
       else {
           throw new SyntaxError('Unexpected token');
@@ -2163,17 +2243,17 @@
           throw new SyntaxError(`Unexpected token ${node.operator}`);
       }
   }
-  function* BinaryExpression(node, scope) {
+  function BinaryExpression(node, scope) {
       let left;
       let right;
       if (node.left.type === 'PrivateIdentifier') {
           left = node.left.name;
-          right = yield* evaluate(node.right, scope);
-          right = right[PRIVATE];
+          right = evaluate(node.right, scope);
+          right = right[PRIVATE] || {};
       }
       else {
-          left = yield* evaluate(node.left, scope);
-          right = yield* evaluate(node.right, scope);
+          left = evaluate(node.left, scope);
+          right = evaluate(node.right, scope);
       }
       switch (node.operator) {
           case '==': return left == right;
@@ -2201,25 +2281,25 @@
           default: throw new SyntaxError(`Unexpected token ${node.operator}`);
       }
   }
-  function* AssignmentExpression(node, scope) {
+  function AssignmentExpression(node, scope) {
       var _a;
       const left = node.left;
       let variable;
       if (left.type === 'Identifier') {
-          variable = yield* Identifier(left, scope, { getVar: true, throwErr: false });
+          variable = Identifier(left, scope, { getVar: true, throwErr: false });
           if (!variable) {
               const win = scope.global().find('window').get();
               variable = new Prop(win, left.name);
           }
       }
       else if (left.type === 'MemberExpression') {
-          variable = yield* MemberExpression(left, scope, { getVar: true });
+          variable = MemberExpression(left, scope, { getVar: true });
       }
       else {
-          const value = yield* evaluate(node.right, scope);
-          return yield* pattern$1(left, scope, { feed: value });
+          const value = evaluate(node.right, scope);
+          return pattern$1(left, scope, { feed: value });
       }
-      const value = yield* evaluate(node.right, scope);
+      const value = evaluate(node.right, scope);
       switch (node.operator) {
           case '=':
               variable.set(value);
@@ -2272,34 +2352,34 @@
           default: throw new SyntaxError(`Unexpected token ${node.operator}`);
       }
   }
-  function* LogicalExpression(node, scope) {
+  function LogicalExpression(node, scope) {
       var _a;
       switch (node.operator) {
           case '||':
-              return (yield* evaluate(node.left, scope)) || (yield* evaluate(node.right, scope));
+              return (evaluate(node.left, scope)) || (evaluate(node.right, scope));
           case '&&':
-              return (yield* evaluate(node.left, scope)) && (yield* evaluate(node.right, scope));
+              return (evaluate(node.left, scope)) && (evaluate(node.right, scope));
           case '??':
-              return (_a = (yield* evaluate(node.left, scope))) !== null && _a !== void 0 ? _a : (yield* evaluate(node.right, scope));
+              return (_a = (evaluate(node.left, scope))) !== null && _a !== void 0 ? _a : (evaluate(node.right, scope));
           default:
               throw new SyntaxError(`Unexpected token ${node.operator}`);
       }
   }
-  function* MemberExpression(node, scope, options = {}) {
+  function MemberExpression(node, scope, options = {}) {
       const { getObj = false, getVar = false } = options;
       let object;
       if (node.object.type === 'Super') {
-          object = yield* Super(node.object, scope, { getProto: true });
+          object = Super(node.object, scope, { getProto: true });
       }
       else {
-          object = yield* evaluate(node.object, scope);
+          object = evaluate(node.object, scope);
       }
       if (getObj)
           return object;
       let key;
       let priv = false;
       if (node.computed) {
-          key = yield* evaluate(node.property, scope);
+          key = evaluate(node.property, scope);
       }
       else if (node.property.type === 'PrivateIdentifier') {
           key = node.property.name;
@@ -2340,23 +2420,23 @@
           }
       }
   }
-  function* ConditionalExpression(node, scope) {
-      return (yield* evaluate(node.test, scope))
-          ? (yield* evaluate(node.consequent, scope))
-          : (yield* evaluate(node.alternate, scope));
+  function ConditionalExpression(node, scope) {
+      return (evaluate(node.test, scope))
+          ? (evaluate(node.consequent, scope))
+          : (evaluate(node.alternate, scope));
   }
-  function* CallExpression(node, scope) {
+  function CallExpression(node, scope) {
       let func;
       let object;
       if (node.callee.type === 'MemberExpression') {
-          object = yield* MemberExpression(node.callee, scope, { getObj: true });
+          object = MemberExpression(node.callee, scope, { getObj: true });
           if (node.callee.optional && object == null) {
               return undefined;
           }
           let key;
           let priv = false;
           if (node.callee.computed) {
-              key = yield* evaluate(node.callee.property, scope);
+              key = evaluate(node.callee.property, scope);
           }
           else if (node.callee.property.type === 'PrivateIdentifier') {
               key = node.callee.property.name;
@@ -2388,7 +2468,7 @@
       }
       else {
           object = scope.find('this').get();
-          func = yield* evaluate(node.callee, scope);
+          func = evaluate(node.callee, scope);
           if (node.optional && func == null) {
               return undefined;
           }
@@ -2417,10 +2497,10 @@
       for (let i = 0; i < node.arguments.length; i++) {
           const arg = node.arguments[i];
           if (arg.type === 'SpreadElement') {
-              args = args.concat(yield* SpreadElement(arg, scope));
+              args = args.concat(SpreadElement(arg, scope));
           }
           else {
-              args.push(yield* evaluate(arg, scope));
+              args.push(evaluate(arg, scope));
           }
       }
       if (node.callee.type === 'Super') {
@@ -2446,8 +2526,8 @@
           throw err;
       }
   }
-  function* NewExpression(node, scope) {
-      const constructor = yield* evaluate(node.callee, scope);
+  function NewExpression(node, scope) {
+      const constructor = evaluate(node.callee, scope);
       if (typeof constructor !== 'function') {
           let name;
           if (node.callee.type === 'Identifier') {
@@ -2470,15 +2550,15 @@
       for (let i = 0; i < node.arguments.length; i++) {
           const arg = node.arguments[i];
           if (arg.type === 'SpreadElement') {
-              args = args.concat(yield* SpreadElement(arg, scope));
+              args = args.concat(SpreadElement(arg, scope));
           }
           else {
-              args.push(yield* evaluate(arg, scope));
+              args.push(evaluate(arg, scope));
           }
       }
       return new constructor(...args);
   }
-  function* MetaProperty(node, scope) {
+  function MetaProperty(node, scope) {
       if (node.meta.name === 'new' && node.property.name === 'target') {
           return scope.find(NEWTARGET).get();
       }
@@ -2486,33 +2566,33 @@
           return { url: '' };
       }
   }
-  function* SequenceExpression(node, scope) {
+  function SequenceExpression(node, scope) {
       let result;
       for (let i = 0; i < node.expressions.length; i++) {
-          result = yield* evaluate(node.expressions[i], scope);
+          result = evaluate(node.expressions[i], scope);
       }
       return result;
   }
-  function* ArrowFunctionExpression(node, scope) {
+  function ArrowFunctionExpression(node, scope) {
       return createFunc$1(node, scope);
   }
-  function* TemplateLiteral(node, scope) {
+  function TemplateLiteral(node, scope) {
       const quasis = node.quasis.slice();
       const expressions = node.expressions.slice();
       let result = '';
       let temEl;
       let expr;
       while (temEl = quasis.shift()) {
-          result += yield* TemplateElement(temEl);
+          result += TemplateElement(temEl);
           expr = expressions.shift();
           if (expr) {
-              result += yield* evaluate(expr, scope);
+              result += evaluate(expr, scope);
           }
       }
       return result;
   }
-  function* TaggedTemplateExpression(node, scope) {
-      const tagFunc = yield* evaluate(node.tag, scope);
+  function TaggedTemplateExpression(node, scope) {
+      const tagFunc = evaluate(node.tag, scope);
       const quasis = node.quasi.quasis;
       const str = quasis.map(v => v.value.cooked);
       const raw = quasis.map(v => v.value.raw);
@@ -2523,40 +2603,40 @@
       const args = [];
       if (expressions) {
           for (let i = 0; i < expressions.length; i++) {
-              args.push(yield* evaluate(expressions[i], scope));
+              args.push(evaluate(expressions[i], scope));
           }
       }
       return tagFunc(freeze(str), ...args);
   }
-  function* TemplateElement(node, scope) {
+  function TemplateElement(node, scope) {
       return node.value.raw;
   }
-  function* ClassExpression(node, scope) {
+  function ClassExpression(node, scope) {
       if (node.id && node.id.name) {
           const tmpScope = new Scope(scope);
-          const klass = yield* createClass$1(node, tmpScope);
+          const klass = createClass$1(node, tmpScope);
           tmpScope.const(node.id.name, klass);
           return klass;
       }
       else {
-          return yield* createClass$1(node, scope);
+          return createClass$1(node, scope);
       }
   }
-  function* Super(node, scope, options = {}) {
+  function Super(node, scope, options = {}) {
       const { getProto = false } = options;
       const superClass = scope.find(SUPER).get();
       return getProto ? superClass.prototype : superClass;
   }
-  function* SpreadElement(node, scope) {
-      const result = yield* evaluate(node.argument, scope);
+  function SpreadElement(node, scope) {
+      const result = evaluate(node.argument, scope);
       return typeof result === 'string' ? [...result] : result;
   }
-  function* ChainExpression(node, scope) {
-      return yield* evaluate(node.expression, scope);
+  function ChainExpression(node, scope) {
+      return evaluate(node.expression, scope);
   }
-  function* ImportExpression(node, scope) {
+  function ImportExpression(node, scope) {
       const globalScope = scope.global();
-      const source = yield* evaluate(node.source, scope);
+      const source = evaluate(node.source, scope);
       const module = globalScope.find(IMPORT + source);
       let value;
       if (module) {
@@ -2574,14 +2654,6 @@
           return Promise.reject(new TypeError(`Failed to resolve module specifier "${source}"`));
       }
       return Promise.resolve(value);
-  }
-  function* YieldExpression(node, scope) {
-      const res = yield* evaluate(node.argument, scope);
-      return node.delegate ? yield* res : yield res;
-  }
-  function* AwaitExpression(node, scope) {
-      AWAIT.RES = yield* evaluate(node.argument, scope);
-      return yield AWAIT;
   }
 
   var expression = /*#__PURE__*/Object.freeze({
@@ -2609,12 +2681,10 @@
     Super: Super,
     SpreadElement: SpreadElement,
     ChainExpression: ChainExpression,
-    ImportExpression: ImportExpression,
-    YieldExpression: YieldExpression,
-    AwaitExpression: AwaitExpression
+    ImportExpression: ImportExpression
   });
 
-  function* ObjectPattern(node, scope, options = {}) {
+  function ObjectPattern(node, scope, options = {}) {
       const { kind = 'var', hoist = false, onlyBlock = false, feed = {} } = options;
       const fedKeys = [];
       for (let i = 0; i < node.properties.length; i++) {
@@ -2627,18 +2697,18 @@
                           scope[kind](value.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
                       }
                       else {
-                          yield* pattern$1(value, scope, { kind, hoist, onlyBlock });
+                          pattern$1(value, scope, { kind, hoist, onlyBlock });
                       }
                   }
                   else {
-                      yield* RestElement(property, scope, { kind, hoist, onlyBlock });
+                      RestElement(property, scope, { kind, hoist, onlyBlock });
                   }
               }
           }
           else if (property.type === 'Property') {
               let key;
               if (property.computed) {
-                  key = yield* evaluate(property.key, scope);
+                  key = evaluate(property.key, scope);
               }
               else {
                   key = property.key.name;
@@ -2649,18 +2719,18 @@
                   scope[kind](value.name, feed[key]);
               }
               else {
-                  yield* pattern$1(value, scope, { kind, feed: feed[key] });
+                  pattern$1(value, scope, { kind, feed: feed[key] });
               }
           }
           else {
               const rest = assign({}, feed);
               for (let i = 0; i < fedKeys.length; i++)
                   delete rest[fedKeys[i]];
-              yield* RestElement(property, scope, { kind, feed: rest });
+              RestElement(property, scope, { kind, feed: rest });
           }
       }
   }
-  function* ArrayPattern(node, scope, options = {}) {
+  function ArrayPattern(node, scope, options = {}) {
       const { kind, hoist = false, onlyBlock = false, feed = [] } = options;
       const result = [];
       for (let i = 0; i < node.elements.length; i++) {
@@ -2673,7 +2743,7 @@
                       scope[kind](element.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
                   }
                   else {
-                      yield* pattern$1(element, scope, { kind, hoist, onlyBlock });
+                      pattern$1(element, scope, { kind, hoist, onlyBlock });
                   }
               }
           }
@@ -2682,23 +2752,23 @@
                   scope[kind](element.name, feed[i]);
               }
               else {
-                  const variable = yield* Identifier(element, scope, { getVar: true });
+                  const variable = Identifier(element, scope, { getVar: true });
                   variable.set(feed[i]);
                   result.push(variable.get());
               }
           }
           else if (element.type === 'RestElement') {
-              yield* RestElement(element, scope, { kind, feed: feed.slice(i) });
+              RestElement(element, scope, { kind, feed: feed.slice(i) });
           }
           else {
-              yield* pattern$1(element, scope, { kind, feed: feed[i] });
+              pattern$1(element, scope, { kind, feed: feed[i] });
           }
       }
       if (result.length) {
           return result;
       }
   }
-  function* RestElement(node, scope, options = {}) {
+  function RestElement(node, scope, options = {}) {
       const { kind, hoist = false, onlyBlock = false, feed = [] } = options;
       const arg = node.argument;
       if (hoist) {
@@ -2707,7 +2777,7 @@
                   scope[kind](arg.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
               }
               else {
-                  yield* pattern$1(arg, scope, { kind, hoist, onlyBlock });
+                  pattern$1(arg, scope, { kind, hoist, onlyBlock });
               }
           }
       }
@@ -2716,16 +2786,16 @@
               scope[kind](arg.name, feed);
           }
           else {
-              const variable = yield* Identifier(arg, scope, { getVar: true });
+              const variable = Identifier(arg, scope, { getVar: true });
               variable.set(feed);
           }
       }
       else {
-          yield* pattern$1(arg, scope, { kind, feed });
+          pattern$1(arg, scope, { kind, feed });
       }
   }
-  function* AssignmentPattern(node, scope, options = {}) {
-      const { kind = 'var', hoist = false, onlyBlock = false, feed = yield* evaluate(node.right, scope) } = options;
+  function AssignmentPattern(node, scope, options = {}) {
+      const { kind = 'var', hoist = false, onlyBlock = false, feed = evaluate(node.right, scope) } = options;
       const left = node.left;
       if (hoist) {
           if (onlyBlock || kind === 'var') {
@@ -2733,7 +2803,7 @@
                   scope[kind](left.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
               }
               else {
-                  yield* pattern$1(left, scope, { kind, hoist, onlyBlock });
+                  pattern$1(left, scope, { kind, hoist, onlyBlock });
               }
           }
       }
@@ -2741,7 +2811,7 @@
           scope[kind](left.name, feed);
       }
       else {
-          yield* pattern$1(left, scope, { kind, feed });
+          pattern$1(left, scope, { kind, feed });
       }
   }
 
@@ -2753,33 +2823,44 @@
     AssignmentPattern: AssignmentPattern
   });
 
+  function Program(program, scope) {
+      for (let i = 0; i < program.body.length; i++) {
+          evaluate(program.body[i], scope);
+      }
+  }
+
+  var program = /*#__PURE__*/Object.freeze({
+    __proto__: null,
+    Program: Program
+  });
+
   let evaluateOps;
-  function* evaluate(node, scope) {
+  function evaluate(node, scope) {
       if (!node)
           return;
       if (!evaluateOps) {
-          evaluateOps = assign({}, declaration, expression, identifier, statement, literal, pattern$2);
+          evaluateOps = assign({}, declaration, expression, identifier, statement, literal, pattern$2, program);
       }
       const handler = evaluateOps[node.type];
       if (handler) {
-          return yield* handler(node, scope);
+          return handler(node, scope);
       }
       else {
           throw new Error(`${node.type} isn't implemented`);
       }
   }
 
-  function* ExpressionStatement(node, scope) {
-      yield* evaluate(node.expression, scope);
+  function ExpressionStatement(node, scope) {
+      evaluate(node.expression, scope);
   }
-  function* BlockStatement(block, scope, options = {}) {
+  function BlockStatement(block, scope, options = {}) {
       const { invasived = false, hoisted = false, } = options;
       const subScope = invasived ? scope : new Scope(scope);
       if (!hoisted) {
-          yield* hoist$1(block, subScope, { onlyBlock: true });
+          hoist$1(block, subScope, { onlyBlock: true });
       }
       for (let i = 0; i < block.body.length; i++) {
-          const result = yield* evaluate(block.body[i], subScope);
+          const result = evaluate(block.body[i], subScope);
           if (result === BREAK) {
               if (result.LABEL && result.LABEL === options.label) {
                   break;
@@ -2791,63 +2872,63 @@
           }
       }
   }
-  function* EmptyStatement() {
+  function EmptyStatement() {
   }
-  function* DebuggerStatement() {
+  function DebuggerStatement() {
       debugger;
   }
-  function* ReturnStatement(node, scope) {
-      RETURN.RES = node.argument ? (yield* evaluate(node.argument, scope)) : undefined;
+  function ReturnStatement(node, scope) {
+      RETURN.RES = node.argument ? (evaluate(node.argument, scope)) : undefined;
       return RETURN;
   }
-  function* BreakStatement(node) {
+  function BreakStatement(node) {
       var _a;
       BREAK.LABEL = (_a = node.label) === null || _a === void 0 ? void 0 : _a.name;
       return BREAK;
   }
-  function* ContinueStatement(node) {
+  function ContinueStatement(node) {
       var _a;
       CONTINUE.LABEL = (_a = node.label) === null || _a === void 0 ? void 0 : _a.name;
       return CONTINUE;
   }
-  function* LabeledStatement(node, scope) {
+  function LabeledStatement(node, scope) {
       const label = node.label.name;
       if (node.body.type === 'WhileStatement') {
-          return yield* WhileStatement(node.body, scope, { label });
+          return WhileStatement(node.body, scope, { label });
       }
       if (node.body.type === 'DoWhileStatement') {
-          return yield* DoWhileStatement(node.body, scope, { label });
+          return DoWhileStatement(node.body, scope, { label });
       }
       if (node.body.type === 'ForStatement') {
-          return yield* ForStatement(node.body, scope, { label });
+          return ForStatement(node.body, scope, { label });
       }
       if (node.body.type === 'ForInStatement') {
-          return yield* ForInStatement(node.body, scope, { label });
+          return ForInStatement(node.body, scope, { label });
       }
       if (node.body.type === 'ForOfStatement') {
-          return yield* ForOfStatement(node.body, scope, { label });
+          return ForOfStatement(node.body, scope, { label });
       }
       if (node.body.type === 'BlockStatement') {
-          return yield* BlockStatement(node.body, scope, { label });
+          return BlockStatement(node.body, scope, { label });
       }
       if (node.body.type === 'WithStatement') {
-          return yield* WithStatement(node.body, scope, { label });
+          return WithStatement(node.body, scope, { label });
       }
       if (node.body.type === 'IfStatement') {
-          return yield* IfStatement(node.body, scope, { label });
+          return IfStatement(node.body, scope, { label });
       }
       if (node.body.type === 'SwitchStatement') {
-          return yield* SwitchStatement(node.body, scope, { label });
+          return SwitchStatement(node.body, scope, { label });
       }
       if (node.body.type === 'TryStatement') {
-          return yield* TryStatement(node.body, scope, { label });
+          return TryStatement(node.body, scope, { label });
       }
       throw new SyntaxError(`${node.body.type} cannot be labeled`);
   }
-  function* WithStatement(node, scope, options = {}) {
+  function WithStatement(node, scope, options = {}) {
       const withScope = new Scope(scope);
-      withScope.with(yield* evaluate(node.object, scope));
-      const result = yield* evaluate(node.body, withScope);
+      withScope.with(evaluate(node.object, scope));
+      const result = evaluate(node.body, withScope);
       if (result === BREAK) {
           if (result.LABEL && result.LABEL === options.label) {
               return;
@@ -2858,13 +2939,13 @@
           return result;
       }
   }
-  function* IfStatement(node, scope, options = {}) {
+  function IfStatement(node, scope, options = {}) {
       let result;
-      if (yield* evaluate(node.test, scope)) {
-          result = yield* evaluate(node.consequent, scope);
+      if (evaluate(node.test, scope)) {
+          result = evaluate(node.consequent, scope);
       }
       else {
-          result = yield* evaluate(node.alternate, scope);
+          result = evaluate(node.alternate, scope);
       }
       if (result === BREAK) {
           if (result.LABEL && result.LABEL === options.label) {
@@ -2876,18 +2957,18 @@
           return result;
       }
   }
-  function* SwitchStatement(node, scope, options = {}) {
-      const discriminant = yield* evaluate(node.discriminant, scope);
+  function SwitchStatement(node, scope, options = {}) {
+      const discriminant = evaluate(node.discriminant, scope);
       let matched = false;
       for (let i = 0; i < node.cases.length; i++) {
           const eachCase = node.cases[i];
           if (!matched
               && (!eachCase.test
-                  || (yield* evaluate(eachCase.test, scope)) === discriminant)) {
+                  || (evaluate(eachCase.test, scope)) === discriminant)) {
               matched = true;
           }
           if (matched) {
-              const result = yield* SwitchCase(eachCase, scope);
+              const result = SwitchCase(eachCase, scope);
               if (result === BREAK) {
                   if (result.LABEL === options.label) {
                       break;
@@ -2900,21 +2981,21 @@
           }
       }
   }
-  function* SwitchCase(node, scope) {
+  function SwitchCase(node, scope) {
       for (let i = 0; i < node.consequent.length; i++) {
-          const result = yield* evaluate(node.consequent[i], scope);
+          const result = evaluate(node.consequent[i], scope);
           if (result === BREAK || result === CONTINUE || result === RETURN) {
               return result;
           }
       }
   }
-  function* ThrowStatement(node, scope) {
-      throw yield* evaluate(node.argument, scope);
+  function ThrowStatement(node, scope) {
+      throw evaluate(node.argument, scope);
   }
-  function* TryStatement(node, scope, options = {}) {
+  function TryStatement(node, scope, options = {}) {
       let result;
       try {
-          result = yield* BlockStatement(node.block, scope);
+          result = BlockStatement(node.block, scope);
       }
       catch (err) {
           if (node.handler) {
@@ -2926,10 +3007,10 @@
                       subScope.var(name, err);
                   }
                   else {
-                      yield* pattern$1(param, scope, { feed: err });
+                      pattern$1(param, scope, { feed: err });
                   }
               }
-              result = yield* CatchClause(node.handler, subScope);
+              result = CatchClause(node.handler, subScope);
           }
           else {
               throw err;
@@ -2937,7 +3018,7 @@
       }
       finally {
           if (node.finalizer) {
-              result = yield* BlockStatement(node.finalizer, scope);
+              result = BlockStatement(node.finalizer, scope);
           }
       }
       if (result === BREAK) {
@@ -2950,12 +3031,12 @@
           return result;
       }
   }
-  function* CatchClause(node, scope) {
-      return yield* BlockStatement(node.body, scope, { invasived: true });
+  function CatchClause(node, scope) {
+      return BlockStatement(node.body, scope, { invasived: true });
   }
-  function* WhileStatement(node, scope, options = {}) {
-      while (yield* evaluate(node.test, scope)) {
-          const result = yield* evaluate(node.body, scope);
+  function WhileStatement(node, scope, options = {}) {
+      while (evaluate(node.test, scope)) {
+          const result = evaluate(node.body, scope);
           if (result === BREAK) {
               if (result.LABEL === options.label) {
                   break;
@@ -2973,9 +3054,9 @@
           }
       }
   }
-  function* DoWhileStatement(node, scope, options = {}) {
+  function DoWhileStatement(node, scope, options = {}) {
       do {
-          const result = yield* evaluate(node.body, scope);
+          const result = evaluate(node.body, scope);
           if (result === BREAK) {
               if (result.LABEL === options.label) {
                   break;
@@ -2991,18 +3072,18 @@
           else if (result === RETURN) {
               return result;
           }
-      } while (yield* evaluate(node.test, scope));
+      } while (evaluate(node.test, scope));
   }
-  function* ForStatement(node, scope, options = {}) {
+  function ForStatement(node, scope, options = {}) {
       const forScope = new Scope(scope);
-      for (yield* evaluate(node.init, forScope); node.test ? (yield* evaluate(node.test, forScope)) : true; yield* evaluate(node.update, forScope)) {
+      for (evaluate(node.init, forScope); node.test ? (evaluate(node.test, forScope)) : true; evaluate(node.update, forScope)) {
           const subScope = new Scope(forScope);
           let result;
           if (node.body.type === 'BlockStatement') {
-              result = yield* BlockStatement(node.body, subScope, { invasived: true });
+              result = BlockStatement(node.body, subScope, { invasived: true });
           }
           else {
-              result = yield* evaluate(node.body, subScope);
+              result = evaluate(node.body, subScope);
           }
           if (result === BREAK) {
               if (result.LABEL === options.label) {
@@ -3021,9 +3102,9 @@
           }
       }
   }
-  function* ForInStatement(node, scope, options = {}) {
-      for (const value in yield* evaluate(node.right, scope)) {
-          const result = yield* ForXHandler$1(node, scope, { value });
+  function ForInStatement(node, scope, options = {}) {
+      for (const value in evaluate(node.right, scope)) {
+          const result = ForXHandler$1(node, scope, { value });
           if (result === BREAK) {
               if (result.LABEL === options.label) {
                   break;
@@ -3041,61 +3122,37 @@
           }
       }
   }
-  function* ForOfStatement(node, scope, options = {}) {
-      const right = yield* evaluate(node.right, scope);
-      if (node.await) {
-          const iterator = getAsyncIterator(right);
-          let ret;
-          for (AWAIT.RES = iterator.next(), ret = yield AWAIT; !ret.done; AWAIT.RES = iterator.next(), ret = yield AWAIT) {
-              const result = yield* ForXHandler$1(node, scope, { value: ret.value });
-              if (result === BREAK) {
-                  if (result.LABEL === options.label) {
-                      break;
-                  }
-                  return result;
+  function ForOfStatement(node, scope, options = {}) {
+      const right = evaluate(node.right, scope);
+      for (const value of right) {
+          const result = ForXHandler$1(node, scope, { value });
+          if (result === BREAK) {
+              if (result.LABEL === options.label) {
+                  break;
               }
-              else if (result === CONTINUE) {
-                  if (result.LABEL === options.label) {
-                      continue;
-                  }
-                  return result;
-              }
-              else if (result === RETURN) {
-                  return result;
-              }
+              return result;
           }
-      }
-      else {
-          for (const value of right) {
-              const result = yield* ForXHandler$1(node, scope, { value });
-              if (result === BREAK) {
-                  if (result.LABEL === options.label) {
-                      break;
-                  }
-                  return result;
+          else if (result === CONTINUE) {
+              if (result.LABEL === options.label) {
+                  continue;
               }
-              else if (result === CONTINUE) {
-                  if (result.LABEL === options.label) {
-                      continue;
-                  }
-                  return result;
-              }
-              else if (result === RETURN) {
-                  return result;
-              }
+              return result;
+          }
+          else if (result === RETURN) {
+              return result;
           }
       }
   }
 
-  function* FunctionDeclaration(node, scope) {
+  function FunctionDeclaration(node, scope) {
       scope.func(node.id.name, createFunc$1(node, scope));
   }
-  function* VariableDeclaration(node, scope, options = {}) {
+  function VariableDeclaration(node, scope, options = {}) {
       for (let i = 0; i < node.declarations.length; i++) {
-          yield* VariableDeclarator(node.declarations[i], scope, assign({ kind: node.kind }, options));
+          VariableDeclarator(node.declarations[i], scope, assign({ kind: node.kind }, options));
       }
   }
-  function* VariableDeclarator(node, scope, options = {}) {
+  function VariableDeclarator(node, scope, options = {}) {
       const { kind = 'var', hoist = false, onlyBlock = false, feed } = options;
       if (hoist) {
           if (onlyBlock || kind === 'var') {
@@ -3103,13 +3160,13 @@
                   scope[kind](node.id.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined);
               }
               else {
-                  yield* pattern$1(node.id, scope, { kind, hoist, onlyBlock });
+                  pattern$1(node.id, scope, { kind, hoist, onlyBlock });
               }
           }
       }
       else {
           const hasFeed = 'feed' in options;
-          const value = hasFeed ? feed : yield* evaluate(node.init, scope);
+          const value = hasFeed ? feed : evaluate(node.init, scope);
           if (node.id.type === 'Identifier') {
               const name = node.id.name;
               if (kind === 'var' && !node.init && !hasFeed) {
@@ -3129,34 +3186,34 @@
               }
           }
           else {
-              yield* pattern$1(node.id, scope, { kind, feed: value });
+              pattern$1(node.id, scope, { kind, feed: value });
           }
       }
   }
-  function* ClassDeclaration(node, scope) {
-      scope.func(node.id.name, yield* createClass$1(node, scope));
+  function ClassDeclaration(node, scope) {
+      scope.func(node.id.name, createClass$1(node, scope));
   }
-  function* ClassBody(node, scope, options = {}) {
+  function ClassBody(node, scope, options = {}) {
       const { klass, superClass } = options;
       for (let i = 0; i < node.body.length; i++) {
           const def = node.body[i];
           if (def.type === 'MethodDefinition') {
-              yield* MethodDefinition(def, scope, { klass, superClass });
+              MethodDefinition(def, scope, { klass, superClass });
           }
           else if (def.type === 'PropertyDefinition' && def.static) {
-              yield* PropertyDefinition(def, scope, { klass, superClass });
+              PropertyDefinition(def, scope, { klass, superClass });
           }
           else if (def.type === 'StaticBlock') {
-              yield* StaticBlock(def, scope, { klass, superClass });
+              StaticBlock(def, scope, { klass, superClass });
           }
       }
   }
-  function* MethodDefinition(node, scope, options = {}) {
+  function MethodDefinition(node, scope, options = {}) {
       const { klass, superClass } = options;
       let key;
       let priv = false;
       if (node.computed) {
-          key = yield* evaluate(node.key, scope);
+          key = evaluate(node.key, scope);
       }
       else if (node.key.type === 'Identifier') {
           key = node.key.name;
@@ -3208,12 +3265,12 @@
               throw new SyntaxError('Unexpected token');
       }
   }
-  function* PropertyDefinition(node, scope, options = {}) {
+  function PropertyDefinition(node, scope, options = {}) {
       const { klass, superClass } = options;
       let key;
       let priv = false;
       if (node.computed) {
-          key = yield* evaluate(node.key, scope);
+          key = evaluate(node.key, scope);
       }
       else if (node.key.type === 'Identifier') {
           key = node.key.name;
@@ -3241,16 +3298,16 @@
           obj[key] = createFunc$1(node.value, subScope, { superClass });
       }
       else {
-          obj[key] = yield* evaluate(node.value, subScope);
+          obj[key] = evaluate(node.value, subScope);
       }
   }
-  function* StaticBlock(node, scope, options = {}) {
+  function StaticBlock(node, scope, options = {}) {
       const { klass } = options;
       const subScope = new Scope(scope, true);
       subScope.const('this', klass);
-      return yield* BlockStatement(node, subScope, { invasived: true });
+      return BlockStatement(node, subScope, { invasived: true });
   }
-  function* ImportDeclaration(node, scope) {
+  function ImportDeclaration(node, scope) {
       const globalScope = scope.global();
       const module = globalScope.find(IMPORT + node.source.value);
       let value;
@@ -3287,7 +3344,7 @@
           scope.var(spec.local.name, name === '*' ? assign({}, value) : value[name]);
       }
   }
-  function* ExportDefaultDeclaration(node, scope) {
+  function ExportDefaultDeclaration(node, scope) {
       const globalScope = scope.global();
       let value;
       if (node.declaration.type === 'FunctionDeclaration') {
@@ -3295,11 +3352,11 @@
           scope.func(node.declaration.id.name, value);
       }
       else if (node.declaration.type === 'ClassDeclaration') {
-          value = yield* createClass$1(node.declaration, scope);
+          value = createClass$1(node.declaration, scope);
           scope.func(node.declaration.id.name, value);
       }
       else {
-          value = yield* evaluate(node.declaration, scope);
+          value = evaluate(node.declaration, scope);
       }
       const variable = globalScope.find(EXPORTS);
       if (variable) {
@@ -3309,7 +3366,7 @@
           }
       }
   }
-  function* ExportNamedDeclaration(node, scope) {
+  function ExportNamedDeclaration(node, scope) {
       const globalScope = scope.global();
       if (node.declaration) {
           if (node.declaration.type === 'FunctionDeclaration') {
@@ -3324,7 +3381,7 @@
               }
           }
           else if (node.declaration.type === 'ClassDeclaration') {
-              const value = yield* createClass$1(node.declaration, scope);
+              const value = createClass$1(node.declaration, scope);
               scope.func(node.declaration.id.name, value);
               const variable = globalScope.find(EXPORTS);
               if (variable) {
@@ -3335,7 +3392,7 @@
               }
           }
           else if (node.declaration.type === 'VariableDeclaration') {
-              yield* VariableDeclaration(node.declaration, scope);
+              VariableDeclaration(node.declaration, scope);
               const variable = globalScope.find(EXPORTS);
               if (variable) {
                   const exports = variable.get();
@@ -3370,7 +3427,7 @@
           }
       }
   }
-  function* ExportAllDeclaration(node, scope) {
+  function ExportAllDeclaration(node, scope) {
       const globalScope = scope.global();
       const module = globalScope.find(IMPORT + node.source.value);
       let value;
@@ -3397,53 +3454,7 @@
       }
   }
 
-  function runAsync(iterator, options = {}) {
-      const { res, err, ret, fullRet } = options;
-      return new Promise((resolve, reject) => {
-          if ('ret' in options) {
-              return resolve(iterator.return(ret));
-          }
-          if ('err' in options) {
-              onRejected(err);
-          }
-          else {
-              onFulfilled(res);
-          }
-          function onFulfilled(res) {
-              let ret;
-              try {
-                  ret = iterator.next(res);
-              }
-              catch (e) {
-                  return reject(e);
-              }
-              next(ret);
-              return null;
-          }
-          function onRejected(err) {
-              let ret;
-              try {
-                  ret = iterator.throw(err);
-              }
-              catch (e) {
-                  return reject(e);
-              }
-              next(ret);
-          }
-          function next(ret) {
-              if (ret.done)
-                  return resolve(fullRet ? ret : ret.value);
-              if (ret.value !== AWAIT)
-                  return resolve(ret);
-              const awaitValue = ret.value.RES;
-              const value = awaitValue && awaitValue.then === 'function'
-                  ? awaitValue : Promise.resolve(awaitValue);
-              return value.then(onFulfilled, onRejected);
-          }
-      });
-  }
-
-  function* hoist$1(block, scope, options = {}) {
+  function hoist$1(block, scope, options = {}) {
       const { onlyBlock = false } = options;
       const funcDclrList = [];
       const funcDclrIdxs = [];
@@ -3455,10 +3466,10 @@
           }
           else if (statement.type === 'VariableDeclaration'
               && ['const', 'let'].indexOf(statement.kind) !== -1) {
-              yield* VariableDeclaration(statement, scope, { hoist: true, onlyBlock: true });
+              VariableDeclaration(statement, scope, { hoist: true, onlyBlock: true });
           }
           else if (!onlyBlock) {
-              yield* hoistVarRecursion$1(statement, scope);
+              hoistVarRecursion$1(statement, scope);
           }
       }
       if (funcDclrIdxs.length) {
@@ -3468,81 +3479,312 @@
           block.body = funcDclrList.concat(block.body);
       }
   }
-  function* hoistVarRecursion$1(statement, scope) {
+  function hoistVarRecursion$1(statement, scope) {
       switch (statement.type) {
           case 'VariableDeclaration':
-              yield* VariableDeclaration(statement, scope, { hoist: true });
+              VariableDeclaration(statement, scope, { hoist: true });
               break;
           case 'ForInStatement':
           case 'ForOfStatement':
               if (statement.left.type === 'VariableDeclaration') {
-                  yield* VariableDeclaration(statement.left, scope, { hoist: true });
+                  VariableDeclaration(statement.left, scope, { hoist: true });
               }
           case 'ForStatement':
               if (statement.type === 'ForStatement' && statement.init.type === 'VariableDeclaration') {
-                  yield* VariableDeclaration(statement.init, scope, { hoist: true });
+                  VariableDeclaration(statement.init, scope, { hoist: true });
               }
           case 'WhileStatement':
           case 'DoWhileStatement':
-              yield* hoistVarRecursion$1(statement.body, scope);
+              hoistVarRecursion$1(statement.body, scope);
               break;
           case 'IfStatement':
-              yield* hoistVarRecursion$1(statement.consequent, scope);
+              hoistVarRecursion$1(statement.consequent, scope);
               if (statement.alternate) {
-                  yield* hoistVarRecursion$1(statement.alternate, scope);
+                  hoistVarRecursion$1(statement.alternate, scope);
               }
               break;
           case 'BlockStatement':
               for (let i = 0; i < statement.body.length; i++) {
-                  yield* hoistVarRecursion$1(statement.body[i], scope);
+                  hoistVarRecursion$1(statement.body[i], scope);
               }
               break;
           case 'SwitchStatement':
               for (let i = 0; i < statement.cases.length; i++) {
                   for (let j = 0; j < statement.cases[i].consequent.length; j++) {
-                      yield* hoistVarRecursion$1(statement.cases[i].consequent[j], scope);
+                      hoistVarRecursion$1(statement.cases[i].consequent[j], scope);
                   }
               }
               break;
           case 'TryStatement': {
               const tryBlock = statement.block.body;
               for (let i = 0; i < tryBlock.length; i++) {
-                  yield* hoistVarRecursion$1(tryBlock[i], scope);
+                  hoistVarRecursion$1(tryBlock[i], scope);
               }
               const catchBlock = statement.handler && statement.handler.body.body;
               if (catchBlock) {
                   for (let i = 0; i < catchBlock.length; i++) {
-                      yield* hoistVarRecursion$1(catchBlock[i], scope);
+                      hoistVarRecursion$1(catchBlock[i], scope);
                   }
               }
               const finalBlock = statement.finalizer && statement.finalizer.body;
               if (finalBlock) {
                   for (let i = 0; i < finalBlock.length; i++) {
-                      yield* hoistVarRecursion$1(finalBlock[i], scope);
+                      hoistVarRecursion$1(finalBlock[i], scope);
                   }
               }
               break;
           }
       }
   }
-  function* pattern$1(node, scope, options = {}) {
+  function pattern$1(node, scope, options = {}) {
       switch (node.type) {
           case 'ObjectPattern':
-              return yield* ObjectPattern(node, scope, options);
+              return ObjectPattern(node, scope, options);
           case 'ArrayPattern':
-              return yield* ArrayPattern(node, scope, options);
+              return ArrayPattern(node, scope, options);
           case 'RestElement':
-              return yield* RestElement(node, scope, options);
+              return RestElement(node, scope, options);
           case 'AssignmentPattern':
-              return yield* AssignmentPattern(node, scope, options);
+              return AssignmentPattern(node, scope, options);
           default:
               throw new SyntaxError('Unexpected token');
       }
   }
   function createFunc$1(node, scope, options = {}) {
       var _a;
-      if (!node.generator && !node.async) {
+      if (node.generator || node.async) {
           return createFunc(node, scope, options);
+      }
+      const { superClass, construct } = options;
+      const params = node.params;
+      const tmpFunc = function (...args) {
+          const subScope = new Scope(scope, true);
+          if (node.type !== 'ArrowFunctionExpression') {
+              subScope.const('this', this);
+              subScope.let('arguments', arguments);
+              subScope.const(NEWTARGET, new.target);
+              if (construct) {
+                  construct(this);
+              }
+              if (superClass) {
+                  subScope.const(SUPER, superClass);
+                  if (construct)
+                      subScope.let(SUPERCALL, false);
+              }
+          }
+          for (let i = 0; i < params.length; i++) {
+              const param = params[i];
+              if (param.type === 'Identifier') {
+                  subScope.var(param.name, args[i]);
+              }
+              else if (param.type === 'RestElement') {
+                  RestElement(param, subScope, { kind: 'var', feed: args.slice(i) });
+              }
+              else {
+                  pattern$1(param, subScope, { kind: 'var', feed: args[i] });
+              }
+          }
+          let result;
+          if (node.body.type === 'BlockStatement') {
+              hoist$1(node.body, subScope);
+              result = BlockStatement(node.body, subScope, {
+                  invasived: true,
+                  hoisted: true
+              });
+          }
+          else {
+              result = evaluate(node.body, subScope);
+              if (node.type === 'ArrowFunctionExpression') {
+                  RETURN.RES = result;
+                  result = RETURN;
+              }
+          }
+          if (result === RETURN) {
+              return result.RES;
+          }
+      };
+      let func = tmpFunc;
+      if (node.type === 'ArrowFunctionExpression') {
+          define(func, NOCTOR, { value: true });
+      }
+      define(func, 'name', {
+          value: node.id
+              && node.id.name
+              || '',
+          configurable: true
+      });
+      define(func, 'length', {
+          value: params.length,
+          configurable: true
+      });
+      const source = (_a = node.loc) === null || _a === void 0 ? void 0 : _a.source;
+      if (source) {
+          define(func, 'toString', {
+              value: () => source.substring(node.start, node.end),
+              configurable: true
+          });
+      }
+      return func;
+  }
+  function createClass$1(node, scope) {
+      const superClass = evaluate(node.superClass, scope);
+      const methodBody = node.body.body;
+      const construct = function (object) {
+          for (let i = 0; i < methodBody.length; i++) {
+              const def = methodBody[i];
+              if (def.type === 'PropertyDefinition' && !def.static) {
+                  PropertyDefinition(def, scope, { klass: object, superClass });
+              }
+          }
+      };
+      let klass = function () {
+          construct(this);
+          if (superClass) {
+              superClass.apply(this);
+          }
+      };
+      for (let i = 0; i < methodBody.length; i++) {
+          const method = methodBody[i];
+          if (method.type === 'MethodDefinition' && method.kind === 'constructor') {
+              klass = createFunc$1(method.value, scope, { superClass, construct });
+              break;
+          }
+      }
+      if (superClass) {
+          inherits(klass, superClass);
+      }
+      ClassBody(node.body, scope, { klass, superClass });
+      define(klass, CLSCTOR, { value: true });
+      define(klass, 'name', {
+          value: node.id && node.id.name || '',
+          configurable: true
+      });
+      return klass;
+  }
+  function ForXHandler$1(node, scope, options) {
+      const { value } = options;
+      const left = node.left;
+      const subScope = new Scope(scope);
+      if (left.type === 'VariableDeclaration') {
+          VariableDeclaration(left, subScope, { feed: value });
+      }
+      else if (left.type === 'Identifier') {
+          const variable = Identifier(left, scope, { getVar: true });
+          variable.set(value);
+      }
+      else {
+          pattern$1(left, scope, { feed: value });
+      }
+      let result;
+      if (node.body.type === 'BlockStatement') {
+          result = BlockStatement(node.body, subScope, { invasived: true });
+      }
+      else {
+          result = evaluate(node.body, subScope);
+      }
+      return result;
+  }
+
+  function* hoist(block, scope, options = {}) {
+      const { onlyBlock = false } = options;
+      const funcDclrList = [];
+      const funcDclrIdxs = [];
+      for (let i = 0; i < block.body.length; i++) {
+          const statement = block.body[i];
+          if (statement.type === 'FunctionDeclaration') {
+              funcDclrList.push(statement);
+              funcDclrIdxs.push(i);
+          }
+          else if (statement.type === 'VariableDeclaration'
+              && ['const', 'let'].indexOf(statement.kind) !== -1) {
+              yield* VariableDeclaration$1(statement, scope, { hoist: true, onlyBlock: true });
+          }
+          else if (!onlyBlock) {
+              yield* hoistVarRecursion(statement, scope);
+          }
+      }
+      if (funcDclrIdxs.length) {
+          for (let i = funcDclrIdxs.length - 1; i > -1; i--) {
+              block.body.splice(funcDclrIdxs[i], 1);
+          }
+          block.body = funcDclrList.concat(block.body);
+      }
+  }
+  function* hoistVarRecursion(statement, scope) {
+      switch (statement.type) {
+          case 'VariableDeclaration':
+              yield* VariableDeclaration$1(statement, scope, { hoist: true });
+              break;
+          case 'ForInStatement':
+          case 'ForOfStatement':
+              if (statement.left.type === 'VariableDeclaration') {
+                  yield* VariableDeclaration$1(statement.left, scope, { hoist: true });
+              }
+          case 'ForStatement':
+              if (statement.type === 'ForStatement' && statement.init.type === 'VariableDeclaration') {
+                  yield* VariableDeclaration$1(statement.init, scope, { hoist: true });
+              }
+          case 'WhileStatement':
+          case 'DoWhileStatement':
+              yield* hoistVarRecursion(statement.body, scope);
+              break;
+          case 'IfStatement':
+              yield* hoistVarRecursion(statement.consequent, scope);
+              if (statement.alternate) {
+                  yield* hoistVarRecursion(statement.alternate, scope);
+              }
+              break;
+          case 'BlockStatement':
+              for (let i = 0; i < statement.body.length; i++) {
+                  yield* hoistVarRecursion(statement.body[i], scope);
+              }
+              break;
+          case 'SwitchStatement':
+              for (let i = 0; i < statement.cases.length; i++) {
+                  for (let j = 0; j < statement.cases[i].consequent.length; j++) {
+                      yield* hoistVarRecursion(statement.cases[i].consequent[j], scope);
+                  }
+              }
+              break;
+          case 'TryStatement': {
+              const tryBlock = statement.block.body;
+              for (let i = 0; i < tryBlock.length; i++) {
+                  yield* hoistVarRecursion(tryBlock[i], scope);
+              }
+              const catchBlock = statement.handler && statement.handler.body.body;
+              if (catchBlock) {
+                  for (let i = 0; i < catchBlock.length; i++) {
+                      yield* hoistVarRecursion(catchBlock[i], scope);
+                  }
+              }
+              const finalBlock = statement.finalizer && statement.finalizer.body;
+              if (finalBlock) {
+                  for (let i = 0; i < finalBlock.length; i++) {
+                      yield* hoistVarRecursion(finalBlock[i], scope);
+                  }
+              }
+              break;
+          }
+      }
+  }
+  function* pattern(node, scope, options = {}) {
+      switch (node.type) {
+          case 'ObjectPattern':
+              return yield* ObjectPattern$1(node, scope, options);
+          case 'ArrayPattern':
+              return yield* ArrayPattern$1(node, scope, options);
+          case 'RestElement':
+              return yield* RestElement$1(node, scope, options);
+          case 'AssignmentPattern':
+              return yield* AssignmentPattern$1(node, scope, options);
+          default:
+              throw new SyntaxError('Unexpected token');
+      }
+  }
+  function createFunc(node, scope, options = {}) {
+      var _a;
+      if (!node.generator && !node.async) {
+          return createFunc$1(node, scope, options);
       }
       const { superClass, construct } = options;
       const params = node.params;
@@ -3567,22 +3809,22 @@
                   subScope.var(param.name, args[i]);
               }
               else if (param.type === 'RestElement') {
-                  yield* RestElement(param, subScope, { kind: 'var', feed: args.slice(i) });
+                  yield* RestElement$1(param, subScope, { kind: 'var', feed: args.slice(i) });
               }
               else {
-                  yield* pattern$1(param, subScope, { kind: 'var', feed: args[i] });
+                  yield* pattern(param, subScope, { kind: 'var', feed: args[i] });
               }
           }
           let result;
           if (node.body.type === 'BlockStatement') {
-              yield* hoist$1(node.body, subScope);
-              result = yield* BlockStatement(node.body, subScope, {
+              yield* hoist(node.body, subScope);
+              result = yield* BlockStatement$1(node.body, subScope, {
                   invasived: true,
                   hoisted: true
               });
           }
           else {
-              result = yield* evaluate(node.body, subScope);
+              result = yield* evaluate$1(node.body, subScope);
               if (node.type === 'ArrowFunctionExpression') {
                   RETURN.RES = result;
                   result = RETURN;
@@ -3643,250 +3885,19 @@
       }
       return func;
   }
-  function* createClass$1(node, scope) {
-      const superClass = yield* evaluate(node.superClass, scope);
+  function* createClass(node, scope) {
+      const superClass = yield* evaluate$1(node.superClass, scope);
       const methodBody = node.body.body;
       const construct = function* (object) {
           for (let i = 0; i < methodBody.length; i++) {
               const def = methodBody[i];
               if (def.type === 'PropertyDefinition' && !def.static) {
-                  yield* PropertyDefinition(def, scope, { klass: object, superClass });
+                  yield* PropertyDefinition$1(def, scope, { klass: object, superClass });
               }
           }
       };
       let klass = function* () {
           yield* construct(this);
-          if (superClass) {
-              superClass.apply(this);
-          }
-      };
-      for (let i = 0; i < methodBody.length; i++) {
-          const method = methodBody[i];
-          if (method.type === 'MethodDefinition' && method.kind === 'constructor') {
-              klass = createFunc$1(method.value, scope, { superClass, construct });
-              break;
-          }
-      }
-      if (superClass) {
-          inherits(klass, superClass);
-      }
-      yield* ClassBody(node.body, scope, { klass, superClass });
-      define(klass, CLSCTOR, { value: true });
-      define(klass, 'name', {
-          value: node.id && node.id.name || '',
-          configurable: true
-      });
-      return klass;
-  }
-  function* ForXHandler$1(node, scope, options) {
-      const { value } = options;
-      const left = node.left;
-      const subScope = new Scope(scope);
-      if (left.type === 'VariableDeclaration') {
-          yield* VariableDeclaration(left, subScope, { feed: value });
-      }
-      else if (left.type === 'Identifier') {
-          const variable = yield* Identifier$1(left, scope, { getVar: true });
-          variable.set(value);
-      }
-      else {
-          yield* pattern$1(left, scope, { feed: value });
-      }
-      let result;
-      if (node.body.type === 'BlockStatement') {
-          result = yield* BlockStatement(node.body, subScope, { invasived: true });
-      }
-      else {
-          result = yield* evaluate(node.body, subScope);
-      }
-      return result;
-  }
-
-  function hoist(block, scope, options = {}) {
-      const { onlyBlock = false } = options;
-      const funcDclrList = [];
-      const funcDclrIdxs = [];
-      for (let i = 0; i < block.body.length; i++) {
-          const statement = block.body[i];
-          if (statement.type === 'FunctionDeclaration') {
-              funcDclrList.push(statement);
-              funcDclrIdxs.push(i);
-          }
-          else if (statement.type === 'VariableDeclaration'
-              && ['const', 'let'].indexOf(statement.kind) !== -1) {
-              VariableDeclaration$1(statement, scope, { hoist: true, onlyBlock: true });
-          }
-          else if (!onlyBlock) {
-              hoistVarRecursion(statement, scope);
-          }
-      }
-      if (funcDclrIdxs.length) {
-          for (let i = funcDclrIdxs.length - 1; i > -1; i--) {
-              block.body.splice(funcDclrIdxs[i], 1);
-          }
-          block.body = funcDclrList.concat(block.body);
-      }
-  }
-  function hoistVarRecursion(statement, scope) {
-      switch (statement.type) {
-          case 'VariableDeclaration':
-              VariableDeclaration$1(statement, scope, { hoist: true });
-              break;
-          case 'ForInStatement':
-          case 'ForOfStatement':
-              if (statement.left.type === 'VariableDeclaration') {
-                  VariableDeclaration$1(statement.left, scope, { hoist: true });
-              }
-          case 'ForStatement':
-              if (statement.type === 'ForStatement' && statement.init.type === 'VariableDeclaration') {
-                  VariableDeclaration$1(statement.init, scope, { hoist: true });
-              }
-          case 'WhileStatement':
-          case 'DoWhileStatement':
-              hoistVarRecursion(statement.body, scope);
-              break;
-          case 'IfStatement':
-              hoistVarRecursion(statement.consequent, scope);
-              if (statement.alternate) {
-                  hoistVarRecursion(statement.alternate, scope);
-              }
-              break;
-          case 'BlockStatement':
-              for (let i = 0; i < statement.body.length; i++) {
-                  hoistVarRecursion(statement.body[i], scope);
-              }
-              break;
-          case 'SwitchStatement':
-              for (let i = 0; i < statement.cases.length; i++) {
-                  for (let j = 0; j < statement.cases[i].consequent.length; j++) {
-                      hoistVarRecursion(statement.cases[i].consequent[j], scope);
-                  }
-              }
-              break;
-          case 'TryStatement': {
-              const tryBlock = statement.block.body;
-              for (let i = 0; i < tryBlock.length; i++) {
-                  hoistVarRecursion(tryBlock[i], scope);
-              }
-              const catchBlock = statement.handler && statement.handler.body.body;
-              if (catchBlock) {
-                  for (let i = 0; i < catchBlock.length; i++) {
-                      hoistVarRecursion(catchBlock[i], scope);
-                  }
-              }
-              const finalBlock = statement.finalizer && statement.finalizer.body;
-              if (finalBlock) {
-                  for (let i = 0; i < finalBlock.length; i++) {
-                      hoistVarRecursion(finalBlock[i], scope);
-                  }
-              }
-              break;
-          }
-      }
-  }
-  function pattern(node, scope, options = {}) {
-      switch (node.type) {
-          case 'ObjectPattern':
-              return ObjectPattern$1(node, scope, options);
-          case 'ArrayPattern':
-              return ArrayPattern$1(node, scope, options);
-          case 'RestElement':
-              return RestElement$1(node, scope, options);
-          case 'AssignmentPattern':
-              return AssignmentPattern$1(node, scope, options);
-          default:
-              throw new SyntaxError('Unexpected token');
-      }
-  }
-  function createFunc(node, scope, options = {}) {
-      var _a;
-      if (node.generator || node.async) {
-          return createFunc$1(node, scope, options);
-      }
-      const { superClass, construct } = options;
-      const params = node.params;
-      const tmpFunc = function (...args) {
-          const subScope = new Scope(scope, true);
-          if (node.type !== 'ArrowFunctionExpression') {
-              subScope.const('this', this);
-              subScope.let('arguments', arguments);
-              subScope.const(NEWTARGET, new.target);
-              if (construct) {
-                  construct(this);
-              }
-              if (superClass) {
-                  subScope.const(SUPER, superClass);
-                  if (construct)
-                      subScope.let(SUPERCALL, false);
-              }
-          }
-          for (let i = 0; i < params.length; i++) {
-              const param = params[i];
-              if (param.type === 'Identifier') {
-                  subScope.var(param.name, args[i]);
-              }
-              else if (param.type === 'RestElement') {
-                  RestElement$1(param, subScope, { kind: 'var', feed: args.slice(i) });
-              }
-              else {
-                  pattern(param, subScope, { kind: 'var', feed: args[i] });
-              }
-          }
-          let result;
-          if (node.body.type === 'BlockStatement') {
-              hoist(node.body, subScope);
-              result = BlockStatement$1(node.body, subScope, {
-                  invasived: true,
-                  hoisted: true
-              });
-          }
-          else {
-              result = evaluate$1(node.body, subScope);
-              if (node.type === 'ArrowFunctionExpression') {
-                  RETURN.RES = result;
-                  result = RETURN;
-              }
-          }
-          if (result === RETURN) {
-              return result.RES;
-          }
-      };
-      let func = tmpFunc;
-      if (node.type === 'ArrowFunctionExpression') {
-          define(func, NOCTOR, { value: true });
-      }
-      define(func, 'name', {
-          value: node.id
-              && node.id.name
-              || '',
-          configurable: true
-      });
-      define(func, 'length', {
-          value: params.length,
-          configurable: true
-      });
-      const source = (_a = node.loc) === null || _a === void 0 ? void 0 : _a.source;
-      if (source) {
-          define(func, 'toString', {
-              value: () => source.substring(node.start, node.end),
-              configurable: true
-          });
-      }
-      return func;
-  }
-  function createClass(node, scope) {
-      const superClass = evaluate$1(node.superClass, scope);
-      const methodBody = node.body.body;
-      const construct = function (object) {
-          for (let i = 0; i < methodBody.length; i++) {
-              const def = methodBody[i];
-              if (def.type === 'PropertyDefinition' && !def.static) {
-                  PropertyDefinition$1(def, scope, { klass: object, superClass });
-              }
-          }
-      };
-      let klass = function () {
-          construct(this);
           if (superClass) {
               superClass.apply(this);
           }
@@ -3901,7 +3912,7 @@
       if (superClass) {
           inherits(klass, superClass);
       }
-      ClassBody$1(node.body, scope, { klass, superClass });
+      yield* ClassBody$1(node.body, scope, { klass, superClass });
       define(klass, CLSCTOR, { value: true });
       define(klass, 'name', {
           value: node.id && node.id.name || '',
@@ -3909,26 +3920,26 @@
       });
       return klass;
   }
-  function ForXHandler(node, scope, options) {
+  function* ForXHandler(node, scope, options) {
       const { value } = options;
       const left = node.left;
       const subScope = new Scope(scope);
       if (left.type === 'VariableDeclaration') {
-          VariableDeclaration$1(left, subScope, { feed: value });
+          yield* VariableDeclaration$1(left, subScope, { feed: value });
       }
       else if (left.type === 'Identifier') {
-          const variable = Identifier$1(left, scope, { getVar: true });
+          const variable = yield* Identifier(left, scope, { getVar: true });
           variable.set(value);
       }
       else {
-          pattern(left, scope, { feed: value });
+          yield* pattern(left, scope, { feed: value });
       }
       let result;
       if (node.body.type === 'BlockStatement') {
-          result = BlockStatement$1(node.body, subScope, { invasived: true });
+          result = yield* BlockStatement$1(node.body, subScope, { invasived: true });
       }
       else {
-          result = evaluate$1(node.body, subScope);
+          result = yield* evaluate$1(node.body, subScope);
       }
       return result;
   }
@@ -3981,9 +3992,19 @@
           return acorn.parse(code, this.options);
       }
       run(code) {
-          const ast = typeof code === 'string' ? acorn.parse(code, this.options) : code;
-          hoist(ast, this.scope);
-          evaluate$1(ast, this.scope);
+          const ast = typeof code === 'string' ? this.parse(code) : code;
+          const scope = this.scope;
+          if (this.options.sourceType === 'module' && (this.options.ecmaVersion === 'latest'
+              || this.options.ecmaVersion >= 13)) {
+              runAsync((function* () {
+                  yield* hoist(ast, scope);
+                  yield* evaluate$1(ast, scope);
+              })());
+          }
+          else {
+              hoist$1(ast, scope);
+              evaluate(ast, scope);
+          }
       }
   }
   Sval.version = version;
