@@ -4,7 +4,10 @@ import { EXPORTS, IMPORT } from './share/const'
 import { version } from '../package.json'
 import Scope from './scope'
 
+import { runAsync } from './share/async'
+import { hoist as hoistAsync } from './evaluate/helper'
 import { hoist } from './evaluate_n/helper'
+import evaluateAsync from './evaluate'
 import evaluate from './evaluate_n'
 
 export interface SvalOptions {
@@ -76,9 +79,21 @@ class Sval {
   }
 
   run(code: string | Node) {
-    const ast = typeof code === 'string' ? parse(code, this.options) as Node : code
-    hoist(ast as Program, this.scope)
-    evaluate(ast, this.scope)
+    const ast = typeof code === 'string' ? this.parse(code) : code
+    const scope = this.scope
+    // check if top-level await supports
+    if (this.options.sourceType === 'module' && (
+      this.options.ecmaVersion === 'latest'
+      || this.options.ecmaVersion >= 13
+    )) {
+      runAsync((function* () {
+        yield* hoistAsync(ast as Program, scope)
+        yield* evaluateAsync(ast, scope)
+      })())
+    } else {
+      hoist(ast as Program, scope)
+      evaluate(ast, scope)
+    }
   }
 }
 

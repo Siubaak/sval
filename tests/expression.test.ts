@@ -414,4 +414,19 @@ describe('testing src/expression.ts', () => {
       })
     `)
   })
+
+  it('should support top-level await', done => {
+    const interpreter = new Sval({ sourceType: 'module' })
+    interpreter.import('done', { default: done })
+    interpreter.import('expect', { default: expect })
+    interpreter.import('module', () => ({ default: 1 }))
+    interpreter.run(`
+      import done from 'done'
+      import expect from 'expect'
+      expect(await new Promise((resolve) => {
+        setTimeout(() => resolve(1), 50)
+      })).toBe(1)
+      done()
+    `)
+  })
 })
