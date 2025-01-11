@@ -542,7 +542,7 @@
     var IMPORT = createSymbol('import');
     var EXPORTS = createSymbol('exports');
 
-    var version = "0.5.7";
+    var version = "0.5.8";
 
     var Var = (function () {
         function Var(kind, value) {
@@ -2746,20 +2746,21 @@
                         }
                         obj = obj[PRIVATE];
                     }
-                    if (!node.value) {
-                        obj[key] = undefined;
-                    }
-                    if (!(node.value.type === 'FunctionExpression' || node.value.type === 'ArrowFunctionExpression')) return [3, 4];
-                    obj[key] = createFunc(node.value, subScope, { superClass: superClass });
-                    return [3, 6];
+                    if (!!node.value) return [3, 4];
+                    obj[key] = undefined;
+                    return [3, 7];
                 case 4:
+                    if (!(node.value.type === 'FunctionExpression' || node.value.type === 'ArrowFunctionExpression')) return [3, 5];
+                    obj[key] = createFunc(node.value, subScope, { superClass: superClass });
+                    return [3, 7];
+                case 5:
                     _a = obj;
                     _b = key;
                     return [5, __values(evaluate$1(node.value, subScope))];
-                case 5:
+                case 6:
                     _a[_b] = _c.sent();
-                    _c.label = 6;
-                case 6: return [2];
+                    _c.label = 7;
+                case 7: return [2];
             }
         });
     }
@@ -4219,7 +4220,7 @@
         if (!node.value) {
             obj[key] = undefined;
         }
-        if (node.value.type === 'FunctionExpression' || node.value.type === 'ArrowFunctionExpression') {
+        else if (node.value.type === 'FunctionExpression' || node.value.type === 'ArrowFunctionExpression') {
             obj[key] = createFunc$1(node.value, subScope, { superClass: superClass });
         }
         else {
