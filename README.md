@@ -1,4 +1,4 @@
-# Sval &middot; [![npm](https://img.shields.io/npm/v/sval.svg?style=flat-square)](https://www.npmjs.com/package/sval) [![coveralls](https://img.shields.io/coveralls/github/Siubaak/sval.svg?style=flat-square)](https://coveralls.io/github/Siubaak/sval) [![prs-welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://makeapullrequest.com)
+# Sval &middot; [![npm](https://img.shields.io/npm/v/sval.svg?style=flat-square)](https://www.npmjs.com/package/sval) [![coveralls](https://img.shields.io/coveralls/github/Siubaak/sval.svg?style=flat-square)](https://coveralls.io/github/Siubaak/sval) [![gh-actions](https://img.shields.io/github/actions/workflow/status/Siubaak/sval/coverage.yml?style=flat-square)](https://github.com/Siubaak/sval/actions/workflows/coverage.yml) [![prs-welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://makeapullrequest.com)
 
 A JavaScript interpreter writen in JavaScript, based on parser [Acorn](https://github.com/acornjs/acorn).
 
