@@ -1,6 +1,6 @@
 {
   "name": "sval",
-  "version": "0.5.7",
+  "version": "0.5.8",
   "description": "A javascript interpreter written in javascript",
   "main": "dist/sval.js",
   "module": "dist/sval.js",
@@ -30,7 +30,7 @@
   },
   "homepage": "https://github.com/Siubaak/sval#readme",
   "dependencies": {
-    "acorn": "^8.11.3"
+    "acorn": "^8.14.0"
   },
   "devDependencies": {
     "@types/jest": "^24.9.1",
