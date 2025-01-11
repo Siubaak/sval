@@ -12,7 +12,7 @@ jobs:
       - name: Setup node environment
         uses: actions/setup-node@v4
       - name: Install node modules
-        run: npm install
+        run: npm install --force
       - name: Test code
         run: npm test
       - name: Send coverage info to Coveralls
