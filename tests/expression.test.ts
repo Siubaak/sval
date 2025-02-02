@@ -174,6 +174,12 @@ describe('testing src/expression.ts', () => {
         exports.d = n
         exports.f = [...arguments]
       }
+
+      try {
+        [...({})]
+      } catch (err) {
+        exports.g = err
+      }
     `)
 
     expect(interpreter.exports.a).toEqual([1, 2])
@@ -181,6 +187,7 @@ describe('testing src/expression.ts', () => {
     expect(interpreter.exports.c).toBe(1)
     expect(interpreter.exports.d).toBe(2)
     expect(interpreter.exports.f).toEqual([1, 2])
+    expect(interpreter.exports.g).toBeInstanceOf(TypeError)
   })
 
   it('should parse regular expression normally', () => {

@@ -554,10 +554,13 @@ export interface SpreadOptions {
 
 export function* SpreadElement(node: acorn.SpreadElement, scope: Scope, options: SpreadOptions = {}) {
   const result = yield* evaluate(node.argument, scope)
+  if (options.spreadProps) {
+    return result
+  }
   if (typeof Symbol === 'function' && typeof result[Symbol.iterator] !== 'function') {
     throw new TypeError('Spread syntax requires ...iterable[Symbol.iterator] to be a function')
   }
-  return options.spreadProps ? result : [...result]
+  return [...result]
 }
 
 export function* ChainExpression(node: acorn.ChainExpression, scope: Scope) {
