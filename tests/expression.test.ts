@@ -167,11 +167,12 @@ describe('testing src/expression.ts', () => {
       const arr = [1, 2]
       exports.a = [...arr]
       exports.b = [...[1, 2, 3]]
-      
+
       f(...arr)
       function f(m, n) {
         exports.c = m
         exports.d = n
+        exports.f = [...arguments]
       }
     `)
 
@@ -179,6 +180,7 @@ describe('testing src/expression.ts', () => {
     expect(interpreter.exports.b).toEqual([1, 2, 3])
     expect(interpreter.exports.c).toBe(1)
     expect(interpreter.exports.d).toBe(2)
+    expect(interpreter.exports.f).toEqual([1, 2])
   })
 
   it('should parse regular expression normally', () => {

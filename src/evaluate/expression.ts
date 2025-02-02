@@ -36,7 +36,7 @@ export function* ObjectExpression(node: acorn.ObjectExpression, scope: Scope) {
   for (let i = 0; i < node.properties.length; i++) {
     const property = node.properties[i]
     if (property.type === 'SpreadElement') {
-      assign(object, yield* SpreadElement(property, scope))
+      assign(object, yield* SpreadElement(property, scope, { spreadProps: true }))
     } else {
       let key: string
       const propKey = property.key
@@ -542,19 +542,19 @@ export interface SuperOptions {
   getProto?: boolean
 }
 
-export function* Super(
-  node: acorn.Super,
-  scope: Scope,
-  options: SuperOptions = {},
-) {
+export function* Super(node: acorn.Super, scope: Scope, options: SuperOptions = {}) {
   const { getProto = false } = options
   const superClass = scope.find(SUPER).get()
   return getProto ? superClass.prototype: superClass
 }
 
-export function* SpreadElement(node: acorn.SpreadElement, scope: Scope) {
+export interface SpreadOptions {
+  spreadProps?: boolean
+}
+
+export function* SpreadElement(node: acorn.SpreadElement, scope: Scope, options: SpreadOptions = {}) {
   const result = yield* evaluate(node.argument, scope)
-  return typeof result === 'string' ? [...result] : result; 
+  return options.spreadProps ? result : [...result]
 }
 
 export function* ChainExpression(node: acorn.ChainExpression, scope: Scope) {
