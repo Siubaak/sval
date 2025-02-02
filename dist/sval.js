@@ -542,7 +542,7 @@
     var IMPORT = createSymbol('import');
     var EXPORTS = createSymbol('exports');
 
-    var version = "0.5.8";
+    var version = "0.5.9";
 
     var Var = (function () {
         function Var(kind, value) {
@@ -829,7 +829,7 @@
                     if (!(property.type === 'SpreadElement')) return [3, 3];
                     _a = assign;
                     _b = [object];
-                    return [5, __values(SpreadElement$1(property, scope))];
+                    return [5, __values(SpreadElement$1(property, scope, { spreadProps: true }))];
                 case 2:
                     _a.apply(void 0, _b.concat([_d.sent()]));
                     return [3, 10];
@@ -1549,14 +1549,15 @@
             return [2, getProto ? superClass.prototype : superClass];
         });
     }
-    function SpreadElement$1(node, scope) {
+    function SpreadElement$1(node, scope, options) {
         var result;
+        if (options === void 0) { options = {}; }
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0: return [5, __values(evaluate$1(node.argument, scope))];
                 case 1:
                     result = _a.sent();
-                    return [2, typeof result === 'string' ? __spread(result) : result];
+                    return [2, options.spreadProps ? result : __spread(result)];
             }
         });
     }
@@ -3028,7 +3029,7 @@
         for (var i = 0; i < node.properties.length; i++) {
             var property = node.properties[i];
             if (property.type === 'SpreadElement') {
-                assign(object, SpreadElement(property, scope));
+                assign(object, SpreadElement(property, scope, { spreadProps: true }));
             }
             else {
                 var key = void 0;
@@ -3523,9 +3524,10 @@
         var superClass = scope.find(SUPER).get();
         return getProto ? superClass.prototype : superClass;
     }
-    function SpreadElement(node, scope) {
+    function SpreadElement(node, scope, options) {
+        if (options === void 0) { options = {}; }
         var result = evaluate(node.argument, scope);
-        return typeof result === 'string' ? __spread(result) : result;
+        return options.spreadProps ? result : __spread(result);
     }
     function ChainExpression(node, scope) {
         return evaluate(node.expression, scope);

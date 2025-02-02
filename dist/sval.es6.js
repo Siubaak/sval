@@ -464,7 +464,7 @@
   const IMPORT = createSymbol('import');
   const EXPORTS = createSymbol('exports');
 
-  var version = "0.5.8";
+  var version = "0.5.9";
 
   class Var {
       constructor(kind, value) {
@@ -710,7 +710,7 @@
       for (let i = 0; i < node.properties.length; i++) {
           const property = node.properties[i];
           if (property.type === 'SpreadElement') {
-              assign(object, yield* SpreadElement$1(property, scope));
+              assign(object, yield* SpreadElement$1(property, scope, { spreadProps: true }));
           }
           else {
               let key;
@@ -1203,9 +1203,9 @@
       const superClass = scope.find(SUPER).get();
       return getProto ? superClass.prototype : superClass;
   }
-  function* SpreadElement$1(node, scope) {
+  function* SpreadElement$1(node, scope, options = {}) {
       const result = yield* evaluate$1(node.argument, scope);
-      return typeof result === 'string' ? [...result] : result;
+      return options.spreadProps ? result : [...result];
   }
   function* ChainExpression$1(node, scope) {
       return yield* evaluate$1(node.expression, scope);
@@ -2134,7 +2134,7 @@
       for (let i = 0; i < node.properties.length; i++) {
           const property = node.properties[i];
           if (property.type === 'SpreadElement') {
-              assign(object, SpreadElement(property, scope));
+              assign(object, SpreadElement(property, scope, { spreadProps: true }));
           }
           else {
               let key;
@@ -2627,9 +2627,9 @@
       const superClass = scope.find(SUPER).get();
       return getProto ? superClass.prototype : superClass;
   }
-  function SpreadElement(node, scope) {
+  function SpreadElement(node, scope, options = {}) {
       const result = evaluate(node.argument, scope);
-      return typeof result === 'string' ? [...result] : result;
+      return options.spreadProps ? result : [...result];
   }
   function ChainExpression(node, scope) {
       return evaluate(node.expression, scope);
