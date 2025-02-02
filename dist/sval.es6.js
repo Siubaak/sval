@@ -464,7 +464,7 @@
   const IMPORT = createSymbol('import');
   const EXPORTS = createSymbol('exports');
 
-  var version = "0.5.9";
+  var version = "0.6.0";
 
   class Var {
       constructor(kind, value) {
@@ -1205,7 +1205,13 @@
   }
   function* SpreadElement$1(node, scope, options = {}) {
       const result = yield* evaluate$1(node.argument, scope);
-      return options.spreadProps ? result : [...result];
+      if (options.spreadProps) {
+          return result;
+      }
+      if (typeof Symbol === 'function' && typeof result[Symbol.iterator] !== 'function') {
+          throw new TypeError('Spread syntax requires ...iterable[Symbol.iterator] to be a function');
+      }
+      return [...result];
   }
   function* ChainExpression$1(node, scope) {
       return yield* evaluate$1(node.expression, scope);
@@ -2629,7 +2635,13 @@
   }
   function SpreadElement(node, scope, options = {}) {
       const result = evaluate(node.argument, scope);
-      return options.spreadProps ? result : [...result];
+      if (options.spreadProps) {
+          return result;
+      }
+      if (typeof Symbol === 'function' && typeof result[Symbol.iterator] !== 'function') {
+          throw new TypeError('Spread syntax requires ...iterable[Symbol.iterator] to be a function');
+      }
+      return [...result];
   }
   function ChainExpression(node, scope) {
       return evaluate(node.expression, scope);

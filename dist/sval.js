@@ -542,7 +542,7 @@
     var IMPORT = createSymbol('import');
     var EXPORTS = createSymbol('exports');
 
-    var version = "0.5.9";
+    var version = "0.6.0";
 
     var Var = (function () {
         function Var(kind, value) {
@@ -1557,7 +1557,13 @@
                 case 0: return [5, __values(evaluate$1(node.argument, scope))];
                 case 1:
                     result = _a.sent();
-                    return [2, options.spreadProps ? result : __spread(result)];
+                    if (options.spreadProps) {
+                        return [2, result];
+                    }
+                    if (typeof Symbol === 'function' && typeof result[Symbol.iterator] !== 'function') {
+                        throw new TypeError('Spread syntax requires ...iterable[Symbol.iterator] to be a function');
+                    }
+                    return [2, __spread(result)];
             }
         });
     }
@@ -3527,7 +3533,13 @@
     function SpreadElement(node, scope, options) {
         if (options === void 0) { options = {}; }
         var result = evaluate(node.argument, scope);
-        return options.spreadProps ? result : __spread(result);
+        if (options.spreadProps) {
+            return result;
+        }
+        if (typeof Symbol === 'function' && typeof result[Symbol.iterator] !== 'function') {
+            throw new TypeError('Spread syntax requires ...iterable[Symbol.iterator] to be a function');
+        }
+        return __spread(result);
     }
     function ChainExpression(node, scope) {
         return evaluate(node.expression, scope);
