@@ -275,6 +275,39 @@ describe('testing src/index.ts', () => {
     expect(interpreter.exports.d).toBeTruthy()
   })
 
+  it('should with statement run normally in async function', done => {
+    const interpreter = new Sval({ ecmaVer: 10 })
+    interpreter.import({ expect, done })
+    interpreter.run(`
+      async function run() {
+        let x = 0
+        const a = {
+          get b() { return x },
+          set b(v) { x = v }
+        }
+        with (a) {
+          exports.a = b
+          b++
+          exports.b = b
+          exports.c = x
+        }
+        try {
+          exports.d = b
+        } catch (err) {
+          if (err instanceof ReferenceError) {
+            exports.d = true
+          }
+        }
+        expect(exports.a).toBe(0)
+        expect(exports.b).toBe(1)
+        expect(exports.c).toBe(1)
+        expect(exports.d).toBeTruthy()
+        done()
+      }
+      run()
+    `)
+  })
+
   it('should labeled loop statement and continue/break run normally', () => {
     const interpreter = new Sval({ ecmaVer: 10 })
     interpreter.run(`
@@ -299,6 +332,36 @@ describe('testing src/index.ts', () => {
     `)
     expect(interpreter.exports.a).toBe(3)
   })
+
+  // it('should labeled loop statement and continue/break run normally in async function', done => {
+  //   const interpreter = new Sval({ ecmaVer: 10 })
+  //   interpreter.import({ expect, done })
+  //   interpreter.run(`
+  //     async function run() {
+  //       let x = 0
+  //       a: while (x < 5) {
+  //         if (x) {
+  //           x++
+  //           break
+  //         }
+  //         do {
+  //           b: for (; x < 5;) {
+  //             x++
+  //             for (const a of [0, 1, 2, 3, 4]) {
+  //               break b
+  //             }
+  //           }
+  //           x++
+  //           continue a
+  //         } while (x < 5)
+  //       }
+  //       exports.a = x
+  //       expect(exports.a).toBe(3)
+  //       done()
+  //     }
+  //     run()
+  //   `)
+  // })
 
   it('should labeled statement and break run normally', () => {
     const interpreter = new Sval({ ecmaVer: 10 })
@@ -366,4 +429,75 @@ describe('testing src/index.ts', () => {
     expect(interpreter.exports.f).toBe(6)
     expect(interpreter.exports.g).toBe(7)
   })
+
+  // it('should labeled statement and break run normally in async function', done => {
+  //   const interpreter = new Sval({ ecmaVer: 10 })
+  //   interpreter.import({ expect, done })
+  //   interpreter.run(`
+  //     async function run() {
+  //       let x = 0
+  //       a: {
+  //         x++
+  //         break a
+  //         x++
+  //       }
+  //       exports.a = x
+
+  //       b: if (true) {
+  //         x++
+  //         break b
+  //         x++
+  //       }
+  //       exports.b = x
+
+  //       c: with (window) {
+  //         x++
+  //         break c
+  //         x++
+  //       }
+  //       exports.c = x
+
+  //       d: switch (true) {
+  //         case true:
+  //           for (;x < 10;) {
+  //             x++
+  //             break d
+  //           }
+  //         default: x++
+  //       }
+  //       exports.d = x
+
+  //       e: try {
+  //         x++
+  //         break e
+  //         x++
+  //       } catch {}
+  //       exports.e = x
+
+  //       f: try {
+  //         throw false
+  //       } catch {
+  //         x++
+  //         break f
+  //         x++
+  //       }
+  //       exports.f = x
+
+  //       g: try {} finally {
+  //         x++
+  //         break g
+  //         x++
+  //       }
+  //       exports.g = x
+  //       expect(exports.a).toBe(1)
+  //       expect(exports.b).toBe(2)
+  //       expect(exports.c).toBe(3)
+  //       expect(exports.d).toBe(4)
+  //       expect(exports.e).toBe(5)
+  //       expect(exports.f).toBe(6)
+  //       expect(exports.g).toBe(7)
+  //     }
+  //     run()
+  //   `)
+  // })
 })
