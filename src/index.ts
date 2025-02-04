@@ -45,10 +45,12 @@ class Sval {
       const win = createSandBox()
       this.scope.let('globalThis', win)
       this.scope.let('window', win)
+      this.scope.let('self', win)
       this.scope.let('this', win)
     } else {
       this.scope.let('globalThis', globalObj)
       this.scope.let('window', globalObj)
+      this.scope.let('self', globalObj)
       this.scope.let('this', globalObj)
     }
 
