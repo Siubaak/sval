@@ -129,6 +129,16 @@
           }
       });
   }
+  function callSuper(target, superClass, args = []) {
+      let supportReflect = false;
+      try {
+          supportReflect = !Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () { }));
+      }
+      catch (err) { }
+      return supportReflect
+          ? Reflect.construct(superClass, args, getProto(target).constructor)
+          : superClass.apply(target, args);
+  }
   function _assign(target) {
       for (let i = 1; i < arguments.length; ++i) {
           const source = arguments[i];
@@ -695,7 +705,7 @@
 
   function* ThisExpression$1(node, scope) {
       const superCall = scope.find(SUPERCALL);
-      if (superCall && !superCall.get()) {
+      if (superCall && superCall.get() !== true) {
           throw new ReferenceError('Must call super constructor in derived class '
               + 'before accessing \'this\' or returning from derived constructor');
       }
@@ -1092,12 +1102,15 @@
       }
       if (node.callee.type === 'Super') {
           const superCall = scope.find(SUPERCALL);
-          if (superCall.get()) {
+          const construct = superCall.get();
+          if (construct === true) {
               throw new ReferenceError('Super constructor may only be called once');
           }
-          else {
-              scope.find(SUPERCALL).set(true);
-          }
+          const inst = callSuper(object, func, args);
+          yield* construct(inst);
+          scope.find('this').set(inst);
+          scope.find(SUPERCALL).set(true);
+          return inst;
       }
       try {
           return func.apply(object, args);
@@ -2125,7 +2138,7 @@
 
   function ThisExpression(node, scope) {
       const superCall = scope.find(SUPERCALL);
-      if (superCall && !superCall.get()) {
+      if (superCall && superCall.get() !== true) {
           throw new ReferenceError('Must call super constructor in derived class '
               + 'before accessing \'this\' or returning from derived constructor');
       }
@@ -2522,12 +2535,15 @@
       }
       if (node.callee.type === 'Super') {
           const superCall = scope.find(SUPERCALL);
-          if (superCall.get()) {
+          const construct = superCall.get();
+          if (construct === true) {
               throw new ReferenceError('Super constructor may only be called once');
           }
-          else {
-              scope.find(SUPERCALL).set(true);
-          }
+          const inst = callSuper(object, func, args);
+          construct(inst);
+          scope.find('this').set(inst);
+          scope.find(SUPERCALL).set(true);
+          return inst;
       }
       try {
           return func.apply(object, args);
@@ -3583,16 +3599,16 @@
       const tmpFunc = function (...args) {
           const subScope = new Scope(scope, true);
           if (node.type !== 'ArrowFunctionExpression') {
-              subScope.const('this', this);
+              subScope.let('this', this);
               subScope.let('arguments', arguments);
               subScope.const(NEWTARGET, new.target);
-              if (construct) {
-                  construct(this);
-              }
               if (superClass) {
                   subScope.const(SUPER, superClass);
                   if (construct)
-                      subScope.let(SUPERCALL, false);
+                      subScope.let(SUPERCALL, construct);
+              }
+              else if (construct) {
+                  construct(this);
               }
           }
           for (let i = 0; i < params.length; i++) {
@@ -3624,6 +3640,9 @@
           }
           if (result === RETURN) {
               return result.RES;
+          }
+          else if (new.target) {
+              return subScope.find('this').get();
           }
       };
       let func = tmpFunc;
@@ -3661,10 +3680,9 @@
           }
       };
       let klass = function () {
-          construct(this);
-          if (superClass) {
-              superClass.apply(this);
-          }
+          const inst = superClass ? callSuper(this, superClass) : this;
+          construct(inst);
+          return inst;
       };
       for (let i = 0; i < methodBody.length; i++) {
           const method = methodBody[i];
@@ -3814,16 +3832,16 @@
       const tmpFunc = function* (...args) {
           const subScope = new Scope(scope, true);
           if (node.type !== 'ArrowFunctionExpression') {
-              subScope.const('this', this);
+              subScope.let('this', this);
               subScope.let('arguments', arguments);
               subScope.const(NEWTARGET, new.target);
-              if (construct) {
-                  yield* construct(this);
-              }
               if (superClass) {
                   subScope.const(SUPER, superClass);
                   if (construct)
-                      subScope.let(SUPERCALL, false);
+                      subScope.let(SUPERCALL, construct);
+              }
+              else if (construct) {
+                  yield* construct(this);
               }
           }
           for (let i = 0; i < params.length; i++) {
@@ -3855,6 +3873,9 @@
           }
           if (result === RETURN) {
               return result.RES;
+          }
+          else if (new.target) {
+              return subScope.find('this').get();
           }
       };
       let func;
@@ -3920,10 +3941,9 @@
           }
       };
       let klass = function* () {
-          yield* construct(this);
-          if (superClass) {
-              superClass.apply(this);
-          }
+          const inst = superClass ? callSuper(this, superClass) : this;
+          yield* construct(inst);
+          return inst;
       };
       for (let i = 0; i < methodBody.length; i++) {
           const method = methodBody[i];

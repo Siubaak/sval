@@ -206,6 +206,17 @@
             }
         });
     }
+    function callSuper(target, superClass, args) {
+        if (args === void 0) { args = []; }
+        var supportReflect = false;
+        try {
+            supportReflect = !Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () { }));
+        }
+        catch (err) { }
+        return supportReflect
+            ? Reflect.construct(superClass, args, getProto(target).constructor)
+            : superClass.apply(target, args);
+    }
     function _assign(target) {
         for (var i = 1; i < arguments.length; ++i) {
             var source = arguments[i];
@@ -787,7 +798,7 @@
         var superCall;
         return __generator(this, function (_a) {
             superCall = scope.find(SUPERCALL);
-            if (superCall && !superCall.get()) {
+            if (superCall && superCall.get() !== true) {
                 throw new ReferenceError('Must call super constructor in derived class '
                     + 'before accessing \'this\' or returning from derived constructor');
             }
@@ -1259,7 +1270,7 @@
         });
     }
     function CallExpression$1(node, scope) {
-        var func, object, key, priv, obj, thisObject, name_1, args, i, arg, _a, _b, _c, _d, superCall, win;
+        var func, object, key, priv, obj, thisObject, name_1, args, i, arg, _a, _b, _c, _d, superCall, construct, inst, win;
         return __generator(this, function (_e) {
             switch (_e.label) {
                 case 0:
@@ -1359,15 +1370,20 @@
                     i++;
                     return [3, 8];
                 case 13:
-                    if (node.callee.type === 'Super') {
-                        superCall = scope.find(SUPERCALL);
-                        if (superCall.get()) {
-                            throw new ReferenceError('Super constructor may only be called once');
-                        }
-                        else {
-                            scope.find(SUPERCALL).set(true);
-                        }
+                    if (!(node.callee.type === 'Super')) return [3, 15];
+                    superCall = scope.find(SUPERCALL);
+                    construct = superCall.get();
+                    if (construct === true) {
+                        throw new ReferenceError('Super constructor may only be called once');
                     }
+                    inst = callSuper(object, func, args);
+                    return [5, __values(construct(inst))];
+                case 14:
+                    _e.sent();
+                    scope.find('this').set(inst);
+                    scope.find(SUPERCALL).set(true);
+                    return [2, inst];
+                case 15:
                     try {
                         return [2, func.apply(object, args)];
                     }
@@ -3020,7 +3036,7 @@
 
     function ThisExpression(node, scope) {
         var superCall = scope.find(SUPERCALL);
-        if (superCall && !superCall.get()) {
+        if (superCall && superCall.get() !== true) {
             throw new ReferenceError('Must call super constructor in derived class '
                 + 'before accessing \'this\' or returning from derived constructor');
         }
@@ -3418,12 +3434,15 @@
         }
         if (node.callee.type === 'Super') {
             var superCall = scope.find(SUPERCALL);
-            if (superCall.get()) {
+            var construct = superCall.get();
+            if (construct === true) {
                 throw new ReferenceError('Super constructor may only be called once');
             }
-            else {
-                scope.find(SUPERCALL).set(true);
-            }
+            var inst = callSuper(object, func, args);
+            construct(inst);
+            scope.find('this').set(inst);
+            scope.find(SUPERCALL).set(true);
+            return inst;
         }
         try {
             return func.apply(object, args);
@@ -4520,16 +4539,16 @@
             }
             var subScope = new Scope(scope, true);
             if (node.type !== 'ArrowFunctionExpression') {
-                subScope.const('this', this);
+                subScope.let('this', this);
                 subScope.let('arguments', arguments);
                 subScope.const(NEWTARGET, _newTarget);
-                if (construct) {
-                    construct(this);
-                }
                 if (superClass) {
                     subScope.const(SUPER, superClass);
                     if (construct)
-                        subScope.let(SUPERCALL, false);
+                        subScope.let(SUPERCALL, construct);
+                }
+                else if (construct) {
+                    construct(this);
                 }
             }
             for (var i = 0; i < params.length; i++) {
@@ -4561,6 +4580,9 @@
             }
             if (result === RETURN) {
                 return result.RES;
+            }
+            else if (_newTarget) {
+                return subScope.find('this').get();
             }
         };
         var func = tmpFunc;
@@ -4598,10 +4620,9 @@
             }
         };
         var klass = function () {
-            construct(this);
-            if (superClass) {
-                superClass.apply(this);
-            }
+            var inst = superClass ? callSuper(this, superClass) : this;
+            construct(inst);
+            return inst;
         };
         for (var i = 0; i < methodBody.length; i++) {
             var method = methodBody[i];
@@ -4863,20 +4884,19 @@
                     case 0:
                         subScope = new Scope(scope, true);
                         if (!(node.type !== 'ArrowFunctionExpression')) return [3, 3];
-                        subScope.const('this', this);
+                        subScope.let('this', this);
                         subScope.let('arguments', arguments);
                         subScope.const(NEWTARGET, _newTarget);
-                        if (!construct) return [3, 2];
-                        return [5, __values(construct(this))];
+                        if (!superClass) return [3, 1];
+                        subScope.const(SUPER, superClass);
+                        if (construct)
+                            subScope.let(SUPERCALL, construct);
+                        return [3, 3];
                     case 1:
-                        _a.sent();
-                        _a.label = 2;
+                        if (!construct) return [3, 3];
+                        return [5, __values(construct(this))];
                     case 2:
-                        if (superClass) {
-                            subScope.const(SUPER, superClass);
-                            if (construct)
-                                subScope.let(SUPERCALL, false);
-                        }
+                        _a.sent();
                         _a.label = 3;
                     case 3:
                         i = 0;
@@ -4923,6 +4943,9 @@
                     case 15:
                         if (result === RETURN) {
                             return [2, result.RES];
+                        }
+                        else if (_newTarget) {
+                            return [2, subScope.find('this').get()];
                         }
                         return [2];
                 }
@@ -5012,15 +5035,15 @@
                         });
                     };
                     klass = function () {
+                        var inst;
                         return __generator(this, function (_a) {
                             switch (_a.label) {
-                                case 0: return [5, __values(construct(this))];
+                                case 0:
+                                    inst = superClass ? callSuper(this, superClass) : this;
+                                    return [5, __values(construct(inst))];
                                 case 1:
                                     _a.sent();
-                                    if (superClass) {
-                                        superClass.apply(this);
-                                    }
-                                    return [2];
+                                    return [2, inst];
                             }
                         });
                     };
