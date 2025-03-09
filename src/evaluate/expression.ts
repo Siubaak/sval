@@ -1,4 +1,4 @@
-import { define, freeze, getGetter, getSetter, createSymbol, assign, getDptor, WINDOW } from '../share/util'
+import { define, freeze, getGetter, getSetter, createSymbol, assign, getDptor, callSuper, WINDOW } from '../share/util'
 import { SUPER, NOCTOR, AWAIT, CLSCTOR, NEWTARGET, SUPERCALL, PRIVATE, IMPORT } from '../share/const'
 import { pattern, createFunc, createClass } from './helper'
 import { Variable, Prop } from '../scope/variable'
@@ -10,7 +10,7 @@ import evaluate from '.'
 
 export function* ThisExpression(node: acorn.ThisExpression, scope: Scope) {
   const superCall = scope.find(SUPERCALL)
-  if (superCall && !superCall.get()) {
+  if (superCall && superCall.get() !== true) {
     throw new ReferenceError('Must call super constructor in derived class '
       + 'before accessing \'this\' or returning from derived constructor')
   } else {
@@ -403,11 +403,15 @@ export function* CallExpression(node: acorn.CallExpression, scope: Scope) {
 
   if (node.callee.type === 'Super') {
     const superCall = scope.find(SUPERCALL)
-    if (superCall.get()) {
+    const construct = superCall.get()
+    if (construct === true) {
       throw new ReferenceError('Super constructor may only be called once')
-    } else {
-      scope.find(SUPERCALL).set(true)
     }
+    const inst = callSuper(object, func, args)
+    yield* construct(inst)
+    scope.find('this').set(inst)
+    scope.find(SUPERCALL).set(true)
+    return inst
   }
 
   try {

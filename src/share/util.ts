@@ -56,6 +56,21 @@ export function inherits(
     }
   })
 }
+export function callSuper(
+  target: any,
+  superClass: (...args: any[]) => any,
+  args: any[] = [],
+) {
+  let supportReflect = false
+  try {
+    supportReflect = !Boolean.prototype.valueOf.call(
+      Reflect.construct(Boolean, [], function () {})
+    )
+  } catch (err) { /* empty */ }
+  return supportReflect
+    ? Reflect.construct(superClass, args, getProto(target).constructor)
+    : superClass.apply(target, args)
+}
 
 export function _assign(target: any): any {
     for (let i = 1; i < arguments.length; ++i) {

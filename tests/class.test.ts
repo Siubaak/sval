@@ -93,6 +93,16 @@ describe('testing src/index.ts', () => {
         }
       }
       new C()
+
+      class D extends Set { }
+      new D()
+
+      class E extends Set {
+        constructor(arr) {
+          super(arr)
+        }
+      }
+      new E()
     `)
     expect(interpreter.exports.g).toBe(2)
   })

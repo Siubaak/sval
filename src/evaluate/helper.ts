@@ -1,7 +1,7 @@
 import { RETURN, SUPER, NOCTOR, CLSCTOR, NEWTARGET, SUPERCALL } from '../share/const'
 import { VariableDeclaration, ClassBody, PropertyDefinition } from './declaration'
+import { define, assign, inherits, callSuper } from '../share/util'
 import { runAsync, runAsyncOptions } from '../share/async'
-import { define, inherits, assign } from '../share/util'
 import { Identifier } from '../evaluate_n/identifier'
 import { BlockStatement } from './statement'
 import * as acorn from 'acorn'
@@ -143,15 +143,14 @@ export function createFunc(
   const tmpFunc = function* (...args: any[]) {
     const subScope: Scope = new Scope(scope, true)
     if (node.type !== 'ArrowFunctionExpression') {
-      subScope.const('this', this)
+      subScope.let('this', this)
       subScope.let('arguments', arguments)
       subScope.const(NEWTARGET, new.target)
-      if (construct) {
-        yield* construct(this) as Generator
-      }
       if (superClass) {
         subScope.const(SUPER, superClass)
-        if (construct) subScope.let(SUPERCALL, false)
+        if (construct) subScope.let(SUPERCALL, construct)
+      } else if (construct) {
+        yield* construct(this) as Generator
       }
     }
 
@@ -183,6 +182,8 @@ export function createFunc(
 
     if (result === RETURN) {
       return result.RES
+    } else if (new.target) {
+      return subScope.find('this').get()
     }
   }
 
@@ -264,10 +265,9 @@ export function* createClass(
   }
 
   let klass = function* () {
-    yield* construct(this)
-    if (superClass) {
-      superClass.apply(this)
-    }
+    const inst = superClass ? callSuper(this, superClass) : this
+    yield* construct(inst)
+    return inst
   }
   for (let i = 0; i < methodBody.length; i++) {
     const method = methodBody[i]
