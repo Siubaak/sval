@@ -100,11 +100,14 @@ describe('testing src/index.ts', () => {
       class E extends Set {
         constructor(arr) {
           super(arr)
+          this.h = arr
         }
       }
-      new E()
+      exports.s = new E([1, 1, 1])
     `)
     expect(interpreter.exports.g).toBe(2)
+    expect(interpreter.exports.s.size).toBe(1)
+    expect(interpreter.exports.s.h).toEqual([1, 1, 1])
   })
 
   it('should get base class normally', () => {
