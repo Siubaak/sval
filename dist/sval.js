@@ -564,7 +564,7 @@
     var IMPORT = createSymbol('import');
     var EXPORTS = createSymbol('exports');
 
-    var version = "0.6.1";
+    var version = "0.6.3";
 
     var Var = (function () {
         function Var(kind, value) {
