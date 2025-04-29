@@ -225,7 +225,7 @@ describe('testing src/index.ts', () => {
         exports.cb = cb
         exports.cc = cc
       `)
-    } catch(err) {
+    } catch (err) {
       expect(err).toBeInstanceOf(SyntaxError)
     }
   })
