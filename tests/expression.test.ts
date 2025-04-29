@@ -145,7 +145,7 @@ describe('testing src/expression.ts', () => {
     interpreter.run(code)
   })
 
-  it ('should throw TypeError when assigning to constant', () => {
+  it('should throw TypeError when assigning to constant', () => {
     const interpreter = new Sval()
     let error = null
     try {
@@ -281,7 +281,7 @@ describe('testing src/expression.ts', () => {
       value: 5,
       writable: true
     })
-    
+
     const yPD = Object.getOwnPropertyDescriptor(a, 'y')!
     expect({
       configurable: yPD.configurable,
