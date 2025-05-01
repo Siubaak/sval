@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import Sval from '../src'
 
-describe('testing src/index.ts', () => {
+describe('testing declaration', () => {
   it('should declare var normally', () => {
     const interpreter = new Sval()
     const code = `

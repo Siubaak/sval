@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import Sval from '../src'
 
-describe('testing src/index.ts', () => {
+describe('testing string', () => {
   it('should support unicode string', () => {
     const interpreter = new Sval()
     interpreter.import({ expect })

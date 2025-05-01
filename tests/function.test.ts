@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { parse } from 'acorn'
 import Sval from '../src'
 
-describe('testing src/index.ts', () => {
+describe('testing function', () => {
   it('should excute function normally', () => {
     const interpreter = new Sval()
     interpreter.run('!function(){exports.a=1}()')

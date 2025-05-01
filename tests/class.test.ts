@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import Sval from '../src'
 
-describe('testing src/index.ts', () => {
+describe('testing class', () => {
   it('should create es5 class normally', () => {
     const interpreter = new Sval()
     interpreter.run(`

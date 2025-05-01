@@ -16,7 +16,7 @@ if (existsSync(codePath)) {
   code = "const msg = 'fisrt build'"
 }
 
-describe('testing src/index.ts', () => {
+describe('testing bootstrap', () => {
   it('should compile normally', () => {
     const interpreter = new Sval()
     interpreter.run(`!async function(){${code}}()`) // also test for generator env

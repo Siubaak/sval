@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import Sval from '../src'
 
-describe('testing src/index.ts', () => {
+describe('testing pattern', () => {
   it('should parse object pattern normally', () => {
     const interpreter = new Sval()
     interpreter.run(`
