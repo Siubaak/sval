@@ -3761,7 +3761,7 @@ class P {
     Object.keys(t) && (this.withContext = t);
   }
 }
-const fa = "0.6.6", pa = {
+const fa = "0.6.7", pa = {
   version: fa
 };
 function mt(e, t = {}) {

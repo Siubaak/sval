@@ -1,6 +1,6 @@
 {
   "name": "sval",
-  "version": "0.6.6",
+  "version": "0.6.7",
   "description": "A javascript interpreter written in javascript",
   "type": "module",
   "main": "dist/sval.min.js",
