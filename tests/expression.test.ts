@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest'
 import Sval from '../src'
 
 describe('testing src/expression.ts', () => {
@@ -409,32 +410,36 @@ describe('testing src/expression.ts', () => {
     expect(interpreter.exports.funcnone).toBeUndefined()
   })
 
-  it('should support dynamic import', done => {
-    const interpreter = new Sval({ sourceType: 'module' })
-    interpreter.import('done', { default: done })
-    interpreter.import('expect', { default: expect })
-    interpreter.import('module', () => ({ default: 1 }))
-    interpreter.run(`
-      import done from 'done'
-      import expect from 'expect'
-      import('module').then(mod => {
-        expect(mod.default).toBe(1)
-        done()
-      })
-    `)
+  it('should support dynamic import', () => {
+    return new Promise((done) => {
+      const interpreter = new Sval({ sourceType: 'module' })
+      interpreter.import('done', { default: done })
+      interpreter.import('expect', { default: expect })
+      interpreter.import('module', () => ({ default: 1 }))
+      interpreter.run(`
+        import done from 'done'
+        import expect from 'expect'
+        import('module').then(mod => {
+          expect(mod.default).toBe(1)
+          done()
+        })
+      `)
+    })
   })
 
-  it('should support top-level await', done => {
-    const interpreter = new Sval({ sourceType: 'module' })
-    interpreter.import('done', { default: done })
-    interpreter.import('expect', { default: expect })
-    interpreter.import('module', () => ({ default: 1 }))
-    interpreter.run(`
-      import done from 'done'
-      import expect from 'expect'
-      const { default: mod } = await import('module')
-      expect(mod).toBe(1)
-      done()
-    `)
+  it('should support top-level await', () => {
+    return new Promise((done) => {
+      const interpreter = new Sval({ sourceType: 'module' })
+      interpreter.import('done', { default: done })
+      interpreter.import('expect', { default: expect })
+      interpreter.import('module', () => ({ default: 1 }))
+      interpreter.run(`
+        import done from 'done'
+        import expect from 'expect'
+        const { default: mod } = await import('module')
+        expect(mod).toBe(1)
+        done()
+      `)
+    })
   })
 })

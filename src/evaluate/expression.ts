@@ -1,12 +1,12 @@
-import { define, freeze, getGetter, getSetter, createSymbol, assign, getDptor, callSuper, WINDOW } from '../share/util'
-import { SUPER, NOCTOR, AWAIT, CLSCTOR, NEWTARGET, SUPERCALL, PRIVATE, IMPORT } from '../share/const'
-import { pattern, createFunc, createClass } from './helper'
-import { Variable, Prop } from '../scope/variable'
-import { Identifier } from './identifier'
-import { Literal } from './literal'
+import { define, freeze, getGetter, getSetter, createSymbol, assign, getDptor, callSuper, WINDOW } from '../share/util.ts'
+import { SUPER, NOCTOR, AWAIT, CLSCTOR, NEWTARGET, SUPERCALL, PRIVATE, IMPORT } from '../share/const.ts'
+import { pattern, createFunc, createClass } from './helper.ts'
+import { Variable, Prop } from '../scope/variable.ts'
+import { Identifier } from './identifier.ts'
+import { Literal } from './literal.ts'
+import Scope from '../scope/index.ts'
+import evaluate from './index.ts'
 import * as acorn from 'acorn'
-import Scope from '../scope'
-import evaluate from '.'
 
 export function* ThisExpression(node: acorn.ThisExpression, scope: Scope) {
   const superCall = scope.find(SUPERCALL)
@@ -360,7 +360,7 @@ export function* CallExpression(node: acorn.CallExpression, scope: Scope) {
 
     if (typeof func !== 'function') {
       throw new TypeError(`${key} is not a function`)
-    } else if (func[CLSCTOR]) {
+    } else if (CLSCTOR in func) {
       throw new TypeError(`Class constructor ${key} cannot be invoked without 'new'`)
     }
   } else {
@@ -372,7 +372,7 @@ export function* CallExpression(node: acorn.CallExpression, scope: Scope) {
       return undefined
     }
 
-    if (typeof func !== 'function' || node.callee.type !== 'Super' && func[CLSCTOR]) {
+    if (typeof func !== 'function' || node.callee.type !== 'Super' && CLSCTOR in func) {
       let name: string
       if (node.callee.type === 'Identifier') {
         name = node.callee.name

@@ -1,13 +1,17 @@
 {
   "compilerOptions": {
     "target": "es5",
-    "lib": ["dom", "es6"],
+    "lib": ["dom", "esnext"],
     "declaration": true,
     "noImplicitAny": true,
     "removeComments": true,
     "resolveJsonModule": true,
     "downlevelIteration": true,
-    "declarationDir": "types"
+    "declarationDir": "types",
+    "moduleResolution": "nodenext",
+    "module": "nodenext",
+    "allowImportingTsExtensions": true,
+    "emitDeclarationOnly": true
   },
   "include": [
     "src/**/*"

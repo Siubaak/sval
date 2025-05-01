@@ -1,14 +1,14 @@
-import { assign } from '../share/util'
 import { Node } from 'acorn'
-import Scope from '../scope'
+import { assign } from '../share/util.ts'
+import Scope from '../scope/index.ts'
 
-import * as declaration from './declaration'
-import * as expression from './expression'
-import * as identifier from './identifier'
-import * as statement from './statement'
-import * as literal from './literal'
-import * as pattern from './pattern'
-import * as program from './program'
+import * as declaration from './declaration.ts'
+import * as expression from './expression.ts'
+import * as identifier from './identifier.ts'
+import * as statement from './statement.ts'
+import * as literal from './literal.ts'
+import * as pattern from './pattern.ts'
+import * as program from './program.ts'
 
 let evaluateOps: any
 

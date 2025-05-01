@@ -1,9 +1,9 @@
-import { BREAK, CONTINUE, RETURN, AWAIT } from '../share/const'
-import { hoist, pattern, ForXHandler } from './helper'
-import { getAsyncIterator } from '../share/util'
+import { BREAK, CONTINUE, RETURN, AWAIT } from '../share/const.ts'
+import { hoist, pattern, ForXHandler } from './helper.ts'
+import { getAsyncIterator } from '../share/util.ts'
+import Scope from '../scope/index.ts'
+import evaluate from './index.ts'
 import * as acorn from 'acorn'
-import Scope from '../scope'
-import evaluate from '.'
 
 export function* ExpressionStatement(node: acorn.ExpressionStatement, scope: Scope) {
   yield* evaluate(node.expression, scope)

@@ -1,6 +1,6 @@
-import { DEADZONE } from '../share/const'
+import { DEADZONE } from '../share/const.ts'
+import Scope from '../scope/index.ts'
 import * as acorn from 'acorn'
-import Scope from '../scope'
 
 export interface IdentifierOptions {
   getVar?: boolean

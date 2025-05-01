@@ -1,4 +1,4 @@
-import { createSymbol } from './util'
+import { createSymbol } from './util.ts'
 
 export const AWAIT: { RES: any } = { RES: undefined }
 

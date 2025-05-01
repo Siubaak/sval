@@ -2,15 +2,20 @@
   "name": "sval",
   "version": "0.6.3",
   "description": "A javascript interpreter written in javascript",
-  "main": "dist/sval.js",
+  "type": "module",
+  "main": "dist/sval.umd.cjs",
+  "unpkg": "dist/sval.umd.cjs",
   "module": "dist/sval.js",
-  "unpkg": "dist/sval.min.js",
-  "types": "types/index.d.ts",
+  "types": "dist/sval.d.ts",
+  "exports": {
+    "types": "./dist/sval.d.ts",
+    "import": "./dist/sval.js",
+    "require": "./dist/sval.umd.cjs"
+  },
   "scripts": {
-    "build": "npm test && rollup -c && npm run post",
-    "start": "node scripts && rollup -c && npm run post",
-    "post": "mv types/src/index.d.ts types && rm -rf types/src",
-    "test": "node scripts && umi-test --coverage"
+    "start": "vite",
+    "build": "npm test && vite build",
+    "test": "node scripts && vitest run --coverage"
   },
   "repository": {
     "type": "git",
@@ -33,13 +38,11 @@
     "acorn": "^8.14.0"
   },
   "devDependencies": {
-    "@types/jest": "^24.9.1",
-    "rollup": "^2.79.2",
-    "rollup-plugin-json": "^3.1.0",
-    "rollup-plugin-node-resolve": "^4.2.4",
-    "rollup-plugin-typescript2": "^0.21.2",
-    "rollup-plugin-uglify": "^6.0.4",
-    "typescript": "^3.8.3",
-    "umi-test": "^1.9.7"
+    "@types/node": "^22.15.3",
+    "@vitest/coverage-v8": "^3.1.2",
+    "happy-dom": "^17.4.6",
+    "vite": "^6.3.4",
+    "vite-plugin-dts": "^4.5.3",
+    "vitest": "^3.1.2"
   }
 }

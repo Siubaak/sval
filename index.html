@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sval</title>
+</head>
+<body>
+  <script type="module">
+    import Sval from './src/index.ts'
+
+    console.log('Sval Version: ' + Sval.version)
+
+    const interpreter = new Sval()
+
+    interpreter.import({
+      getItem: n => new Promise(resolve => setTimeout(resolve, 1500, n))
+    })
+
+    interpreter.run(`
+      !async function () {
+        for (const i of [1, 2, 3]) {
+          console.log(await getItem(i))
+        }
+      }()
+      exports.end = true
+    `)
+
+    console.log('End: ' + interpreter.exports.end)
+  </script>
+</body>
+</html>

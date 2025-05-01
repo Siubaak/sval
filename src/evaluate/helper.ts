@@ -1,12 +1,12 @@
-import { RETURN, SUPER, NOCTOR, CLSCTOR, NEWTARGET, SUPERCALL } from '../share/const'
-import { VariableDeclaration, ClassBody, PropertyDefinition } from './declaration'
-import { define, assign, inherits, callSuper } from '../share/util'
-import { runAsync, runAsyncOptions } from '../share/async'
-import { Identifier } from '../evaluate_n/identifier'
-import { BlockStatement } from './statement'
+import { RETURN, SUPER, NOCTOR, CLSCTOR, NEWTARGET, SUPERCALL } from '../share/const.ts'
+import { VariableDeclaration, ClassBody, PropertyDefinition } from './declaration.ts'
+import { define, assign, inherits, callSuper } from '../share/util.ts'
+import { runAsync, runAsyncOptions } from '../share/async.ts'
+import { Identifier } from '../evaluate_n/identifier.ts'
+import { BlockStatement } from './statement.ts'
+import Scope from '../scope/index.ts'
+import evaluate from './index.ts'
 import * as acorn from 'acorn'
-import Scope from '../scope'
-import evaluate from '.'
 
 import {
   PatternOptions,
@@ -14,7 +14,7 @@ import {
   ArrayPattern,
   RestElement,
   AssignmentPattern
-} from './pattern'
+} from './pattern.ts'
 
 export interface hoistOptions {
   onlyBlock?: boolean
@@ -128,7 +128,7 @@ export interface CtorOptions {
   superClass?: (...args: any[]) => any
 }
 
-import { createFunc as createAnotherFunc } from /*<replace by:='../evaluate/helper'>*/'../evaluate_n/helper'/*</replace>*/
+import { createFunc as createAnotherFunc } from /*<replace by:='../evaluate/helper.ts'>*/'../evaluate_n/helper.ts'/*</replace>*/
 export function createFunc(
   node: acorn.FunctionDeclaration | acorn.FunctionExpression | acorn.ArrowFunctionExpression,
   scope: Scope,

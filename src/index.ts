@@ -1,14 +1,14 @@
-import { getOwnNames, createSandBox, globalObj, assign } from './share/util'
+import { getOwnNames, createSandBox, globalObj, assign } from './share/util.ts'
 import { parse, Options, Node, Program } from 'acorn'
-import { EXPORTS, IMPORT } from './share/const'
-import { version } from '../package.json'
-import Scope from './scope'
+import { EXPORTS, IMPORT } from './share/const.ts'
+import Scope from './scope/index.ts'
+import PkgJson from '../package.json' with { type: 'json' }
 
-import { runAsync } from './share/async'
-import { hoist as hoistAsync } from './evaluate/helper'
-import { hoist } from './evaluate_n/helper'
-import evaluateAsync from './evaluate'
-import evaluate from './evaluate_n'
+import { runAsync } from './share/async.ts'
+import { hoist as hoistAsync } from './evaluate/helper.ts'
+import { hoist } from './evaluate_n/helper.ts'
+import evaluateAsync from './evaluate/index.ts'
+import evaluate from './evaluate_n/index.ts'
 
 export interface SvalOptions {
   ecmaVer?: Options['ecmaVersion']
@@ -19,7 +19,7 @@ export interface SvalOptions {
 const latestVer = 15
 
 class Sval {
-  static version: string = version
+  static version: string = PkgJson.version
 
   private options: Options = { ecmaVersion: 'latest' }
   private scope = new Scope(null, true)

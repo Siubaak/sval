@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest'
 import Sval from '../src'
 
 describe('testing src/index.ts', () => {
@@ -487,7 +488,7 @@ describe('testing src/index.ts', () => {
     expect(interpreter.exports.target).toEqual(interpreter.exports.actual)
   })
 
-  it('should support async method', () => {
+  it('should support async method', async () => {
     const interpreter = new Sval()
     interpreter.run(`
       class Foo {
@@ -502,7 +503,7 @@ describe('testing src/index.ts', () => {
     `)
 
     const instance = new interpreter.exports.Foo()
-    expect(instance.getA()).resolves.toBe(1)
+    await expect(instance.getA()).resolves.toBe(1)
   })
 
   it('should support property accessing between parent and child class', () => {

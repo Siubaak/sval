@@ -85,7 +85,7 @@ export function _assign(target: any): any {
 }
 export const assign = Object.assign ||  _assign
 
-declare let WebAssembly: any // Avoid typescript error
+declare let global: any // Avoid typescript error
 let names: string[] = []
 export let globalObj = create(null)
 const setGlobalObj = (g: any) => {

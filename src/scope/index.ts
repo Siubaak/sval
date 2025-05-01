@@ -1,6 +1,6 @@
-import { NOINIT, DEADZONE } from '../share/const'
-import { Variable, Var, Prop } from './variable'
-import { create, define } from '../share/util'
+import { NOINIT, DEADZONE } from '../share/const.ts'
+import { Variable, Var, Prop } from './variable.ts'
+import { create, define } from '../share/util.ts'
 
 /**
  * Scope simulation class

@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest'
 import Sval from '../src'
 
 describe('testing src/index.ts', () => {
@@ -20,7 +21,6 @@ describe('testing src/index.ts', () => {
       expect(e).toBe(f)
       expect(g).toBe('z')
     `)
-
   })
 
   it('should parse template element normally', () => {

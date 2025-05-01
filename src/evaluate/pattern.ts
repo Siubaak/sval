@@ -1,11 +1,11 @@
-import { NOINIT, DEADZONE } from '../share/const'
-import { VarKind } from '../scope/variable'
-import { Identifier } from './identifier'
-import { assign } from '../share/util'
-import { pattern } from './helper'
+import { NOINIT, DEADZONE } from '../share/const.ts'
+import { VarKind } from '../scope/variable.ts'
+import { Identifier } from './identifier.ts'
+import { assign } from '../share/util.ts'
+import { pattern } from './helper.ts'
+import Scope from '../scope/index.ts'
+import evaluate from './index.ts'
 import * as acorn from 'acorn'
-import Scope from '../scope'
-import evaluate from '.'
 
 export interface PatternOptions {
   kind?: VarKind

@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest'
 import Sval from '../src'
 
 describe('testing src/index.ts', () => {

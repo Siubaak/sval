@@ -1,4 +1,4 @@
-import { AWAIT } from './const'
+import { AWAIT } from './const.ts'
 
 export interface runAsyncOptions {
   res?: any

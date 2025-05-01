@@ -1,11 +1,15 @@
+import { describe, it, expect } from 'vitest'
 import { readFileSync, existsSync } from 'fs'
+import { resolve, dirname } from 'path'
+import { fileURLToPath } from 'url'
 import { ecmaVersion } from 'acorn'
-import { resolve } from 'path'
 import Sval from '../src'
 
 let code: string
 
-const codePath = resolve(__dirname, '../dist/sval.min.js')
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+const codePath = resolve(__dirname, '../dist/sval.umd.cjs')
 if (existsSync(codePath)) {
   code = readFileSync(codePath, 'utf-8')
 } else {

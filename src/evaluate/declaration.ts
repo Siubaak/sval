@@ -1,11 +1,11 @@
-import { NOINIT, DEADZONE, PRIVATE, IMPORT, EXPORTS } from '../share/const'
-import { define, getDptor, assign, hasOwn } from '../share/util'
-import { pattern, createFunc, createClass } from './helper'
-import { BlockStatement } from './statement'
-import { VarKind } from '../scope/variable'
+import { NOINIT, DEADZONE, PRIVATE, IMPORT, EXPORTS } from '../share/const.ts'
+import { define, getDptor, assign, hasOwn } from '../share/util.ts'
+import { pattern, createFunc, createClass } from './helper.ts'
+import { BlockStatement } from './statement.ts'
+import { VarKind } from '../scope/variable.ts'
+import Scope from '../scope/index.ts'
+import evaluate from './index.ts'
 import * as acorn from 'acorn'
-import Scope from '../scope'
-import evaluate from '.'
 
 export function* FunctionDeclaration(
   node: acorn.FunctionDeclaration,
