@@ -14,8 +14,8 @@
   },
   "scripts": {
     "start": "vite",
-    "build": "npm test && vite build && swc dist/sval.js -o dist/sval.min.js",
-    "test": "node scripts && vitest run --coverage"
+    "test": "node scripts && vitest run --coverage",
+    "build": "npm test && vite build && node scripts/legacy.js"
   },
   "repository": {
     "type": "git",
@@ -38,7 +38,6 @@
     "acorn": "^8.14.0"
   },
   "devDependencies": {
-    "@swc/cli": "^0.7.3",
     "@swc/core": "^1.11.24",
     "@types/node": "^22.15.3",
     "@vitest/coverage-v8": "^3.1.2",

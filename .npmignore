@@ -6,7 +6,6 @@
 
 # Useless configurations
 /.gitignore
-/.swcrc
 /index.html
 /tsconfig.json
 /vite.config.ts
