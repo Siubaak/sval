@@ -3,18 +3,18 @@
   "version": "0.6.3",
   "description": "A javascript interpreter written in javascript",
   "type": "module",
-  "main": "dist/sval.umd.cjs",
-  "unpkg": "dist/sval.umd.cjs",
+  "main": "dist/sval.min.js",
+  "unpkg": "dist/sval.min.js",
   "module": "dist/sval.js",
-  "types": "dist/sval.d.ts",
+  "types": "dist/src/index.d.ts",
   "exports": {
-    "types": "./dist/sval.d.ts",
+    "types": "./dist/src/index.d.ts",
     "import": "./dist/sval.js",
     "require": "./dist/sval.umd.cjs"
   },
   "scripts": {
     "start": "vite",
-    "build": "npm test && vite build",
+    "build": "npm test && vite build && swc dist/sval.js -o dist/sval.min.js",
     "test": "node scripts && vitest run --coverage"
   },
   "repository": {
@@ -38,6 +38,8 @@
     "acorn": "^8.14.0"
   },
   "devDependencies": {
+    "@swc/cli": "^0.7.3",
+    "@swc/core": "^1.11.24",
     "@types/node": "^22.15.3",
     "@vitest/coverage-v8": "^3.1.2",
     "happy-dom": "^17.4.6",

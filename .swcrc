@@ -1,0 +1,6 @@
+{
+  "minify": true,
+  "module": {
+    "type": "umd"
+  }
+}

@@ -9,9 +9,7 @@ export default defineConfig({
     },
   },
   plugins: [
-    dts({
-      rollupTypes: true,
-    }),
+    dts(),
   ],
   test: {
     environment: 'happy-dom',
