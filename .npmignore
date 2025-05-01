@@ -1,13 +1,15 @@
 # Useless directories
+/.github
 /scripts
 /src
 /tests
 
 # Useless configurations
 /.gitignore
-/.travis.yml
-/rollup.config.js
+/.swcrc
+/index.html
 /tsconfig.json
+/vite.config.ts
 
 # Logs
 logs
