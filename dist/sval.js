@@ -5662,7 +5662,10 @@ function Pt(e, t, r = {}) {
   const { onlyBlock: i = !1 } = r, a = [], s = [];
   for (let n = 0; n < e.body.length; n++) {
     const u = e.body[n];
-    u.type === "FunctionDeclaration" ? (a.push(u), s.push(n)) : u.type === "VariableDeclaration" && ["const", "let"].indexOf(u.kind) !== -1 ? ge(u, t, { hoist: !0, onlyBlock: !0 }) : i || ee(u, t);
+    u.type === "FunctionDeclaration" ? (a.push(u), s.push(n)) : u.type === "VariableDeclaration" && ["const", "let"].indexOf(u.kind) !== -1 ? ge(u, t, {
+      hoist: !0,
+      onlyBlock: !0
+    }) : i || ee(u, t);
   }
   if (s.length) {
     for (let n = s.length - 1; n > -1; n--)
@@ -5671,6 +5674,7 @@ function Pt(e, t, r = {}) {
   }
 }
 function ee(e, t) {
+  var r;
   switch (e.type) {
     case "VariableDeclaration":
       ge(e, t, { hoist: !0 });
@@ -5679,7 +5683,7 @@ function ee(e, t) {
     case "ForOfStatement":
       e.left.type === "VariableDeclaration" && ge(e.left, t, { hoist: !0 });
     case "ForStatement":
-      e.type === "ForStatement" && e.init.type === "VariableDeclaration" && ge(e.init, t, { hoist: !0 });
+      e.type === "ForStatement" && ((r = e.init) == null ? void 0 : r.type) === "VariableDeclaration" && ge(e.init, t, { hoist: !0 });
     case "WhileStatement":
     case "DoWhileStatement":
       ee(e.body, t);
@@ -5688,26 +5692,26 @@ function ee(e, t) {
       ee(e.consequent, t), e.alternate && ee(e.alternate, t);
       break;
     case "BlockStatement":
-      for (let r = 0; r < e.body.length; r++)
-        ee(e.body[r], t);
+      for (let i = 0; i < e.body.length; i++)
+        ee(e.body[i], t);
       break;
     case "SwitchStatement":
-      for (let r = 0; r < e.cases.length; r++)
-        for (let i = 0; i < e.cases[r].consequent.length; i++)
-          ee(e.cases[r].consequent[i], t);
+      for (let i = 0; i < e.cases.length; i++)
+        for (let a = 0; a < e.cases[i].consequent.length; a++)
+          ee(e.cases[i].consequent[a], t);
       break;
     case "TryStatement": {
-      const r = e.block.body;
-      for (let s = 0; s < r.length; s++)
-        ee(r[s], t);
-      const i = e.handler && e.handler.body.body;
-      if (i)
-        for (let s = 0; s < i.length; s++)
-          ee(i[s], t);
-      const a = e.finalizer && e.finalizer.body;
+      const i = e.block.body;
+      for (let n = 0; n < i.length; n++)
+        ee(i[n], t);
+      const a = e.handler && e.handler.body.body;
       if (a)
-        for (let s = 0; s < a.length; s++)
-          ee(a[s], t);
+        for (let n = 0; n < a.length; n++)
+          ee(a[n], t);
+      const s = e.finalizer && e.finalizer.body;
+      if (s)
+        for (let n = 0; n < s.length; n++)
+          ee(s[n], t);
       break;
     }
   }
@@ -5736,7 +5740,10 @@ function X(e, t, r = {}) {
     e.type !== "ArrowFunctionExpression" && (f.let("this", this), f.let("arguments", arguments), f.const(nt, new.target), i ? (f.const(at, i), a && f.let(he, a)) : a && a(this));
     for (let C = 0; C < s.length; C++) {
       const L = s[C];
-      L.type === "Identifier" ? f.var(L.name, h[C]) : L.type === "RestElement" ? Ce(L, f, { kind: "var", feed: h.slice(C) }) : M(L, f, { kind: "var", feed: h[C] });
+      L.type === "Identifier" ? f.var(L.name, h[C]) : L.type === "RestElement" ? Ce(L, f, {
+        kind: "var",
+        feed: h.slice(C)
+      }) : M(L, f, { kind: "var", feed: h[C] });
     }
     let v;
     if (e.body.type === "BlockStatement" ? (Pt(e.body, f), v = ne(e.body, f, {
@@ -5793,7 +5800,10 @@ function* Lt(e, t, r = {}) {
   const { onlyBlock: i = !1 } = r, a = [], s = [];
   for (let n = 0; n < e.body.length; n++) {
     const u = e.body[n];
-    u.type === "FunctionDeclaration" ? (a.push(u), s.push(n)) : u.type === "VariableDeclaration" && ["const", "let"].indexOf(u.kind) !== -1 ? yield* me(u, t, { hoist: !0, onlyBlock: !0 }) : i || (yield* te(u, t));
+    u.type === "FunctionDeclaration" ? (a.push(u), s.push(n)) : u.type === "VariableDeclaration" && ["const", "let"].indexOf(u.kind) !== -1 ? yield* me(u, t, {
+      hoist: !0,
+      onlyBlock: !0
+    }) : i || (yield* te(u, t));
   }
   if (s.length) {
     for (let n = s.length - 1; n > -1; n--)
@@ -5802,6 +5812,7 @@ function* Lt(e, t, r = {}) {
   }
 }
 function* te(e, t) {
+  var r;
   switch (e.type) {
     case "VariableDeclaration":
       yield* me(e, t, { hoist: !0 });
@@ -5810,7 +5821,7 @@ function* te(e, t) {
     case "ForOfStatement":
       e.left.type === "VariableDeclaration" && (yield* me(e.left, t, { hoist: !0 }));
     case "ForStatement":
-      e.type === "ForStatement" && e.init.type === "VariableDeclaration" && (yield* me(e.init, t, { hoist: !0 }));
+      e.type === "ForStatement" && ((r = e.init) == null ? void 0 : r.type) === "VariableDeclaration" && (yield* me(e.init, t, { hoist: !0 }));
     case "WhileStatement":
     case "DoWhileStatement":
       yield* te(e.body, t);
@@ -5819,26 +5830,26 @@ function* te(e, t) {
       yield* te(e.consequent, t), e.alternate && (yield* te(e.alternate, t));
       break;
     case "BlockStatement":
-      for (let r = 0; r < e.body.length; r++)
-        yield* te(e.body[r], t);
+      for (let i = 0; i < e.body.length; i++)
+        yield* te(e.body[i], t);
       break;
     case "SwitchStatement":
-      for (let r = 0; r < e.cases.length; r++)
-        for (let i = 0; i < e.cases[r].consequent.length; i++)
-          yield* te(e.cases[r].consequent[i], t);
+      for (let i = 0; i < e.cases.length; i++)
+        for (let a = 0; a < e.cases[i].consequent.length; a++)
+          yield* te(e.cases[i].consequent[a], t);
       break;
     case "TryStatement": {
-      const r = e.block.body;
-      for (let s = 0; s < r.length; s++)
-        yield* te(r[s], t);
-      const i = e.handler && e.handler.body.body;
-      if (i)
-        for (let s = 0; s < i.length; s++)
-          yield* te(i[s], t);
-      const a = e.finalizer && e.finalizer.body;
+      const i = e.block.body;
+      for (let n = 0; n < i.length; n++)
+        yield* te(i[n], t);
+      const a = e.handler && e.handler.body.body;
       if (a)
-        for (let s = 0; s < a.length; s++)
-          yield* te(a[s], t);
+        for (let n = 0; n < a.length; n++)
+          yield* te(a[n], t);
+      const s = e.finalizer && e.finalizer.body;
+      if (s)
+        for (let n = 0; n < s.length; n++)
+          yield* te(s[n], t);
       break;
     }
   }
@@ -5869,7 +5880,10 @@ function Y(e, t, r = {}) {
     e.type !== "ArrowFunctionExpression" && (f.let("this", this), f.let("arguments", arguments), f.const(nt, new.target), i ? (f.const(at, i), a && f.let(he, a)) : a && (yield* a(this)));
     for (let C = 0; C < s.length; C++) {
       const L = s[C];
-      L.type === "Identifier" ? f.var(L.name, h[C]) : L.type === "RestElement" ? yield* Ee(L, f, { kind: "var", feed: h.slice(C) }) : yield* j(L, f, { kind: "var", feed: h[C] });
+      L.type === "Identifier" ? f.var(L.name, h[C]) : L.type === "RestElement" ? yield* Ee(L, f, {
+        kind: "var",
+        feed: h.slice(C)
+      }) : yield* j(L, f, { kind: "var", feed: h[C] });
     }
     let v;
     if (e.body.type === "BlockStatement" ? (yield* Lt(e.body, f), v = yield* se(e.body, f, {

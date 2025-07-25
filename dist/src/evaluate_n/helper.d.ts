@@ -1,6 +1,6 @@
 import { default as Scope } from '../scope/index.ts';
 import { PatternOptions } from './pattern.ts';
-import * as acorn from 'acorn';
+import * as acorn from "acorn";
 export interface hoistOptions {
     onlyBlock?: boolean;
 }

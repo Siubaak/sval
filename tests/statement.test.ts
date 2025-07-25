@@ -1,18 +1,18 @@
-import { describe, it, expect } from 'vitest'
-import Sval from '../src'
+import { describe, it, expect } from "vitest";
+import Sval from "../src";
 
-describe('testing statement', () => {
-  it('should for statement run normally', () => {
-    const interpreter = new Sval()
+describe("testing statement", () => {
+  it("should for statement run normally", () => {
+    const interpreter = new Sval();
     interpreter.run(`
       for (let i = 0; i < 5; i++) {
         let r = i
       }
-    `)
-  })
+    `);
+  });
 
-  it('should break statement in switch run normally', () => {
-    const interpreter = new Sval()
+  it("should break statement in switch run normally", () => {
+    const interpreter = new Sval();
     interpreter.run(`
       exports.a = 0
       while (exports.a < 10) {
@@ -21,36 +21,36 @@ describe('testing statement', () => {
           case 2: break
         }
       }
-    `)
-    expect(interpreter.exports.a).toEqual(10)
-  })
+    `);
+    expect(interpreter.exports.a).toEqual(10);
+  });
 
-  it('should for-in statement run normally', () => {
-    const interpreter = new Sval()
+  it("should for-in statement run normally", () => {
+    const interpreter = new Sval();
     interpreter.run(`
       exports.a = []
       for (const i in [1, 2, 3]) {
         exports.a.push(i)
       }
-    `)
-    expect(interpreter.exports.a).toEqual(['0', '1', '2'])
-  })
+    `);
+    expect(interpreter.exports.a).toEqual(["0", "1", "2"]);
+  });
 
-  it('should for-of statement run normally', () => {
-    const interpreter = new Sval()
+  it("should for-of statement run normally", () => {
+    const interpreter = new Sval();
     interpreter.run(`
       exports.a = []
       for (const i of [1, 2, 3]) {
         exports.a.push(i)
       }
-    `)
-    expect(interpreter.exports.a).toEqual([1, 2, 3])
-  })
+    `);
+    expect(interpreter.exports.a).toEqual([1, 2, 3]);
+  });
 
-  it('should for-await-of statement run normally', () => {
+  it("should for-await-of statement run normally", () => {
     return new Promise((done) => {
-      const interpreter = new Sval()
-      interpreter.import({ getItem, expect, done })
+      const interpreter = new Sval();
+      interpreter.import({ getItem, expect, done });
       interpreter.run(`
         b()
         async function* a() {
@@ -66,17 +66,17 @@ describe('testing statement', () => {
           expect(res).toEqual([1, 2, 3])
           done()
         }
-      `)
+      `);
       function getItem(n: any) {
-        return new Promise(resolve => setTimeout(resolve, 5, n))
+        return new Promise((resolve) => setTimeout(resolve, 5, n));
       }
-    })
-  })
+    });
+  });
 
-  it('should for-await-of with manual iterator run normally', () => {
+  it("should for-await-of with manual iterator run normally", () => {
     return new Promise((done) => {
-      const interpreter = new Sval()
-      interpreter.import({ expect, done })
+      const interpreter = new Sval();
+      interpreter.import({ expect, done });
       interpreter.run(`
         c()
         function makeIterator(array) {
@@ -98,14 +98,14 @@ describe('testing statement', () => {
           expect(res).toEqual([1, 2, 3, 4])
           done()
         }
-      `)
-    })
-  })
+      `);
+    });
+  });
 
-  it('should support for-await-of with sync iterables', () => {
+  it("should support for-await-of with sync iterables", () => {
     return new Promise((done) => {
-      const interpreter = new Sval()
-      interpreter.import({ expect, done })
+      const interpreter = new Sval();
+      interpreter.import({ expect, done });
       interpreter.run(`
         (async function run() {
           const res = []
@@ -128,14 +128,14 @@ describe('testing statement', () => {
           expect(res).toEqual(['x', 'y', 'z', 'a', 'b', 'c', 1, 2, 3, 4, 5, 6])
           done()
         })()
-      `)
-    })
-  })
+      `);
+    });
+  });
 
-  it('should support for-await-of with sync iterator', () => {
+  it("should support for-await-of with sync iterator", () => {
     return new Promise((done) => {
-      const interpreter = new Sval()
-      interpreter.import({ expect, done })
+      const interpreter = new Sval();
+      interpreter.import({ expect, done });
       interpreter.run(`
         const iterable = {
           [Symbol.iterator]() {
@@ -160,14 +160,14 @@ describe('testing statement', () => {
           expect(res).toEqual([0, 1, 2])
           done()
         })()
-      `)
-    })
-  })
+      `);
+    });
+  });
 
-  it('should support for-await-of with async iterator', () => {
+  it("should support for-await-of with async iterator", () => {
     return new Promise((done) => {
-      const interpreter = new Sval()
-      interpreter.import({ expect, done })
+      const interpreter = new Sval();
+      interpreter.import({ expect, done });
       interpreter.run(`
         const asyncIterable = {
           [Symbol.asyncIterator]() {
@@ -193,14 +193,14 @@ describe('testing statement', () => {
 
           done()
         })()
-      `)
-    })
-  })
+      `);
+    });
+  });
 
-  it('should support for-await-of with async generator', () => {
+  it("should support for-await-of with async generator", () => {
     return new Promise((done) => {
-      const interpreter = new Sval()
-      interpreter.import({ expect, done })
+      const interpreter = new Sval();
+      interpreter.import({ expect, done });
       interpreter.run(`
         async function* asyncGenerator() {
           var i = 0
@@ -218,12 +218,12 @@ describe('testing statement', () => {
           expect(res).toEqual([0, 1, 2])
           done()
         })()
-      `)
-    })
-  })
+      `);
+    });
+  });
 
-  it('should try statement run normally', () => {
-    const interpreter = new Sval({ ecmaVer: 10 })
+  it("should try statement run normally", () => {
+    const interpreter = new Sval({ ecmaVer: 10 });
     interpreter.run(`
       try {
         throw 1
@@ -253,15 +253,15 @@ describe('testing statement', () => {
           break
         }
       }
-    `)
-    expect(interpreter.exports.a).toBe(1)
-    expect(interpreter.exports.b).toBe(2)
-    expect(interpreter.exports.c).toBe(3)
-    expect(interpreter.exports.d).toBe(4)
-  })
+    `);
+    expect(interpreter.exports.a).toBe(1);
+    expect(interpreter.exports.b).toBe(2);
+    expect(interpreter.exports.c).toBe(3);
+    expect(interpreter.exports.d).toBe(4);
+  });
 
-  it('should with statement run normally', () => {
-    const interpreter = new Sval({ ecmaVer: 10 })
+  it("should with statement run normally", () => {
+    const interpreter = new Sval({ ecmaVer: 10 });
     interpreter.run(`
       let x = 0
       const a = {
@@ -281,17 +281,17 @@ describe('testing statement', () => {
           exports.d = true
         }
       }
-    `)
-    expect(interpreter.exports.a).toBe(0)
-    expect(interpreter.exports.b).toBe(1)
-    expect(interpreter.exports.c).toBe(1)
-    expect(interpreter.exports.d).toBeTruthy()
-  })
+    `);
+    expect(interpreter.exports.a).toBe(0);
+    expect(interpreter.exports.b).toBe(1);
+    expect(interpreter.exports.c).toBe(1);
+    expect(interpreter.exports.d).toBeTruthy();
+  });
 
-  it('should with statement run normally in async function', () => {
+  it("should with statement run normally in async function", () => {
     return new Promise((done) => {
-      const interpreter = new Sval({ ecmaVer: 10 })
-      interpreter.import({ expect, done })
+      const interpreter = new Sval({ ecmaVer: 10 });
+      interpreter.import({ expect, done });
       interpreter.run(`
         async function run() {
           let x = 0
@@ -319,12 +319,12 @@ describe('testing statement', () => {
           done()
         }
         run()
-      `)
-    })
-  })
+      `);
+    });
+  });
 
-  it('should labeled loop statement and continue/break run normally', () => {
-    const interpreter = new Sval({ ecmaVer: 10 })
+  it("should labeled loop statement and continue/break run normally", () => {
+    const interpreter = new Sval({ ecmaVer: 10 });
     interpreter.run(`
       let x = 0
       a: while (x < 5) {
@@ -344,9 +344,9 @@ describe('testing statement', () => {
         } while (x < 5)
       }
       exports.a = x
-    `)
-    expect(interpreter.exports.a).toBe(3)
-  })
+    `);
+    expect(interpreter.exports.a).toBe(3);
+  });
 
   // it('should labeled loop statement and continue/break run normally in async function', () => {
   //   return new Promise((done) => {
@@ -380,8 +380,8 @@ describe('testing statement', () => {
   //   })
   // })
 
-  it('should labeled statement and break run normally', () => {
-    const interpreter = new Sval({ ecmaVer: 10 })
+  it("should labeled statement and break run normally", () => {
+    const interpreter = new Sval({ ecmaVer: 10 });
     interpreter.run(`
       let x = 0
       a: {
@@ -437,15 +437,15 @@ describe('testing statement', () => {
         x++
       }
       exports.g = x
-    `)
-    expect(interpreter.exports.a).toBe(1)
-    expect(interpreter.exports.b).toBe(2)
-    expect(interpreter.exports.c).toBe(3)
-    expect(interpreter.exports.d).toBe(4)
-    expect(interpreter.exports.e).toBe(5)
-    expect(interpreter.exports.f).toBe(6)
-    expect(interpreter.exports.g).toBe(7)
-  })
+    `);
+    expect(interpreter.exports.a).toBe(1);
+    expect(interpreter.exports.b).toBe(2);
+    expect(interpreter.exports.c).toBe(3);
+    expect(interpreter.exports.d).toBe(4);
+    expect(interpreter.exports.e).toBe(5);
+    expect(interpreter.exports.f).toBe(6);
+    expect(interpreter.exports.g).toBe(7);
+  });
 
   // it('should labeled statement and break run normally in async function', () => {
   //   const interpreter = new Sval({ ecmaVer: 10 })
@@ -517,4 +517,14 @@ describe('testing statement', () => {
   //     run()
   //   `)
   // })
-})
+
+  it("should support for loops with empty inits", () => {
+    const interpreter = new Sval();
+    interpreter.run(`
+      let i = 0;
+      for (; i < 5; i++) {
+        let r = i
+      }
+    `);
+  });
+});
