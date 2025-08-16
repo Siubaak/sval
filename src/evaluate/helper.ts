@@ -1,8 +1,9 @@
 import { RETURN, SUPER, NOCTOR, CLSCTOR, NEWTARGET, SUPERCALL } from '../share/const.ts'
-import { VariableDeclaration, ClassBody, PropertyDefinition } from './declaration.ts'
+import { VariableDeclaration, ClassBody } from './declaration.ts'
 import { define, assign, inherits, callSuper } from '../share/util.ts'
 import { runAsync, runAsyncOptions } from '../share/async.ts'
 import { Identifier } from '../evaluate_n/identifier.ts'
+import { PropertyDefinition } from '../evaluate_n/declaration.ts'
 import { BlockStatement } from './statement.ts'
 import Scope from '../scope/index.ts'
 import evaluate from './index.ts'
@@ -255,18 +256,18 @@ export function* createClass(
   const superClass = yield* evaluate(node.superClass, scope)
 
   const methodBody = node.body.body
-  const construct = function* (object: any) {
+  const construct = function (object: any) {
     for (let i = 0; i < methodBody.length; i++) {
       const def = methodBody[i]
       if (def.type === 'PropertyDefinition' && !def.static) {
-        yield* PropertyDefinition(def, scope, { klass: object, superClass })
+        PropertyDefinition(def, scope, { klass: object, superClass })
       }
     }
   }
 
-  let klass = function* () {
+  let klass = function () {
     const inst = superClass ? callSuper(this, superClass) : this
-    yield* construct(inst)
+    construct(inst)
     return inst
   }
   for (let i = 0; i < methodBody.length; i++) {

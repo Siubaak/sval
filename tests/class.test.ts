@@ -600,4 +600,93 @@ describe('testing class', () => {
       expect(B.l).toEqual([3, 4])
     `)
   })
+
+  it('should create working classes in module mode', () => {
+    const interpreter = new Sval({ 
+      sourceType: 'module'
+    })
+
+    interpreter.run(`
+      class TestClass {
+        constructor(value) {
+          this.value = value
+        }
+        
+        getValue() {
+          return this.value
+        }
+      }
+      
+      export { TestClass }
+      const instance = new TestClass(42)
+      export { instance }
+    `)
+
+    expect(interpreter.exports.TestClass).toBeDefined()
+    expect(interpreter.exports.instance).toBeDefined()
+    expect(interpreter.exports.instance.value).toBe(42)
+    expect(interpreter.exports.instance.getValue()).toBe(42)
+  })
+
+  it('should create working class expressions in module mode', () => {
+    const interpreter = new Sval({ 
+      sourceType: 'module'
+    })
+
+    interpreter.run(`
+      const MyClass = class {
+        constructor(x, y) {
+          this.x = x
+          this.y = y
+        }
+        
+        sum() {
+          return this.x + this.y
+        }
+      }
+      
+      export { MyClass }
+      const obj = new MyClass(3, 4)
+      export { obj }
+    `)
+
+    expect(interpreter.exports.MyClass).toBeDefined()
+    expect(interpreter.exports.obj).toBeDefined()
+    expect(interpreter.exports.obj.x).toBe(3)
+    expect(interpreter.exports.obj.y).toBe(4)
+    expect(interpreter.exports.obj.sum()).toBe(7)
+  })
+
+  it('should handle class with static methods in module mode', () => {
+    const interpreter = new Sval({ 
+      sourceType: 'module'
+    })
+
+    interpreter.run(`
+      class Calculator {
+        static add(a, b) {
+          return a + b
+        }
+        
+        constructor(initial) {
+          this.value = initial
+        }
+        
+        multiply(x) {
+          this.value *= x
+          return this
+        }
+      }
+      
+      export { Calculator }
+      const calc = new Calculator(5)
+      calc.multiply(3)
+      export { calc }
+      export const staticResult = Calculator.add(10, 20)
+    `)
+
+    expect(interpreter.exports.Calculator.add(1, 2)).toBe(3)
+    expect(interpreter.exports.calc.value).toBe(15)
+    expect(interpreter.exports.staticResult).toBe(30)
+  })
 })

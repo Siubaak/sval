@@ -11,7 +11,7 @@ export interface CtorOptions {
     superClass?: (...args: any[]) => any;
 }
 export declare function createFunc(node: acorn.FunctionDeclaration | acorn.FunctionExpression | acorn.ArrowFunctionExpression, scope: Scope, options?: CtorOptions): any;
-export declare function createClass(node: acorn.ClassDeclaration | acorn.ClassExpression, scope: Scope): Generator<any, () => Generator<any, any, any>, any>;
+export declare function createClass(node: acorn.ClassDeclaration | acorn.ClassExpression, scope: Scope): Generator<any, () => any, any>;
 export interface ForXHandlerOptions {
     value: any;
 }

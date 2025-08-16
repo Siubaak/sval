@@ -25,7 +25,7 @@ export declare function ArrowFunctionExpression(node: acorn.ArrowFunctionExpress
 export declare function TemplateLiteral(node: acorn.TemplateLiteral, scope: Scope): Generator<any, string, any>;
 export declare function TaggedTemplateExpression(node: acorn.TaggedTemplateExpression, scope: Scope): Generator<any, any, any>;
 export declare function TemplateElement(node: acorn.TemplateElement, scope: Scope): Generator<never, string, unknown>;
-export declare function ClassExpression(node: acorn.ClassExpression, scope: Scope): Generator<any, () => Generator<any, any, any>, any>;
+export declare function ClassExpression(node: acorn.ClassExpression, scope: Scope): Generator<any, () => any, any>;
 export interface SuperOptions {
     getProto?: boolean;
 }
