@@ -4,11 +4,7 @@ import { EXPORTS, IMPORT } from './share/const.ts'
 import Scope from './scope/index.ts'
 import PkgJson from '../package.json' with { type: 'json' }
 
-import { runAsync } from './share/async.ts'
-import { hoist as hoistAsync } from './evaluate/helper.ts'
-import { hoist } from './evaluate_n/helper.ts'
-import evaluateAsync from './evaluate/index.ts'
-import evaluate from './evaluate_n/index.ts'
+import { Compiler, VM } from './bytecode/index.ts'
 
 export interface SvalOptions {
   ecmaVer?: Options['ecmaVersion']
@@ -83,18 +79,23 @@ class Sval {
   run(code: string | Node) {
     const ast = typeof code === 'string' ? this.parse(code) : code
     const scope = this.scope
-    // check if top-level await supports
+
+    // Compile AST to bytecode
+    const compiler = new Compiler()
+    const bytecode = compiler.compile(ast, scope)
+
+    // Check if top-level await is supported (async execution needed)
     if (this.options.sourceType === 'module' && (
       this.options.ecmaVersion === 'latest'
       || this.options.ecmaVersion >= 13
     )) {
-      runAsync((function* () {
-        yield* hoistAsync(ast as Program, scope)
-        yield* evaluateAsync(ast, scope)
-      })())
+      // Return promise for async execution
+      const vm = new VM(scope, true)
+      return vm.executeAsync(bytecode)
     } else {
-      hoist(ast as Program, scope)
-      evaluate(ast, scope)
+      // Execute synchronously
+      const vm = new VM(scope, false)
+      return vm.execute(bytecode)
     }
   }
 }
