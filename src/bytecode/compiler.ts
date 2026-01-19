@@ -4,7 +4,7 @@
 
 import type { Node } from 'acorn'
 import type Scope from '../scope'
-import { NEWTARGET } from '../share/const'
+import { NEWTARGET, NOINIT, DEADZONE } from '../share/const'
 import {
   OpCode,
   createChunk,
@@ -26,9 +26,128 @@ export class Compiler {
 
   compile(node: Node, scope: Scope): BytecodeChunk {
     this.currentScope = scope
+
+    // Perform hoisting before compilation
+    this.hoist(node, scope)
+
     this.compileNode(node, scope)
     this.emit(OpCode.HALT)
     return this.chunk
+  }
+
+  /**
+   * Hoist function declarations and var declarations to the top of their scope
+   */
+  private hoist(node: any, scope: Scope): void {
+    if (node.type === 'Program' || node.type === 'BlockStatement') {
+      this.hoistInBlock(node.body, scope)
+    }
+  }
+
+  private hoistInBlock(body: any[], scope: Scope): void {
+    // First pass: hoist function declarations
+    for (const stmt of body) {
+      if (stmt.type === 'FunctionDeclaration' && stmt.id) {
+        // Function declarations are hoisted with their full definition
+        scope.func(stmt.id.name, undefined) // Declare first, will be set during execution
+      }
+    }
+
+    // Second pass: hoist var declarations (not let/const)
+    for (const stmt of body) {
+      this.hoistVarsInStatement(stmt, scope)
+    }
+
+    // Third pass: create temporal dead zone for let/const
+    for (const stmt of body) {
+      if (stmt.type === 'VariableDeclaration' && (stmt.kind === 'let' || stmt.kind === 'const')) {
+        for (const decl of stmt.declarations) {
+          if (decl.id.type === 'Identifier') {
+            // Create dead zone marker
+            try {
+              scope.let(decl.id.name, DEADZONE)
+            } catch (e) {
+              // Already declared, that's fine
+            }
+          }
+        }
+      }
+    }
+  }
+
+  private hoistVarsInStatement(stmt: any, scope: Scope): void {
+    switch (stmt.type) {
+      case 'VariableDeclaration':
+        if (stmt.kind === 'var') {
+          for (const decl of stmt.declarations) {
+            if (decl.id.type === 'Identifier') {
+              // Var declarations are hoisted but not initialized
+              scope.var(decl.id.name, NOINIT)
+            }
+          }
+        }
+        break
+
+      case 'ForStatement':
+        if (stmt.init && stmt.init.type === 'VariableDeclaration') {
+          this.hoistVarsInStatement(stmt.init, scope)
+        }
+        this.hoistVarsInStatement(stmt.body, scope)
+        break
+
+      case 'ForInStatement':
+      case 'ForOfStatement':
+        if (stmt.left && stmt.left.type === 'VariableDeclaration') {
+          this.hoistVarsInStatement(stmt.left, scope)
+        }
+        this.hoistVarsInStatement(stmt.body, scope)
+        break
+
+      case 'WhileStatement':
+      case 'DoWhileStatement':
+        this.hoistVarsInStatement(stmt.body, scope)
+        break
+
+      case 'IfStatement':
+        this.hoistVarsInStatement(stmt.consequent, scope)
+        if (stmt.alternate) {
+          this.hoistVarsInStatement(stmt.alternate, scope)
+        }
+        break
+
+      case 'BlockStatement':
+        // Don't hoist out of blocks for let/const, but do for var
+        for (const s of stmt.body) {
+          this.hoistVarsInStatement(s, scope)
+        }
+        break
+
+      case 'SwitchStatement':
+        for (const c of stmt.cases) {
+          for (const s of c.consequent) {
+            this.hoistVarsInStatement(s, scope)
+          }
+        }
+        break
+
+      case 'TryStatement':
+        for (const s of stmt.block.body) {
+          this.hoistVarsInStatement(s, scope)
+        }
+        if (stmt.handler) {
+          // Don't hoist from catch block to outer scope
+        }
+        if (stmt.finalizer) {
+          for (const s of stmt.finalizer.body) {
+            this.hoistVarsInStatement(s, scope)
+          }
+        }
+        break
+
+      case 'LabeledStatement':
+        this.hoistVarsInStatement(stmt.body, scope)
+        break
+    }
   }
 
   private compileNode(node: Node, scope: Scope): void {
