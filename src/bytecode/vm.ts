@@ -2,7 +2,7 @@
  * Virtual Machine - executes bytecode instructions using stacks
  */
 
-import type Scope from '../scope'
+import Scope from '../scope'
 import { Var } from '../scope/variable'
 import { OpCode, type BytecodeChunk, type Instruction } from './opcodes'
 import { Compiler } from './compiler'
@@ -119,7 +119,7 @@ export class VM {
       }
 
       case OpCode.LOAD_THIS: {
-        const thisValue = this.currentScope.$find('this')?.get()
+        const thisValue = this.currentScope.find('this')?.get()
         this.push(thisValue)
         break
       }
@@ -127,7 +127,7 @@ export class VM {
       // ===== Variable operations =====
       case OpCode.LOAD_VAR: {
         const name = operand
-        const variable = this.currentScope.$find(name)
+        const variable = this.currentScope.find(name)
         if (!variable) {
           throw new ReferenceError(`${name} is not defined`)
         }
@@ -138,10 +138,10 @@ export class VM {
       case OpCode.STORE_VAR: {
         const name = operand
         const value = this.peek()
-        const variable = this.currentScope.$find(name)
+        const variable = this.currentScope.find(name)
         if (!variable) {
           // Create global variable in non-strict mode
-          this.currentScope.$define(name, new Var('var', value))
+          this.currentScope.var(name, value)
         } else {
           variable.set(value)
         }
@@ -151,21 +151,21 @@ export class VM {
       case OpCode.DECLARE_VAR: {
         const name = operand
         const value = this.pop()
-        this.currentScope.$define(name, new Var('var', value))
+        this.currentScope.var(name, value)
         break
       }
 
       case OpCode.DECLARE_CONST: {
         const name = operand
         const value = this.pop()
-        this.currentScope.$define(name, new Var('const', value))
+        this.currentScope.const(name, value)
         break
       }
 
       case OpCode.DECLARE_LET: {
         const name = operand
         const value = this.pop()
-        this.currentScope.$define(name, new Var('let', value))
+        this.currentScope.let(name, value)
         break
       }
 
@@ -520,7 +520,7 @@ export class VM {
 
       // ===== Scope operations =====
       case OpCode.PUSH_SCOPE: {
-        const newScope = this.currentScope.$child()
+        const newScope = new Scope(this.currentScope)
         this.scopeStack.push(newScope)
         this.currentScope = newScope
         break
@@ -642,7 +642,7 @@ export class VM {
       }
 
       case OpCode.LOAD_THIS: {
-        const thisValue = this.currentScope.$find('this')?.get()
+        const thisValue = this.currentScope.find('this')?.get()
         this.push(thisValue)
         break
       }
@@ -650,7 +650,7 @@ export class VM {
       // ===== Variable operations =====
       case OpCode.LOAD_VAR: {
         const name = operand
-        const variable = this.currentScope.$find(name)
+        const variable = this.currentScope.find(name)
         if (!variable) {
           throw new ReferenceError(`${name} is not defined`)
         }
@@ -661,10 +661,10 @@ export class VM {
       case OpCode.STORE_VAR: {
         const name = operand
         const value = this.peek()
-        const variable = this.currentScope.$find(name)
+        const variable = this.currentScope.find(name)
         if (!variable) {
           // Create global variable in non-strict mode
-          this.currentScope.$define(name, new Var('var', value))
+          this.currentScope.var(name, value)
         } else {
           variable.set(value)
         }
@@ -674,21 +674,21 @@ export class VM {
       case OpCode.DECLARE_VAR: {
         const name = operand
         const value = this.pop()
-        this.currentScope.$define(name, new Var('var', value))
+        this.currentScope.var(name, value)
         break
       }
 
       case OpCode.DECLARE_CONST: {
         const name = operand
         const value = this.pop()
-        this.currentScope.$define(name, new Var('const', value))
+        this.currentScope.const(name, value)
         break
       }
 
       case OpCode.DECLARE_LET: {
         const name = operand
         const value = this.pop()
-        this.currentScope.$define(name, new Var('let', value))
+        this.currentScope.let(name, value)
         break
       }
 
@@ -1046,7 +1046,7 @@ export class VM {
 
       // ===== Scope operations =====
       case OpCode.PUSH_SCOPE: {
-        const newScope = this.currentScope.$child()
+        const newScope = new Scope(this.currentScope)
         this.scopeStack.push(newScope)
         this.currentScope = newScope
         break
@@ -1128,49 +1128,49 @@ export class VM {
     const self = this
 
     return async function (this: any, ...args: any[]) {
-      // Create new scope for function execution
-      const funcScope = captureScope.$child()
+      // Create new scope for function execution (isolated function scope)
+      const funcScope = new Scope(captureScope, true)
 
       // Bind parameters
       for (let i = 0; i < funcNode.params.length; i++) {
         const param = funcNode.params[i]
         if (param.type === 'Identifier') {
-          funcScope.$define(param.name, new Var('var', args[i]))
+          funcScope.var(param.name, args[i])
         }
       }
 
       // Bind 'this' and 'arguments'
-      funcScope.$define('this', new Var('var', this))
-      funcScope.$define('arguments', new Var('var', arguments))
+      funcScope.var('this', this)
+      funcScope.var('arguments', arguments)
 
       // Compile and execute function body
       const compiler = new Compiler()
       const chunk = compiler.compile(funcNode.body, funcScope)
 
       const funcVM = new VM(funcScope)
-      return await funcVM.execute(chunk)
+      return await funcVM.executeAsync(chunk)
     }
   }
 
   private createArrowFunction(funcNode: any, captureScope: Scope): Function {
     const self = this
-    const capturedThis = captureScope.$find('this')?.get()
+    const capturedThis = captureScope.find('this')?.get()
 
     return async (...args: any[]) => {
-      // Create new scope for function execution
-      const funcScope = captureScope.$child()
+      // Create new scope for function execution (isolated function scope)
+      const funcScope = new Scope(captureScope, true)
 
       // Bind parameters
       for (let i = 0; i < funcNode.params.length; i++) {
         const param = funcNode.params[i]
         if (param.type === 'Identifier') {
-          funcScope.$define(param.name, new Var('var', args[i]))
+          funcScope.var(param.name, args[i])
         }
       }
 
       // Arrow functions capture 'this'
       if (capturedThis !== undefined) {
-        funcScope.$define('this', new Var('var', capturedThis))
+        funcScope.var('this', capturedThis)
       }
 
       // Compile and execute function body
@@ -1188,7 +1188,7 @@ export class VM {
       }
 
       const funcVM = new VM(funcScope)
-      return await funcVM.execute(chunk)
+      return await funcVM.executeAsync(chunk)
     }
   }
 

@@ -2,8 +2,9 @@
  * Bytecode compiler - converts AST to bytecode instructions
  */
 
-import type { Node } from '../share/types'
+import type { Node } from 'acorn'
 import type Scope from '../scope'
+import { NEWTARGET } from '../share/const'
 import {
   OpCode,
   createChunk,
@@ -17,18 +18,23 @@ export class Compiler {
   private chunk: BytecodeChunk
   private loopStack: Array<{ breakLabel: number[]; continueLabel: number[] }> = []
   private labelMap: Map<string, number> = new Map()
+  private currentScope!: Scope
 
   constructor() {
     this.chunk = createChunk()
   }
 
   compile(node: Node, scope: Scope): BytecodeChunk {
+    this.currentScope = scope
     this.compileNode(node, scope)
     this.emit(OpCode.HALT)
     return this.chunk
   }
 
   private compileNode(node: Node, scope: Scope): void {
+    // Update current scope as we traverse
+    this.currentScope = scope
+
     const handler = (this as any)[`compile${node.type}`]
     if (!handler) {
       throw new Error(`Unknown node type: ${node.type}`)
@@ -680,6 +686,240 @@ export class Compiler {
       }
       this.emit(OpCode.POP)
     }
+  }
+
+  // ===== Additional statement types =====
+  private compileEmptyStatement(node: any, scope: Scope): void {
+    // Empty statement - no code generation needed
+  }
+
+  private compileDebuggerStatement(node: any, scope: Scope): void {
+    // Debugger statement - in a real implementation this would set a breakpoint
+    this.emit(OpCode.NOP)
+  }
+
+  private compileLabeledStatement(node: any, scope: Scope): void {
+    // Store label position for break/continue
+    const labelStart = this.chunk.instructions.length
+    this.labelMap.set(node.label.name, labelStart)
+    this.compileNode(node.body, scope)
+    this.labelMap.delete(node.label.name)
+  }
+
+  private compileWithStatement(node: any, scope: Scope): void {
+    // With statement - simplified implementation
+    // In a full implementation, this would modify scope chain
+    this.compileNode(node.object, scope)
+    this.emit(OpCode.POP)
+    this.compileNode(node.body, scope)
+  }
+
+  // ===== For-in and For-of loops =====
+  private compileForInStatement(node: any, scope: Scope): void {
+    this.emit(OpCode.PUSH_SCOPE)
+
+    // Get the object to iterate over
+    this.compileNode(node.right, scope)
+    this.emit(OpCode.DECLARE_VAR, 'FOR_IN_OBJ')
+
+    // Get keys array
+    this.emit(OpCode.LOAD_VAR, 'FOR_IN_OBJ')
+    // For now, we need to call Object.keys - simplified
+    // In a real implementation, we'd have a special opcode
+    const loopStart = this.chunk.instructions.length
+
+    const breakLabels: number[] = []
+    const continueLabels: number[] = []
+    this.loopStack.push({ breakLabel: breakLabels, continueLabel: continueLabels })
+
+    // Simplified: just compile the body
+    // Full implementation would need iterator protocol
+    this.compileNode(node.body, scope)
+
+    this.emit(OpCode.JUMP, loopStart)
+
+    const loopEnd = this.chunk.instructions.length
+    for (const label of breakLabels) {
+      this.chunk.instructions[label].operand = loopEnd
+    }
+    for (const label of continueLabels) {
+      this.chunk.instructions[label].operand = loopStart
+    }
+
+    this.loopStack.pop()
+    this.emit(OpCode.POP_SCOPE)
+  }
+
+  private compileForOfStatement(node: any, scope: Scope): void {
+    this.emit(OpCode.PUSH_SCOPE)
+
+    // Similar to for-in but uses iterator protocol
+    this.compileNode(node.right, scope)
+    this.emit(OpCode.DECLARE_VAR, 'FOR_OF_ITERABLE')
+
+    const loopStart = this.chunk.instructions.length
+
+    const breakLabels: number[] = []
+    const continueLabels: number[] = []
+    this.loopStack.push({ breakLabel: breakLabels, continueLabel: continueLabels })
+
+    // Simplified: just compile the body
+    this.compileNode(node.body, scope)
+
+    this.emit(OpCode.JUMP, loopStart)
+
+    const loopEnd = this.chunk.instructions.length
+    for (const label of breakLabels) {
+      this.chunk.instructions[label].operand = loopEnd
+    }
+    for (const label of continueLabels) {
+      this.chunk.instructions[label].operand = loopStart
+    }
+
+    this.loopStack.pop()
+    this.emit(OpCode.POP_SCOPE)
+  }
+
+  // ===== Class declarations =====
+  private compileClassDeclaration(node: any, scope: Scope): void {
+    const classIdx = addConstant(this.chunk, node)
+    this.emit(OpCode.CREATE_CLASS, classIdx)
+    this.emit(OpCode.DECLARE_VAR, node.id.name)
+  }
+
+  private compileClassExpression(node: any, scope: Scope): void {
+    const classIdx = addConstant(this.chunk, node)
+    this.emit(OpCode.CREATE_CLASS, classIdx)
+  }
+
+  // ===== Import/Export =====
+  private compileImportDeclaration(node: any, scope: Scope): void {
+    // Import declarations are handled at parse time by Sval.import()
+    // No runtime code generation needed
+  }
+
+  private compileExportNamedDeclaration(node: any, scope: Scope): void {
+    if (node.declaration) {
+      this.compileNode(node.declaration, scope)
+    }
+    // Exports are handled via the exports object
+  }
+
+  private compileExportDefaultDeclaration(node: any, scope: Scope): void {
+    this.compileNode(node.declaration, scope)
+    // Store to exports.default
+    this.emit(OpCode.LOAD_VAR, 'exports')
+    const idx = addConstant(this.chunk, 'default')
+    this.emit(OpCode.PUSH, idx)
+    this.emit(OpCode.SET_MEMBER)
+    this.emit(OpCode.POP)
+  }
+
+  private compileExportAllDeclaration(node: any, scope: Scope): void {
+    // Export all - simplified
+  }
+
+  // ===== Special expressions =====
+  private compileChainExpression(node: any, scope: Scope): void {
+    // Optional chaining - simplified
+    this.compileNode(node.expression, scope)
+  }
+
+  private compileMetaProperty(node: any, scope: Scope): void {
+    // new.target or import.meta
+    if (node.meta.name === 'new' && node.property.name === 'target') {
+      // Load new.target from scope
+      const variable = this.currentScope.$find(NEWTARGET)
+      if (variable) {
+        this.emit(OpCode.LOAD_VAR, NEWTARGET)
+      } else {
+        this.emit(OpCode.LOAD_UNDEFINED)
+      }
+    } else if (node.meta.name === 'import' && node.property.name === 'meta') {
+      // import.meta - would need module context
+      this.emit(OpCode.LOAD_UNDEFINED)
+    }
+  }
+
+  private compileSpreadElement(node: any, scope: Scope): void {
+    this.compileNode(node.argument, scope)
+    this.emit(OpCode.SPREAD)
+  }
+
+  private compileRestElement(node: any, scope: Scope): void {
+    // Rest element in destructuring - simplified
+    this.compilePattern(node.argument, scope)
+  }
+
+  private compileAssignmentPattern(node: any, scope: Scope): void {
+    // Assignment pattern in destructuring (default values)
+    // value = value ?? default
+    this.emit(OpCode.DUP)
+    this.emit(OpCode.LOAD_UNDEFINED)
+    this.emit(OpCode.SEQ)
+    const jumpIfDefined = this.emit(OpCode.JUMP_IF_FALSE, 0)
+    this.emit(OpCode.POP)
+    this.compileNode(node.right, scope)
+    this.patchJump(jumpIfDefined)
+    this.compilePattern(node.left, scope)
+  }
+
+  private compileProperty(node: any, scope: Scope): void {
+    // Property in object expression - handled by parent
+    if (node.kind === 'init') {
+      if (node.method) {
+        // Method
+        const funcIdx = addConstant(this.chunk, node.value)
+        this.emit(OpCode.CREATE_FUNCTION, funcIdx)
+      } else {
+        this.compileNode(node.value, scope)
+      }
+    } else if (node.kind === 'get' || node.kind === 'set') {
+      // Getter/setter - simplified
+      const funcIdx = addConstant(this.chunk, node.value)
+      this.emit(OpCode.CREATE_FUNCTION, funcIdx)
+    }
+  }
+
+  private compileMethodDefinition(node: any, scope: Scope): void {
+    // Method definition in class - handled by class compilation
+  }
+
+  private compilePropertyDefinition(node: any, scope: Scope): void {
+    // Class field - handled by class compilation
+  }
+
+  private compileSuper(node: any, scope: Scope): void {
+    // Super keyword
+    this.emit(OpCode.CREATE_SUPER)
+  }
+
+  private compileImportExpression(node: any, scope: Scope): void {
+    // Dynamic import() - would need async support
+    this.compileNode(node.source, scope)
+    // Simplified - would need actual import logic
+    this.emit(OpCode.LOAD_UNDEFINED)
+  }
+
+  private compileTaggedTemplateExpression(node: any, scope: Scope): void {
+    // Tagged template literal
+    // tag`template`
+
+    // Compile the tag function
+    this.compileNode(node.tag, scope)
+
+    // Create the template strings array
+    const strings = node.quasi.quasis.map((q: any) => q.value.cooked)
+    const stringsIdx = addConstant(this.chunk, strings)
+    this.emit(OpCode.PUSH, stringsIdx)
+
+    // Compile the expressions
+    for (const expr of node.quasi.expressions) {
+      this.compileNode(expr, scope)
+    }
+
+    // Call the tag function
+    this.emit(OpCode.CALL, 1 + node.quasi.expressions.length)
   }
 
   // ===== Helper methods =====
