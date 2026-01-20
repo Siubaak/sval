@@ -46,12 +46,28 @@ export class Compiler {
 
   private hoistInBlock(body: any[], scope: Scope): void {
     // First pass: hoist function declarations
+    // Note: We just declare them here; they'll be defined when the declaration is executed
     for (const stmt of body) {
       if (stmt.type === 'FunctionDeclaration' && stmt.id) {
-        // Function declarations are hoisted with their full definition
-        scope.func(stmt.id.name, undefined) // Declare first, will be set during execution
+        // Just declare the variable; the function will be assigned when we execute the declaration
+        scope.var(stmt.id.name, NOINIT)
       }
     }
+
+    // Actually, for proper hoisting, we need to move function declarations to the front
+    // Sort the body to put function declarations first
+    const funcDecls: any[] = []
+    const otherStmts: any[] = []
+    for (const stmt of body) {
+      if (stmt.type === 'FunctionDeclaration') {
+        funcDecls.push(stmt)
+      } else {
+        otherStmts.push(stmt)
+      }
+    }
+    // Modify the body array in place
+    body.length = 0
+    body.push(...funcDecls, ...otherStmts)
 
     // Second pass: hoist var declarations (not let/const)
     for (const stmt of body) {
@@ -335,8 +351,22 @@ export class Compiler {
   // ===== Assignment =====
   private compileAssignmentExpression(node: any, scope: Scope): void {
     if (node.operator === '=') {
-      this.compileNode(node.right, scope)
-      this.compileAssignmentTarget(node.left, scope)
+      // For member expressions, we need to push object and property first
+      if (node.left.type === 'MemberExpression') {
+        this.compileNode(node.left.object, scope)
+        if (node.left.computed) {
+          this.compileNode(node.left.property, scope)
+        } else {
+          const idx = addConstant(this.chunk, node.left.property.name)
+          this.emit(OpCode.PUSH, idx)
+        }
+        this.compileNode(node.right, scope)
+        this.emit(OpCode.SET_MEMBER)
+      } else {
+        // For identifiers and patterns, compile value first
+        this.compileNode(node.right, scope)
+        this.compileAssignmentTarget(node.left, scope)
+      }
     } else {
       // Compound assignment: +=, -=, etc.
       const baseOp = node.operator.slice(0, -1) // Remove '='

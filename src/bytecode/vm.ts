@@ -6,7 +6,7 @@ import Scope from '../scope'
 import { Var } from '../scope/variable'
 import { OpCode, type BytecodeChunk, type Instruction } from './opcodes'
 import { Compiler } from './compiler'
-import { AWAIT } from '../share/async'
+import { AWAIT } from '../share/const'
 
 class CallFrame {
   chunk: BytecodeChunk
@@ -1126,69 +1126,98 @@ export class VM {
 
   private createFunction(funcNode: any, captureScope: Scope): Function {
     const self = this
+    const isAsync = funcNode.async || funcNode.generator
 
-    return async function (this: any, ...args: any[]) {
-      // Create new scope for function execution (isolated function scope)
-      const funcScope = new Scope(captureScope, true)
-
-      // Bind parameters
-      for (let i = 0; i < funcNode.params.length; i++) {
-        const param = funcNode.params[i]
-        if (param.type === 'Identifier') {
-          funcScope.var(param.name, args[i])
+    if (isAsync) {
+      return async function (this: any, ...args: any[]) {
+        const funcScope = new Scope(captureScope, true)
+        for (let i = 0; i < funcNode.params.length; i++) {
+          const param = funcNode.params[i]
+          if (param.type === 'Identifier') {
+            funcScope.var(param.name, args[i])
+          }
         }
+        funcScope.var('this', this)
+        funcScope.var('arguments', arguments)
+        const compiler = new Compiler()
+        const chunk = compiler.compile(funcNode.body, funcScope)
+        const funcVM = new VM(funcScope)
+        return await funcVM.executeAsync(chunk)
       }
-
-      // Bind 'this' and 'arguments'
-      funcScope.var('this', this)
-      funcScope.var('arguments', arguments)
-
-      // Compile and execute function body
-      const compiler = new Compiler()
-      const chunk = compiler.compile(funcNode.body, funcScope)
-
-      const funcVM = new VM(funcScope)
-      return await funcVM.executeAsync(chunk)
+    } else {
+      return function (this: any, ...args: any[]) {
+        const funcScope = new Scope(captureScope, true)
+        for (let i = 0; i < funcNode.params.length; i++) {
+          const param = funcNode.params[i]
+          if (param.type === 'Identifier') {
+            funcScope.var(param.name, args[i])
+          }
+        }
+        funcScope.var('this', this)
+        funcScope.var('arguments', arguments)
+        const compiler = new Compiler()
+        const chunk = compiler.compile(funcNode.body, funcScope)
+        const funcVM = new VM(funcScope)
+        return funcVM.execute(chunk)
+      }
     }
   }
 
   private createArrowFunction(funcNode: any, captureScope: Scope): Function {
     const self = this
     const capturedThis = captureScope.find('this')?.get()
+    const isAsync = funcNode.async || funcNode.generator
 
-    return async (...args: any[]) => {
-      // Create new scope for function execution (isolated function scope)
-      const funcScope = new Scope(captureScope, true)
-
-      // Bind parameters
-      for (let i = 0; i < funcNode.params.length; i++) {
-        const param = funcNode.params[i]
-        if (param.type === 'Identifier') {
-          funcScope.var(param.name, args[i])
+    if (isAsync) {
+      return async (...args: any[]) => {
+        const funcScope = new Scope(captureScope, true)
+        for (let i = 0; i < funcNode.params.length; i++) {
+          const param = funcNode.params[i]
+          if (param.type === 'Identifier') {
+            funcScope.var(param.name, args[i])
+          }
         }
+        if (capturedThis !== undefined) {
+          funcScope.var('this', capturedThis)
+        }
+        const compiler = new Compiler()
+        let chunk: BytecodeChunk
+        if (funcNode.body.type === 'BlockStatement') {
+          chunk = compiler.compile(funcNode.body, funcScope)
+        } else {
+          chunk = compiler.compile({
+            type: 'ReturnStatement',
+            argument: funcNode.body
+          }, funcScope)
+        }
+        const funcVM = new VM(funcScope)
+        return await funcVM.executeAsync(chunk)
       }
-
-      // Arrow functions capture 'this'
-      if (capturedThis !== undefined) {
-        funcScope.var('this', capturedThis)
+    } else {
+      return (...args: any[]) => {
+        const funcScope = new Scope(captureScope, true)
+        for (let i = 0; i < funcNode.params.length; i++) {
+          const param = funcNode.params[i]
+          if (param.type === 'Identifier') {
+            funcScope.var(param.name, args[i])
+          }
+        }
+        if (capturedThis !== undefined) {
+          funcScope.var('this', capturedThis)
+        }
+        const compiler = new Compiler()
+        let chunk: BytecodeChunk
+        if (funcNode.body.type === 'BlockStatement') {
+          chunk = compiler.compile(funcNode.body, funcScope)
+        } else {
+          chunk = compiler.compile({
+            type: 'ReturnStatement',
+            argument: funcNode.body
+          }, funcScope)
+        }
+        const funcVM = new VM(funcScope)
+        return funcVM.execute(chunk)
       }
-
-      // Compile and execute function body
-      const compiler = new Compiler()
-      let chunk: BytecodeChunk
-
-      if (funcNode.body.type === 'BlockStatement') {
-        chunk = compiler.compile(funcNode.body, funcScope)
-      } else {
-        // Expression body - auto-return
-        chunk = compiler.compile({
-          type: 'ReturnStatement',
-          argument: funcNode.body
-        }, funcScope)
-      }
-
-      const funcVM = new VM(funcScope)
-      return await funcVM.executeAsync(chunk)
     }
   }
 
