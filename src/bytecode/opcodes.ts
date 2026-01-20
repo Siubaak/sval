@@ -67,6 +67,7 @@ export enum OpCode {
 
   // Function operations
   CALL,           // Function call
+  CALL_METHOD,    // Method call with this binding
   NEW,            // new Constructor()
   RETURN,         // return statement
   YIELD,          // yield expression
@@ -90,7 +91,7 @@ export enum OpCode {
   CREATE_FUNCTION,
   CREATE_ARROW_FUNCTION,
   CREATE_CLASS,
-  CREATE_SUPER,
+  SUPER_CALL,     // super() constructor call
 
   // Exception handling
   THROW,
@@ -104,6 +105,12 @@ export enum OpCode {
   // Loop control
   BREAK,
   CONTINUE,
+
+  // Iterator operations
+  GET_KEYS,         // Get Object.keys() for for-in
+  GET_ITERATOR,     // Get iterator for for-of
+  ITERATOR_NEXT,    // Get next value from iterator
+  ITERATOR_DONE,    // Check if iterator is done
 
   // Special
   NOP,            // No operation

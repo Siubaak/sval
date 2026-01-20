@@ -20,6 +20,14 @@ class CallFrame {
   }
 }
 
+interface ExceptionHandler {
+  catchJump: number
+  finallyJump: number
+  hasCatch: boolean
+  hasFinally: boolean
+  scopeDepth: number
+}
+
 export class VM {
   private stack: any[] = []
   private callStack: CallFrame[] = []
@@ -28,11 +36,17 @@ export class VM {
   private currentScope: Scope
   private halted: boolean = false
   private isAsync: boolean = false
+  private exceptionHandlers: ExceptionHandler[] = []
+  private superClass: any = null  // For super() calls in class constructors
 
   constructor(private rootScope: Scope, isAsync: boolean = false) {
     this.currentScope = rootScope
     this.scopeStack.push(rootScope)
     this.isAsync = isAsync
+  }
+
+  setSuperClass(superClass: any): void {
+    this.superClass = superClass
   }
 
   execute(chunk: BytecodeChunk): any {
@@ -46,13 +60,44 @@ export class VM {
       try {
         this.executeInstruction(instruction)
       } catch (error) {
-        // Handle runtime errors
-        throw error
+        // Handle exceptions with try/catch/finally
+        if (!this.handleException(error)) {
+          // No exception handler, rethrow
+          throw error
+        }
       }
     }
 
     // Return top of stack or undefined
     return this.stack.length > 0 ? this.stack.pop() : undefined
+  }
+
+  private handleException(error: any): boolean {
+    // Find the nearest exception handler
+    if (this.exceptionHandlers.length === 0) {
+      return false // No handler
+    }
+
+    const handler = this.exceptionHandlers.pop()!
+
+    // Restore scope to the handler's depth
+    while (this.scopeStack.length > handler.scopeDepth) {
+      this.scopeStack.pop()
+    }
+    this.currentScope = this.scopeStack[this.scopeStack.length - 1]
+
+    // Jump to catch or finally
+    if (handler.hasCatch) {
+      // Push the error onto the stack for the catch block
+      this.push(error)
+      this.currentFrame!.ip = handler.catchJump
+    } else if (handler.hasFinally) {
+      // Jump to finally, but rethrow after
+      this.currentFrame!.ip = handler.finallyJump
+      // TODO: Need to track that we should rethrow after finally
+    }
+
+    return true
   }
 
   async executeAsync(chunk: BytecodeChunk): Promise<any> {
@@ -416,6 +461,24 @@ export class VM {
         break
       }
 
+      case OpCode.CALL_METHOD: {
+        const argCount = operand
+        const method = this.pop()
+        const receiver = this.pop()
+        const args = []
+        for (let i = 0; i < argCount; i++) {
+          args.unshift(this.pop())
+        }
+
+        if (typeof method !== 'function') {
+          throw new TypeError(`${method} is not a function`)
+        }
+
+        const result = method.call(receiver, ...args)
+        this.push(result)
+        break
+      }
+
       case OpCode.NEW: {
         const argCount = operand
         const constructor = this.pop()
@@ -557,20 +620,85 @@ export class VM {
         break
       }
 
+      case OpCode.SUPER_CALL: {
+        const argCount = operand
+        const args = []
+        for (let i = 0; i < argCount; i++) {
+          args.unshift(this.pop())
+        }
+
+        // Get the superclass from VM
+        if (!this.superClass) {
+          throw new ReferenceError('super() call outside of class constructor with parent')
+        }
+
+        // Get this from scope
+        const thisVar = this.currentScope.find('this')
+        if (!thisVar) {
+          throw new ReferenceError('super() call without this context')
+        }
+        const thisContext = thisVar.get()
+
+        // Call superclass constructor
+        this.superClass.apply(thisContext, args)
+        this.push(undefined)
+        break
+      }
+
       // ===== Exception handling =====
       case OpCode.THROW: {
         const error = this.pop()
         throw error
       }
 
-      case OpCode.TRY_START:
-      case OpCode.TRY_END:
-      case OpCode.CATCH_START:
-      case OpCode.CATCH_END:
-      case OpCode.FINALLY_START:
+      case OpCode.TRY_START: {
+        // Register an exception handler
+        const handlerInfo = operand
+        this.exceptionHandlers.push({
+          catchJump: handlerInfo.catchJump,
+          finallyJump: handlerInfo.finallyJump,
+          hasCatch: handlerInfo.hasCatch,
+          hasFinally: handlerInfo.hasFinally,
+          scopeDepth: this.scopeStack.length
+        })
+        break
+      }
+
+      case OpCode.TRY_END: {
+        // Successfully completed try block, remove handler
+        if (this.exceptionHandlers.length > 0) {
+          const handler = this.exceptionHandlers.pop()!
+          // If there's a finally block, we still need to execute it
+          if (handler.hasFinally) {
+            // Jump to finally block
+            this.currentFrame!.ip = handler.finallyJump
+          }
+        }
+        break
+      }
+
+      case OpCode.CATCH_START: {
+        // Bind the exception to the catch parameter
+        const paramName = operand
+        if (paramName) {
+          const error = this.pop()
+          this.currentScope.let(paramName, error)
+        }
+        break
+      }
+
+      case OpCode.CATCH_END: {
+        // End of catch block
+        break
+      }
+
+      case OpCode.FINALLY_START: {
+        // Start of finally block
+        break
+      }
+
       case OpCode.FINALLY_END: {
-        // Exception handling would require more complex control flow
-        // For now, these are placeholders
+        // End of finally block
         break
       }
 
@@ -578,6 +706,63 @@ export class VM {
       case OpCode.BREAK:
       case OpCode.CONTINUE: {
         // These are handled by jump instructions in the compiler
+        break
+      }
+
+      // ===== Iterator operations =====
+      case OpCode.GET_KEYS: {
+        const obj = this.pop()
+        const keys = Object.keys(obj)
+        this.push(keys)
+        break
+      }
+
+      case OpCode.GET_ITERATOR: {
+        const iterable = this.pop()
+        // Get the iterator from the iterable
+        let iterator
+        if (Array.isArray(iterable)) {
+          // For arrays, create a simple iterator
+          let index = 0
+          iterator = {
+            next() {
+              if (index < iterable.length) {
+                return { value: iterable[index++], done: false }
+              }
+              return { value: undefined, done: true }
+            }
+          }
+        } else if (iterable && typeof iterable[Symbol.iterator] === 'function') {
+          // Use the built-in iterator
+          iterator = iterable[Symbol.iterator]()
+        } else if (typeof iterable === 'string') {
+          // Strings are iterable
+          let index = 0
+          iterator = {
+            next() {
+              if (index < iterable.length) {
+                return { value: iterable[index++], done: false }
+              }
+              return { value: undefined, done: true }
+            }
+          }
+        } else {
+          throw new TypeError(`${iterable} is not iterable`)
+        }
+        this.push(iterator)
+        break
+      }
+
+      case OpCode.ITERATOR_NEXT: {
+        const iterator = this.pop()
+        const result = iterator.next()
+        this.push(result)
+        break
+      }
+
+      case OpCode.ITERATOR_DONE: {
+        const result = this.pop()
+        this.push(result.done)
         break
       }
 
@@ -939,6 +1124,24 @@ export class VM {
         break
       }
 
+      case OpCode.CALL_METHOD: {
+        const argCount = operand
+        const method = this.pop()
+        const receiver = this.pop()
+        const args = []
+        for (let i = 0; i < argCount; i++) {
+          args.unshift(this.pop())
+        }
+
+        if (typeof method !== 'function') {
+          throw new TypeError(`${method} is not a function`)
+        }
+
+        const result = await method.call(receiver, ...args)
+        this.push(result)
+        break
+      }
+
       case OpCode.NEW: {
         const argCount = operand
         const constructor = this.pop()
@@ -1083,20 +1286,85 @@ export class VM {
         break
       }
 
+      case OpCode.SUPER_CALL: {
+        const argCount = operand
+        const args = []
+        for (let i = 0; i < argCount; i++) {
+          args.unshift(this.pop())
+        }
+
+        // Get the superclass from VM
+        if (!this.superClass) {
+          throw new ReferenceError('super() call outside of class constructor with parent')
+        }
+
+        // Get this from scope
+        const thisVar = this.currentScope.find('this')
+        if (!thisVar) {
+          throw new ReferenceError('super() call without this context')
+        }
+        const thisContext = thisVar.get()
+
+        // Call superclass constructor
+        this.superClass.apply(thisContext, args)
+        this.push(undefined)
+        break
+      }
+
       // ===== Exception handling =====
       case OpCode.THROW: {
         const error = this.pop()
         throw error
       }
 
-      case OpCode.TRY_START:
-      case OpCode.TRY_END:
-      case OpCode.CATCH_START:
-      case OpCode.CATCH_END:
-      case OpCode.FINALLY_START:
+      case OpCode.TRY_START: {
+        // Register an exception handler
+        const handlerInfo = operand
+        this.exceptionHandlers.push({
+          catchJump: handlerInfo.catchJump,
+          finallyJump: handlerInfo.finallyJump,
+          hasCatch: handlerInfo.hasCatch,
+          hasFinally: handlerInfo.hasFinally,
+          scopeDepth: this.scopeStack.length
+        })
+        break
+      }
+
+      case OpCode.TRY_END: {
+        // Successfully completed try block, remove handler
+        if (this.exceptionHandlers.length > 0) {
+          const handler = this.exceptionHandlers.pop()!
+          // If there's a finally block, we still need to execute it
+          if (handler.hasFinally) {
+            // Jump to finally block
+            this.currentFrame!.ip = handler.finallyJump
+          }
+        }
+        break
+      }
+
+      case OpCode.CATCH_START: {
+        // Bind the exception to the catch parameter
+        const paramName = operand
+        if (paramName) {
+          const error = this.pop()
+          this.currentScope.let(paramName, error)
+        }
+        break
+      }
+
+      case OpCode.CATCH_END: {
+        // End of catch block
+        break
+      }
+
+      case OpCode.FINALLY_START: {
+        // Start of finally block
+        break
+      }
+
       case OpCode.FINALLY_END: {
-        // Exception handling would require more complex control flow
-        // For now, these are placeholders
+        // End of finally block
         break
       }
 
@@ -1104,6 +1372,63 @@ export class VM {
       case OpCode.BREAK:
       case OpCode.CONTINUE: {
         // These are handled by jump instructions in the compiler
+        break
+      }
+
+      // ===== Iterator operations =====
+      case OpCode.GET_KEYS: {
+        const obj = this.pop()
+        const keys = Object.keys(obj)
+        this.push(keys)
+        break
+      }
+
+      case OpCode.GET_ITERATOR: {
+        const iterable = this.pop()
+        // Get the iterator from the iterable
+        let iterator
+        if (Array.isArray(iterable)) {
+          // For arrays, create a simple iterator
+          let index = 0
+          iterator = {
+            next() {
+              if (index < iterable.length) {
+                return { value: iterable[index++], done: false }
+              }
+              return { value: undefined, done: true }
+            }
+          }
+        } else if (iterable && typeof iterable[Symbol.iterator] === 'function') {
+          // Use the built-in iterator
+          iterator = iterable[Symbol.iterator]()
+        } else if (typeof iterable === 'string') {
+          // Strings are iterable
+          let index = 0
+          iterator = {
+            next() {
+              if (index < iterable.length) {
+                return { value: iterable[index++], done: false }
+              }
+              return { value: undefined, done: true }
+            }
+          }
+        } else {
+          throw new TypeError(`${iterable} is not iterable`)
+        }
+        this.push(iterator)
+        break
+      }
+
+      case OpCode.ITERATOR_NEXT: {
+        const iterator = this.pop()
+        const result = iterator.next()
+        this.push(result)
+        break
+      }
+
+      case OpCode.ITERATOR_DONE: {
+        const result = this.pop()
+        this.push(result.done)
         break
       }
 
@@ -1222,27 +1547,206 @@ export class VM {
   }
 
   private createClass(classNode: any, captureScope: Scope): any {
-    // Simplified class creation - full implementation would be more complex
+    const self = this
     const className = classNode.id?.name || 'AnonymousClass'
 
-    // Create constructor function
-    const constructor = function (this: any, ...args: any[]) {
-      // Initialize instance
-    }
+    // Find constructor method
+    let constructorMethod: any = null
+    const instanceMethods: any[] = []
+    const staticMethods: any[] = []
+    const instanceFields: any[] = []
+    const staticFields: any[] = []
 
-    // Add methods to prototype
-    for (const method of classNode.body.body) {
-      if (method.type === 'MethodDefinition') {
-        const methodName = method.key.name
-        if (method.kind === 'constructor') {
-          // Constructor logic
+    for (const element of classNode.body.body) {
+      if (element.type === 'MethodDefinition') {
+        if (element.kind === 'constructor') {
+          constructorMethod = element
+        } else if (element.static) {
+          staticMethods.push(element)
         } else {
-          constructor.prototype[methodName] = this.createFunction(method.value, captureScope)
+          instanceMethods.push(element)
+        }
+      } else if (element.type === 'PropertyDefinition') {
+        if (element.static) {
+          staticFields.push(element)
+        } else {
+          instanceFields.push(element)
         }
       }
     }
 
-    return constructor
+    // Get superclass if it exists
+    let superClass: any = null
+    if (classNode.superClass) {
+      const compiler = new Compiler()
+      const chunk = compiler.compile({
+        type: 'Program',
+        body: [{
+          type: 'ReturnStatement',
+          argument: classNode.superClass
+        }],
+        sourceType: 'script'
+      }, captureScope)
+      const vm = new VM(captureScope)
+      superClass = vm.execute(chunk)
+    }
+
+    // Create the constructor function
+    let classConstructor: any
+
+    if (constructorMethod) {
+      // Use the provided constructor
+      const constructorBody = constructorMethod.value.body
+      const constructorParams = constructorMethod.value.params
+
+      classConstructor = function (this: any, ...args: any[]) {
+        // Create constructor scope
+        const constructorScope = new Scope(captureScope, true)
+
+        // Bind parameters
+        for (let i = 0; i < constructorParams.length; i++) {
+          const param = constructorParams[i]
+          if (param.type === 'Identifier') {
+            constructorScope.var(param.name, args[i])
+          }
+        }
+
+        // Bind this
+        constructorScope.var('this', this)
+        constructorScope.var('arguments', arguments)
+
+        // Initialize instance fields
+        for (const field of instanceFields) {
+          const fieldName = field.key.name || field.key.value
+          let fieldValue = undefined
+          if (field.value) {
+            const compiler = new Compiler()
+            const chunk = compiler.compile({
+              type: 'ExpressionStatement',
+              expression: field.value
+            }, constructorScope)
+            const vm = new VM(constructorScope)
+            fieldValue = vm.execute(chunk)
+          }
+          this[fieldName] = fieldValue
+        }
+
+        // Execute constructor body statements directly (not as BlockStatement to avoid scope issues)
+        const compiler = new Compiler()
+        const chunk = compiler.compile({
+          type: 'Program',
+          body: constructorBody.body,
+          sourceType: 'script'
+        }, constructorScope)
+        const vm = new VM(constructorScope)
+        // Set superclass for super() calls
+        if (superClass) {
+          vm.setSuperClass(superClass)
+        }
+        vm.execute(chunk)
+      }
+    } else {
+      // Default constructor
+      classConstructor = function (this: any, ...args: any[]) {
+        // If there's a superclass, call it
+        if (superClass) {
+          superClass.apply(this, args)
+        }
+
+        // Initialize instance fields
+        for (const field of instanceFields) {
+          const fieldName = field.key.name || field.key.value
+          let fieldValue = undefined
+          if (field.value) {
+            const compiler = new Compiler()
+            const chunk = compiler.compile({
+              type: 'ExpressionStatement',
+              expression: field.value
+            }, captureScope)
+            const vm = new VM(captureScope)
+            fieldValue = vm.execute(chunk)
+          }
+          this[fieldName] = fieldValue
+        }
+      }
+    }
+
+    // Set up prototype chain
+    if (superClass) {
+      classConstructor.prototype = Object.create(superClass.prototype)
+      classConstructor.prototype.constructor = classConstructor
+    }
+
+    // Add instance methods to prototype
+    for (const method of instanceMethods) {
+      const methodName = method.key.name || method.key.value
+      const methodFunc = this.createFunction(method.value, captureScope)
+
+      // Handle getters and setters
+      if (method.kind === 'get') {
+        Object.defineProperty(classConstructor.prototype, methodName, {
+          get: methodFunc,
+          enumerable: false,
+          configurable: true
+        })
+      } else if (method.kind === 'set') {
+        Object.defineProperty(classConstructor.prototype, methodName, {
+          set: methodFunc,
+          enumerable: false,
+          configurable: true
+        })
+      } else {
+        classConstructor.prototype[methodName] = methodFunc
+      }
+    }
+
+    // Add static methods to constructor
+    for (const method of staticMethods) {
+      const methodName = method.key.name || method.key.value
+      const methodFunc = this.createFunction(method.value, captureScope)
+
+      if (method.kind === 'get') {
+        Object.defineProperty(classConstructor, methodName, {
+          get: methodFunc,
+          enumerable: false,
+          configurable: true
+        })
+      } else if (method.kind === 'set') {
+        Object.defineProperty(classConstructor, methodName, {
+          set: methodFunc,
+          enumerable: false,
+          configurable: true
+        })
+      } else {
+        classConstructor[methodName] = methodFunc
+      }
+    }
+
+    // Initialize static fields
+    for (const field of staticFields) {
+      const fieldName = field.key.name || field.key.value
+      let fieldValue = undefined
+      if (field.value) {
+        const compiler = new Compiler()
+        const chunk = compiler.compile({
+          type: 'ExpressionStatement',
+          expression: field.value
+        }, captureScope)
+        const vm = new VM(captureScope)
+        fieldValue = vm.execute(chunk)
+      }
+      classConstructor[fieldName] = fieldValue
+    }
+
+    // Set class name
+    Object.defineProperty(classConstructor, 'name', {
+      value: className,
+      writable: false,
+      enumerable: false,
+      configurable: true
+    })
+
+    return classConstructor
   }
 
   // ===== Stack helpers =====

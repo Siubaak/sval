@@ -222,6 +222,11 @@ export class Compiler {
     this.emit(OpCode.LOAD_THIS)
   }
 
+  private compileSuper(node: any, scope: Scope): void {
+    // Load the super binding from scope
+    this.emit(OpCode.LOAD_VAR, 'super')
+  }
+
   // ===== Binary Operations =====
   private compileBinaryExpression(node: any, scope: Scope): void {
     this.compileNode(node.left, scope)
@@ -450,14 +455,51 @@ export class Compiler {
   }
 
   private compileCallExpression(node: any, scope: Scope): void {
-    // Compile arguments
-    for (const arg of node.arguments) {
-      this.compileNode(arg, scope)
+    // Check if this is a super() call
+    if (node.callee.type === 'Super') {
+      // Compile arguments for super call
+      for (const arg of node.arguments) {
+        this.compileNode(arg, scope)
+      }
+      // Emit super call opcode
+      this.emit(OpCode.SUPER_CALL, node.arguments.length)
     }
-    // Compile callee
-    this.compileNode(node.callee, scope)
-    // Call with argument count
-    this.emit(OpCode.CALL, node.arguments.length)
+    // Check if this is a method call (callee is a MemberExpression)
+    else if (node.callee.type === 'MemberExpression') {
+      // Compile arguments
+      for (const arg of node.arguments) {
+        this.compileNode(arg, scope)
+      }
+
+      // Compile the object (receiver)
+      this.compileNode(node.callee.object, scope)
+
+      // Duplicate the receiver so we have it for method call
+      this.emit(OpCode.DUP)
+
+      // Get the method
+      if (node.callee.computed) {
+        this.compileNode(node.callee.property, scope)
+      } else {
+        const idx = addConstant(this.chunk, node.callee.property.name)
+        this.emit(OpCode.PUSH, idx)
+      }
+      this.emit(OpCode.GET_MEMBER)
+
+      // Call method with receiver binding
+      // Stack: args..., receiver, method
+      this.emit(OpCode.CALL_METHOD, node.arguments.length)
+    } else {
+      // Regular function call
+      // Compile arguments
+      for (const arg of node.arguments) {
+        this.compileNode(arg, scope)
+      }
+      // Compile callee
+      this.compileNode(node.callee, scope)
+      // Call with argument count
+      this.emit(OpCode.CALL, node.arguments.length)
+    }
   }
 
   private compileNewExpression(node: any, scope: Scope): void {
@@ -744,20 +786,63 @@ export class Compiler {
   }
 
   private compileTryStatement(node: any, scope: Scope): void {
-    this.emit(OpCode.TRY_START)
+    // Try/catch/finally control flow:
+    // TRY_START <catchJump> <finallyJump>
+    // ... try block ...
+    // TRY_END
+    // JUMP <afterCatch>
+    // <catchJump>:
+    // ... catch block ...
+    // <afterCatch>:
+    // <finallyJump>:
+    // ... finally block ...
+    // TRY_CLEANUP
+
+    const hasCatch = node.handler !== null
+    const hasFinally = node.finalizer !== null
+
+    // Emit TRY_START with placeholders for catch and finally jumps
+    const tryStartIdx = this.emit(OpCode.TRY_START, {
+      hasCatch,
+      hasFinally,
+      catchJump: 0,
+      finallyJump: 0
+    })
+
+    // Compile try block
     this.compileNode(node.block, scope)
     this.emit(OpCode.TRY_END)
 
-    if (node.handler) {
+    // Jump over catch block if no exception
+    const jumpOverCatch = hasCatch ? this.emit(OpCode.JUMP, 0) : -1
+
+    // Catch block
+    const catchStart = this.chunk.instructions.length
+    if (hasCatch) {
       this.emit(OpCode.CATCH_START, node.handler.param?.name)
       this.compileNode(node.handler.body, scope)
       this.emit(OpCode.CATCH_END)
     }
 
-    if (node.finalizer) {
+    // Patch jump over catch
+    if (jumpOverCatch >= 0) {
+      this.patchJump(jumpOverCatch)
+    }
+
+    // Finally block
+    const finallyStart = this.chunk.instructions.length
+    if (hasFinally) {
       this.emit(OpCode.FINALLY_START)
       this.compileNode(node.finalizer, scope)
       this.emit(OpCode.FINALLY_END)
+    }
+
+    // Patch TRY_START with actual jump addresses
+    this.chunk.instructions[tryStartIdx].operand = {
+      hasCatch,
+      hasFinally,
+      catchJump: catchStart,
+      finallyJump: finallyStart
     }
   }
 
@@ -867,32 +952,75 @@ export class Compiler {
   private compileForInStatement(node: any, scope: Scope): void {
     this.emit(OpCode.PUSH_SCOPE)
 
-    // Get the object to iterate over
+    // Get the object and its keys
     this.compileNode(node.right, scope)
-    this.emit(OpCode.DECLARE_VAR, 'FOR_IN_OBJ')
+    this.emit(OpCode.GET_KEYS) // Converts object to array of keys
+    this.emit(OpCode.DECLARE_VAR, '__keys__')
 
-    // Get keys array
-    this.emit(OpCode.LOAD_VAR, 'FOR_IN_OBJ')
-    // For now, we need to call Object.keys - simplified
-    // In a real implementation, we'd have a special opcode
+    // Initialize index
+    const idx = addConstant(this.chunk, 0)
+    this.emit(OpCode.PUSH, idx)
+    this.emit(OpCode.DECLARE_VAR, '__index__')
+
     const loopStart = this.chunk.instructions.length
-
     const breakLabels: number[] = []
     const continueLabels: number[] = []
     this.loopStack.push({ breakLabel: breakLabels, continueLabel: continueLabels })
 
-    // Simplified: just compile the body
-    // Full implementation would need iterator protocol
+    // Check if index < keys.length
+    this.emit(OpCode.LOAD_VAR, '__index__')
+    this.emit(OpCode.LOAD_VAR, '__keys__')
+    const lengthIdx = addConstant(this.chunk, 'length')
+    this.emit(OpCode.PUSH, lengthIdx)
+    this.emit(OpCode.GET_MEMBER)
+    this.emit(OpCode.LT)
+    const jumpToEnd = this.emit(OpCode.JUMP_IF_FALSE, 0)
+
+    // Get current key: keys[index]
+    this.emit(OpCode.LOAD_VAR, '__keys__')
+    this.emit(OpCode.LOAD_VAR, '__index__')
+    this.emit(OpCode.GET_MEMBER)
+
+    // Assign to loop variable
+    if (node.left.type === 'VariableDeclaration') {
+      const decl = node.left.declarations[0]
+      if (decl.id.type === 'Identifier') {
+        if (node.left.kind === 'const') {
+          this.emit(OpCode.DECLARE_CONST, decl.id.name)
+        } else if (node.left.kind === 'let') {
+          this.emit(OpCode.DECLARE_LET, decl.id.name)
+        } else {
+          this.emit(OpCode.DECLARE_VAR, decl.id.name)
+        }
+      }
+    } else if (node.left.type === 'Identifier') {
+      this.emit(OpCode.STORE_VAR, node.left.name)
+      this.emit(OpCode.POP)
+    }
+
+    // Compile loop body
     this.compileNode(node.body, scope)
 
+    // Increment index
+    const continueTarget = this.chunk.instructions.length
+    this.emit(OpCode.LOAD_VAR, '__index__')
+    this.emit(OpCode.INC)
+    this.emit(OpCode.STORE_VAR, '__index__')
+    this.emit(OpCode.POP)
+
+    // Jump back to loop start
     this.emit(OpCode.JUMP, loopStart)
 
+    // Loop end
     const loopEnd = this.chunk.instructions.length
+    this.patchJump(jumpToEnd)
+
+    // Patch break/continue
     for (const label of breakLabels) {
       this.chunk.instructions[label].operand = loopEnd
     }
     for (const label of continueLabels) {
-      this.chunk.instructions[label].operand = loopStart
+      this.chunk.instructions[label].operand = continueTarget
     }
 
     this.loopStack.pop()
@@ -902,27 +1030,67 @@ export class Compiler {
   private compileForOfStatement(node: any, scope: Scope): void {
     this.emit(OpCode.PUSH_SCOPE)
 
-    // Similar to for-in but uses iterator protocol
+    // Get the iterable and create iterator
     this.compileNode(node.right, scope)
-    this.emit(OpCode.DECLARE_VAR, 'FOR_OF_ITERABLE')
+    this.emit(OpCode.GET_ITERATOR) // Gets iterator from iterable
+    this.emit(OpCode.DECLARE_VAR, '__iterator__')
 
     const loopStart = this.chunk.instructions.length
-
     const breakLabels: number[] = []
     const continueLabels: number[] = []
     this.loopStack.push({ breakLabel: breakLabels, continueLabel: continueLabels })
 
-    // Simplified: just compile the body
+    // Get next value from iterator
+    this.emit(OpCode.LOAD_VAR, '__iterator__')
+    this.emit(OpCode.ITERATOR_NEXT) // Pushes {value, done}
+    this.emit(OpCode.DUP)
+    this.emit(OpCode.DECLARE_VAR, '__iterResult__')
+
+    // Check if done
+    this.emit(OpCode.LOAD_VAR, '__iterResult__')
+    this.emit(OpCode.ITERATOR_DONE)
+    const jumpToEnd = this.emit(OpCode.JUMP_IF_TRUE, 0)
+
+    // Get value from result
+    this.emit(OpCode.LOAD_VAR, '__iterResult__')
+    const valueIdx = addConstant(this.chunk, 'value')
+    this.emit(OpCode.PUSH, valueIdx)
+    this.emit(OpCode.GET_MEMBER)
+
+    // Assign to loop variable
+    if (node.left.type === 'VariableDeclaration') {
+      const decl = node.left.declarations[0]
+      if (decl.id.type === 'Identifier') {
+        if (node.left.kind === 'const') {
+          this.emit(OpCode.DECLARE_CONST, decl.id.name)
+        } else if (node.left.kind === 'let') {
+          this.emit(OpCode.DECLARE_LET, decl.id.name)
+        } else {
+          this.emit(OpCode.DECLARE_VAR, decl.id.name)
+        }
+      }
+    } else if (node.left.type === 'Identifier') {
+      this.emit(OpCode.STORE_VAR, node.left.name)
+      this.emit(OpCode.POP)
+    }
+
+    // Compile loop body
     this.compileNode(node.body, scope)
 
+    // Jump back to loop start
+    const continueTarget = this.chunk.instructions.length
     this.emit(OpCode.JUMP, loopStart)
 
+    // Loop end
     const loopEnd = this.chunk.instructions.length
+    this.patchJump(jumpToEnd)
+
+    // Patch break/continue
     for (const label of breakLabels) {
       this.chunk.instructions[label].operand = loopEnd
     }
     for (const label of continueLabels) {
-      this.chunk.instructions[label].operand = loopStart
+      this.chunk.instructions[label].operand = continueTarget
     }
 
     this.loopStack.pop()
@@ -1036,11 +1204,6 @@ export class Compiler {
 
   private compilePropertyDefinition(node: any, scope: Scope): void {
     // Class field - handled by class compilation
-  }
-
-  private compileSuper(node: any, scope: Scope): void {
-    // Super keyword
-    this.emit(OpCode.CREATE_SUPER)
   }
 
   private compileImportExpression(node: any, scope: Scope): void {
