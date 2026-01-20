@@ -28,6 +28,39 @@ interface ExceptionHandler {
   scopeDepth: number
 }
 
+// Generator state for pausing and resuming execution
+class GeneratorState {
+  stack: any[]
+  callStack: CallFrame[]
+  currentFrame: CallFrame | null
+  scopeStack: Scope[]
+  currentScope: Scope
+  exceptionHandlers: ExceptionHandler[]
+  done: boolean = false
+  value: any = undefined
+
+  constructor(
+    stack: any[],
+    callStack: CallFrame[],
+    currentFrame: CallFrame | null,
+    scopeStack: Scope[],
+    currentScope: Scope,
+    exceptionHandlers: ExceptionHandler[]
+  ) {
+    this.stack = [...stack]
+    this.callStack = callStack.map(frame => {
+      const newFrame = new CallFrame(frame.chunk, frame.returnAddress)
+      newFrame.ip = frame.ip
+      newFrame.slots = [...frame.slots]
+      return newFrame
+    })
+    this.currentFrame = currentFrame
+    this.scopeStack = [...scopeStack]
+    this.currentScope = currentScope
+    this.exceptionHandlers = [...exceptionHandlers]
+  }
+}
+
 export class VM {
   private stack: any[] = []
   private callStack: CallFrame[] = []
@@ -1451,9 +1484,53 @@ export class VM {
 
   private createFunction(funcNode: any, captureScope: Scope): Function {
     const self = this
-    const isAsync = funcNode.async || funcNode.generator
+    const isGenerator = funcNode.generator
+    const isAsync = funcNode.async
 
-    if (isAsync) {
+    // Generator function
+    if (isGenerator && !isAsync) {
+      return function (this: any, ...args: any[]) {
+        const funcScope = new Scope(captureScope, true)
+        for (let i = 0; i < funcNode.params.length; i++) {
+          const param = funcNode.params[i]
+          if (param.type === 'Identifier') {
+            funcScope.var(param.name, args[i])
+          }
+        }
+        funcScope.var('this', this)
+        funcScope.var('arguments', arguments)
+
+        // Compile the generator body
+        const compiler = new Compiler()
+        const chunk = compiler.compile(funcNode.body, funcScope)
+
+        // Return a generator object
+        return self.createGeneratorObject(chunk, funcScope)
+      }
+    }
+    // Async generator function
+    else if (isGenerator && isAsync) {
+      return function (this: any, ...args: any[]) {
+        const funcScope = new Scope(captureScope, true)
+        for (let i = 0; i < funcNode.params.length; i++) {
+          const param = funcNode.params[i]
+          if (param.type === 'Identifier') {
+            funcScope.var(param.name, args[i])
+          }
+        }
+        funcScope.var('this', this)
+        funcScope.var('arguments', arguments)
+
+        // Compile the generator body
+        const compiler = new Compiler()
+        const chunk = compiler.compile(funcNode.body, funcScope)
+
+        // Return an async generator object
+        return self.createAsyncGeneratorObject(chunk, funcScope)
+      }
+    }
+    // Async function
+    else if (isAsync) {
       return async function (this: any, ...args: any[]) {
         const funcScope = new Scope(captureScope, true)
         for (let i = 0; i < funcNode.params.length; i++) {
@@ -1469,7 +1546,9 @@ export class VM {
         const funcVM = new VM(funcScope)
         return await funcVM.executeAsync(chunk)
       }
-    } else {
+    }
+    // Regular function
+    else {
       return function (this: any, ...args: any[]) {
         const funcScope = new Scope(captureScope, true)
         for (let i = 0; i < funcNode.params.length; i++) {
@@ -1747,6 +1826,298 @@ export class VM {
     })
 
     return classConstructor
+  }
+
+  // ===== Generator support =====
+  private createGeneratorObject(chunk: BytecodeChunk, scope: Scope): any {
+    let generatorState: GeneratorState | null = null
+
+    const generatorObject = {
+      next: (value?: any) => {
+        // Create VM for execution
+        const vm = new VM(scope)
+
+        // First call - initialize state
+        if (generatorState === null) {
+          vm.currentFrame = new CallFrame(chunk)
+          vm.callStack.push(vm.currentFrame)
+        }
+        // Resume from saved state
+        else if (generatorState.done) {
+          return { value: undefined, done: true }
+        }
+        else {
+          // Restore state
+          vm.stack = [...generatorState.stack]
+          vm.callStack = generatorState.callStack.map(frame => {
+            const newFrame = new CallFrame(frame.chunk, frame.returnAddress)
+            newFrame.ip = frame.ip
+            newFrame.slots = [...frame.slots]
+            return newFrame
+          })
+          vm.currentFrame = vm.callStack[vm.callStack.length - 1] || null
+          vm.scopeStack = [...generatorState.scopeStack]
+          vm.currentScope = generatorState.currentScope
+          vm.exceptionHandlers = [...generatorState.exceptionHandlers]
+
+          // Push the value passed to next() on the stack
+          // (This becomes the result of the yield expression)
+          // Always push, even if undefined
+          vm.push(value)
+        }
+
+        try {
+          // Continue execution until next yield or end
+          while (vm.currentFrame && vm.currentFrame.ip < vm.currentFrame.chunk.instructions.length && !vm.halted) {
+            const instruction = vm.currentFrame.chunk.instructions[vm.currentFrame.ip]
+            vm.currentFrame.ip++
+
+            // Check if this is a YIELD instruction
+            if (instruction.opcode === OpCode.YIELD) {
+              const delegate = instruction.operand
+              const yieldValue = vm.stack.length > 0 ? vm.pop() : undefined
+
+              // Handle yield* (delegation)
+              if (delegate) {
+                // yield* delegates to another iterable
+                const iterable = yieldValue
+                if (iterable && typeof iterable[Symbol.iterator] === 'function') {
+                  const iterator = iterable[Symbol.iterator]()
+                  let result = iterator.next()
+                  // Yield all values from the delegated iterator
+                  while (!result.done) {
+                    // Save state before yielding
+                    generatorState = new GeneratorState(
+                      vm.stack,
+                      vm.callStack,
+                      vm.currentFrame,
+                      vm.scopeStack,
+                      vm.currentScope,
+                      vm.exceptionHandlers
+                    )
+                    // Temporarily return this value
+                    // Note: This doesn't properly handle .next(value) sent to delegated iterator
+                    // A full implementation would need more complex state management
+                    return { value: result.value, done: false }
+                  }
+                  // Push the return value of the delegated iterator
+                  vm.push(result.value)
+                  continue
+                }
+              }
+
+              // Save state for next call
+              generatorState = new GeneratorState(
+                vm.stack,
+                vm.callStack,
+                vm.currentFrame,
+                vm.scopeStack,
+                vm.currentScope,
+                vm.exceptionHandlers
+              )
+
+              return { value: yieldValue, done: false }
+            }
+
+            // Execute the instruction
+            vm.executeInstruction(instruction)
+          }
+
+          // Generator finished
+          const returnValue = vm.stack.length > 0 ? vm.pop() : undefined
+          if (generatorState === null) {
+            generatorState = new GeneratorState(
+              vm.stack,
+              vm.callStack,
+              vm.currentFrame,
+              vm.scopeStack,
+              vm.currentScope,
+              vm.exceptionHandlers
+            )
+          }
+          generatorState.done = true
+          return { value: returnValue, done: true }
+        } catch (error) {
+          if (generatorState === null) {
+            generatorState = new GeneratorState(
+              vm.stack,
+              vm.callStack,
+              vm.currentFrame,
+              vm.scopeStack,
+              vm.currentScope,
+              vm.exceptionHandlers
+            )
+          }
+          generatorState.done = true
+          throw error
+        }
+      },
+
+      return: (value?: any) => {
+        if (generatorState) {
+          generatorState.done = true
+        }
+        return { value, done: true }
+      },
+
+      throw: (error: any) => {
+        if (generatorState) {
+          generatorState.done = true
+        }
+        throw error
+      },
+
+      [Symbol.iterator]: function() {
+        return this
+      }
+    }
+
+    return generatorObject
+  }
+
+  private createAsyncGeneratorObject(chunk: BytecodeChunk, scope: Scope): any {
+    let generatorState: GeneratorState | null = null
+
+    const asyncGeneratorObject = {
+      next: async (value?: any) => {
+        // Create VM for execution
+        const vm = new VM(scope, true)
+
+        // First call - initialize state
+        if (generatorState === null) {
+          vm.currentFrame = new CallFrame(chunk)
+          vm.callStack.push(vm.currentFrame)
+        }
+        // Resume from saved state
+        else if (generatorState.done) {
+          return { value: undefined, done: true }
+        }
+        else {
+          // Restore state
+          vm.stack = [...generatorState.stack]
+          vm.callStack = generatorState.callStack.map(frame => {
+            const newFrame = new CallFrame(frame.chunk, frame.returnAddress)
+            newFrame.ip = frame.ip
+            newFrame.slots = [...frame.slots]
+            return newFrame
+          })
+          vm.currentFrame = vm.callStack[vm.callStack.length - 1] || null
+          vm.scopeStack = [...generatorState.scopeStack]
+          vm.currentScope = generatorState.currentScope
+          vm.exceptionHandlers = [...generatorState.exceptionHandlers]
+
+          // Push the value passed to next() on the stack
+          // (This becomes the result of the yield expression)
+          // Always push, even if undefined
+          vm.push(value)
+        }
+
+        try {
+          // Continue execution until next yield or end
+          while (vm.currentFrame && vm.currentFrame.ip < vm.currentFrame.chunk.instructions.length && !vm.halted) {
+            const instruction = vm.currentFrame.chunk.instructions[vm.currentFrame.ip]
+            vm.currentFrame.ip++
+
+            // Check if this is a YIELD instruction
+            if (instruction.opcode === OpCode.YIELD) {
+              const delegate = instruction.operand
+              const yieldValue = vm.stack.length > 0 ? vm.pop() : undefined
+
+              // Handle yield* (delegation)
+              if (delegate) {
+                // yield* delegates to another iterable
+                // For now, simple implementation - just yield each value
+                const iterable = yieldValue
+                if (iterable && typeof iterable[Symbol.asyncIterator] === 'function') {
+                  const iterator = iterable[Symbol.asyncIterator]()
+                  let result = await iterator.next()
+                  while (!result.done) {
+                    // Save state before yielding
+                    generatorState = new GeneratorState(
+                      vm.stack,
+                      vm.callStack,
+                      vm.currentFrame,
+                      vm.scopeStack,
+                      vm.currentScope,
+                      vm.exceptionHandlers
+                    )
+                    // Yield the delegated value
+                    const sentValue = yield { value: result.value, done: false }
+                    result = await iterator.next(sentValue)
+                  }
+                  // Push the return value of the delegated iterator
+                  vm.push(result.value)
+                  continue
+                }
+              }
+
+              // Save state for next call
+              generatorState = new GeneratorState(
+                vm.stack,
+                vm.callStack,
+                vm.currentFrame,
+                vm.scopeStack,
+                vm.currentScope,
+                vm.exceptionHandlers
+              )
+
+              return { value: await yieldValue, done: false }
+            }
+
+            // Execute the instruction
+            await vm.executeInstructionAsync(instruction)
+          }
+
+          // Generator finished
+          const returnValue = vm.stack.length > 0 ? vm.pop() : undefined
+          if (generatorState === null) {
+            generatorState = new GeneratorState(
+              vm.stack,
+              vm.callStack,
+              vm.currentFrame,
+              vm.scopeStack,
+              vm.currentScope,
+              vm.exceptionHandlers
+            )
+          }
+          generatorState.done = true
+          return { value: returnValue, done: true }
+        } catch (error) {
+          if (generatorState === null) {
+            generatorState = new GeneratorState(
+              vm.stack,
+              vm.callStack,
+              vm.currentFrame,
+              vm.scopeStack,
+              vm.currentScope,
+              vm.exceptionHandlers
+            )
+          }
+          generatorState.done = true
+          throw error
+        }
+      },
+
+      return: async (value?: any) => {
+        if (generatorState) {
+          generatorState.done = true
+        }
+        return { value, done: true }
+      },
+
+      throw: async (error: any) => {
+        if (generatorState) {
+          generatorState.done = true
+        }
+        throw error
+      },
+
+      [Symbol.asyncIterator]: function() {
+        return this
+      }
+    }
+
+    return asyncGeneratorObject
   }
 
   // ===== Stack helpers =====
