@@ -592,6 +592,47 @@ export class VM {
         break
       }
 
+      case OpCode.ARRAY_PUSH: {
+        const value = this.pop()
+        const array = this.pop()
+        array.push(value)
+        this.push(array)
+        break
+      }
+
+      case OpCode.ARRAY_CONCAT: {
+        const iterable = this.pop()
+        const array = this.pop()
+        if (Array.isArray(iterable)) {
+          array.push(...iterable)
+        } else if (typeof iterable === 'string') {
+          array.push(...iterable)
+        } else if (iterable && typeof iterable[Symbol.iterator] === 'function') {
+          for (const item of iterable) {
+            array.push(item)
+          }
+        }
+        this.push(array)
+        break
+      }
+
+      case OpCode.OBJECT_ASSIGN: {
+        const source = this.pop()
+        const target = this.pop()
+        Object.assign(target, source)
+        this.push(target)
+        break
+      }
+
+      case OpCode.OBJECT_SET_PROP: {
+        const value = this.pop()
+        const key = this.pop()
+        const object = this.pop()
+        object[key] = value
+        this.push(object)
+        break
+      }
+
       // ===== Control flow =====
       case OpCode.JUMP: {
         this.currentFrame!.ip = operand
@@ -1258,6 +1299,47 @@ export class VM {
         break
       }
 
+      case OpCode.ARRAY_PUSH: {
+        const value = this.pop()
+        const array = this.pop()
+        array.push(value)
+        this.push(array)
+        break
+      }
+
+      case OpCode.ARRAY_CONCAT: {
+        const iterable = this.pop()
+        const array = this.pop()
+        if (Array.isArray(iterable)) {
+          array.push(...iterable)
+        } else if (typeof iterable === 'string') {
+          array.push(...iterable)
+        } else if (iterable && typeof iterable[Symbol.iterator] === 'function') {
+          for (const item of iterable) {
+            array.push(item)
+          }
+        }
+        this.push(array)
+        break
+      }
+
+      case OpCode.OBJECT_ASSIGN: {
+        const source = this.pop()
+        const target = this.pop()
+        Object.assign(target, source)
+        this.push(target)
+        break
+      }
+
+      case OpCode.OBJECT_SET_PROP: {
+        const value = this.pop()
+        const key = this.pop()
+        const object = this.pop()
+        object[key] = value
+        this.push(object)
+        break
+      }
+
       // ===== Control flow =====
       case OpCode.JUMP: {
         this.currentFrame!.ip = operand
@@ -1482,6 +1564,40 @@ export class VM {
     }
   }
 
+  // Helper to bind function parameters including rest parameters
+  private bindParameters(params: any[], args: any[], scope: Scope): void {
+    for (let i = 0; i < params.length; i++) {
+      const param = params[i]
+      if (param.type === 'Identifier') {
+        scope.var(param.name, args[i])
+      } else if (param.type === 'RestElement') {
+        // Rest parameter - collect remaining arguments
+        const restArgs = args.slice(i)
+        scope.var(param.argument.name, restArgs)
+        break // Rest must be last parameter
+      } else if (param.type === 'AssignmentPattern') {
+        // Default parameter
+        const value = args[i] !== undefined ? args[i] : this.evaluateDefault(param.right, scope)
+        if (param.left.type === 'Identifier') {
+          scope.var(param.left.name, value)
+        }
+      }
+      // Could also handle destructuring patterns here
+    }
+  }
+
+  private evaluateDefault(node: any, scope: Scope): any {
+    // Evaluate default parameter value
+    const compiler = new Compiler()
+    const chunk = compiler.compile({
+      type: 'Program',
+      body: [{ type: 'ReturnStatement', argument: node }],
+      sourceType: 'script'
+    }, scope)
+    const vm = new VM(scope)
+    return vm.execute(chunk)
+  }
+
   private createFunction(funcNode: any, captureScope: Scope): Function {
     const self = this
     const isGenerator = funcNode.generator
@@ -1491,12 +1607,7 @@ export class VM {
     if (isGenerator && !isAsync) {
       return function (this: any, ...args: any[]) {
         const funcScope = new Scope(captureScope, true)
-        for (let i = 0; i < funcNode.params.length; i++) {
-          const param = funcNode.params[i]
-          if (param.type === 'Identifier') {
-            funcScope.var(param.name, args[i])
-          }
-        }
+        self.bindParameters(funcNode.params, args, funcScope)
         funcScope.var('this', this)
         funcScope.var('arguments', arguments)
 
@@ -1512,12 +1623,7 @@ export class VM {
     else if (isGenerator && isAsync) {
       return function (this: any, ...args: any[]) {
         const funcScope = new Scope(captureScope, true)
-        for (let i = 0; i < funcNode.params.length; i++) {
-          const param = funcNode.params[i]
-          if (param.type === 'Identifier') {
-            funcScope.var(param.name, args[i])
-          }
-        }
+        self.bindParameters(funcNode.params, args, funcScope)
         funcScope.var('this', this)
         funcScope.var('arguments', arguments)
 
@@ -1533,12 +1639,7 @@ export class VM {
     else if (isAsync) {
       return async function (this: any, ...args: any[]) {
         const funcScope = new Scope(captureScope, true)
-        for (let i = 0; i < funcNode.params.length; i++) {
-          const param = funcNode.params[i]
-          if (param.type === 'Identifier') {
-            funcScope.var(param.name, args[i])
-          }
-        }
+        self.bindParameters(funcNode.params, args, funcScope)
         funcScope.var('this', this)
         funcScope.var('arguments', arguments)
         const compiler = new Compiler()
@@ -1551,12 +1652,7 @@ export class VM {
     else {
       return function (this: any, ...args: any[]) {
         const funcScope = new Scope(captureScope, true)
-        for (let i = 0; i < funcNode.params.length; i++) {
-          const param = funcNode.params[i]
-          if (param.type === 'Identifier') {
-            funcScope.var(param.name, args[i])
-          }
-        }
+        self.bindParameters(funcNode.params, args, funcScope)
         funcScope.var('this', this)
         funcScope.var('arguments', arguments)
         const compiler = new Compiler()
@@ -1575,12 +1671,7 @@ export class VM {
     if (isAsync) {
       return async (...args: any[]) => {
         const funcScope = new Scope(captureScope, true)
-        for (let i = 0; i < funcNode.params.length; i++) {
-          const param = funcNode.params[i]
-          if (param.type === 'Identifier') {
-            funcScope.var(param.name, args[i])
-          }
-        }
+        self.bindParameters(funcNode.params, args, funcScope)
         if (capturedThis !== undefined) {
           funcScope.var('this', capturedThis)
         }
@@ -1600,12 +1691,7 @@ export class VM {
     } else {
       return (...args: any[]) => {
         const funcScope = new Scope(captureScope, true)
-        for (let i = 0; i < funcNode.params.length; i++) {
-          const param = funcNode.params[i]
-          if (param.type === 'Identifier') {
-            funcScope.var(param.name, args[i])
-          }
-        }
+        self.bindParameters(funcNode.params, args, funcScope)
         if (capturedThis !== undefined) {
           funcScope.var('this', capturedThis)
         }

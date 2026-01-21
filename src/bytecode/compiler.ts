@@ -445,13 +445,52 @@ export class Compiler {
   // ===== Member & Call Expressions =====
   private compileMemberExpression(node: any, scope: Scope): void {
     this.compileNode(node.object, scope)
-    if (node.computed) {
-      this.compileNode(node.property, scope)
+
+    // Handle optional chaining (?.)
+    if (node.optional) {
+      // Check if object is null or undefined
+      this.emit(OpCode.DUP)
+
+      // Check for null
+      this.emit(OpCode.DUP)
+      this.emit(OpCode.LOAD_NULL)
+      this.emit(OpCode.SEQ)
+      const jumpIfNull = this.emit(OpCode.JUMP_IF_TRUE, 0)
+
+      // Check for undefined
+      this.emit(OpCode.DUP)
+      this.emit(OpCode.LOAD_UNDEFINED)
+      this.emit(OpCode.SEQ)
+      const jumpIfUndefined = this.emit(OpCode.JUMP_IF_TRUE, 0)
+
+      // Not null/undefined, access property
+      if (node.computed) {
+        this.compileNode(node.property, scope)
+      } else {
+        const idx = addConstant(this.chunk, node.property.name)
+        this.emit(OpCode.PUSH, idx)
+      }
+      this.emit(OpCode.GET_MEMBER)
+      const skipUndefined = this.emit(OpCode.JUMP, 0)
+
+      // If null or undefined, pop the duplicates and push undefined
+      this.patchJump(jumpIfNull)
+      this.patchJump(jumpIfUndefined)
+      this.emit(OpCode.POP)  // Pop the duplicate
+      this.emit(OpCode.POP)  // Pop the original value
+      this.emit(OpCode.LOAD_UNDEFINED)
+
+      this.patchJump(skipUndefined)
     } else {
-      const idx = addConstant(this.chunk, node.property.name)
-      this.emit(OpCode.PUSH, idx)
+      // Normal member access
+      if (node.computed) {
+        this.compileNode(node.property, scope)
+      } else {
+        const idx = addConstant(this.chunk, node.property.name)
+        this.emit(OpCode.PUSH, idx)
+      }
+      this.emit(OpCode.GET_MEMBER)
     }
-    this.emit(OpCode.GET_MEMBER)
   }
 
   private compileCallExpression(node: any, scope: Scope): void {
@@ -718,28 +757,77 @@ export class Compiler {
   }
 
   private compileArrayExpression(node: any, scope: Scope): void {
-    for (const element of node.elements) {
-      if (element) {
-        if (element.type === 'SpreadElement') {
-          this.compileNode(element.argument, scope)
-          this.emit(OpCode.SPREAD)
+    // Check if there are any spread elements
+    const hasSpread = node.elements.some((el: any) => el && el.type === 'SpreadElement')
+
+    if (hasSpread) {
+      // Create array progressively with spreads
+      this.emit(OpCode.NEW_ARRAY, 0) // Start with empty array
+
+      for (const element of node.elements) {
+        if (element) {
+          if (element.type === 'SpreadElement') {
+            // Compile the spread source
+            this.compileNode(element.argument, scope)
+            // Spread and concat to array
+            this.emit(OpCode.ARRAY_CONCAT)
+          } else {
+            // Push single element
+            this.compileNode(element, scope)
+            this.emit(OpCode.ARRAY_PUSH)
+          }
         } else {
-          this.compileNode(element, scope)
+          this.emit(OpCode.LOAD_UNDEFINED)
+          this.emit(OpCode.ARRAY_PUSH)
         }
-      } else {
-        this.emit(OpCode.LOAD_UNDEFINED)
       }
+    } else {
+      // No spreads, use simple array creation
+      for (const element of node.elements) {
+        if (element) {
+          this.compileNode(element, scope)
+        } else {
+          this.emit(OpCode.LOAD_UNDEFINED)
+        }
+      }
+      this.emit(OpCode.NEW_ARRAY, node.elements.length)
     }
-    this.emit(OpCode.NEW_ARRAY, node.elements.length)
   }
 
   private compileObjectExpression(node: any, scope: Scope): void {
-    let propCount = 0
-    for (const prop of node.properties) {
-      if (prop.type === 'SpreadElement') {
-        this.compileNode(prop.argument, scope)
-        this.emit(OpCode.SPREAD)
-      } else {
+    // Check if there are any spread elements
+    const hasSpread = node.properties.some((prop: any) => prop.type === 'SpreadElement')
+
+    if (hasSpread) {
+      // Create object progressively with spreads
+      this.emit(OpCode.NEW_OBJECT, 0) // Start with empty object
+
+      for (const prop of node.properties) {
+        if (prop.type === 'SpreadElement') {
+          // Compile the spread source
+          this.compileNode(prop.argument, scope)
+          // Spread and assign to object
+          this.emit(OpCode.OBJECT_ASSIGN)
+        } else {
+          // Add single property
+          // Key
+          if (prop.computed) {
+            this.compileNode(prop.key, scope)
+          } else {
+            const key = prop.key.type === 'Identifier' ? prop.key.name : prop.key.value
+            const idx = addConstant(this.chunk, key)
+            this.emit(OpCode.PUSH, idx)
+          }
+          // Value
+          this.compileNode(prop.value, scope)
+          // Set property
+          this.emit(OpCode.OBJECT_SET_PROP)
+        }
+      }
+    } else {
+      // No spreads, use simple object creation
+      let propCount = 0
+      for (const prop of node.properties) {
         // Key
         if (prop.computed) {
           this.compileNode(prop.key, scope)
@@ -752,8 +840,8 @@ export class Compiler {
         this.compileNode(prop.value, scope)
         propCount++
       }
+      this.emit(OpCode.NEW_OBJECT, propCount)
     }
-    this.emit(OpCode.NEW_OBJECT, propCount)
   }
 
   private compileArrowFunctionExpression(node: any, scope: Scope): void {

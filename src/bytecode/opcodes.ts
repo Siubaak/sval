@@ -78,6 +78,10 @@ export enum OpCode {
   NEW_OBJECT,     // Create new object
   NEW_ARRAY,      // Create new array
   SPREAD,         // Spread operator
+  ARRAY_PUSH,     // Push element to array on stack
+  ARRAY_CONCAT,   // Concat iterable to array on stack
+  OBJECT_ASSIGN,  // Assign properties to object on stack
+  OBJECT_SET_PROP, // Set property on object on stack
 
   // Control flow
   JUMP,           // Unconditional jump
