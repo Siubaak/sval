@@ -1931,6 +1931,10 @@ export class VM {
     const self = this
     const className = classNode.id?.name || 'AnonymousClass'
 
+    // For class expressions, create an intermediate scope with the class name
+    // This scope will be accessible inside methods but not outside
+    const classScope = new Scope(captureScope, false)
+
     // Find constructor method
     let constructorMethod: any = null
     const instanceMethods: any[] = []
@@ -2079,13 +2083,19 @@ export class VM {
       classConstructor.prototype.constructor = classConstructor
     }
 
+    // Bind the class constructor to the class scope for class expressions
+    // This makes the class name available inside methods
+    if (classNode.id) {
+      classScope.const(className, classConstructor)
+    }
+
     // Add instance methods to prototype
     for (const method of instanceMethods) {
       const methodName = method.key.name || method.key.value
       // Create method with super access if there's a superclass
       const methodFunc = superClass
-        ? this.createClassMethod(method.value, captureScope, superClass)
-        : this.createFunction(method.value, captureScope)
+        ? this.createClassMethod(method.value, classScope, superClass)
+        : this.createFunction(method.value, classScope)
 
       // Handle getters and setters
       if (method.kind === 'get') {
@@ -2108,7 +2118,7 @@ export class VM {
     // Add static methods to constructor
     for (const method of staticMethods) {
       const methodName = method.key.name || method.key.value
-      const methodFunc = this.createFunction(method.value, captureScope)
+      const methodFunc = this.createFunction(method.value, classScope)
 
       if (method.kind === 'get') {
         Object.defineProperty(classConstructor, methodName, {
