@@ -985,22 +985,67 @@ export class Compiler {
         }
       }
     } else {
-      // No spreads, use simple object creation
-      let propCount = 0
-      for (const prop of node.properties) {
-        // Key
-        if (prop.computed) {
-          this.compileNode(prop.key, scope)
-        } else {
-          const key = prop.key.type === 'Identifier' ? prop.key.name : prop.key.value
-          const idx = addConstant(this.chunk, key)
-          this.emit(OpCode.PUSH, idx)
+      // No spreads - check if we have getters/setters
+      const hasAccessors = node.properties.some((prop: any) =>
+        prop.kind === 'get' || prop.kind === 'set')
+
+      if (hasAccessors) {
+        // Create object progressively to preserve property order
+        this.emit(OpCode.NEW_OBJECT, 0)
+
+        for (const prop of node.properties) {
+          const key = prop.computed ? null : (prop.key.type === 'Identifier' ? prop.key.name : prop.key.value)
+
+          if (prop.kind === 'get') {
+            // Define getter
+            if (prop.computed) {
+              this.compileNode(prop.key, scope)
+            } else {
+              const idx = addConstant(this.chunk, key)
+              this.emit(OpCode.PUSH, idx)
+            }
+            this.compileNode(prop.value, scope) // Getter function
+            this.emit(OpCode.OBJECT_DEFINE_GETTER)
+          } else if (prop.kind === 'set') {
+            // Define setter
+            if (prop.computed) {
+              this.compileNode(prop.key, scope)
+            } else {
+              const idx = addConstant(this.chunk, key)
+              this.emit(OpCode.PUSH, idx)
+            }
+            this.compileNode(prop.value, scope) // Setter function
+            this.emit(OpCode.OBJECT_DEFINE_SETTER)
+          } else {
+            // Regular property
+            if (prop.computed) {
+              this.compileNode(prop.key, scope)
+            } else {
+              const idx = addConstant(this.chunk, key)
+              this.emit(OpCode.PUSH, idx)
+            }
+            this.compileNode(prop.value, scope)
+            this.emit(OpCode.OBJECT_SET_PROP)
+          }
         }
-        // Value
-        this.compileNode(prop.value, scope)
-        propCount++
+      } else {
+        // Simple object creation without accessors
+        let propCount = 0
+        for (const prop of node.properties) {
+          // Key
+          if (prop.computed) {
+            this.compileNode(prop.key, scope)
+          } else {
+            const key = prop.key.type === 'Identifier' ? prop.key.name : prop.key.value
+            const idx = addConstant(this.chunk, key)
+            this.emit(OpCode.PUSH, idx)
+          }
+          // Value
+          this.compileNode(prop.value, scope)
+          propCount++
+        }
+        this.emit(OpCode.NEW_OBJECT, propCount)
       }
-      this.emit(OpCode.NEW_OBJECT, propCount)
     }
   }
 

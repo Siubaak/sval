@@ -85,6 +85,8 @@ export enum OpCode {
   ARRAY_CONCAT,   // Concat iterable to array on stack
   OBJECT_ASSIGN,  // Assign properties to object on stack
   OBJECT_SET_PROP, // Set property on object on stack
+  OBJECT_DEFINE_GETTER, // Define getter on object
+  OBJECT_DEFINE_SETTER, // Define setter on object
   OBJECT_REST,    // Create rest object from source object excluding keys
   ARRAY_REST,     // Create rest array from source array starting at index
 

@@ -672,6 +672,32 @@ export class VM {
         break
       }
 
+      case OpCode.OBJECT_DEFINE_GETTER: {
+        const getter = this.pop()
+        const key = this.pop()
+        const object = this.pop()
+        Object.defineProperty(object, key, {
+          get: getter,
+          enumerable: true,
+          configurable: true
+        })
+        this.push(object)
+        break
+      }
+
+      case OpCode.OBJECT_DEFINE_SETTER: {
+        const setter = this.pop()
+        const key = this.pop()
+        const object = this.pop()
+        Object.defineProperty(object, key, {
+          set: setter,
+          enumerable: true,
+          configurable: true
+        })
+        this.push(object)
+        break
+      }
+
       case OpCode.OBJECT_REST: {
         const excludedKeys = this.pop()
         const sourceObject = this.pop()
@@ -1441,6 +1467,32 @@ export class VM {
         const key = this.pop()
         const object = this.pop()
         object[key] = value
+        this.push(object)
+        break
+      }
+
+      case OpCode.OBJECT_DEFINE_GETTER: {
+        const getter = this.pop()
+        const key = this.pop()
+        const object = this.pop()
+        Object.defineProperty(object, key, {
+          get: getter,
+          enumerable: true,
+          configurable: true
+        })
+        this.push(object)
+        break
+      }
+
+      case OpCode.OBJECT_DEFINE_SETTER: {
+        const setter = this.pop()
+        const key = this.pop()
+        const object = this.pop()
+        Object.defineProperty(object, key, {
+          set: setter,
+          enumerable: true,
+          configurable: true
+        })
         this.push(object)
         break
       }
