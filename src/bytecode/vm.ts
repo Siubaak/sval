@@ -1349,7 +1349,7 @@ export class VM {
 
       case OpCode.AWAIT: {
         const promise = this.pop()
-        const result = await AWAIT(promise)
+        const result = await promise
         this.push(result)
         break
       }
