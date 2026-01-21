@@ -231,6 +231,17 @@ export class VM {
         break
       }
 
+      case OpCode.ASSIGN_VAR: {
+        const name = operand
+        const value = this.pop()
+        const variable = this.currentScope.find(name)
+        if (!variable) {
+          throw new ReferenceError(`${name} is not defined`)
+        }
+        variable.set(value)
+        break
+      }
+
       case OpCode.DECLARE_VAR: {
         const name = operand
         const value = this.pop()
@@ -987,6 +998,17 @@ export class VM {
         } else {
           variable.set(value)
         }
+        break
+      }
+
+      case OpCode.ASSIGN_VAR: {
+        const name = operand
+        const value = this.pop()
+        const variable = this.currentScope.find(name)
+        if (!variable) {
+          throw new ReferenceError(`${name} is not defined`)
+        }
+        variable.set(value)
         break
       }
 

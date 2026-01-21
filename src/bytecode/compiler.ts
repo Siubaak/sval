@@ -1150,8 +1150,8 @@ export class Compiler {
       } else if (kind === 'var') {
         this.emit(OpCode.DECLARE_VAR, pattern.name)
       } else {
-        // Assignment pattern (no declaration)
-        this.emit(OpCode.STORE_VAR, pattern.name)
+        // Assignment pattern (no declaration) - value is on stack, consume it
+        this.emit(OpCode.ASSIGN_VAR, pattern.name)
       }
     } else if (pattern.type === 'AssignmentPattern') {
       // Default value in destructuring: [a = 10] or { x = 5 }

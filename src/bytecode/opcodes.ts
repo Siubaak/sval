@@ -10,7 +10,8 @@ export enum OpCode {
 
   // Variable operations
   LOAD_VAR,       // Load variable onto stack
-  STORE_VAR,      // Store top of stack to variable
+  STORE_VAR,      // Store top of stack to variable (peek, don't pop)
+  ASSIGN_VAR,     // Assign (pop) top of stack to variable
   DECLARE_VAR,    // Declare variable
   DECLARE_CONST,  // Declare const
   DECLARE_LET,    // Declare let
