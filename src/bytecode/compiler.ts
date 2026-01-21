@@ -1008,13 +1008,28 @@ export class Compiler {
       this.emit(OpCode.POP)
     } else if (pattern.type === 'ObjectPattern') {
       // Object destructuring
+      const extractedKeys: string[] = []
+
       for (const property of pattern.properties) {
-        this.emit(OpCode.DUP)
-        const key = property.key.name || property.key.value
-        const idx = addConstant(this.chunk, key)
-        this.emit(OpCode.PUSH, idx)
-        this.emit(OpCode.GET_MEMBER)
-        this.compilePattern(property.value, scope, kind)
+        if (property.type === 'RestElement') {
+          // Rest property - collect remaining properties
+          this.emit(OpCode.DUP) // Duplicate the source object
+          // Push array of extracted keys
+          const keysIdx = addConstant(this.chunk, extractedKeys)
+          this.emit(OpCode.PUSH, keysIdx)
+          // Call helper to create rest object (we'll need a new opcode)
+          this.emit(OpCode.OBJECT_REST)
+          this.compilePattern(property.argument, scope, kind)
+        } else {
+          // Regular property
+          this.emit(OpCode.DUP)
+          const key = property.key.name || property.key.value
+          extractedKeys.push(key)
+          const idx = addConstant(this.chunk, key)
+          this.emit(OpCode.PUSH, idx)
+          this.emit(OpCode.GET_MEMBER)
+          this.compilePattern(property.value, scope, kind)
+        }
       }
       this.emit(OpCode.POP)
     }
@@ -1123,6 +1138,12 @@ export class Compiler {
 
     this.loopStack.pop()
     this.emit(OpCode.POP_SCOPE)
+  }
+
+  private compileForAwaitStatement(node: any, scope: Scope): void {
+    // For-await-of is similar to for-of but awaits the iterator
+    // We'll just compile it like for-of for now - the async execution will handle it
+    this.compileForOfStatement(node, scope)
   }
 
   private compileForOfStatement(node: any, scope: Scope): void {

@@ -633,6 +633,22 @@ export class VM {
         break
       }
 
+      case OpCode.OBJECT_REST: {
+        const excludedKeys = this.pop()
+        const sourceObject = this.pop()
+        const restObject: any = {}
+
+        // Copy all properties except the excluded ones
+        for (const key in sourceObject) {
+          if (sourceObject.hasOwnProperty(key) && !excludedKeys.includes(key)) {
+            restObject[key] = sourceObject[key]
+          }
+        }
+
+        this.push(restObject)
+        break
+      }
+
       // ===== Control flow =====
       case OpCode.JUMP: {
         this.currentFrame!.ip = operand
@@ -1337,6 +1353,22 @@ export class VM {
         const object = this.pop()
         object[key] = value
         this.push(object)
+        break
+      }
+
+      case OpCode.OBJECT_REST: {
+        const excludedKeys = this.pop()
+        const sourceObject = this.pop()
+        const restObject: any = {}
+
+        // Copy all properties except the excluded ones
+        for (const key in sourceObject) {
+          if (sourceObject.hasOwnProperty(key) && !excludedKeys.includes(key)) {
+            restObject[key] = sourceObject[key]
+          }
+        }
+
+        this.push(restObject)
         break
       }
 

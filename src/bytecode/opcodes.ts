@@ -82,6 +82,7 @@ export enum OpCode {
   ARRAY_CONCAT,   // Concat iterable to array on stack
   OBJECT_ASSIGN,  // Assign properties to object on stack
   OBJECT_SET_PROP, // Set property on object on stack
+  OBJECT_REST,    // Create rest object from source object excluding keys
 
   // Control flow
   JUMP,           // Unconditional jump
