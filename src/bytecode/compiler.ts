@@ -199,10 +199,11 @@ export class Compiler {
   private compileTemplateLiteral(node: any, scope: Scope): void {
     const { quasis, expressions } = node
     for (let i = 0; i < quasis.length; i++) {
-      if (quasis[i].value.cooked) {
-        const idx = addConstant(this.chunk, quasis[i].value.cooked)
-        this.emit(OpCode.PUSH, idx)
-      }
+      // Always push the quasi, even if it's an empty string
+      const cookedValue = quasis[i].value.cooked !== undefined ? quasis[i].value.cooked : ''
+      const idx = addConstant(this.chunk, cookedValue)
+      this.emit(OpCode.PUSH, idx)
+
       if (i < expressions.length) {
         this.compileNode(expressions[i], scope)
         this.emit(OpCode.ADD) // String concatenation
@@ -372,6 +373,101 @@ export class Compiler {
         this.compileNode(node.right, scope)
         this.compileAssignmentTarget(node.left, scope)
       }
+    } else if (node.operator === '??=' || node.operator === '||=' || node.operator === '&&=') {
+      // Logical assignment operators
+      if (node.left.type === 'Identifier') {
+        this.emit(OpCode.LOAD_VAR, node.left.name)
+
+        if (node.operator === '??=') {
+          // a ??= b -> assign only if a is null or undefined
+          this.emit(OpCode.DUP)
+          this.emit(OpCode.LOAD_NULL)
+          this.emit(OpCode.SEQ)
+          const jumpIfNull = this.emit(OpCode.JUMP_IF_TRUE, 0)
+          this.emit(OpCode.DUP)
+          this.emit(OpCode.LOAD_UNDEFINED)
+          this.emit(OpCode.SEQ)
+          const jumpIfUndefined = this.emit(OpCode.JUMP_IF_TRUE, 0)
+          const skipAssignment = this.emit(OpCode.JUMP, 0)
+
+          // Assign
+          this.patchJump(jumpIfNull)
+          this.patchJump(jumpIfUndefined)
+          this.emit(OpCode.POP)
+          this.compileNode(node.right, scope)
+          this.emit(OpCode.DUP)
+          this.emit(OpCode.STORE_VAR, node.left.name)
+
+          this.patchJump(skipAssignment)
+        } else if (node.operator === '||=') {
+          // a ||= b -> assign only if a is falsy
+          this.emit(OpCode.DUP)
+          const jumpIfTruthy = this.emit(OpCode.JUMP_IF_TRUE, 0)
+          this.emit(OpCode.POP)
+          this.compileNode(node.right, scope)
+          this.emit(OpCode.DUP)
+          this.emit(OpCode.STORE_VAR, node.left.name)
+          this.patchJump(jumpIfTruthy)
+        } else if (node.operator === '&&=') {
+          // a &&= b -> assign only if a is truthy
+          this.emit(OpCode.DUP)
+          const jumpIfFalsy = this.emit(OpCode.JUMP_IF_FALSE, 0)
+          this.emit(OpCode.POP)
+          this.compileNode(node.right, scope)
+          this.emit(OpCode.DUP)
+          this.emit(OpCode.STORE_VAR, node.left.name)
+          this.patchJump(jumpIfFalsy)
+        }
+      } else if (node.left.type === 'MemberExpression') {
+        // Similar logic for member expressions
+        this.compileNode(node.left.object, scope)
+        if (node.left.computed) {
+          this.compileNode(node.left.property, scope)
+        } else {
+          const idx = addConstant(this.chunk, node.left.property.name)
+          this.emit(OpCode.PUSH, idx)
+        }
+        this.emit(OpCode.DUP)
+        this.emit(OpCode.DUP)
+        this.emit(OpCode.GET_MEMBER)
+
+        if (node.operator === '??=') {
+          this.emit(OpCode.DUP)
+          this.emit(OpCode.LOAD_NULL)
+          this.emit(OpCode.SEQ)
+          const jumpIfNull = this.emit(OpCode.JUMP_IF_TRUE, 0)
+          this.emit(OpCode.DUP)
+          this.emit(OpCode.LOAD_UNDEFINED)
+          this.emit(OpCode.SEQ)
+          const jumpIfUndefined = this.emit(OpCode.JUMP_IF_TRUE, 0)
+          const skipAssignment = this.emit(OpCode.JUMP, 0)
+
+          this.patchJump(jumpIfNull)
+          this.patchJump(jumpIfUndefined)
+          this.emit(OpCode.POP)
+          this.compileNode(node.right, scope)
+          this.emit(OpCode.DUP)
+          this.emit(OpCode.SET_MEMBER)
+
+          this.patchJump(skipAssignment)
+        } else if (node.operator === '||=') {
+          this.emit(OpCode.DUP)
+          const jumpIfTruthy = this.emit(OpCode.JUMP_IF_TRUE, 0)
+          this.emit(OpCode.POP)
+          this.compileNode(node.right, scope)
+          this.emit(OpCode.DUP)
+          this.emit(OpCode.SET_MEMBER)
+          this.patchJump(jumpIfTruthy)
+        } else if (node.operator === '&&=') {
+          this.emit(OpCode.DUP)
+          const jumpIfFalsy = this.emit(OpCode.JUMP_IF_FALSE, 0)
+          this.emit(OpCode.POP)
+          this.compileNode(node.right, scope)
+          this.emit(OpCode.DUP)
+          this.emit(OpCode.SET_MEMBER)
+          this.patchJump(jumpIfFalsy)
+        }
+      }
     } else {
       // Compound assignment: +=, -=, etc.
       const baseOp = node.operator.slice(0, -1) // Remove '='
@@ -494,6 +590,8 @@ export class Compiler {
   }
 
   private compileCallExpression(node: any, scope: Scope): void {
+    const hasSpread = node.arguments.some((arg: any) => arg && arg.type === 'SpreadElement')
+
     // Check if this is a super() call
     if (node.callee.type === 'Super') {
       // Compile arguments for super call
@@ -505,39 +603,95 @@ export class Compiler {
     }
     // Check if this is a method call (callee is a MemberExpression)
     else if (node.callee.type === 'MemberExpression') {
-      // Compile arguments
-      for (const arg of node.arguments) {
-        this.compileNode(arg, scope)
-      }
+      if (hasSpread) {
+        // Build arguments array with spread support
+        this.emit(OpCode.NEW_ARRAY, 0)
+        for (const arg of node.arguments) {
+          if (arg.type === 'SpreadElement') {
+            this.compileNode(arg.argument, scope)
+            this.emit(OpCode.ARRAY_CONCAT)
+          } else {
+            this.compileNode(arg, scope)
+            this.emit(OpCode.ARRAY_PUSH)
+          }
+        }
 
-      // Compile the object (receiver)
-      this.compileNode(node.callee.object, scope)
+        // Compile the object (receiver)
+        this.compileNode(node.callee.object, scope)
 
-      // Duplicate the receiver so we have it for method call
-      this.emit(OpCode.DUP)
+        // Duplicate the receiver so we have it for method call
+        this.emit(OpCode.DUP)
 
-      // Get the method
-      if (node.callee.computed) {
-        this.compileNode(node.callee.property, scope)
+        // Get the method
+        if (node.callee.computed) {
+          this.compileNode(node.callee.property, scope)
+        } else {
+          const idx = addConstant(this.chunk, node.callee.property.name)
+          this.emit(OpCode.PUSH, idx)
+        }
+        this.emit(OpCode.GET_MEMBER)
+
+        // Stack: argsArray, receiver, method
+        this.emit(OpCode.CALL_WITH_SPREAD)
       } else {
-        const idx = addConstant(this.chunk, node.callee.property.name)
-        this.emit(OpCode.PUSH, idx)
-      }
-      this.emit(OpCode.GET_MEMBER)
+        // Compile arguments
+        for (const arg of node.arguments) {
+          this.compileNode(arg, scope)
+        }
 
-      // Call method with receiver binding
-      // Stack: args..., receiver, method
-      this.emit(OpCode.CALL_METHOD, node.arguments.length)
+        // Compile the object (receiver)
+        this.compileNode(node.callee.object, scope)
+
+        // Duplicate the receiver so we have it for method call
+        this.emit(OpCode.DUP)
+
+        // Get the method
+        if (node.callee.computed) {
+          this.compileNode(node.callee.property, scope)
+        } else {
+          const idx = addConstant(this.chunk, node.callee.property.name)
+          this.emit(OpCode.PUSH, idx)
+        }
+        this.emit(OpCode.GET_MEMBER)
+
+        // Call method with receiver binding
+        // Stack: args..., receiver, method
+        this.emit(OpCode.CALL_METHOD, node.arguments.length)
+      }
     } else {
       // Regular function call
-      // Compile arguments
-      for (const arg of node.arguments) {
-        this.compileNode(arg, scope)
+      if (hasSpread) {
+        // Build arguments array with spread support
+        this.emit(OpCode.NEW_ARRAY, 0)
+        for (const arg of node.arguments) {
+          if (arg.type === 'SpreadElement') {
+            this.compileNode(arg.argument, scope)
+            this.emit(OpCode.ARRAY_CONCAT)
+          } else {
+            this.compileNode(arg, scope)
+            this.emit(OpCode.ARRAY_PUSH)
+          }
+        }
+
+        // For regular function calls, push undefined as receiver
+        this.emit(OpCode.LOAD_UNDEFINED)
+
+        // Compile callee
+        this.compileNode(node.callee, scope)
+
+        // Call with spread
+        // Stack: argsArray, undefined (receiver), function
+        this.emit(OpCode.CALL_WITH_SPREAD)
+      } else {
+        // Compile arguments
+        for (const arg of node.arguments) {
+          this.compileNode(arg, scope)
+        }
+        // Compile callee
+        this.compileNode(node.callee, scope)
+        // Call with argument count
+        this.emit(OpCode.CALL, node.arguments.length)
       }
-      // Compile callee
-      this.compileNode(node.callee, scope)
-      // Call with argument count
-      this.emit(OpCode.CALL, node.arguments.length)
     }
   }
 
@@ -1352,19 +1506,20 @@ export class Compiler {
   private compileTaggedTemplateExpression(node: any, scope: Scope): void {
     // Tagged template literal
     // tag`template`
+    // Stack layout for CALL: [arg0, arg1, ..., argN, function]
 
-    // Compile the tag function
-    this.compileNode(node.tag, scope)
-
-    // Create the template strings array
+    // Create the template strings array (first argument)
     const strings = node.quasi.quasis.map((q: any) => q.value.cooked)
     const stringsIdx = addConstant(this.chunk, strings)
     this.emit(OpCode.PUSH, stringsIdx)
 
-    // Compile the expressions
+    // Compile the expressions (remaining arguments)
     for (const expr of node.quasi.expressions) {
       this.compileNode(expr, scope)
     }
+
+    // Compile the tag function (pushed last for CALL)
+    this.compileNode(node.tag, scope)
 
     // Call the tag function
     this.emit(OpCode.CALL, 1 + node.quasi.expressions.length)

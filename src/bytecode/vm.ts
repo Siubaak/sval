@@ -512,6 +512,26 @@ export class VM {
         break
       }
 
+      case OpCode.CALL_WITH_SPREAD: {
+        const method = this.pop()
+        const receiver = this.pop()
+        const argsArray = this.pop()
+
+        if (typeof method !== 'function') {
+          throw new TypeError(`${method} is not a function`)
+        }
+
+        // If receiver is undefined, this is a regular function call
+        if (receiver === undefined) {
+          const result = method(...argsArray)
+          this.push(result)
+        } else {
+          const result = method.call(receiver, ...argsArray)
+          this.push(result)
+        }
+        break
+      }
+
       case OpCode.NEW: {
         const argCount = operand
         const constructor = this.pop()
@@ -1232,6 +1252,26 @@ export class VM {
         break
       }
 
+      case OpCode.CALL_WITH_SPREAD: {
+        const method = this.pop()
+        const receiver = this.pop()
+        const argsArray = this.pop()
+
+        if (typeof method !== 'function') {
+          throw new TypeError(`${method} is not a function`)
+        }
+
+        // If receiver is undefined, this is a regular function call
+        if (receiver === undefined) {
+          const result = await method(...argsArray)
+          this.push(result)
+        } else {
+          const result = await method.call(receiver, ...argsArray)
+          this.push(result)
+        }
+        break
+      }
+
       case OpCode.NEW: {
         const argCount = operand
         const constructor = this.pop()
@@ -1630,6 +1670,90 @@ export class VM {
     return vm.execute(chunk)
   }
 
+  private createClassMethod(funcNode: any, captureScope: Scope, superClass: any): Function {
+    const self = this
+    const isGenerator = funcNode.generator
+    const isAsync = funcNode.async
+
+    // Create a super proxy object for property access
+    const createSuperProxy = (thisContext: any) => {
+      return new Proxy(superClass.prototype, {
+        get(target, prop) {
+          const value = target[prop]
+          // If it's a function, bind it to thisContext
+          if (typeof value === 'function') {
+            return value.bind(thisContext)
+          }
+          return value
+        },
+        set(target, prop, value) {
+          // Setting properties on super actually sets them on this
+          thisContext[prop] = value
+          return true
+        }
+      })
+    }
+
+    // Generator method
+    if (isGenerator && !isAsync) {
+      return function (this: any, ...args: any[]) {
+        const funcScope = new Scope(captureScope, true)
+        self.bindParameters(funcNode.params, args, funcScope)
+        funcScope.var('this', this)
+        funcScope.var('arguments', arguments)
+        funcScope.var('super', createSuperProxy(this))
+
+        const compiler = new Compiler()
+        const chunk = compiler.compile(funcNode.body, funcScope)
+        return self.createGeneratorObject(chunk, funcScope)
+      }
+    }
+    // Async generator method
+    else if (isGenerator && isAsync) {
+      return function (this: any, ...args: any[]) {
+        const funcScope = new Scope(captureScope, true)
+        self.bindParameters(funcNode.params, args, funcScope)
+        funcScope.var('this', this)
+        funcScope.var('arguments', arguments)
+        funcScope.var('super', createSuperProxy(this))
+
+        const compiler = new Compiler()
+        const chunk = compiler.compile(funcNode.body, funcScope)
+        return self.createAsyncGeneratorObject(chunk, funcScope)
+      }
+    }
+    // Async method
+    else if (isAsync) {
+      return async function (this: any, ...args: any[]) {
+        const funcScope = new Scope(captureScope, true)
+        self.bindParameters(funcNode.params, args, funcScope)
+        funcScope.var('this', this)
+        funcScope.var('arguments', arguments)
+        funcScope.var('super', createSuperProxy(this))
+
+        const compiler = new Compiler()
+        const chunk = compiler.compile(funcNode.body, funcScope)
+        const funcVM = new VM(funcScope)
+        return await funcVM.executeAsync(chunk)
+      }
+    }
+    // Regular method
+    else {
+      return function (this: any, ...args: any[]) {
+        const funcScope = new Scope(captureScope, true)
+        self.bindParameters(funcNode.params, args, funcScope)
+        funcScope.var('this', this)
+        funcScope.var('arguments', arguments)
+        funcScope.var('super', createSuperProxy(this))
+
+        const compiler = new Compiler()
+        const chunk = compiler.compile(funcNode.body, funcScope)
+        const funcVM = new VM(funcScope)
+        return funcVM.execute(chunk)
+      }
+    }
+  }
+
   private createFunction(funcNode: any, captureScope: Scope): Function {
     const self = this
     const isGenerator = funcNode.generator
@@ -1812,6 +1936,26 @@ export class VM {
         constructorScope.var('this', this)
         constructorScope.var('arguments', arguments)
 
+        // Bind super for property access if there's a superclass
+        if (superClass) {
+          const superProxy = new Proxy(superClass.prototype, {
+            get(target, prop) {
+              const value = target[prop]
+              // If it's a function, bind it to this
+              if (typeof value === 'function') {
+                return value.bind(this)
+              }
+              return value
+            }.bind(this),
+            set(target, prop, value) {
+              // Setting properties on super actually sets them on this
+              this[prop] = value
+              return true
+            }.bind(this)
+          })
+          constructorScope.var('super', superProxy)
+        }
+
         // Initialize instance fields
         for (const field of instanceFields) {
           const fieldName = field.key.name || field.key.value
@@ -1877,7 +2021,10 @@ export class VM {
     // Add instance methods to prototype
     for (const method of instanceMethods) {
       const methodName = method.key.name || method.key.value
-      const methodFunc = this.createFunction(method.value, captureScope)
+      // Create method with super access if there's a superclass
+      const methodFunc = superClass
+        ? this.createClassMethod(method.value, captureScope, superClass)
+        : this.createFunction(method.value, captureScope)
 
       // Handle getters and setters
       if (method.kind === 'get') {
