@@ -2024,31 +2024,11 @@ export class VM {
               const yieldValue = vm.stack.length > 0 ? vm.pop() : undefined
 
               // Handle yield* (delegation)
+              // Note: Full yield* support requires more complex state management
+              // This is a simplified implementation
               if (delegate) {
-                // yield* delegates to another iterable
-                // For now, simple implementation - just yield each value
-                const iterable = yieldValue
-                if (iterable && typeof iterable[Symbol.asyncIterator] === 'function') {
-                  const iterator = iterable[Symbol.asyncIterator]()
-                  let result = await iterator.next()
-                  while (!result.done) {
-                    // Save state before yielding
-                    generatorState = new GeneratorState(
-                      vm.stack,
-                      vm.callStack,
-                      vm.currentFrame,
-                      vm.scopeStack,
-                      vm.currentScope,
-                      vm.exceptionHandlers
-                    )
-                    // Yield the delegated value
-                    const sentValue = yield { value: result.value, done: false }
-                    result = await iterator.next(sentValue)
-                  }
-                  // Push the return value of the delegated iterator
-                  vm.push(result.value)
-                  continue
-                }
+                // For yield*, just yield the iterable value for now
+                // A full implementation would iterate and yield each value
               }
 
               // Save state for next call

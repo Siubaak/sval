@@ -39,6 +39,7 @@ export enum OpCode {
   GTE,            // >=
   LOGICAL_AND,    // &&
   LOGICAL_OR,     // ||
+  NULLISH_COALESCING, // ??
   BITWISE_AND,    // &
   BITWISE_OR,     // |
   BITWISE_XOR,    // ^

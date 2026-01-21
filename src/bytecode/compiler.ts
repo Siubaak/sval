@@ -686,7 +686,7 @@ export class Compiler {
         }
       } else {
         // Destructuring
-        this.compilePattern(declarator.id, scope)
+        this.compilePattern(declarator.id, scope, node.kind)
       }
     }
   }
@@ -891,10 +891,20 @@ export class Compiler {
   }
 
   // ===== Pattern compilation (destructuring) =====
-  private compilePattern(pattern: any, scope: Scope): void {
+  private compilePattern(pattern: any, scope: Scope, kind?: string): void {
     // Simplified pattern handling - full implementation would be more complex
     if (pattern.type === 'Identifier') {
-      this.emit(OpCode.STORE_VAR, pattern.name)
+      // Use appropriate declaration or assignment based on kind
+      if (kind === 'const') {
+        this.emit(OpCode.DECLARE_CONST, pattern.name)
+      } else if (kind === 'let') {
+        this.emit(OpCode.DECLARE_LET, pattern.name)
+      } else if (kind === 'var') {
+        this.emit(OpCode.DECLARE_VAR, pattern.name)
+      } else {
+        // Assignment pattern (no declaration)
+        this.emit(OpCode.STORE_VAR, pattern.name)
+      }
     } else if (pattern.type === 'ArrayPattern') {
       // Array destructuring
       for (let i = 0; i < pattern.elements.length; i++) {
@@ -904,7 +914,7 @@ export class Compiler {
           const idx = addConstant(this.chunk, i)
           this.emit(OpCode.PUSH, idx)
           this.emit(OpCode.GET_MEMBER)
-          this.compilePattern(element, scope)
+          this.compilePattern(element, scope, kind)
         }
       }
       this.emit(OpCode.POP)
@@ -916,7 +926,7 @@ export class Compiler {
         const idx = addConstant(this.chunk, key)
         this.emit(OpCode.PUSH, idx)
         this.emit(OpCode.GET_MEMBER)
-        this.compilePattern(property.value, scope)
+        this.compilePattern(property.value, scope, kind)
       }
       this.emit(OpCode.POP)
     }
