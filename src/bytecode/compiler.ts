@@ -993,6 +993,23 @@ export class Compiler {
         // Assignment pattern (no declaration)
         this.emit(OpCode.STORE_VAR, pattern.name)
       }
+    } else if (pattern.type === 'AssignmentPattern') {
+      // Default value in destructuring: [a = 10] or { x = 5 }
+      // Stack has the value (or undefined if not present)
+      this.emit(OpCode.DUP)
+      this.emit(OpCode.LOAD_UNDEFINED)
+      this.emit(OpCode.SEQ) // Check if value === undefined
+      const jumpIfDefined = this.emit(OpCode.JUMP_IF_FALSE, 0)
+
+      // Value is undefined, use default
+      this.emit(OpCode.POP) // Pop the undefined value
+      this.compileNode(pattern.right, scope) // Compile default value
+
+      // Patch jump
+      this.patchJump(jumpIfDefined)
+
+      // Now assign to the left side (which is the actual pattern)
+      this.compilePattern(pattern.left, scope, kind)
     } else if (pattern.type === 'ArrayPattern') {
       // Array destructuring
       for (let i = 0; i < pattern.elements.length; i++) {
