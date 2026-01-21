@@ -6,7 +6,7 @@ import Scope from '../scope'
 import { Var } from '../scope/variable'
 import { OpCode, type BytecodeChunk, type Instruction } from './opcodes'
 import { Compiler } from './compiler'
-import { AWAIT } from '../share/const'
+import { AWAIT, NOINIT } from '../share/const'
 
 class CallFrame {
   chunk: BytecodeChunk
@@ -199,6 +199,11 @@ export class VM {
       case OpCode.LOAD_THIS: {
         const thisValue = this.currentScope.find('this')?.get()
         this.push(thisValue)
+        break
+      }
+
+      case OpCode.LOAD_NOINIT: {
+        this.push(NOINIT)
         break
       }
 
@@ -631,6 +636,9 @@ export class VM {
           for (const item of iterable) {
             array.push(item)
           }
+        } else {
+          // Not iterable - throw TypeError
+          throw new TypeError(`${Object.prototype.toString.call(iterable)} is not iterable`)
         }
         this.push(array)
         break
@@ -666,6 +674,17 @@ export class VM {
         }
 
         this.push(restObject)
+        break
+      }
+
+      case OpCode.ARRAY_REST: {
+        const startIndex = this.pop()
+        const sourceArray = this.pop()
+        // Slice from startIndex to end
+        const restArray = Array.isArray(sourceArray)
+          ? sourceArray.slice(startIndex)
+          : []
+        this.push(restArray)
         break
       }
 
@@ -939,6 +958,11 @@ export class VM {
       case OpCode.LOAD_THIS: {
         const thisValue = this.currentScope.find('this')?.get()
         this.push(thisValue)
+        break
+      }
+
+      case OpCode.LOAD_NOINIT: {
+        this.push(NOINIT)
         break
       }
 
@@ -1374,6 +1398,9 @@ export class VM {
           for (const item of iterable) {
             array.push(item)
           }
+        } else {
+          // Not iterable - throw TypeError
+          throw new TypeError(`${Object.prototype.toString.call(iterable)} is not iterable`)
         }
         this.push(array)
         break
@@ -1409,6 +1436,17 @@ export class VM {
         }
 
         this.push(restObject)
+        break
+      }
+
+      case OpCode.ARRAY_REST: {
+        const startIndex = this.pop()
+        const sourceArray = this.pop()
+        // Slice from startIndex to end
+        const restArray = Array.isArray(sourceArray)
+          ? sourceArray.slice(startIndex)
+          : []
+        this.push(restArray)
         break
       }
 

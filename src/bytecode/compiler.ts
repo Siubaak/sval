@@ -866,7 +866,13 @@ export class Compiler {
       if (declarator.init) {
         this.compileNode(declarator.init, scope)
       } else {
-        this.emit(OpCode.LOAD_UNDEFINED)
+        // For var without initializer, use NOINIT to prevent overwriting existing value
+        // For let/const without initializer, use undefined
+        if (node.kind === 'var') {
+          this.emit(OpCode.LOAD_NOINIT)
+        } else {
+          this.emit(OpCode.LOAD_UNDEFINED)
+        }
       }
 
       if (declarator.id.type === 'Identifier') {
@@ -1169,11 +1175,21 @@ export class Compiler {
       for (let i = 0; i < pattern.elements.length; i++) {
         const element = pattern.elements[i]
         if (element) {
-          this.emit(OpCode.DUP)
-          const idx = addConstant(this.chunk, i)
-          this.emit(OpCode.PUSH, idx)
-          this.emit(OpCode.GET_MEMBER)
-          this.compilePattern(element, scope, kind)
+          if (element.type === 'RestElement') {
+            // Rest element in array pattern: [...rest]
+            this.emit(OpCode.DUP)
+            const idx = addConstant(this.chunk, i) // Start index
+            this.emit(OpCode.PUSH, idx)
+            this.emit(OpCode.ARRAY_REST)
+            this.compilePattern(element.argument, scope, kind)
+            break // Rest element must be last
+          } else {
+            this.emit(OpCode.DUP)
+            const idx = addConstant(this.chunk, i)
+            this.emit(OpCode.PUSH, idx)
+            this.emit(OpCode.GET_MEMBER)
+            this.compilePattern(element, scope, kind)
+          }
         }
       }
       this.emit(OpCode.POP)
@@ -1194,10 +1210,19 @@ export class Compiler {
         } else {
           // Regular property
           this.emit(OpCode.DUP)
-          const key = property.key.name || property.key.value
-          extractedKeys.push(key)
-          const idx = addConstant(this.chunk, key)
-          this.emit(OpCode.PUSH, idx)
+
+          // Handle computed vs non-computed keys
+          if (property.computed) {
+            // Computed property: { [expr]: name }
+            this.compileNode(property.key, scope)
+            // We can't track computed keys for rest operator
+          } else {
+            const key = property.key.name || property.key.value
+            extractedKeys.push(key)
+            const idx = addConstant(this.chunk, key)
+            this.emit(OpCode.PUSH, idx)
+          }
+
           this.emit(OpCode.GET_MEMBER)
           this.compilePattern(property.value, scope, kind)
         }

@@ -21,6 +21,7 @@ export enum OpCode {
   LOAD_TRUE,
   LOAD_FALSE,
   LOAD_THIS,
+  LOAD_NOINIT,    // Load NOINIT symbol for var hoisting
 
   // Binary operations
   ADD,
@@ -84,6 +85,7 @@ export enum OpCode {
   OBJECT_ASSIGN,  // Assign properties to object on stack
   OBJECT_SET_PROP, // Set property on object on stack
   OBJECT_REST,    // Create rest object from source object excluding keys
+  ARRAY_REST,     // Create rest array from source array starting at index
 
   // Control flow
   JUMP,           // Unconditional jump
