@@ -1938,20 +1938,21 @@ export class VM {
 
         // Bind super for property access if there's a superclass
         if (superClass) {
+          const thisContext = this
           const superProxy = new Proxy(superClass.prototype, {
             get(target, prop) {
               const value = target[prop]
-              // If it's a function, bind it to this
+              // If it's a function, bind it to thisContext
               if (typeof value === 'function') {
-                return value.bind(this)
+                return value.bind(thisContext)
               }
               return value
-            }.bind(this),
+            },
             set(target, prop, value) {
-              // Setting properties on super actually sets them on this
-              this[prop] = value
+              // Setting properties on super actually sets them on thisContext
+              thisContext[prop] = value
               return true
-            }.bind(this)
+            }
           })
           constructorScope.var('super', superProxy)
         }
