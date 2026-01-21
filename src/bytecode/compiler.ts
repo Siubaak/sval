@@ -1192,7 +1192,10 @@ export class Compiler {
           }
         }
       }
-      this.emit(OpCode.POP)
+      // Only pop if this is a declaration, not an assignment
+      if (kind) {
+        this.emit(OpCode.POP)
+      }
     } else if (pattern.type === 'ObjectPattern') {
       // Object destructuring
       const extractedKeys: string[] = []
@@ -1227,7 +1230,10 @@ export class Compiler {
           this.compilePattern(property.value, scope, kind)
         }
       }
-      this.emit(OpCode.POP)
+      // Only pop if this is a declaration, not an assignment
+      if (kind) {
+        this.emit(OpCode.POP)
+      }
     }
   }
 
