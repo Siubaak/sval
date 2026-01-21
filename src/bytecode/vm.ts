@@ -1821,8 +1821,14 @@ export class VM {
 
     // Generator function
     if (isGenerator && !isAsync) {
-      return function (this: any, ...args: any[]) {
-        const funcScope = new Scope(captureScope, true)
+      // For named function expressions, we need an intermediate scope
+      let effectiveCaptureScope = captureScope
+      if (funcNode.id && funcNode.type === 'FunctionExpression') {
+        effectiveCaptureScope = new Scope(captureScope, false)
+      }
+
+      const func = function (this: any, ...args: any[]) {
+        const funcScope = new Scope(effectiveCaptureScope, true)
         self.bindParameters(funcNode.params, args, funcScope)
         funcScope.var('this', this)
         funcScope.var('arguments', arguments)
@@ -1834,11 +1840,24 @@ export class VM {
         // Return a generator object
         return self.createGeneratorObject(chunk, funcScope)
       }
+
+      // Bind the function name in intermediate scope
+      if (funcNode.id && funcNode.type === 'FunctionExpression') {
+        effectiveCaptureScope.const(funcNode.id.name, func)
+      }
+
+      return func
     }
     // Async generator function
     else if (isGenerator && isAsync) {
-      return function (this: any, ...args: any[]) {
-        const funcScope = new Scope(captureScope, true)
+      // For named function expressions, we need an intermediate scope
+      let effectiveCaptureScope = captureScope
+      if (funcNode.id && funcNode.type === 'FunctionExpression') {
+        effectiveCaptureScope = new Scope(captureScope, false)
+      }
+
+      const func = function (this: any, ...args: any[]) {
+        const funcScope = new Scope(effectiveCaptureScope, true)
         self.bindParameters(funcNode.params, args, funcScope)
         funcScope.var('this', this)
         funcScope.var('arguments', arguments)
@@ -1850,32 +1869,67 @@ export class VM {
         // Return an async generator object
         return self.createAsyncGeneratorObject(chunk, funcScope)
       }
+
+      // Bind the function name in intermediate scope
+      if (funcNode.id && funcNode.type === 'FunctionExpression') {
+        effectiveCaptureScope.const(funcNode.id.name, func)
+      }
+
+      return func
     }
     // Async function
     else if (isAsync) {
-      return async function (this: any, ...args: any[]) {
-        const funcScope = new Scope(captureScope, true)
+      // For named function expressions, we need an intermediate scope
+      let effectiveCaptureScope = captureScope
+      if (funcNode.id && funcNode.type === 'FunctionExpression') {
+        effectiveCaptureScope = new Scope(captureScope, false)
+      }
+
+      const func = async function (this: any, ...args: any[]) {
+        const funcScope = new Scope(effectiveCaptureScope, true)
         self.bindParameters(funcNode.params, args, funcScope)
         funcScope.var('this', this)
         funcScope.var('arguments', arguments)
+
         const compiler = new Compiler()
         const chunk = compiler.compile(funcNode.body, funcScope)
         const funcVM = new VM(funcScope)
         return await funcVM.executeAsync(chunk)
       }
+
+      // Bind the function name in intermediate scope
+      if (funcNode.id && funcNode.type === 'FunctionExpression') {
+        effectiveCaptureScope.const(funcNode.id.name, func)
+      }
+
+      return func
     }
     // Regular function
     else {
-      return function (this: any, ...args: any[]) {
-        const funcScope = new Scope(captureScope, true)
+      // For named function expressions, we need an intermediate scope
+      let effectiveCaptureScope = captureScope
+      if (funcNode.id && funcNode.type === 'FunctionExpression') {
+        effectiveCaptureScope = new Scope(captureScope, false)
+      }
+
+      const func = function (this: any, ...args: any[]) {
+        const funcScope = new Scope(effectiveCaptureScope, true)
         self.bindParameters(funcNode.params, args, funcScope)
         funcScope.var('this', this)
         funcScope.var('arguments', arguments)
+
         const compiler = new Compiler()
         const chunk = compiler.compile(funcNode.body, funcScope)
         const funcVM = new VM(funcScope)
         return funcVM.execute(chunk)
       }
+
+      // Bind the function name in intermediate scope
+      if (funcNode.id && funcNode.type === 'FunctionExpression') {
+        effectiveCaptureScope.const(funcNode.id.name, func)
+      }
+
+      return func
     }
   }
 
