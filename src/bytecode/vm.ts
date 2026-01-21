@@ -38,6 +38,7 @@ class GeneratorState {
   exceptionHandlers: ExceptionHandler[]
   done: boolean = false
   value: any = undefined
+  delegatedIterator: any = null // For yield* delegation
 
   constructor(
     stack: any[],
@@ -45,7 +46,8 @@ class GeneratorState {
     currentFrame: CallFrame | null,
     scopeStack: Scope[],
     currentScope: Scope,
-    exceptionHandlers: ExceptionHandler[]
+    exceptionHandlers: ExceptionHandler[],
+    delegatedIterator: any = null
   ) {
     this.stack = [...stack]
     this.callStack = callStack.map(frame => {
@@ -58,6 +60,7 @@ class GeneratorState {
     this.scopeStack = [...scopeStack]
     this.currentScope = currentScope
     this.exceptionHandlers = [...exceptionHandlers]
+    this.delegatedIterator = delegatedIterator
   }
 }
 
@@ -1764,9 +1767,63 @@ export class VM {
         const value = args[i] !== undefined ? args[i] : this.evaluateDefault(param.right, scope)
         if (param.left.type === 'Identifier') {
           scope.var(param.left.name, value)
+        } else {
+          // Destructuring with default value
+          this.bindPattern(param.left, value, scope)
+        }
+      } else if (param.type === 'ArrayPattern' || param.type === 'ObjectPattern') {
+        // Destructuring parameter
+        this.bindPattern(param, args[i], scope)
+      }
+    }
+  }
+
+  private bindPattern(pattern: any, value: any, scope: Scope): void {
+    if (pattern.type === 'Identifier') {
+      scope.var(pattern.name, value)
+    } else if (pattern.type === 'ArrayPattern') {
+      // Array destructuring
+      const arr = value || []
+      for (let i = 0; i < pattern.elements.length; i++) {
+        const element = pattern.elements[i]
+        if (!element) continue // Hole in array pattern
+        if (element.type === 'RestElement') {
+          this.bindPattern(element.argument, arr.slice(i), scope)
+          break
+        } else {
+          this.bindPattern(element, arr[i], scope)
         }
       }
-      // Could also handle destructuring patterns here
+    } else if (pattern.type === 'ObjectPattern') {
+      // Object destructuring
+      const obj = value || {}
+      for (const property of pattern.properties) {
+        if (property.type === 'RestElement') {
+          // Object rest
+          const rest: any = {}
+          const extractedKeys = new Set()
+          for (const prop of pattern.properties) {
+            if (prop !== property && prop.key) {
+              const key = prop.key.type === 'Identifier' ? prop.key.name : prop.key.value
+              extractedKeys.add(key)
+            }
+          }
+          for (const key in obj) {
+            if (!extractedKeys.has(key)) {
+              rest[key] = obj[key]
+            }
+          }
+          this.bindPattern(property.argument, rest, scope)
+        } else {
+          const key = property.key.type === 'Identifier' ? property.key.name : property.key.value
+          const propValue = obj[key]
+          this.bindPattern(property.value, propValue, scope)
+        }
+      }
+    } else if (pattern.type === 'AssignmentPattern') {
+      // Default value in destructuring
+      const actualValue = value !== undefined ? value : this.evaluateDefault(pattern.right, scope)
+      this.bindPattern(pattern.left, actualValue, scope)
     }
   }
 
@@ -1893,6 +1950,9 @@ export class VM {
         return self.createGeneratorObject(chunk, funcScope)
       }
 
+      // Set toString for function
+      self.setFunctionToString(func, funcNode)
+
       // Bind the function name in intermediate scope
       if (funcNode.id && funcNode.type === 'FunctionExpression') {
         effectiveCaptureScope.const(funcNode.id.name, func)
@@ -1922,6 +1982,9 @@ export class VM {
         return self.createAsyncGeneratorObject(chunk, funcScope)
       }
 
+      // Set toString for function
+      self.setFunctionToString(func, funcNode)
+
       // Bind the function name in intermediate scope
       if (funcNode.id && funcNode.type === 'FunctionExpression') {
         effectiveCaptureScope.const(funcNode.id.name, func)
@@ -1948,6 +2011,9 @@ export class VM {
         const funcVM = new VM(funcScope)
         return await funcVM.executeAsync(chunk)
       }
+
+      // Set toString for function
+      self.setFunctionToString(func, funcNode)
 
       // Bind the function name in intermediate scope
       if (funcNode.id && funcNode.type === 'FunctionExpression') {
@@ -1976,6 +2042,9 @@ export class VM {
         return funcVM.execute(chunk)
       }
 
+      // Set toString for function
+      self.setFunctionToString(func, funcNode)
+
       // Bind the function name in intermediate scope
       if (funcNode.id && funcNode.type === 'FunctionExpression') {
         effectiveCaptureScope.const(funcNode.id.name, func)
@@ -1990,8 +2059,9 @@ export class VM {
     const capturedThis = captureScope.find('this')?.get()
     const isAsync = funcNode.async || funcNode.generator
 
+    let func: Function
     if (isAsync) {
-      return async (...args: any[]) => {
+      func = async (...args: any[]) => {
         const funcScope = new Scope(captureScope, true)
         self.bindParameters(funcNode.params, args, funcScope)
         if (capturedThis !== undefined) {
@@ -2011,7 +2081,7 @@ export class VM {
         return await funcVM.executeAsync(chunk)
       }
     } else {
-      return (...args: any[]) => {
+      func = (...args: any[]) => {
         const funcScope = new Scope(captureScope, true)
         self.bindParameters(funcNode.params, args, funcScope)
         if (capturedThis !== undefined) {
@@ -2031,6 +2101,11 @@ export class VM {
         return funcVM.execute(chunk)
       }
     }
+
+    // Set toString for arrow function
+    self.setFunctionToString(func, funcNode)
+
+    return func
   }
 
   private createClass(classNode: any, captureScope: Scope): any {
@@ -2309,6 +2384,19 @@ export class VM {
         }
 
         try {
+          // Check if we're in the middle of delegating to another iterator
+          if (generatorState && generatorState.delegatedIterator) {
+            const result = generatorState.delegatedIterator.next(value)
+            if (!result.done) {
+              // Still yielding from delegated iterator
+              return { value: result.value, done: false }
+            }
+            // Delegated iterator is exhausted, clear it and continue
+            generatorState.delegatedIterator = null
+            // Push the return value of the iterator (becomes value of yield* expression)
+            vm.push(result.value)
+          }
+
           // Continue execution until next yield or end
           while (vm.currentFrame && vm.currentFrame.ip < vm.currentFrame.chunk.instructions.length && !vm.halted) {
             const instruction = vm.currentFrame.chunk.instructions[vm.currentFrame.ip]
@@ -2325,24 +2413,21 @@ export class VM {
                 const iterable = yieldValue
                 if (iterable && typeof iterable[Symbol.iterator] === 'function') {
                   const iterator = iterable[Symbol.iterator]()
-                  let result = iterator.next()
-                  // Yield all values from the delegated iterator
-                  while (!result.done) {
-                    // Save state before yielding
+                  const result = iterator.next()
+                  if (!result.done) {
+                    // Save state with the delegated iterator
                     generatorState = new GeneratorState(
                       vm.stack,
                       vm.callStack,
                       vm.currentFrame,
                       vm.scopeStack,
                       vm.currentScope,
-                      vm.exceptionHandlers
+                      vm.exceptionHandlers,
+                      iterator  // Save the iterator for next call
                     )
-                    // Temporarily return this value
-                    // Note: This doesn't properly handle .next(value) sent to delegated iterator
-                    // A full implementation would need more complex state management
                     return { value: result.value, done: false }
                   }
-                  // Push the return value of the delegated iterator
+                  // Iterator was empty or had only one value, push return value and continue
                   vm.push(result.value)
                   continue
                 }
@@ -2355,7 +2440,8 @@ export class VM {
                 vm.currentFrame,
                 vm.scopeStack,
                 vm.currentScope,
-                vm.exceptionHandlers
+                vm.exceptionHandlers,
+                null  // No delegation
               )
 
               return { value: yieldValue, done: false }
@@ -2374,7 +2460,8 @@ export class VM {
               vm.currentFrame,
               vm.scopeStack,
               vm.currentScope,
-              vm.exceptionHandlers
+              vm.exceptionHandlers,
+              null
             )
           }
           generatorState.done = true
@@ -2387,7 +2474,8 @@ export class VM {
               vm.currentFrame,
               vm.scopeStack,
               vm.currentScope,
-              vm.exceptionHandlers
+              vm.exceptionHandlers,
+              null
             )
           }
           generatorState.done = true
@@ -2419,9 +2507,17 @@ export class VM {
 
   private createAsyncGeneratorObject(chunk: BytecodeChunk, scope: Scope): any {
     let generatorState: GeneratorState | null = null
+    let pendingNext: Promise<any> | null = null
 
     const asyncGeneratorObject = {
       next: async (value?: any) => {
+        // Queue this call if there's already a next() in progress
+        if (pendingNext) {
+          await pendingNext
+        }
+
+        // Create a promise for this next() call
+        const currentNext = (async () => {
         // Create VM for execution
         const vm = new VM(scope, true)
 
@@ -2480,7 +2576,8 @@ export class VM {
                 vm.currentFrame,
                 vm.scopeStack,
                 vm.currentScope,
-                vm.exceptionHandlers
+                vm.exceptionHandlers,
+                null
               )
 
               return { value: await yieldValue, done: false }
@@ -2499,7 +2596,8 @@ export class VM {
               vm.currentFrame,
               vm.scopeStack,
               vm.currentScope,
-              vm.exceptionHandlers
+              vm.exceptionHandlers,
+              null
             )
           }
           generatorState.done = true
@@ -2512,26 +2610,57 @@ export class VM {
               vm.currentFrame,
               vm.scopeStack,
               vm.currentScope,
-              vm.exceptionHandlers
+              vm.exceptionHandlers,
+              null
             )
           }
           generatorState.done = true
           throw error
+        } finally {
+          // Clear pending when this call completes
+          if (pendingNext === currentNext) {
+            pendingNext = null
+          }
         }
+        })()
+
+        // Store this promise as the current pending call
+        pendingNext = currentNext
+        return await currentNext
       },
 
       return: async (value?: any) => {
-        if (generatorState) {
-          generatorState.done = true
+        // Queue this call if there's already a next() in progress
+        if (pendingNext) {
+          await pendingNext
         }
-        return { value, done: true }
+
+        const currentOp = (async () => {
+          if (generatorState) {
+            generatorState.done = true
+          }
+          return { value, done: true }
+        })()
+
+        pendingNext = currentOp
+        return await currentOp
       },
 
       throw: async (error: any) => {
-        if (generatorState) {
-          generatorState.done = true
+        // Queue this call if there's already a next() in progress
+        if (pendingNext) {
+          await pendingNext
         }
-        throw error
+
+        const currentOp = (async () => {
+          if (generatorState) {
+            generatorState.done = true
+          }
+          throw error
+        })()
+
+        pendingNext = currentOp
+        return await currentOp
       },
 
       [Symbol.asyncIterator]: function() {
@@ -2540,6 +2669,111 @@ export class VM {
     }
 
     return asyncGeneratorObject
+  }
+
+  // ===== Function toString helper =====
+  private setFunctionToString(func: Function, funcNode: any): void {
+    const sourceCode = this.generateFunctionSource(funcNode)
+    Object.defineProperty(func, 'toString', {
+      value: () => sourceCode,
+      writable: true,
+      configurable: true
+    })
+  }
+
+  private generateFunctionSource(funcNode: any): string {
+    // Try to extract source from the AST node if available
+    if (funcNode.start !== undefined && funcNode.end !== undefined && funcNode.loc?.source) {
+      return funcNode.loc.source.substring(funcNode.start, funcNode.end)
+    }
+
+    // Otherwise, reconstruct from AST
+    const parts: string[] = []
+
+    // Async
+    if (funcNode.async) {
+      parts.push('async ')
+    }
+
+    // Function keyword or arrow
+    if (funcNode.type === 'ArrowFunctionExpression') {
+      // Arrow function
+      const params = this.generateParams(funcNode.params)
+      parts.push(`(${params}) => `)
+      if (funcNode.body.type === 'BlockStatement') {
+        parts.push(this.generateBlockBody(funcNode.body))
+      } else {
+        parts.push(this.generateExpression(funcNode.body))
+      }
+    } else {
+      // Regular function or generator
+      parts.push('function')
+      if (funcNode.generator) {
+        parts.push('* ')
+      } else {
+        parts.push(' ')
+      }
+
+      // Function name
+      if (funcNode.id) {
+        parts.push(funcNode.id.name)
+      }
+
+      // Parameters
+      const params = this.generateParams(funcNode.params)
+      parts.push(`(${params}) `)
+
+      // Body
+      parts.push(this.generateBlockBody(funcNode.body))
+    }
+
+    return parts.join('')
+  }
+
+  private generateParams(params: any[]): string {
+    return params.map(p => {
+      if (p.type === 'Identifier') return p.name
+      if (p.type === 'RestElement') return '...' + this.generateParams([p.argument])
+      // Simplified - could handle destructuring, defaults, etc.
+      return 'param'
+    }).join(', ')
+  }
+
+  private generateBlockBody(body: any): string {
+    if (!body.body || body.body.length === 0) return '{ }'
+
+    // Simplified - just try to reconstruct basic statements
+    const statements = body.body.map((stmt: any) => this.generateStatement(stmt))
+    return `{ ${statements.join(' ')} }`
+  }
+
+  private generateStatement(stmt: any): string {
+    if (stmt.type === 'ReturnStatement') {
+      if (stmt.argument) {
+        return 'return ' + this.generateExpression(stmt.argument)
+      }
+      return 'return'
+    }
+    if (stmt.type === 'ExpressionStatement') {
+      return this.generateExpression(stmt.expression)
+    }
+    // Simplified for other statement types
+    return ''
+  }
+
+  private generateExpression(expr: any): string {
+    if (expr.type === 'Identifier') return expr.name
+    if (expr.type === 'BinaryExpression') {
+      return this.generateExpression(expr.left) + ' ' + expr.operator + ' ' + this.generateExpression(expr.right)
+    }
+    if (expr.type === 'AwaitExpression') {
+      return 'await ' + this.generateExpression(expr.argument)
+    }
+    if (expr.type === 'YieldExpression') {
+      return 'yield ' + (expr.argument ? this.generateExpression(expr.argument) : '')
+    }
+    // Simplified - could handle more expression types
+    return ''
   }
 
   // ===== Stack helpers =====

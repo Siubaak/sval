@@ -1417,6 +1417,13 @@ export class Compiler {
     this.emit(OpCode.ITERATOR_DONE)
     const jumpToEnd = this.emit(OpCode.JUMP_IF_TRUE, 0)
 
+    // Create new scope for each iteration (for const/let)
+    const needsIterationScope = node.left.type === 'VariableDeclaration' &&
+                                 (node.left.kind === 'const' || node.left.kind === 'let')
+    if (needsIterationScope) {
+      this.emit(OpCode.PUSH_SCOPE)
+    }
+
     // Get value from result
     this.emit(OpCode.LOAD_VAR, '__iterResult__')
     const valueIdx = addConstant(this.chunk, 'value')
@@ -1443,12 +1450,25 @@ export class Compiler {
     // Compile loop body
     this.compileNode(node.body, scope)
 
-    // Jump back to loop start
+    // Continue target is here (before popping scope)
     const continueTarget = this.chunk.instructions.length
+
+    // Pop iteration scope before continuing
+    if (needsIterationScope) {
+      this.emit(OpCode.POP_SCOPE)
+    }
+
+    // Jump back to loop start
     this.emit(OpCode.JUMP, loopStart)
 
-    // Loop end
+    // Loop end (break target)
     const loopEnd = this.chunk.instructions.length
+
+    // If we need iteration scope, add a POP_SCOPE at break target too
+    if (needsIterationScope) {
+      this.emit(OpCode.POP_SCOPE)
+    }
+
     this.patchJump(jumpToEnd)
 
     // Patch break/continue
