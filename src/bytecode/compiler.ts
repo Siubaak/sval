@@ -329,6 +329,27 @@ export class Compiler {
   }
 
   private compileUnaryExpression(node: any, scope: Scope): void {
+    // Special handling for typeof with identifier - don't throw if undefined
+    if (node.operator === 'typeof' && node.argument.type === 'Identifier') {
+      this.emit(OpCode.TYPEOF_VAR, node.argument.name)
+      return
+    }
+
+    // Special handling for delete with member expression
+    if (node.operator === 'delete' && node.argument.type === 'MemberExpression') {
+      // Compile object
+      this.compileNode(node.argument.object, scope)
+      // Compile property
+      if (node.argument.computed) {
+        this.compileNode(node.argument.property, scope)
+      } else {
+        const idx = addConstant(this.chunk, node.argument.property.name)
+        this.emit(OpCode.PUSH, idx)
+      }
+      this.emit(OpCode.DELETE_MEMBER)
+      return
+    }
+
     this.compileNode(node.argument, scope)
 
     const opMap: Record<string, OpCode> = {

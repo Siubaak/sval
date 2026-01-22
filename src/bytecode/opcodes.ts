@@ -58,8 +58,10 @@ export enum OpCode {
   NOT,            // !
   BITWISE_NOT,    // ~
   TYPEOF,         // typeof
+  TYPEOF_VAR,     // typeof identifier (doesn't throw if undefined)
   VOID,           // void
   DELETE,         // delete
+  DELETE_MEMBER,  // delete obj.prop
   PLUS,           // +x
   MINUS,          // -x
 

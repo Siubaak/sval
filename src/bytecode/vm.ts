@@ -472,6 +472,18 @@ export class VM {
         break
       }
 
+      case OpCode.TYPEOF_VAR: {
+        const name = operand as string
+        const variable = this.currentScope.find(name)
+        if (!variable) {
+          // typeof on undefined variable should return 'undefined', not throw
+          this.push('undefined')
+        } else {
+          this.push(typeof variable.get())
+        }
+        break
+      }
+
       case OpCode.VOID: {
         this.pop()
         this.push(undefined)
@@ -479,9 +491,17 @@ export class VM {
       }
 
       case OpCode.DELETE: {
-        // Simplified delete - would need more context
+        // Delete variable (not commonly used, mostly for member deletion)
         this.pop()
         this.push(true)
+        break
+      }
+
+      case OpCode.DELETE_MEMBER: {
+        const property = this.pop()
+        const object = this.pop()
+        const result = delete object[property]
+        this.push(result)
         break
       }
 
@@ -1313,6 +1333,18 @@ export class VM {
         break
       }
 
+      case OpCode.TYPEOF_VAR: {
+        const name = operand as string
+        const variable = this.currentScope.find(name)
+        if (!variable) {
+          // typeof on undefined variable should return 'undefined', not throw
+          this.push('undefined')
+        } else {
+          this.push(typeof variable.get())
+        }
+        break
+      }
+
       case OpCode.VOID: {
         this.pop()
         this.push(undefined)
@@ -1320,9 +1352,17 @@ export class VM {
       }
 
       case OpCode.DELETE: {
-        // Simplified delete - would need more context
+        // Delete variable (not commonly used, mostly for member deletion)
         this.pop()
         this.push(true)
+        break
+      }
+
+      case OpCode.DELETE_MEMBER: {
+        const property = this.pop()
+        const object = this.pop()
+        const result = delete object[property]
+        this.push(result)
         break
       }
 
