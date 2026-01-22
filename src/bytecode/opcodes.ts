@@ -8,6 +8,8 @@ export enum OpCode {
   POP,            // Pop value from stack
   DUP,            // Duplicate top of stack
   SWAP,           // Swap top two stack items
+  ROT3,           // Rotate top 3 items: [a,b,c] -> [b,c,a]
+  ROT4,           // Rotate top 4 items: [a,b,c,d] -> [b,c,d,a]
 
   // Variable operations
   LOAD_VAR,       // Load variable onto stack

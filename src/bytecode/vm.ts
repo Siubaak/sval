@@ -186,6 +186,30 @@ export class VM {
         break
       }
 
+      case OpCode.ROT3: {
+        // Rotate top 3 items: [a,b,c] -> [b,c,a]
+        const c = this.pop()
+        const b = this.pop()
+        const a = this.pop()
+        this.push(b)
+        this.push(c)
+        this.push(a)
+        break
+      }
+
+      case OpCode.ROT4: {
+        // Rotate top 4 items: [a,b,c,d] -> [b,c,d,a]
+        const d = this.pop()
+        const c = this.pop()
+        const b = this.pop()
+        const a = this.pop()
+        this.push(b)
+        this.push(c)
+        this.push(d)
+        this.push(a)
+        break
+      }
+
       // ===== Literal operations =====
       case OpCode.LOAD_UNDEFINED: {
         this.push(undefined)
@@ -987,6 +1011,30 @@ export class VM {
         const second = this.pop()
         this.push(top)
         this.push(second)
+        break
+      }
+
+      case OpCode.ROT3: {
+        // Rotate top 3 items: [a,b,c] -> [b,c,a]
+        const c = this.pop()
+        const b = this.pop()
+        const a = this.pop()
+        this.push(b)
+        this.push(c)
+        this.push(a)
+        break
+      }
+
+      case OpCode.ROT4: {
+        // Rotate top 4 items: [a,b,c,d] -> [b,c,d,a]
+        const d = this.pop()
+        const c = this.pop()
+        const b = this.pop()
+        const a = this.pop()
+        this.push(b)
+        this.push(c)
+        this.push(d)
+        this.push(a)
         break
       }
 
