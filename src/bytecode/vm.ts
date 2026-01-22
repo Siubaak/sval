@@ -6,7 +6,7 @@ import Scope from '../scope'
 import { Var } from '../scope/variable'
 import { OpCode, type BytecodeChunk, type Instruction } from './opcodes'
 import { Compiler } from './compiler'
-import { AWAIT, NOINIT } from '../share/const'
+import { AWAIT, NOINIT, NEWTARGET } from '../share/const'
 
 class CallFrame {
   chunk: BytecodeChunk
@@ -2181,6 +2181,9 @@ export class VM {
         constructorScope.var('this', this)
         constructorScope.var('arguments', arguments)
 
+        // Bind new.target (points to the actual constructor being called)
+        constructorScope.var(NEWTARGET, classConstructor)
+
         // Bind super for property access if there's a superclass
         if (superClass) {
           const thisContext = this
@@ -2248,7 +2251,13 @@ export class VM {
         if (superClass) {
           vm.setSuperClass(superClass)
         }
-        vm.execute(chunk)
+        const result = vm.execute(chunk)
+
+        // If constructor explicitly returns an object, use that instead of `this`
+        if (result !== undefined && typeof result === 'object' && result !== null) {
+          return result
+        }
+        // Otherwise return `this` (which is the default behavior)
       }
     } else {
       // Default constructor
