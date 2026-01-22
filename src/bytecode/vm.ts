@@ -2169,13 +2169,8 @@ export class VM {
         // Create constructor scope
         const constructorScope = new Scope(captureScope, true)
 
-        // Bind parameters
-        for (let i = 0; i < constructorParams.length; i++) {
-          const param = constructorParams[i]
-          if (param.type === 'Identifier') {
-            constructorScope.var(param.name, args[i])
-          }
-        }
+        // Bind parameters using the helper method (handles rest params, destructuring, defaults)
+        self.bindParameters(constructorParams, args, constructorScope)
 
         // Bind this
         constructorScope.var('this', this)

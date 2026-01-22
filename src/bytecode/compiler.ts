@@ -1570,7 +1570,7 @@ export class Compiler {
     // new.target or import.meta
     if (node.meta.name === 'new' && node.property.name === 'target') {
       // Load new.target from scope
-      const variable = this.currentScope.$find(NEWTARGET)
+      const variable = this.currentScope.find(NEWTARGET)
       if (variable) {
         this.emit(OpCode.LOAD_VAR, NEWTARGET)
       } else {
