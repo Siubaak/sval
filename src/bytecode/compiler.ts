@@ -500,7 +500,7 @@ export class Compiler {
           this.patchJump(jumpIfFalsy)
         }
       } else if (node.left.type === 'MemberExpression') {
-        // Similar logic for member expressions
+        // Get current value
         this.compileNode(node.left.object, scope)
         if (node.left.computed) {
           this.compileNode(node.left.property, scope)
@@ -508,11 +508,10 @@ export class Compiler {
           const idx = addConstant(this.chunk, node.left.property.name)
           this.emit(OpCode.PUSH, idx)
         }
-        this.emit(OpCode.DUP)
-        this.emit(OpCode.DUP)
-        this.emit(OpCode.GET_MEMBER)
+        this.emit(OpCode.GET_MEMBER) // [currentValue]
 
         if (node.operator === '??=') {
+          // a ??= b -> assign only if a is null or undefined
           this.emit(OpCode.DUP)
           this.emit(OpCode.LOAD_NULL)
           this.emit(OpCode.SEQ)
@@ -523,28 +522,55 @@ export class Compiler {
           const jumpIfUndefined = this.emit(OpCode.JUMP_IF_TRUE, 0)
           const skipAssignment = this.emit(OpCode.JUMP, 0)
 
+          // Need to assign
           this.patchJump(jumpIfNull)
           this.patchJump(jumpIfUndefined)
-          this.emit(OpCode.POP)
-          this.compileNode(node.right, scope)
-          this.emit(OpCode.DUP)
-          this.emit(OpCode.SET_MEMBER)
+          this.emit(OpCode.POP) // Pop the null/undefined value
+          this.compileNode(node.right, scope) // [newValue]
+          // Recompile obj and prop for SET
+          this.compileNode(node.left.object, scope) // [newValue, obj]
+          if (node.left.computed) {
+            this.compileNode(node.left.property, scope) // [newValue, obj, prop]
+          } else {
+            const idx = addConstant(this.chunk, node.left.property.name)
+            this.emit(OpCode.PUSH, idx)
+          }
+          this.emit(OpCode.ROT3) // [obj, prop, newValue]
+          this.emit(OpCode.SET_MEMBER) // [newValue]
 
           this.patchJump(skipAssignment)
         } else if (node.operator === '||=') {
+          // a ||= b -> assign only if a is falsy
           this.emit(OpCode.DUP)
           const jumpIfTruthy = this.emit(OpCode.JUMP_IF_TRUE, 0)
           this.emit(OpCode.POP)
           this.compileNode(node.right, scope)
-          this.emit(OpCode.DUP)
+          // Recompile obj and prop for SET
+          this.compileNode(node.left.object, scope)
+          if (node.left.computed) {
+            this.compileNode(node.left.property, scope)
+          } else {
+            const idx = addConstant(this.chunk, node.left.property.name)
+            this.emit(OpCode.PUSH, idx)
+          }
+          this.emit(OpCode.ROT3)
           this.emit(OpCode.SET_MEMBER)
           this.patchJump(jumpIfTruthy)
         } else if (node.operator === '&&=') {
+          // a &&= b -> assign only if a is truthy
           this.emit(OpCode.DUP)
           const jumpIfFalsy = this.emit(OpCode.JUMP_IF_FALSE, 0)
           this.emit(OpCode.POP)
           this.compileNode(node.right, scope)
-          this.emit(OpCode.DUP)
+          // Recompile obj and prop for SET
+          this.compileNode(node.left.object, scope)
+          if (node.left.computed) {
+            this.compileNode(node.left.property, scope)
+          } else {
+            const idx = addConstant(this.chunk, node.left.property.name)
+            this.emit(OpCode.PUSH, idx)
+          }
+          this.emit(OpCode.ROT3)
           this.emit(OpCode.SET_MEMBER)
           this.patchJump(jumpIfFalsy)
         }
@@ -560,6 +586,7 @@ export class Compiler {
         this.emit(OpCode.DUP)
         this.emit(OpCode.STORE_VAR, node.left.name)
       } else if (node.left.type === 'MemberExpression') {
+        // Get current value
         this.compileNode(node.left.object, scope)
         if (node.left.computed) {
           this.compileNode(node.left.property, scope)
@@ -567,13 +594,24 @@ export class Compiler {
           const idx = addConstant(this.chunk, node.left.property.name)
           this.emit(OpCode.PUSH, idx)
         }
-        this.emit(OpCode.DUP)
-        this.emit(OpCode.DUP)
-        this.emit(OpCode.GET_MEMBER)
-        this.compileNode(node.right, scope)
-        this.emitBinaryOp(baseOp)
-        this.emit(OpCode.DUP)
-        this.emit(OpCode.SET_MEMBER)
+        this.emit(OpCode.GET_MEMBER) // [currentValue]
+
+        // Compute new value
+        this.compileNode(node.right, scope) // [currentValue, rightValue]
+        this.emitBinaryOp(baseOp) // [newValue]
+
+        // Set new value (recompile obj and prop)
+        this.compileNode(node.left.object, scope) // [newValue, obj]
+        if (node.left.computed) {
+          this.compileNode(node.left.property, scope) // [newValue, obj, prop]
+        } else {
+          const idx = addConstant(this.chunk, node.left.property.name)
+          this.emit(OpCode.PUSH, idx) // [newValue, obj, prop]
+        }
+        // Stack: [newValue, obj, prop]
+        // Need: [obj, prop, newValue] for SET_MEMBER
+        this.emit(OpCode.ROT3) // [obj, prop, newValue]
+        this.emit(OpCode.SET_MEMBER) // [newValue] - SET_MEMBER pushes the value back
       }
     }
   }
