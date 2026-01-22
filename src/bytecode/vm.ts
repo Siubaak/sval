@@ -2199,7 +2199,25 @@ export class VM {
 
         // Initialize instance fields
         for (const field of instanceFields) {
-          const fieldName = field.key.name || field.key.value
+          let fieldName: any
+
+          // Handle computed property names
+          if (field.computed) {
+            const compiler = new Compiler()
+            const chunk = compiler.compile({
+              type: 'Program',
+              body: [{
+                type: 'ReturnStatement',
+                argument: field.key
+              }],
+              sourceType: 'script'
+            }, constructorScope)
+            const vm = new VM(constructorScope)
+            fieldName = vm.execute(chunk)
+          } else {
+            fieldName = field.key.name || field.key.value
+          }
+
           let fieldValue = undefined
           if (field.value) {
             const compiler = new Compiler()
@@ -2232,12 +2250,36 @@ export class VM {
       classConstructor = function (this: any, ...args: any[]) {
         // If there's a superclass, call it
         if (superClass) {
+          // Need to use Reflect.construct for proper inheritance with built-ins
+          if (superClass === Array || superClass === Set || superClass === Map ||
+              superClass === Promise || superClass === Error || superClass === RegExp) {
+            // Cannot extend built-ins with simple apply
+            throw new TypeError(`Cannot extend built-in '${superClass.name}' in this implementation`)
+          }
           superClass.apply(this, args)
         }
 
         // Initialize instance fields
         for (const field of instanceFields) {
-          const fieldName = field.key.name || field.key.value
+          let fieldName: any
+
+          // Handle computed property names
+          if (field.computed) {
+            const compiler = new Compiler()
+            const chunk = compiler.compile({
+              type: 'Program',
+              body: [{
+                type: 'ReturnStatement',
+                argument: field.key
+              }],
+              sourceType: 'script'
+            }, captureScope)
+            const vm = new VM(captureScope)
+            fieldName = vm.execute(chunk)
+          } else {
+            fieldName = field.key.name || field.key.value
+          }
+
           let fieldValue = undefined
           if (field.value) {
             const compiler = new Compiler()
@@ -2267,7 +2309,26 @@ export class VM {
 
     // Add instance methods to prototype
     for (const method of instanceMethods) {
-      const methodName = method.key.name || method.key.value
+      let methodName: any
+
+      // Handle computed property names
+      if (method.computed) {
+        // Evaluate the key expression to get the actual key
+        const compiler = new Compiler()
+        const chunk = compiler.compile({
+          type: 'Program',
+          body: [{
+            type: 'ReturnStatement',
+            argument: method.key
+          }],
+          sourceType: 'script'
+        }, classScope)
+        const vm = new VM(classScope)
+        methodName = vm.execute(chunk)
+      } else {
+        methodName = method.key.name || method.key.value
+      }
+
       // Create method with super access if there's a superclass
       const methodFunc = superClass
         ? this.createClassMethod(method.value, classScope, superClass)
@@ -2293,7 +2354,26 @@ export class VM {
 
     // Add static methods to constructor
     for (const method of staticMethods) {
-      const methodName = method.key.name || method.key.value
+      let methodName: any
+
+      // Handle computed property names
+      if (method.computed) {
+        // Evaluate the key expression to get the actual key
+        const compiler = new Compiler()
+        const chunk = compiler.compile({
+          type: 'Program',
+          body: [{
+            type: 'ReturnStatement',
+            argument: method.key
+          }],
+          sourceType: 'script'
+        }, classScope)
+        const vm = new VM(classScope)
+        methodName = vm.execute(chunk)
+      } else {
+        methodName = method.key.name || method.key.value
+      }
+
       const methodFunc = this.createFunction(method.value, classScope)
 
       if (method.kind === 'get') {
@@ -2315,7 +2395,25 @@ export class VM {
 
     // Initialize static fields
     for (const field of staticFields) {
-      const fieldName = field.key.name || field.key.value
+      let fieldName: any
+
+      // Handle computed property names
+      if (field.computed) {
+        const compiler = new Compiler()
+        const chunk = compiler.compile({
+          type: 'Program',
+          body: [{
+            type: 'ReturnStatement',
+            argument: field.key
+          }],
+          sourceType: 'script'
+        }, classScope)
+        const vm = new VM(classScope)
+        fieldName = vm.execute(chunk)
+      } else {
+        fieldName = field.key.name || field.key.value
+      }
+
       let fieldValue = undefined
       if (field.value) {
         const compiler = new Compiler()
