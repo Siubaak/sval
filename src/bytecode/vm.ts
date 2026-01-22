@@ -2318,6 +2318,8 @@ export class VM {
     if (superClass) {
       classConstructor.prototype = Object.create(superClass.prototype)
       classConstructor.prototype.constructor = classConstructor
+      // Set up static method inheritance
+      Object.setPrototypeOf(classConstructor, superClass)
     }
 
     // Bind the class constructor to the class scope for class expressions
