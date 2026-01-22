@@ -2166,6 +2166,11 @@ export class VM {
       const constructorParams = constructorMethod.value.params
 
       classConstructor = function (this: any, ...args: any[]) {
+        // ES6 classes must be called with new
+        if (!(this instanceof classConstructor)) {
+          throw new TypeError(`Class constructor ${className} cannot be invoked without 'new'`)
+        }
+
         // Create constructor scope
         const constructorScope = new Scope(captureScope, true)
 
@@ -2248,6 +2253,11 @@ export class VM {
     } else {
       // Default constructor
       classConstructor = function (this: any, ...args: any[]) {
+        // ES6 classes must be called with new
+        if (!(this instanceof classConstructor)) {
+          throw new TypeError(`Class constructor ${className} cannot be invoked without 'new'`)
+        }
+
         // If there's a superclass, call it
         if (superClass) {
           // Need to use Reflect.construct for proper inheritance with built-ins
