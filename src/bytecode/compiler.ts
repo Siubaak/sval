@@ -3,7 +3,7 @@
  */
 
 import type { Node } from 'acorn'
-import type Scope from '../scope'
+import Scope from '../scope'
 import { NEWTARGET, NOINIT, DEADZONE } from '../share/const'
 import {
   OpCode,
@@ -46,11 +46,15 @@ export class Compiler {
 
   private hoistInBlock(body: any[], scope: Scope): void {
     // First pass: hoist function declarations
-    // Note: We just declare them here; they'll be defined when the declaration is executed
+    // Function declarations in blocks are block-scoped (like let) but initialized immediately
     for (const stmt of body) {
       if (stmt.type === 'FunctionDeclaration' && stmt.id) {
-        // Just declare the variable; the function will be assigned when we execute the declaration
-        scope.var(stmt.id.name, NOINIT)
+        // For function declarations, use let to make them block-scoped
+        try {
+          scope.let(stmt.id.name, NOINIT)
+        } catch (e) {
+          // If already declared (e.g., duplicate function declaration), ignore
+        }
       }
     }
 
@@ -91,15 +95,40 @@ export class Compiler {
     }
   }
 
+  private hoistPattern(pattern: any, scope: Scope): void {
+    if (pattern.type === 'Identifier') {
+      scope.var(pattern.name, NOINIT)
+    } else if (pattern.type === 'ArrayPattern') {
+      for (const element of pattern.elements) {
+        if (element) { // Can be null for holes like [a, , b]
+          if (element.type === 'RestElement') {
+            this.hoistPattern(element.argument, scope)
+          } else {
+            this.hoistPattern(element, scope)
+          }
+        }
+      }
+    } else if (pattern.type === 'ObjectPattern') {
+      for (const property of pattern.properties) {
+        if (property.type === 'RestElement') {
+          this.hoistPattern(property.argument, scope)
+        } else {
+          this.hoistPattern(property.value, scope)
+        }
+      }
+    } else if (pattern.type === 'AssignmentPattern') {
+      // For patterns with defaults like { a = 1 }
+      this.hoistPattern(pattern.left, scope)
+    }
+  }
+
   private hoistVarsInStatement(stmt: any, scope: Scope): void {
     switch (stmt.type) {
       case 'VariableDeclaration':
         if (stmt.kind === 'var') {
           for (const decl of stmt.declarations) {
-            if (decl.id.type === 'Identifier') {
-              // Var declarations are hoisted but not initialized
-              scope.var(decl.id.name, NOINIT)
-            }
+            // Extract all identifiers from the pattern (handles destructuring)
+            this.hoistPattern(decl.id, scope)
           }
         }
         break
@@ -714,8 +743,15 @@ export class Compiler {
 
   private compileBlockStatement(node: any, scope: Scope): void {
     this.emit(OpCode.PUSH_SCOPE)
+
+    // Create a new compile-time scope for this block
+    const blockScope = new Scope(scope)
+
+    // Perform hoisting for this block
+    this.hoistInBlock(node.body, blockScope)
+
     for (const stmt of node.body) {
-      this.compileNode(stmt, scope)
+      this.compileNode(stmt, blockScope)
     }
     this.emit(OpCode.POP_SCOPE)
   }
@@ -893,7 +929,9 @@ export class Compiler {
   private compileFunctionDeclaration(node: any, scope: Scope): void {
     const funcIdx = addConstant(this.chunk, node)
     this.emit(OpCode.CREATE_FUNCTION, funcIdx)
-    this.emit(OpCode.DECLARE_VAR, node.id.name)
+    // Use STORE_VAR to update the hoisted binding
+    this.emit(OpCode.STORE_VAR, node.id.name)
+    this.emit(OpCode.POP) // STORE_VAR peeks, so we need to pop
   }
 
   // ===== Special =====
