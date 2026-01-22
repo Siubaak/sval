@@ -7,6 +7,7 @@ export enum OpCode {
   PUSH,           // Push constant onto stack
   POP,            // Pop value from stack
   DUP,            // Duplicate top of stack
+  SWAP,           // Swap top two stack items
 
   // Variable operations
   LOAD_VAR,       // Load variable onto stack

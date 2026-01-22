@@ -178,6 +178,14 @@ export class VM {
         break
       }
 
+      case OpCode.SWAP: {
+        const top = this.pop()
+        const second = this.pop()
+        this.push(top)
+        this.push(second)
+        break
+      }
+
       // ===== Literal operations =====
       case OpCode.LOAD_UNDEFINED: {
         this.push(undefined)
@@ -971,6 +979,14 @@ export class VM {
       case OpCode.DUP: {
         const value = this.peek()
         this.push(value)
+        break
+      }
+
+      case OpCode.SWAP: {
+        const top = this.pop()
+        const second = this.pop()
+        this.push(top)
+        this.push(second)
         break
       }
 
@@ -2329,6 +2345,10 @@ export class VM {
     }
 
     // Add instance methods to prototype
+    // Collect getters and setters by property name first to handle both get/set for same property
+    const instanceAccessors = new Map<any, { get?: Function, set?: Function }>()
+    const instanceRegularMethods = []
+
     for (const method of instanceMethods) {
       let methodName: any
 
@@ -2355,25 +2375,42 @@ export class VM {
         ? this.createClassMethod(method.value, classScope, superClass)
         : this.createFunction(method.value, classScope)
 
-      // Handle getters and setters
-      if (method.kind === 'get') {
-        Object.defineProperty(classConstructor.prototype, methodName, {
-          get: methodFunc,
-          enumerable: false,
-          configurable: true
-        })
-      } else if (method.kind === 'set') {
-        Object.defineProperty(classConstructor.prototype, methodName, {
-          set: methodFunc,
-          enumerable: false,
-          configurable: true
-        })
+      // Collect getters and setters
+      if (method.kind === 'get' || method.kind === 'set') {
+        if (!instanceAccessors.has(methodName)) {
+          instanceAccessors.set(methodName, {})
+        }
+        const accessor = instanceAccessors.get(methodName)!
+        if (method.kind === 'get') {
+          accessor.get = methodFunc
+        } else {
+          accessor.set = methodFunc
+        }
       } else {
-        classConstructor.prototype[methodName] = methodFunc
+        instanceRegularMethods.push({ name: methodName, func: methodFunc })
       }
     }
 
+    // Define accessors
+    for (const [methodName, accessor] of instanceAccessors) {
+      Object.defineProperty(classConstructor.prototype, methodName, {
+        get: accessor.get,
+        set: accessor.set,
+        enumerable: false,
+        configurable: true
+      })
+    }
+
+    // Define regular methods
+    for (const { name, func } of instanceRegularMethods) {
+      classConstructor.prototype[name] = func
+    }
+
     // Add static methods to constructor
+    // Collect getters and setters by property name first
+    const staticAccessors = new Map<any, { get?: Function, set?: Function }>()
+    const staticRegularMethods = []
+
     for (const method of staticMethods) {
       let methodName: any
 
@@ -2397,21 +2434,35 @@ export class VM {
 
       const methodFunc = this.createFunction(method.value, classScope)
 
-      if (method.kind === 'get') {
-        Object.defineProperty(classConstructor, methodName, {
-          get: methodFunc,
-          enumerable: false,
-          configurable: true
-        })
-      } else if (method.kind === 'set') {
-        Object.defineProperty(classConstructor, methodName, {
-          set: methodFunc,
-          enumerable: false,
-          configurable: true
-        })
+      // Collect getters and setters
+      if (method.kind === 'get' || method.kind === 'set') {
+        if (!staticAccessors.has(methodName)) {
+          staticAccessors.set(methodName, {})
+        }
+        const accessor = staticAccessors.get(methodName)!
+        if (method.kind === 'get') {
+          accessor.get = methodFunc
+        } else {
+          accessor.set = methodFunc
+        }
       } else {
-        classConstructor[methodName] = methodFunc
+        staticRegularMethods.push({ name: methodName, func: methodFunc })
       }
+    }
+
+    // Define accessors
+    for (const [methodName, accessor] of staticAccessors) {
+      Object.defineProperty(classConstructor, methodName, {
+        get: accessor.get,
+        set: accessor.set,
+        enumerable: false,
+        configurable: true
+      })
+    }
+
+    // Define regular methods
+    for (const { name, func } of staticRegularMethods) {
+      classConstructor[name] = func
     }
 
     // Initialize static fields
