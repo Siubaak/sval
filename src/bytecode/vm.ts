@@ -596,6 +596,19 @@ export class VM {
         break
       }
 
+      case OpCode.NEW_WITH_SPREAD: {
+        const constructor = this.pop()
+        const argsArray = this.pop()
+
+        if (typeof constructor !== 'function') {
+          throw new TypeError(`${constructor} is not a constructor`)
+        }
+
+        const instance = new constructor(...argsArray)
+        this.push(instance)
+        break
+      }
+
       case OpCode.RETURN: {
         const returnValue = this.pop()
 
@@ -1420,6 +1433,19 @@ export class VM {
         }
 
         const instance = new constructor(...args)
+        this.push(instance)
+        break
+      }
+
+      case OpCode.NEW_WITH_SPREAD: {
+        const constructor = this.pop()
+        const argsArray = this.pop()
+
+        if (typeof constructor !== 'function') {
+          throw new TypeError(`${constructor} is not a constructor`)
+        }
+
+        const instance = new constructor(...argsArray)
         this.push(instance)
         break
       }

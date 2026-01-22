@@ -76,6 +76,7 @@ export enum OpCode {
   CALL_METHOD,    // Method call with this binding
   CALL_WITH_SPREAD, // Function call with spread arguments
   NEW,            // new Constructor()
+  NEW_WITH_SPREAD, // new Constructor(...args)
   RETURN,         // return statement
   YIELD,          // yield expression
   AWAIT,          // await expression

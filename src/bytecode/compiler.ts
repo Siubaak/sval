@@ -756,14 +756,38 @@ export class Compiler {
   }
 
   private compileNewExpression(node: any, scope: Scope): void {
-    // Compile arguments
-    for (const arg of node.arguments) {
-      this.compileNode(arg, scope)
+    // Check if any argument is a spread element
+    const hasSpread = node.arguments.some((arg: any) => arg.type === 'SpreadElement')
+
+    if (hasSpread) {
+      // Build arguments array with spread support
+      this.emit(OpCode.NEW_ARRAY, 0)
+      for (const arg of node.arguments) {
+        if (arg.type === 'SpreadElement') {
+          this.compileNode(arg.argument, scope)
+          this.emit(OpCode.ARRAY_CONCAT)
+        } else {
+          this.compileNode(arg, scope)
+          this.emit(OpCode.ARRAY_PUSH)
+        }
+      }
+
+      // Compile constructor
+      this.compileNode(node.callee, scope)
+
+      // New with spread arguments
+      // Stack: argsArray, constructor
+      this.emit(OpCode.NEW_WITH_SPREAD)
+    } else {
+      // Compile arguments
+      for (const arg of node.arguments) {
+        this.compileNode(arg, scope)
+      }
+      // Compile constructor
+      this.compileNode(node.callee, scope)
+      // New with argument count
+      this.emit(OpCode.NEW, node.arguments.length)
     }
-    // Compile constructor
-    this.compileNode(node.callee, scope)
-    // New with argument count
-    this.emit(OpCode.NEW, node.arguments.length)
   }
 
   // ===== Statements =====
