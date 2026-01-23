@@ -24,6 +24,14 @@ export class Compiler {
     this.chunk = createChunk()
   }
 
+  // Helper to get property name, handling private identifiers
+  private getPropertyName(propertyNode: any): string {
+    if (propertyNode.type === 'PrivateIdentifier') {
+      return `__private_${propertyNode.name}`
+    }
+    return propertyNode.name || propertyNode.value
+  }
+
   compile(node: Node, scope: Scope): BytecodeChunk {
     this.currentScope = scope
 
@@ -352,7 +360,8 @@ export class Compiler {
       if (node.argument.computed) {
         this.compileNode(node.argument.property, scope)
       } else {
-        const idx = addConstant(this.chunk, node.argument.property.name)
+        const propName = this.getPropertyName(node.argument.property)
+        const idx = addConstant(this.chunk, propName)
         this.emit(OpCode.PUSH, idx)
       }
       this.emit(OpCode.DELETE_MEMBER)
@@ -399,7 +408,8 @@ export class Compiler {
       if (node.argument.computed) {
         this.compileNode(node.argument.property, scope)
       } else {
-        const idx = addConstant(this.chunk, node.argument.property.name)
+        const propName = this.getPropertyName(node.argument.property)
+        const idx = addConstant(this.chunk, propName)
         this.emit(OpCode.PUSH, idx)
       }
       this.emit(OpCode.GET_MEMBER) // [currentValue]
@@ -424,7 +434,8 @@ export class Compiler {
       if (node.argument.computed) {
         this.compileNode(node.argument.property, scope) // [newValue, resultValue, obj, prop]
       } else {
-        const idx = addConstant(this.chunk, node.argument.property.name)
+        const propName = this.getPropertyName(node.argument.property)
+        const idx = addConstant(this.chunk, propName)
         this.emit(OpCode.PUSH, idx) // [newValue, resultValue, obj, prop]
       }
 
@@ -453,7 +464,8 @@ export class Compiler {
         if (node.left.computed) {
           this.compileNode(node.left.property, scope)
         } else {
-          const idx = addConstant(this.chunk, node.left.property.name)
+          const propName = this.getPropertyName(node.left.property)
+          const idx = addConstant(this.chunk, propName)
           this.emit(OpCode.PUSH, idx)
         }
         this.compileNode(node.right, scope)
@@ -514,7 +526,8 @@ export class Compiler {
         if (node.left.computed) {
           this.compileNode(node.left.property, scope)
         } else {
-          const idx = addConstant(this.chunk, node.left.property.name)
+          const propName = this.getPropertyName(node.left.property)
+          const idx = addConstant(this.chunk, propName)
           this.emit(OpCode.PUSH, idx)
         }
         this.emit(OpCode.GET_MEMBER) // [currentValue]
@@ -541,7 +554,8 @@ export class Compiler {
           if (node.left.computed) {
             this.compileNode(node.left.property, scope) // [newValue, obj, prop]
           } else {
-            const idx = addConstant(this.chunk, node.left.property.name)
+            const propName = this.getPropertyName(node.left.property)
+          const idx = addConstant(this.chunk, propName)
             this.emit(OpCode.PUSH, idx)
           }
           this.emit(OpCode.ROT3) // [obj, prop, newValue]
@@ -559,7 +573,8 @@ export class Compiler {
           if (node.left.computed) {
             this.compileNode(node.left.property, scope)
           } else {
-            const idx = addConstant(this.chunk, node.left.property.name)
+            const propName = this.getPropertyName(node.left.property)
+          const idx = addConstant(this.chunk, propName)
             this.emit(OpCode.PUSH, idx)
           }
           this.emit(OpCode.ROT3)
@@ -576,7 +591,8 @@ export class Compiler {
           if (node.left.computed) {
             this.compileNode(node.left.property, scope)
           } else {
-            const idx = addConstant(this.chunk, node.left.property.name)
+            const propName = this.getPropertyName(node.left.property)
+          const idx = addConstant(this.chunk, propName)
             this.emit(OpCode.PUSH, idx)
           }
           this.emit(OpCode.ROT3)
@@ -600,7 +616,8 @@ export class Compiler {
         if (node.left.computed) {
           this.compileNode(node.left.property, scope)
         } else {
-          const idx = addConstant(this.chunk, node.left.property.name)
+          const propName = this.getPropertyName(node.left.property)
+          const idx = addConstant(this.chunk, propName)
           this.emit(OpCode.PUSH, idx)
         }
         this.emit(OpCode.GET_MEMBER) // [currentValue]
@@ -614,7 +631,8 @@ export class Compiler {
         if (node.left.computed) {
           this.compileNode(node.left.property, scope) // [newValue, obj, prop]
         } else {
-          const idx = addConstant(this.chunk, node.left.property.name)
+          const propName = this.getPropertyName(node.left.property)
+          const idx = addConstant(this.chunk, propName)
           this.emit(OpCode.PUSH, idx) // [newValue, obj, prop]
         }
         // Stack: [newValue, obj, prop]
@@ -634,7 +652,8 @@ export class Compiler {
       if (target.computed) {
         this.compileNode(target.property, scope)
       } else {
-        const idx = addConstant(this.chunk, target.property.name)
+        const propName = this.getPropertyName(target.property)
+        const idx = addConstant(this.chunk, propName)
         this.emit(OpCode.PUSH, idx)
       }
       this.emit(OpCode.SET_MEMBER)
@@ -690,6 +709,11 @@ export class Compiler {
       // Not null/undefined, access property
       if (node.computed) {
         this.compileNode(node.property, scope)
+      } else if (node.property.type === 'PrivateIdentifier') {
+        // Use mangled name for private fields
+        const mangledName = `__private_${node.property.name}`
+        const idx = addConstant(this.chunk, mangledName)
+        this.emit(OpCode.PUSH, idx)
       } else {
         const idx = addConstant(this.chunk, node.property.name)
         this.emit(OpCode.PUSH, idx)
@@ -709,6 +733,11 @@ export class Compiler {
       // Normal member access
       if (node.computed) {
         this.compileNode(node.property, scope)
+      } else if (node.property.type === 'PrivateIdentifier') {
+        // Use mangled name for private fields
+        const mangledName = `__private_${node.property.name}`
+        const idx = addConstant(this.chunk, mangledName)
+        this.emit(OpCode.PUSH, idx)
       } else {
         const idx = addConstant(this.chunk, node.property.name)
         this.emit(OpCode.PUSH, idx)
