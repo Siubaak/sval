@@ -2252,6 +2252,7 @@ export class VM {
     const staticMethods: any[] = []
     const instanceFields: any[] = []
     const staticFields: any[] = []
+    const staticBlocks: any[] = []
 
     for (const element of classNode.body.body) {
       if (element.type === 'MethodDefinition') {
@@ -2268,6 +2269,8 @@ export class VM {
         } else {
           instanceFields.push(element)
         }
+      } else if (element.type === 'StaticBlock') {
+        staticBlocks.push(element)
       }
     }
 
@@ -2642,6 +2645,22 @@ export class VM {
         fieldValue = vm.execute(chunk)
       }
       classConstructor[fieldName] = fieldValue
+    }
+
+    // Execute static blocks
+    for (const staticBlock of staticBlocks) {
+      // Create a scope for static block execution with 'this' bound to the constructor
+      const staticBlockScope = new Scope(classScope, true)
+      staticBlockScope.var('this', classConstructor)
+
+      const compiler = new Compiler()
+      const chunk = compiler.compile({
+        type: 'Program',
+        body: staticBlock.body,
+        sourceType: 'script'
+      }, staticBlockScope)
+      const vm = new VM(staticBlockScope)
+      vm.execute(chunk)
     }
 
     // Set class name
