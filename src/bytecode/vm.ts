@@ -873,8 +873,23 @@ export class VM {
         }
         const thisContext = thisVar.get()
 
-        // Call superclass constructor
-        this.superClass.apply(thisContext, args)
+        // Get new.target (the actual constructor being called)
+        const newTargetVar = this.currentScope.find(NEWTARGET)
+        const newTarget = newTargetVar ? newTargetVar.get() : this.superClass
+
+        // For built-in classes, use Reflect.construct
+        if (this.superClass === Array || this.superClass === Set || this.superClass === Map ||
+            this.superClass === Promise || this.superClass === Error || this.superClass === RegExp ||
+            this.superClass === Date || this.superClass === String || this.superClass === Number ||
+            this.superClass === Boolean || this.superClass === Symbol) {
+          // Use Reflect.construct to properly initialize built-ins
+          const instance = Reflect.construct(this.superClass, args, newTarget)
+          // Replace 'this' binding with the new instance
+          thisVar.set(instance)
+        } else {
+          // Regular class inheritance
+          this.superClass.apply(thisContext, args)
+        }
         this.push(undefined)
         break
       }
@@ -1737,8 +1752,23 @@ export class VM {
         }
         const thisContext = thisVar.get()
 
-        // Call superclass constructor
-        this.superClass.apply(thisContext, args)
+        // Get new.target (the actual constructor being called)
+        const newTargetVar = this.currentScope.find(NEWTARGET)
+        const newTarget = newTargetVar ? newTargetVar.get() : this.superClass
+
+        // For built-in classes, use Reflect.construct
+        if (this.superClass === Array || this.superClass === Set || this.superClass === Map ||
+            this.superClass === Promise || this.superClass === Error || this.superClass === RegExp ||
+            this.superClass === Date || this.superClass === String || this.superClass === Number ||
+            this.superClass === Boolean || this.superClass === Symbol) {
+          // Use Reflect.construct to properly initialize built-ins
+          const instance = Reflect.construct(this.superClass, args, newTarget)
+          // Replace 'this' binding with the new instance
+          thisVar.set(instance)
+        } else {
+          // Regular class inheritance
+          this.superClass.apply(thisContext, args)
+        }
         this.push(undefined)
         break
       }
@@ -2319,26 +2349,49 @@ export class VM {
 
         // Bind super for property access if there's a superclass
         if (superClass) {
-          const thisContext = this
           const superProxy = new Proxy(superClass.prototype, {
             get(target, prop) {
+              // Get the current 'this' from scope (may have been replaced by super())
+              const currentThis = constructorScope.find('this')?.get()
               const value = target[prop]
-              // If it's a function, bind it to thisContext
+              // If it's a function, bind it to current this
               if (typeof value === 'function') {
-                return value.bind(thisContext)
+                return value.bind(currentThis)
               }
               return value
             },
             set(target, prop, value) {
-              // Setting properties on super actually sets them on thisContext
-              thisContext[prop] = value
+              // Setting properties on super actually sets them on current this
+              const currentThis = constructorScope.find('this')?.get()
+              if (currentThis) {
+                currentThis[prop] = value
+              }
               return true
             }
           })
           constructorScope.var('super', superProxy)
         }
 
-        // Initialize instance fields
+        // Execute constructor body BEFORE initializing instance fields (for classes with super)
+        // This allows super() to be called first and replace 'this' binding
+        if (superClass) {
+          const compiler = new Compiler()
+          const chunk = compiler.compile({
+            type: 'Program',
+            body: constructorBody.body,
+            sourceType: 'script'
+          }, constructorScope)
+          const vm = new VM(constructorScope)
+          vm.setSuperClass(superClass)
+          const result = vm.execute(chunk)
+
+          // If constructor explicitly returns an object, use that and don't initialize fields
+          if (result !== undefined && typeof result === 'object' && result !== null) {
+            return result
+          }
+        }
+
+        // Initialize instance fields (after super() for derived classes)
         for (const field of instanceFields) {
           let fieldName: any
 
@@ -2376,28 +2429,31 @@ export class VM {
             const vm = new VM(constructorScope)
             fieldValue = vm.execute(chunk)
           }
-          this[fieldName] = fieldValue
+          // Use the current 'this' from scope (may have been set by field initializers)
+          const currentThis = constructorScope.find('this')?.get() || this
+          currentThis[fieldName] = fieldValue
         }
 
-        // Execute constructor body statements directly (not as BlockStatement to avoid scope issues)
-        const compiler = new Compiler()
-        const chunk = compiler.compile({
-          type: 'Program',
-          body: constructorBody.body,
-          sourceType: 'script'
-        }, constructorScope)
-        const vm = new VM(constructorScope)
-        // Set superclass for super() calls
-        if (superClass) {
-          vm.setSuperClass(superClass)
-        }
-        const result = vm.execute(chunk)
+        // If no superclass, execute constructor body after field initialization
+        if (!superClass) {
+          const compiler = new Compiler()
+          const chunk = compiler.compile({
+            type: 'Program',
+            body: constructorBody.body,
+            sourceType: 'script'
+          }, constructorScope)
+          const vm = new VM(constructorScope)
+          const result = vm.execute(chunk)
 
-        // If constructor explicitly returns an object, use that instead of `this`
-        if (result !== undefined && typeof result === 'object' && result !== null) {
-          return result
+          // If constructor explicitly returns an object, use that instead of `this`
+          if (result !== undefined && typeof result === 'object' && result !== null) {
+            return result
+          }
         }
-        // Otherwise return `this` (which is the default behavior)
+
+        // Return the current 'this' from scope (which may have been replaced by super())
+        const finalThis = constructorScope.find('this')?.get()
+        return finalThis !== undefined ? finalThis : this
       }
     } else {
       // Default constructor
@@ -2407,21 +2463,27 @@ export class VM {
           throw new TypeError(`Class constructor ${className} cannot be invoked without 'new'`)
         }
 
+        let instance = this
+
         // If there's a superclass, call it
         if (superClass) {
-          // Need to use Reflect.construct for proper inheritance with built-ins
+          // For built-in classes, use Reflect.construct to properly initialize
           if (superClass === Array || superClass === Set || superClass === Map ||
-              superClass === Promise || superClass === Error || superClass === RegExp) {
-            // Cannot extend built-ins with simple apply
-            throw new TypeError(`Cannot extend built-in '${superClass.name}' in this implementation`)
+              superClass === Promise || superClass === Error || superClass === RegExp ||
+              superClass === Date || superClass === String || superClass === Number ||
+              superClass === Boolean || superClass === Symbol) {
+            // Use Reflect.construct to properly initialize built-ins
+            instance = Reflect.construct(superClass, args, classConstructor)
+          } else {
+            // Regular class inheritance
+            superClass.apply(this, args)
           }
-          superClass.apply(this, args)
         }
 
         // Create a scope for field initialization with 'this' bound
         // Use a function scope which allows 'this' to be bound
         const fieldScope = new Scope(captureScope, true)
-        fieldScope.var('this', this)
+        fieldScope.var('this', instance)
 
         // Initialize instance fields
         for (const field of instanceFields) {
@@ -2461,8 +2523,11 @@ export class VM {
             const vm = new VM(fieldScope)
             fieldValue = vm.execute(chunk)
           }
-          this[fieldName] = fieldValue
+          instance[fieldName] = fieldValue
         }
+
+        // Return the instance (important for built-ins where instance !== this)
+        return instance
       }
     }
 
