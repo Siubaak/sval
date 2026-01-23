@@ -2353,6 +2353,23 @@ export class VM {
             get(target, prop) {
               // Get the current 'this' from scope (may have been replaced by super())
               const currentThis = constructorScope.find('this')?.get()
+
+              // Check if property is a getter/setter by walking prototype chain
+              let descriptor = Object.getOwnPropertyDescriptor(target, prop)
+              let proto = target
+              while (!descriptor && proto) {
+                proto = Object.getPrototypeOf(proto)
+                if (proto) {
+                  descriptor = Object.getOwnPropertyDescriptor(proto, prop)
+                }
+              }
+
+              // If it's a getter, invoke it with the correct 'this'
+              if (descriptor && descriptor.get) {
+                return descriptor.get.call(currentThis)
+              }
+
+              // Otherwise get the value normally
               const value = target[prop]
               // If it's a function, bind it to current this
               if (typeof value === 'function') {
@@ -2361,11 +2378,28 @@ export class VM {
               return value
             },
             set(target, prop, value) {
-              // Setting properties on super actually sets them on current this
+              // Get the current 'this' from scope
               const currentThis = constructorScope.find('this')?.get()
-              if (currentThis) {
-                currentThis[prop] = value
+              if (!currentThis) return false
+
+              // Check if property is a setter by walking prototype chain
+              let descriptor = Object.getOwnPropertyDescriptor(target, prop)
+              let proto = target
+              while (!descriptor && proto) {
+                proto = Object.getPrototypeOf(proto)
+                if (proto) {
+                  descriptor = Object.getOwnPropertyDescriptor(proto, prop)
+                }
               }
+
+              // If it's a setter, invoke it with the correct 'this'
+              if (descriptor && descriptor.set) {
+                descriptor.set.call(currentThis, value)
+                return true
+              }
+
+              // Otherwise set the property on current this
+              currentThis[prop] = value
               return true
             }
           })

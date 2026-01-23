@@ -782,6 +782,10 @@ export class Compiler {
         // Get the method
         if (node.callee.computed) {
           this.compileNode(node.callee.property, scope)
+        } else if (node.callee.property.type === 'PrivateIdentifier') {
+          const mangledName = `__private_${node.callee.property.name}`
+          const idx = addConstant(this.chunk, mangledName)
+          this.emit(OpCode.PUSH, idx)
         } else {
           const idx = addConstant(this.chunk, node.callee.property.name)
           this.emit(OpCode.PUSH, idx)
@@ -805,6 +809,10 @@ export class Compiler {
         // Get the method
         if (node.callee.computed) {
           this.compileNode(node.callee.property, scope)
+        } else if (node.callee.property.type === 'PrivateIdentifier') {
+          const mangledName = `__private_${node.callee.property.name}`
+          const idx = addConstant(this.chunk, mangledName)
+          this.emit(OpCode.PUSH, idx)
         } else {
           const idx = addConstant(this.chunk, node.callee.property.name)
           this.emit(OpCode.PUSH, idx)
