@@ -7,16 +7,20 @@ export declare class Compiler {
     private labelMap;
     private currentScope;
     constructor();
+    private getPropertyName;
     compile(node: Node, scope: Scope): BytecodeChunk;
     private hoist;
     private hoistInBlock;
+    private hoistPattern;
     private hoistVarsInStatement;
     private compileNode;
     private compileProgram;
     private compileLiteral;
     private compileTemplateLiteral;
     private compileIdentifier;
+    private compilePrivateIdentifier;
     private compileThisExpression;
+    private compileSuper;
     private compileBinaryExpression;
     private compileLogicalExpression;
     private compileUnaryExpression;
@@ -55,6 +59,7 @@ export declare class Compiler {
     private compileLabeledStatement;
     private compileWithStatement;
     private compileForInStatement;
+    private compileForAwaitStatement;
     private compileForOfStatement;
     private compileClassDeclaration;
     private compileClassExpression;
@@ -70,7 +75,6 @@ export declare class Compiler {
     private compileProperty;
     private compileMethodDefinition;
     private compilePropertyDefinition;
-    private compileSuper;
     private compileImportExpression;
     private compileTaggedTemplateExpression;
     private emit;
