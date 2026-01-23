@@ -2408,6 +2408,11 @@ export class VM {
           superClass.apply(this, args)
         }
 
+        // Create a scope for field initialization with 'this' bound
+        // Use a function scope which allows 'this' to be bound
+        const fieldScope = new Scope(captureScope, true)
+        fieldScope.var('this', this)
+
         // Initialize instance fields
         for (const field of instanceFields) {
           let fieldName: any
@@ -2422,8 +2427,8 @@ export class VM {
                 argument: field.key
               }],
               sourceType: 'script'
-            }, captureScope)
-            const vm = new VM(captureScope)
+            }, fieldScope)
+            const vm = new VM(fieldScope)
             fieldName = vm.execute(chunk)
           } else {
             fieldName = field.key.name || field.key.value
@@ -2435,8 +2440,8 @@ export class VM {
             const chunk = compiler.compile({
               type: 'ExpressionStatement',
               expression: field.value
-            }, captureScope)
-            const vm = new VM(captureScope)
+            }, fieldScope)
+            const vm = new VM(fieldScope)
             fieldValue = vm.execute(chunk)
           }
           this[fieldName] = fieldValue
@@ -2602,12 +2607,17 @@ export class VM {
 
       let fieldValue = undefined
       if (field.value) {
+        // Create a scope for static field initialization with 'this' bound to the constructor
+        // Use a function scope which allows 'this' to be bound
+        const staticFieldScope = new Scope(classScope, true)
+        staticFieldScope.var('this', classConstructor)
+
         const compiler = new Compiler()
         const chunk = compiler.compile({
           type: 'ExpressionStatement',
           expression: field.value
-        }, captureScope)
-        const vm = new VM(captureScope)
+        }, staticFieldScope)
+        const vm = new VM(staticFieldScope)
         fieldValue = vm.execute(chunk)
       }
       classConstructor[fieldName] = fieldValue
