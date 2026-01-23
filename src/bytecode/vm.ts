@@ -2360,8 +2360,12 @@ export class VM {
           if (field.value) {
             const compiler = new Compiler()
             const chunk = compiler.compile({
-              type: 'ExpressionStatement',
-              expression: field.value
+              type: 'Program',
+              body: [{
+                type: 'ReturnStatement',
+                argument: field.value
+              }],
+              sourceType: 'script'
             }, constructorScope)
             const vm = new VM(constructorScope)
             fieldValue = vm.execute(chunk)
@@ -2438,8 +2442,12 @@ export class VM {
           if (field.value) {
             const compiler = new Compiler()
             const chunk = compiler.compile({
-              type: 'ExpressionStatement',
-              expression: field.value
+              type: 'Program',
+              body: [{
+                type: 'ReturnStatement',
+                argument: field.value
+              }],
+              sourceType: 'script'
             }, fieldScope)
             const vm = new VM(fieldScope)
             fieldValue = vm.execute(chunk)
@@ -2614,8 +2622,12 @@ export class VM {
 
         const compiler = new Compiler()
         const chunk = compiler.compile({
-          type: 'ExpressionStatement',
-          expression: field.value
+          type: 'Program',
+          body: [{
+            type: 'ReturnStatement',
+            argument: field.value
+          }],
+          sourceType: 'script'
         }, staticFieldScope)
         const vm = new VM(staticFieldScope)
         fieldValue = vm.execute(chunk)
