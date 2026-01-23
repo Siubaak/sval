@@ -2352,6 +2352,9 @@ export class VM {
             }, constructorScope)
             const vm = new VM(constructorScope)
             fieldName = vm.execute(chunk)
+          } else if (field.key.type === 'PrivateIdentifier') {
+            // Mangle private field names
+            fieldName = `__private_${field.key.name}`
           } else {
             fieldName = field.key.name || field.key.value
           }
@@ -2434,6 +2437,9 @@ export class VM {
             }, fieldScope)
             const vm = new VM(fieldScope)
             fieldName = vm.execute(chunk)
+          } else if (field.key.type === 'PrivateIdentifier') {
+            // Mangle private field names
+            fieldName = `__private_${field.key.name}`
           } else {
             fieldName = field.key.name || field.key.value
           }
@@ -2609,6 +2615,9 @@ export class VM {
         }, classScope)
         const vm = new VM(classScope)
         fieldName = vm.execute(chunk)
+      } else if (field.key.type === 'PrivateIdentifier') {
+        // Mangle private field names
+        fieldName = `__private_${field.key.name}`
       } else {
         fieldName = field.key.name || field.key.value
       }

@@ -248,6 +248,15 @@ export class Compiler {
     this.emit(OpCode.LOAD_VAR, node.name)
   }
 
+  private compilePrivateIdentifier(node: any, scope: Scope): void {
+    // For now, treat private identifiers as mangled property names
+    // Private fields will be accessed as mangled property names
+    // This is a simplified implementation - true privacy would require WeakMaps
+    const mangledName = `__private_${node.name}`
+    const idx = addConstant(this.chunk, mangledName)
+    this.emit(OpCode.PUSH, idx)
+  }
+
   private compileThisExpression(node: any, scope: Scope): void {
     this.emit(OpCode.LOAD_THIS)
   }
