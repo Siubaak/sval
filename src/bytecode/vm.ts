@@ -2638,7 +2638,12 @@ export class VM {
 
     // Define regular methods
     for (const { name, func } of instanceRegularMethods) {
-      classConstructor.prototype[name] = func
+      Object.defineProperty(classConstructor.prototype, name, {
+        value: func,
+        writable: true,
+        enumerable: false,
+        configurable: true
+      })
     }
 
     // Add static methods to constructor
@@ -2697,7 +2702,12 @@ export class VM {
 
     // Define regular methods
     for (const { name, func } of staticRegularMethods) {
-      classConstructor[name] = func
+      Object.defineProperty(classConstructor, name, {
+        value: func,
+        writable: true,
+        enumerable: false,
+        configurable: true
+      })
     }
 
     // Initialize static fields
