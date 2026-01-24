@@ -4356,7 +4356,20 @@ class P {
   }
   // ===== Special expressions =====
   compileChainExpression(e, i) {
-    this.compileNode(e.expression, i);
+    const r = this.emit(n.TRY_START, {
+      hasCatch: !0,
+      hasFinally: !1,
+      catchJump: 0,
+      finallyJump: 0
+    });
+    this.compileNode(e.expression, i), this.emit(n.TRY_END);
+    const o = this.emit(n.JUMP, 0), s = this.chunk.instructions.length;
+    this.emit(n.CATCH_START, "__chainErr"), this.emit(n.LOAD_UNDEFINED), this.emit(n.CATCH_END), this.patchJump(o), this.chunk.instructions[r].operand = {
+      hasCatch: !0,
+      hasFinally: !1,
+      catchJump: s,
+      finallyJump: this.chunk.instructions.length
+    };
   }
   compileMetaProperty(e, i) {
     e.meta.name === "new" && e.property.name === "target" ? this.currentScope.find(_t) ? this.emit(n.LOAD_VAR, _t) : this.emit(n.LOAD_UNDEFINED) : e.meta.name === "import" && e.property.name === "meta" && this.emit(n.LOAD_UNDEFINED);

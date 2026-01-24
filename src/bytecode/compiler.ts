@@ -1778,8 +1778,40 @@ export class Compiler {
 
   // ===== Special expressions =====
   private compileChainExpression(node: any, scope: Scope): void {
-    // Optional chaining - simplified
+    // Optional chaining with try-catch to handle short-circuiting
+    // When an optional operation returns undefined and subsequent operations
+    // try to access properties on it, we catch the TypeError and return undefined
+
+    const tryStartIdx = this.emit(OpCode.TRY_START, {
+      hasCatch: true,
+      hasFinally: false,
+      catchJump: 0,
+      finallyJump: 0
+    })
+
+    // Compile the inner chain expression
     this.compileNode(node.expression, scope)
+    this.emit(OpCode.TRY_END)
+
+    // Jump over catch if no error
+    const jumpOverCatch = this.emit(OpCode.JUMP, 0)
+
+    // Catch block - return undefined for property access errors
+    const catchStart = this.chunk.instructions.length
+    this.emit(OpCode.CATCH_START, '__chainErr')
+    // CATCH_START already pops the error and binds it to __chainErr
+    // Just push undefined as the result
+    this.emit(OpCode.LOAD_UNDEFINED)
+    this.emit(OpCode.CATCH_END)
+
+    // Patch jumps
+    this.patchJump(jumpOverCatch)
+    this.chunk.instructions[tryStartIdx].operand = {
+      hasCatch: true,
+      hasFinally: false,
+      catchJump: catchStart,
+      finallyJump: this.chunk.instructions.length
+    }
   }
 
   private compileMetaProperty(node: any, scope: Scope): void {
