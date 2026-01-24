@@ -1520,6 +1520,24 @@ export class Compiler {
     this.emit(OpCode.PUSH, idx)
     this.emit(OpCode.DECLARE_VAR, '__index__')
 
+    // For var declarations, declare the variable once before the loop
+    let loopVarName: string | null = null
+    let isVarDeclaration = false
+    if (node.left.type === 'VariableDeclaration') {
+      const decl = node.left.declarations[0]
+      if (decl.id.type === 'Identifier') {
+        loopVarName = decl.id.name
+        isVarDeclaration = node.left.kind === 'var'
+        if (isVarDeclaration) {
+          // For var, declare once before loop
+          this.emit(OpCode.LOAD_UNDEFINED)
+          this.emit(OpCode.DECLARE_VAR, loopVarName)
+        }
+      }
+    } else if (node.left.type === 'Identifier') {
+      loopVarName = node.left.name
+    }
+
     const loopStart = this.chunk.instructions.length
     const breakLabels: number[] = []
     const continueLabels: number[] = []
@@ -1534,6 +1552,12 @@ export class Compiler {
     this.emit(OpCode.LT)
     const jumpToEnd = this.emit(OpCode.JUMP_IF_FALSE, 0)
 
+    // For const/let, create new scope for each iteration
+    const needsIterationScope = node.left.type === 'VariableDeclaration' && !isVarDeclaration
+    if (needsIterationScope) {
+      this.emit(OpCode.PUSH_SCOPE)
+    }
+
     // Get current key: keys[index]
     this.emit(OpCode.LOAD_VAR, '__keys__')
     this.emit(OpCode.LOAD_VAR, '__index__')
@@ -1543,12 +1567,17 @@ export class Compiler {
     if (node.left.type === 'VariableDeclaration') {
       const decl = node.left.declarations[0]
       if (decl.id.type === 'Identifier') {
-        if (node.left.kind === 'const') {
-          this.emit(OpCode.DECLARE_CONST, decl.id.name)
-        } else if (node.left.kind === 'let') {
-          this.emit(OpCode.DECLARE_LET, decl.id.name)
+        if (isVarDeclaration) {
+          // For var, just assign to existing variable
+          this.emit(OpCode.STORE_VAR, decl.id.name)
+          this.emit(OpCode.POP)
         } else {
-          this.emit(OpCode.DECLARE_VAR, decl.id.name)
+          // For const/let, declare in iteration scope
+          if (node.left.kind === 'const') {
+            this.emit(OpCode.DECLARE_CONST, decl.id.name)
+          } else {
+            this.emit(OpCode.DECLARE_LET, decl.id.name)
+          }
         }
       }
     } else if (node.left.type === 'Identifier') {
@@ -1558,6 +1587,11 @@ export class Compiler {
 
     // Compile loop body
     this.compileNode(node.body, scope)
+
+    // Pop iteration scope for const/let
+    if (needsIterationScope) {
+      this.emit(OpCode.POP_SCOPE)
+    }
 
     // Increment index
     const continueTarget = this.chunk.instructions.length
