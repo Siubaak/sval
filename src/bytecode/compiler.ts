@@ -1695,15 +1695,18 @@ export class Compiler {
 
   // ===== Import/Export =====
   private compileImportDeclaration(node: any, scope: Scope): void {
-    // Import declarations are handled at parse time by Sval.import()
-    // No runtime code generation needed
+    // Emit import bindings opcode with the import node
+    const idx = addConstant(this.chunk, node)
+    this.emit(OpCode.IMPORT_BINDINGS, idx)
   }
 
   private compileExportNamedDeclaration(node: any, scope: Scope): void {
     if (node.declaration) {
       this.compileNode(node.declaration, scope)
     }
-    // Exports are handled via the exports object
+    // Emit export named to handle copying to exports object
+    const idx = addConstant(this.chunk, node)
+    this.emit(OpCode.EXPORT_NAMED, idx)
   }
 
   private compileExportDefaultDeclaration(node: any, scope: Scope): void {

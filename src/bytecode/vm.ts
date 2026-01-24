@@ -933,6 +933,103 @@ export class VM {
         break
       }
 
+      case OpCode.EXPORT_NAMED: {
+        // export named declarations
+        const exportNode = this.currentFrame!.chunk.constants[operand]
+        const globalScope = this.currentScope.global()
+
+        // Get exports object
+        const variable = globalScope.find(EXPORTS)
+        if (!variable) break
+
+        const exports = variable.get()
+        if (!exports || typeof exports !== 'object') break
+
+        if (exportNode.declaration) {
+          // export const/let/var/function/class name = value
+          if (exportNode.declaration.type === 'VariableDeclaration') {
+            for (let i = 0; i < exportNode.declaration.declarations.length; i++) {
+              const decl = exportNode.declaration.declarations[i]
+              const name = decl.id.name
+              const item = globalScope.find(name)
+              if (item) {
+                exports[name] = item.get()
+              }
+            }
+          } else if (exportNode.declaration.type === 'FunctionDeclaration' ||
+                     exportNode.declaration.type === 'ClassDeclaration') {
+            const name = exportNode.declaration.id.name
+            const item = globalScope.find(name)
+            if (item) {
+              exports[name] = item.get()
+            }
+          }
+        } else if (exportNode.specifiers) {
+          // export { a as b }
+          for (let i = 0; i < exportNode.specifiers.length; i++) {
+            const spec = exportNode.specifiers[i]
+            const localName = spec.local.type === 'Identifier'
+              ? spec.local.name : spec.local.value
+            const exportedName = spec.exported.type === 'Identifier'
+              ? spec.exported.name : spec.exported.value
+            const item = globalScope.find(localName)
+            if (item) {
+              exports[exportedName] = item.get()
+            }
+          }
+        }
+        break
+      }
+
+      case OpCode.IMPORT_BINDINGS: {
+        // import declarations
+        const importNode = this.currentFrame!.chunk.constants[operand]
+        const globalScope = this.currentScope.global()
+
+        // Get the imported module
+        const module = globalScope.find(IMPORT + importNode.source.value)
+        let value: any
+        if (module) {
+          const result = module.get()
+          if (result) {
+            if (typeof result === 'function') {
+              value = result()
+            } else if (typeof result === 'object') {
+              value = result
+            }
+          }
+        }
+
+        if (!value || typeof value !== 'object') {
+          throw new TypeError(`Failed to resolve module specifier "${importNode.source.value}"`)
+        }
+
+        // Process import specifiers and create variables
+        for (let i = 0; i < importNode.specifiers.length; i++) {
+          const spec = importNode.specifiers[i]
+          let name: string
+          if (spec.type === 'ImportSpecifier') {
+            name = spec.imported.type === 'Identifier'
+              ? spec.imported.name : spec.imported.value
+          } else if (spec.type === 'ImportDefaultSpecifier') {
+            name = 'default'
+          } else if (spec.type === 'ImportNamespaceSpecifier') {
+            name = '*'
+          } else {
+            continue
+          }
+
+          if (name !== '*' && !Object.prototype.hasOwnProperty.call(value, name)) {
+            throw new SyntaxError(`The requested module "${importNode.source.value}" does not provide an export named "${name}"`)
+          }
+
+          // Create variable in current scope
+          const importValue = name === '*' ? Object.assign({}, value) : value[name]
+          this.currentScope.var(spec.local.name, importValue)
+        }
+        break
+      }
+
       // ===== Exception handling =====
       case OpCode.THROW: {
         const error = this.pop()
@@ -1847,6 +1944,103 @@ export class VM {
               }
             }
           }
+        }
+        break
+      }
+
+      case OpCode.EXPORT_NAMED: {
+        // export named declarations
+        const exportNode = this.currentFrame!.chunk.constants[operand]
+        const globalScope = this.currentScope.global()
+
+        // Get exports object
+        const variable = globalScope.find(EXPORTS)
+        if (!variable) break
+
+        const exports = variable.get()
+        if (!exports || typeof exports !== 'object') break
+
+        if (exportNode.declaration) {
+          // export const/let/var/function/class name = value
+          if (exportNode.declaration.type === 'VariableDeclaration') {
+            for (let i = 0; i < exportNode.declaration.declarations.length; i++) {
+              const decl = exportNode.declaration.declarations[i]
+              const name = decl.id.name
+              const item = globalScope.find(name)
+              if (item) {
+                exports[name] = item.get()
+              }
+            }
+          } else if (exportNode.declaration.type === 'FunctionDeclaration' ||
+                     exportNode.declaration.type === 'ClassDeclaration') {
+            const name = exportNode.declaration.id.name
+            const item = globalScope.find(name)
+            if (item) {
+              exports[name] = item.get()
+            }
+          }
+        } else if (exportNode.specifiers) {
+          // export { a as b }
+          for (let i = 0; i < exportNode.specifiers.length; i++) {
+            const spec = exportNode.specifiers[i]
+            const localName = spec.local.type === 'Identifier'
+              ? spec.local.name : spec.local.value
+            const exportedName = spec.exported.type === 'Identifier'
+              ? spec.exported.name : spec.exported.value
+            const item = globalScope.find(localName)
+            if (item) {
+              exports[exportedName] = item.get()
+            }
+          }
+        }
+        break
+      }
+
+      case OpCode.IMPORT_BINDINGS: {
+        // import declarations
+        const importNode = this.currentFrame!.chunk.constants[operand]
+        const globalScope = this.currentScope.global()
+
+        // Get the imported module
+        const module = globalScope.find(IMPORT + importNode.source.value)
+        let value: any
+        if (module) {
+          const result = module.get()
+          if (result) {
+            if (typeof result === 'function') {
+              value = result()
+            } else if (typeof result === 'object') {
+              value = result
+            }
+          }
+        }
+
+        if (!value || typeof value !== 'object') {
+          throw new TypeError(`Failed to resolve module specifier "${importNode.source.value}"`)
+        }
+
+        // Process import specifiers and create variables
+        for (let i = 0; i < importNode.specifiers.length; i++) {
+          const spec = importNode.specifiers[i]
+          let name: string
+          if (spec.type === 'ImportSpecifier') {
+            name = spec.imported.type === 'Identifier'
+              ? spec.imported.name : spec.imported.value
+          } else if (spec.type === 'ImportDefaultSpecifier') {
+            name = 'default'
+          } else if (spec.type === 'ImportNamespaceSpecifier') {
+            name = '*'
+          } else {
+            continue
+          }
+
+          if (name !== '*' && !Object.prototype.hasOwnProperty.call(value, name)) {
+            throw new SyntaxError(`The requested module "${importNode.source.value}" does not provide an export named "${name}"`)
+          }
+
+          // Create variable in current scope
+          const importValue = name === '*' ? Object.assign({}, value) : value[name]
+          this.currentScope.var(spec.local.name, importValue)
         }
         break
       }

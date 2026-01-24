@@ -113,6 +113,8 @@ export enum OpCode {
 
   // Module operations
   EXPORT_ALL,     // export * from 'module'
+  EXPORT_NAMED,   // export named bindings
+  IMPORT_BINDINGS, // import declarations
 
   // Exception handling
   THROW,
