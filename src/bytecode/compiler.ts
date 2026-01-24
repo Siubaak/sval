@@ -1717,7 +1717,9 @@ export class Compiler {
   }
 
   private compileExportAllDeclaration(node: any, scope: Scope): void {
-    // Export all - simplified
+    // Export * from 'module'
+    const idx = addConstant(this.chunk, node.source.value)
+    this.emit(OpCode.EXPORT_ALL, idx)
   }
 
   // ===== Special expressions =====

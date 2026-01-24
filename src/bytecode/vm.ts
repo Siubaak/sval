@@ -6,7 +6,7 @@ import Scope from '../scope'
 import { Var } from '../scope/variable'
 import { OpCode, type BytecodeChunk, type Instruction } from './opcodes'
 import { Compiler } from './compiler'
-import { AWAIT, NOINIT, NEWTARGET } from '../share/const'
+import { AWAIT, NOINIT, NEWTARGET, IMPORT, EXPORTS } from '../share/const'
 
 class CallFrame {
   chunk: BytecodeChunk
@@ -894,6 +894,45 @@ export class VM {
         break
       }
 
+      case OpCode.EXPORT_ALL: {
+        // export * from 'module'
+        const moduleName = this.currentFrame!.chunk.constants[operand]
+        const globalScope = this.currentScope.global()
+
+        // Get the imported module
+        const module = globalScope.find(IMPORT + moduleName)
+        let value: any
+        if (module) {
+          const result = module.get()
+          if (result) {
+            if (typeof result === 'function') {
+              value = result()
+            } else if (typeof result === 'object') {
+              value = result
+            }
+          }
+        }
+
+        if (!value || typeof value !== 'object') {
+          throw new TypeError(`Failed to resolve module specifier "${moduleName}"`)
+        }
+
+        // Get exports object
+        const variable = globalScope.find(EXPORTS)
+        if (variable) {
+          const exports = variable.get()
+          if (exports && typeof exports === 'object') {
+            // Copy all properties from the module to exports
+            for (const key in value) {
+              if (Object.prototype.hasOwnProperty.call(value, key)) {
+                exports[key] = value[key]
+              }
+            }
+          }
+        }
+        break
+      }
+
       // ===== Exception handling =====
       case OpCode.THROW: {
         const error = this.pop()
@@ -1770,6 +1809,45 @@ export class VM {
           this.superClass.apply(thisContext, args)
         }
         this.push(undefined)
+        break
+      }
+
+      case OpCode.EXPORT_ALL: {
+        // export * from 'module'
+        const moduleName = this.currentFrame!.chunk.constants[operand]
+        const globalScope = this.currentScope.global()
+
+        // Get the imported module
+        const module = globalScope.find(IMPORT + moduleName)
+        let value: any
+        if (module) {
+          const result = module.get()
+          if (result) {
+            if (typeof result === 'function') {
+              value = result()
+            } else if (typeof result === 'object') {
+              value = result
+            }
+          }
+        }
+
+        if (!value || typeof value !== 'object') {
+          throw new TypeError(`Failed to resolve module specifier "${moduleName}"`)
+        }
+
+        // Get exports object
+        const variable = globalScope.find(EXPORTS)
+        if (variable) {
+          const exports = variable.get()
+          if (exports && typeof exports === 'object') {
+            // Copy all properties from the module to exports
+            for (const key in value) {
+              if (Object.prototype.hasOwnProperty.call(value, key)) {
+                exports[key] = value[key]
+              }
+            }
+          }
+        }
         break
       }
 

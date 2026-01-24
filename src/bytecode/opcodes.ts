@@ -111,6 +111,9 @@ export enum OpCode {
   CREATE_CLASS,
   SUPER_CALL,     // super() constructor call
 
+  // Module operations
+  EXPORT_ALL,     // export * from 'module'
+
   // Exception handling
   THROW,
   TRY_START,
