@@ -4,7 +4,7 @@
 
 import type { Node } from 'acorn'
 import Scope from '../scope'
-import { NEWTARGET, NOINIT, DEADZONE } from '../share/const'
+import { NEWTARGET, NOINIT, DEADZONE, EXPORTS } from '../share/const'
 import {
   OpCode,
   createChunk,
@@ -352,20 +352,28 @@ export class Compiler {
       return
     }
 
-    // Special handling for delete with member expression
-    if (node.operator === 'delete' && node.argument.type === 'MemberExpression') {
-      // Compile object
-      this.compileNode(node.argument.object, scope)
-      // Compile property
-      if (node.argument.computed) {
-        this.compileNode(node.argument.property, scope)
-      } else {
-        const propName = this.getPropertyName(node.argument.property)
-        const idx = addConstant(this.chunk, propName)
-        this.emit(OpCode.PUSH, idx)
+    // Special handling for delete operator
+    if (node.operator === 'delete') {
+      // delete on identifier is not allowed in strict mode (and sval enforces this)
+      if (node.argument.type === 'Identifier') {
+        throw new SyntaxError(`Delete of an unqualified identifier in strict mode`)
       }
-      this.emit(OpCode.DELETE_MEMBER)
-      return
+
+      // delete on member expression
+      if (node.argument.type === 'MemberExpression') {
+        // Compile object
+        this.compileNode(node.argument.object, scope)
+        // Compile property
+        if (node.argument.computed) {
+          this.compileNode(node.argument.property, scope)
+        } else {
+          const propName = this.getPropertyName(node.argument.property)
+          const idx = addConstant(this.chunk, propName)
+          this.emit(OpCode.PUSH, idx)
+        }
+        this.emit(OpCode.DELETE_MEMBER)
+        return
+      }
     }
 
     this.compileNode(node.argument, scope)
@@ -1761,11 +1769,12 @@ export class Compiler {
   }
 
   private compileExportDefaultDeclaration(node: any, scope: Scope): void {
-    this.compileNode(node.declaration, scope)
     // Store to exports.default
-    this.emit(OpCode.LOAD_VAR, 'exports')
+    // Stack order for SET_MEMBER: [object, property, value]
+    this.emit(OpCode.LOAD_VAR, EXPORTS)
     const idx = addConstant(this.chunk, 'default')
     this.emit(OpCode.PUSH, idx)
+    this.compileNode(node.declaration, scope)
     this.emit(OpCode.SET_MEMBER)
     this.emit(OpCode.POP)
   }
