@@ -691,22 +691,15 @@ export class Compiler {
 
     // Handle optional chaining (?.)
     if (node.optional) {
-      // Check if object is null or undefined
-      this.emit(OpCode.DUP)
+      // Check if object is null or undefined using loose equality (==)
+      // In JavaScript: obj == null returns true for both null and undefined
+      // Stack: [obj]
+      this.emit(OpCode.DUP) // [obj, obj]
+      this.emit(OpCode.LOAD_NULL) // [obj, obj, null]
+      this.emit(OpCode.EQ) // [obj, true/false] - EQ checks ==, not ===
+      const jumpIfNullish = this.emit(OpCode.JUMP_IF_TRUE, 0)
 
-      // Check for null
-      this.emit(OpCode.DUP)
-      this.emit(OpCode.LOAD_NULL)
-      this.emit(OpCode.SEQ)
-      const jumpIfNull = this.emit(OpCode.JUMP_IF_TRUE, 0)
-
-      // Check for undefined
-      this.emit(OpCode.DUP)
-      this.emit(OpCode.LOAD_UNDEFINED)
-      this.emit(OpCode.SEQ)
-      const jumpIfUndefined = this.emit(OpCode.JUMP_IF_TRUE, 0)
-
-      // Not null/undefined, access property
+      // Not nullish - JUMP_IF_TRUE popped the false, stack is [obj]
       if (node.computed) {
         this.compileNode(node.property, scope)
       } else if (node.property.type === 'PrivateIdentifier') {
@@ -719,16 +712,14 @@ export class Compiler {
         this.emit(OpCode.PUSH, idx)
       }
       this.emit(OpCode.GET_MEMBER)
-      const skipUndefined = this.emit(OpCode.JUMP, 0)
+      const skipNullish = this.emit(OpCode.JUMP, 0)
 
-      // If null or undefined, pop the duplicates and push undefined
-      this.patchJump(jumpIfNull)
-      this.patchJump(jumpIfUndefined)
-      this.emit(OpCode.POP)  // Pop the duplicate
-      this.emit(OpCode.POP)  // Pop the original value
-      this.emit(OpCode.LOAD_UNDEFINED)
+      // Nullish - JUMP_IF_TRUE popped the true, stack is [obj]
+      this.patchJump(jumpIfNullish)
+      this.emit(OpCode.POP)  // Pop the object: []
+      this.emit(OpCode.LOAD_UNDEFINED) // [undefined]
 
-      this.patchJump(skipUndefined)
+      this.patchJump(skipNullish)
     } else {
       // Normal member access
       if (node.computed) {
@@ -819,9 +810,35 @@ export class Compiler {
         }
         this.emit(OpCode.GET_MEMBER)
 
-        // Call method with receiver binding
-        // Stack: args..., receiver, method
-        this.emit(OpCode.CALL_METHOD, node.arguments.length)
+        // Handle optional call (?.)
+        if (node.optional) {
+          // Stack: args..., receiver, method
+          // Check if method is null/undefined
+          this.emit(OpCode.DUP) // args..., receiver, method, method
+          this.emit(OpCode.LOAD_NULL)
+          this.emit(OpCode.EQ) // args..., receiver, method, true/false
+          const jumpIfNullish = this.emit(OpCode.JUMP_IF_TRUE, 0)
+
+          // Not nullish - stack is args..., receiver, method
+          this.emit(OpCode.CALL_METHOD, node.arguments.length)
+          const skipNullish = this.emit(OpCode.JUMP, 0)
+
+          // Nullish - stack is args..., receiver, method
+          this.patchJump(jumpIfNullish)
+          this.emit(OpCode.POP) // Pop method: args..., receiver
+          this.emit(OpCode.POP) // Pop receiver: args...
+          // Pop all arguments
+          for (let i = 0; i < node.arguments.length; i++) {
+            this.emit(OpCode.POP)
+          }
+          this.emit(OpCode.LOAD_UNDEFINED)
+
+          this.patchJump(skipNullish)
+        } else {
+          // Call method with receiver binding
+          // Stack: args..., receiver, method
+          this.emit(OpCode.CALL_METHOD, node.arguments.length)
+        }
       }
     } else {
       // Regular function call

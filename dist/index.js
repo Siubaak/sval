@@ -304,10 +304,10 @@ var si = [509, 0, 227, 0, 150, 4, 294, 9, 1368, 2, 2, 1, 6, 3, 41, 2, 5, 0, 166,
   6: "enum",
   strict: "implements interface let package private protected public static yield",
   strictBind: "eval arguments"
-}, Wt = "break case catch continue debugger default do else finally for function if return switch throw try var while with null true false instanceof typeof void delete new in this", ai = {
-  5: Wt,
-  "5module": Wt + " export import",
-  6: Wt + " const class extends export import super"
+}, Jt = "break case catch continue debugger default do else finally for function if return switch throw try var while with null true false instanceof typeof void delete new in this", ai = {
+  5: Jt,
+  "5module": Jt + " export import",
+  6: Jt + " const class extends export import super"
 }, ni = /^in(stanceof)?$/, oi = new RegExp("[" + ye + "]"), ci = new RegExp("[" + ye + ri + "]");
 function Yt(t, e) {
   for (var i = 65536, r = 0; r < e.length; r += 2) {
@@ -330,7 +330,7 @@ var I = function(e, i) {
 function G(t, e) {
   return new I(t, { beforeExpr: !0, binop: e });
 }
-var W = { beforeExpr: !0 }, H = { startsExpr: !0 }, $t = {};
+var J = { beforeExpr: !0 }, H = { startsExpr: !0 }, $t = {};
 function A(t, e) {
   return e === void 0 && (e = {}), e.keyword = t, $t[t] = new I(t, e);
 }
@@ -348,16 +348,16 @@ var c = {
   braceR: new I("}"),
   parenL: new I("(", { beforeExpr: !0, startsExpr: !0 }),
   parenR: new I(")"),
-  comma: new I(",", W),
-  semi: new I(";", W),
-  colon: new I(":", W),
+  comma: new I(",", J),
+  semi: new I(";", J),
+  colon: new I(":", J),
   dot: new I("."),
-  question: new I("?", W),
+  question: new I("?", J),
   questionDot: new I("?."),
-  arrow: new I("=>", W),
+  arrow: new I("=>", J),
   template: new I("template"),
   invalidTemplate: new I("invalidTemplate"),
-  ellipsis: new I("...", W),
+  ellipsis: new I("...", J),
   backQuote: new I("`", H),
   dollarBraceL: new I("${", { beforeExpr: !0, startsExpr: !0 }),
   // Operators. These carry several kinds of properties to help the
@@ -393,20 +393,20 @@ var c = {
   coalesce: G("??", 1),
   // Keyword token types.
   _break: A("break"),
-  _case: A("case", W),
+  _case: A("case", J),
   _catch: A("catch"),
   _continue: A("continue"),
   _debugger: A("debugger"),
-  _default: A("default", W),
+  _default: A("default", J),
   _do: A("do", { isLoop: !0, beforeExpr: !0 }),
-  _else: A("else", W),
+  _else: A("else", J),
   _finally: A("finally"),
   _for: A("for", { isLoop: !0 }),
   _function: A("function", H),
   _if: A("if"),
-  _return: A("return", W),
+  _return: A("return", J),
   _switch: A("switch"),
-  _throw: A("throw", W),
+  _throw: A("throw", J),
   _try: A("try"),
   _var: A("var"),
   _const: A("const"),
@@ -416,7 +416,7 @@ var c = {
   _this: A("this", H),
   _super: A("super", H),
   _class: A("class", H),
-  _extends: A("extends", W),
+  _extends: A("extends", J),
   _export: A("export"),
   _import: A("import", H),
   _null: A("null", H),
@@ -440,7 +440,7 @@ function be(t, e, i) {
   }
   return -1;
 }
-var xe = /[\u1680\u2000-\u200a\u202f\u205f\u3000\ufeff]/, J = /(?:\s|\/\/.*|\/\*[^]*?\*\/)*/g, ge = Object.prototype, ui = ge.hasOwnProperty, pi = ge.toString, yt = Object.hasOwn || function(t, e) {
+var xe = /[\u1680\u2000-\u200a\u202f\u205f\u3000\ufeff]/, W = /(?:\s|\/\/.*|\/\*[^]*?\*\/)*/g, ge = Object.prototype, ui = ge.hasOwnProperty, pi = ge.toString, yt = Object.hasOwn || function(t, e) {
   return ui.call(t, e);
 }, oe = Array.isArray || function(t) {
   return pi.call(t) === "[object Array]";
@@ -667,16 +667,16 @@ B.strictDirective = function(t) {
   if (this.options.ecmaVersion < 5)
     return !1;
   for (; ; ) {
-    J.lastIndex = t, t += J.exec(this.input)[0].length;
+    W.lastIndex = t, t += W.exec(this.input)[0].length;
     var e = di.exec(this.input.slice(t));
     if (!e)
       return !1;
     if ((e[1] || e[2]) === "use strict") {
-      J.lastIndex = t + e[0].length;
-      var i = J.exec(this.input), r = i.index + i[0].length, o = this.input.charAt(r);
+      W.lastIndex = t + e[0].length;
+      var i = W.exec(this.input), r = i.index + i[0].length, o = this.input.charAt(r);
       return o === ";" || o === "}" || q.test(i[0]) && !(/[(`.[+\-/*%<>=,?^&]/.test(o) || o === "!" && this.input.charAt(r + 1) === "=");
     }
-    t += e[0].length, J.lastIndex = t, t += J.exec(this.input)[0].length, this.input[t] === ";" && t++;
+    t += e[0].length, W.lastIndex = t, t += W.exec(this.input)[0].length, this.input[t] === ";" && t++;
   }
 };
 B.eat = function(t) {
@@ -753,8 +753,8 @@ var se = { kind: "loop" }, yi = { kind: "switch" };
 b.isLet = function(t) {
   if (this.options.ecmaVersion < 6 || !this.isContextual("let"))
     return !1;
-  J.lastIndex = this.pos;
-  var e = J.exec(this.input), i = this.pos + e[0].length, r = this.input.charCodeAt(i);
+  W.lastIndex = this.pos;
+  var e = W.exec(this.input), i = this.pos + e[0].length, r = this.input.charCodeAt(i);
   if (r === 91 || r === 92)
     return !0;
   if (t)
@@ -775,8 +775,8 @@ b.isLet = function(t) {
 b.isAsyncFunction = function() {
   if (this.options.ecmaVersion < 8 || !this.isContextual("async"))
     return !1;
-  J.lastIndex = this.pos;
-  var t = J.exec(this.input), e = this.pos + t[0].length, i;
+  W.lastIndex = this.pos;
+  var t = W.exec(this.input), e = this.pos + t[0].length, i;
   return !q.test(this.input.slice(this.pos, e)) && this.input.slice(e, e + 8) === "function" && (e + 8 === this.input.length || !(mt(i = this.input.charCodeAt(e + 8)) || i > 55295 && i < 56320));
 };
 b.parseStatement = function(t, e, i) {
@@ -819,8 +819,8 @@ b.parseStatement = function(t, e, i) {
     case c._export:
     case c._import:
       if (this.options.ecmaVersion > 10 && r === c._import) {
-        J.lastIndex = this.pos;
-        var a = J.exec(this.input), h = this.pos + a[0].length, u = this.input.charCodeAt(h);
+        W.lastIndex = this.pos;
+        var a = W.exec(this.input), h = this.pos + a[0].length, u = this.input.charCodeAt(h);
         if (u === 40 || u === 46)
           return this.parseExpressionStatement(o, this.parseExpression());
       }
@@ -2014,8 +2014,8 @@ function Ti(t) {
   };
   e.nonBinary.Script_Extensions = e.nonBinary.Script, e.nonBinary.gc = e.nonBinary.General_Category, e.nonBinary.sc = e.nonBinary.Script, e.nonBinary.scx = e.nonBinary.Script_Extensions;
 }
-for (var Jt = 0, pe = [9, 10, 11, 12, 13, 14]; Jt < pe.length; Jt += 1) {
-  var wi = pe[Jt];
+for (var Wt = 0, pe = [9, 10, 11, 12, 13, 14]; Wt < pe.length; Wt += 1) {
+  var wi = pe[Wt];
   Ti(wi);
 }
 var d = L.prototype, Ot = function(e, i) {
@@ -2553,11 +2553,11 @@ d.regexp_validateUnicodePropertyNameOrValue = function(t, e) {
 };
 d.regexp_eatUnicodePropertyName = function(t) {
   var e = 0;
-  for (t.lastStringValue = ""; We(e = t.current()); )
+  for (t.lastStringValue = ""; Je(e = t.current()); )
     t.lastStringValue += rt(e), t.advance();
   return t.lastStringValue !== "";
 };
-function We(t) {
+function Je(t) {
   return je(t) || t === 95;
 }
 d.regexp_eatUnicodePropertyValue = function(t) {
@@ -2567,7 +2567,7 @@ d.regexp_eatUnicodePropertyValue = function(t) {
   return t.lastStringValue !== "";
 };
 function Oi(t) {
-  return We(t) || jt(t);
+  return Je(t) || jt(t);
 }
 d.regexp_eatLoneUnicodePropertyNameOrValue = function(t) {
   return this.regexp_eatUnicodePropertyValue(t);
@@ -2808,11 +2808,11 @@ function jt(t) {
 }
 d.regexp_eatHexDigits = function(t) {
   var e = t.pos, i = 0;
-  for (t.lastIntValue = 0; Je(i = t.current()); )
+  for (t.lastIntValue = 0; We(i = t.current()); )
     t.lastIntValue = 16 * t.lastIntValue + Ye(i), t.advance();
   return t.pos !== e;
 };
-function Je(t) {
+function We(t) {
   return t >= 48 && t <= 57 || t >= 65 && t <= 70 || t >= 97 && t <= 102;
 }
 function Ye(t) {
@@ -2842,7 +2842,7 @@ d.regexp_eatFixedHexDigits = function(t, e) {
   t.lastIntValue = 0;
   for (var r = 0; r < e; ++r) {
     var o = t.current();
-    if (!Je(o))
+    if (!We(o))
       return t.pos = i, !1;
     t.lastIntValue = 16 * t.lastIntValue + Ye(o), t.advance();
   }
@@ -3510,11 +3510,11 @@ class R {
     Object.keys(e) && (this.withContext = e);
   }
 }
-const Gi = "0.6.8", Wi = {
+const Gi = "0.6.8", Ji = {
   version: Gi
 };
 var n = /* @__PURE__ */ ((t) => (t[t.PUSH = 0] = "PUSH", t[t.POP = 1] = "POP", t[t.DUP = 2] = "DUP", t[t.SWAP = 3] = "SWAP", t[t.ROT3 = 4] = "ROT3", t[t.ROT4 = 5] = "ROT4", t[t.LOAD_VAR = 6] = "LOAD_VAR", t[t.STORE_VAR = 7] = "STORE_VAR", t[t.ASSIGN_VAR = 8] = "ASSIGN_VAR", t[t.DECLARE_VAR = 9] = "DECLARE_VAR", t[t.DECLARE_CONST = 10] = "DECLARE_CONST", t[t.DECLARE_LET = 11] = "DECLARE_LET", t[t.LOAD_UNDEFINED = 12] = "LOAD_UNDEFINED", t[t.LOAD_NULL = 13] = "LOAD_NULL", t[t.LOAD_TRUE = 14] = "LOAD_TRUE", t[t.LOAD_FALSE = 15] = "LOAD_FALSE", t[t.LOAD_THIS = 16] = "LOAD_THIS", t[t.LOAD_NOINIT = 17] = "LOAD_NOINIT", t[t.ADD = 18] = "ADD", t[t.SUB = 19] = "SUB", t[t.MUL = 20] = "MUL", t[t.DIV = 21] = "DIV", t[t.MOD = 22] = "MOD", t[t.EXP = 23] = "EXP", t[t.EQ = 24] = "EQ", t[t.NEQ = 25] = "NEQ", t[t.SEQ = 26] = "SEQ", t[t.SNEQ = 27] = "SNEQ", t[t.LT = 28] = "LT", t[t.LTE = 29] = "LTE", t[t.GT = 30] = "GT", t[t.GTE = 31] = "GTE", t[t.LOGICAL_AND = 32] = "LOGICAL_AND", t[t.LOGICAL_OR = 33] = "LOGICAL_OR", t[t.NULLISH_COALESCING = 34] = "NULLISH_COALESCING", t[t.BITWISE_AND = 35] = "BITWISE_AND", t[t.BITWISE_OR = 36] = "BITWISE_OR", t[t.BITWISE_XOR = 37] = "BITWISE_XOR", t[t.LEFT_SHIFT = 38] = "LEFT_SHIFT", t[t.RIGHT_SHIFT = 39] = "RIGHT_SHIFT", t[t.UNSIGNED_RIGHT_SHIFT = 40] = "UNSIGNED_RIGHT_SHIFT", t[t.IN = 41] = "IN", t[t.INSTANCEOF = 42] = "INSTANCEOF", t[t.NOT = 43] = "NOT", t[t.BITWISE_NOT = 44] = "BITWISE_NOT", t[t.TYPEOF = 45] = "TYPEOF", t[t.TYPEOF_VAR = 46] = "TYPEOF_VAR", t[t.VOID = 47] = "VOID", t[t.DELETE = 48] = "DELETE", t[t.DELETE_MEMBER = 49] = "DELETE_MEMBER", t[t.PLUS = 50] = "PLUS", t[t.MINUS = 51] = "MINUS", t[t.INC = 52] = "INC", t[t.DEC = 53] = "DEC", t[t.GET_MEMBER = 54] = "GET_MEMBER", t[t.SET_MEMBER = 55] = "SET_MEMBER", t[t.CALL = 56] = "CALL", t[t.CALL_METHOD = 57] = "CALL_METHOD", t[t.CALL_WITH_SPREAD = 58] = "CALL_WITH_SPREAD", t[t.NEW = 59] = "NEW", t[t.NEW_WITH_SPREAD = 60] = "NEW_WITH_SPREAD", t[t.RETURN = 61] = "RETURN", t[t.YIELD = 62] = "YIELD", t[t.AWAIT = 63] = "AWAIT", t[t.NEW_OBJECT = 64] = "NEW_OBJECT", t[t.NEW_ARRAY = 65] = "NEW_ARRAY", t[t.SPREAD = 66] = "SPREAD", t[t.ARRAY_PUSH = 67] = "ARRAY_PUSH", t[t.ARRAY_CONCAT = 68] = "ARRAY_CONCAT", t[t.OBJECT_ASSIGN = 69] = "OBJECT_ASSIGN", t[t.OBJECT_SET_PROP = 70] = "OBJECT_SET_PROP", t[t.OBJECT_DEFINE_GETTER = 71] = "OBJECT_DEFINE_GETTER", t[t.OBJECT_DEFINE_SETTER = 72] = "OBJECT_DEFINE_SETTER", t[t.OBJECT_REST = 73] = "OBJECT_REST", t[t.ARRAY_REST = 74] = "ARRAY_REST", t[t.JUMP = 75] = "JUMP", t[t.JUMP_IF_FALSE = 76] = "JUMP_IF_FALSE", t[t.JUMP_IF_TRUE = 77] = "JUMP_IF_TRUE", t[t.PUSH_SCOPE = 78] = "PUSH_SCOPE", t[t.POP_SCOPE = 79] = "POP_SCOPE", t[t.CREATE_FUNCTION = 80] = "CREATE_FUNCTION", t[t.CREATE_ARROW_FUNCTION = 81] = "CREATE_ARROW_FUNCTION", t[t.CREATE_CLASS = 82] = "CREATE_CLASS", t[t.SUPER_CALL = 83] = "SUPER_CALL", t[t.EXPORT_ALL = 84] = "EXPORT_ALL", t[t.EXPORT_NAMED = 85] = "EXPORT_NAMED", t[t.IMPORT_BINDINGS = 86] = "IMPORT_BINDINGS", t[t.THROW = 87] = "THROW", t[t.TRY_START = 88] = "TRY_START", t[t.TRY_END = 89] = "TRY_END", t[t.CATCH_START = 90] = "CATCH_START", t[t.CATCH_END = 91] = "CATCH_END", t[t.FINALLY_START = 92] = "FINALLY_START", t[t.FINALLY_END = 93] = "FINALLY_END", t[t.BREAK = 94] = "BREAK", t[t.CONTINUE = 95] = "CONTINUE", t[t.GET_KEYS = 96] = "GET_KEYS", t[t.GET_ITERATOR = 97] = "GET_ITERATOR", t[t.ITERATOR_NEXT = 98] = "ITERATOR_NEXT", t[t.ITERATOR_DONE = 99] = "ITERATOR_DONE", t[t.NOP = 100] = "NOP", t[t.HALT = 101] = "HALT", t))(n || {});
-function Ji(t, e, i, r) {
+function Wi(t, e, i, r) {
   return { opcode: t, operand: e, line: i, column: r };
 }
 function Yi() {
@@ -3895,22 +3895,20 @@ class P {
   // ===== Member & Call Expressions =====
   compileMemberExpression(e, i) {
     if (this.compileNode(e.object, i), e.optional) {
-      this.emit(n.DUP), this.emit(n.DUP), this.emit(n.LOAD_NULL), this.emit(n.SEQ);
+      this.emit(n.DUP), this.emit(n.LOAD_NULL), this.emit(n.EQ);
       const r = this.emit(n.JUMP_IF_TRUE, 0);
-      this.emit(n.DUP), this.emit(n.LOAD_UNDEFINED), this.emit(n.SEQ);
-      const o = this.emit(n.JUMP_IF_TRUE, 0);
       if (e.computed)
         this.compileNode(e.property, i);
       else if (e.property.type === "PrivateIdentifier") {
-        const a = `__private_${e.property.name}`, h = g(this.chunk, a);
-        this.emit(n.PUSH, h);
-      } else {
-        const a = g(this.chunk, e.property.name);
+        const s = `__private_${e.property.name}`, a = g(this.chunk, s);
         this.emit(n.PUSH, a);
+      } else {
+        const s = g(this.chunk, e.property.name);
+        this.emit(n.PUSH, s);
       }
       this.emit(n.GET_MEMBER);
-      const s = this.emit(n.JUMP, 0);
-      this.patchJump(r), this.patchJump(o), this.emit(n.POP), this.emit(n.POP), this.emit(n.LOAD_UNDEFINED), this.patchJump(s);
+      const o = this.emit(n.JUMP, 0);
+      this.patchJump(r), this.emit(n.POP), this.emit(n.LOAD_UNDEFINED), this.patchJump(o);
     } else {
       if (e.computed)
         this.compileNode(e.property, i);
@@ -3957,7 +3955,17 @@ class P {
           const o = g(this.chunk, e.callee.property.name);
           this.emit(n.PUSH, o);
         }
-        this.emit(n.GET_MEMBER), this.emit(n.CALL_METHOD, e.arguments.length);
+        if (this.emit(n.GET_MEMBER), e.optional) {
+          this.emit(n.DUP), this.emit(n.LOAD_NULL), this.emit(n.EQ);
+          const o = this.emit(n.JUMP_IF_TRUE, 0);
+          this.emit(n.CALL_METHOD, e.arguments.length);
+          const s = this.emit(n.JUMP, 0);
+          this.patchJump(o), this.emit(n.POP), this.emit(n.POP);
+          for (let a = 0; a < e.arguments.length; a++)
+            this.emit(n.POP);
+          this.emit(n.LOAD_UNDEFINED), this.patchJump(s);
+        } else
+          this.emit(n.CALL_METHOD, e.arguments.length);
       }
     else if (r) {
       this.emit(n.NEW_ARRAY, 0);
@@ -4392,7 +4400,7 @@ class P {
   }
   // ===== Helper methods =====
   emit(e, i) {
-    const r = Ji(e, i);
+    const r = Wi(e, i);
     return qi(this.chunk, r);
   }
   patchJump(e) {
@@ -6397,7 +6405,7 @@ const Qi = 15, ae = class ae {
     return this.options.sourceType === "module" && (this.options.ecmaVersion === "latest" || this.options.ecmaVersion >= 13) ? new T(r, !0).executeAsync(s) : new T(r, !1).execute(s);
   }
 };
-ae.version = Wi.version;
+ae.version = Ji.version;
 let fe = ae;
 export {
   fe as default
