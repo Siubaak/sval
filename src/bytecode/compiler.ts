@@ -1888,10 +1888,9 @@ export class Compiler {
   }
 
   private compileImportExpression(node: any, scope: Scope): void {
-    // Dynamic import() - would need async support
+    // Dynamic import() - compile the module specifier and emit opcode
     this.compileNode(node.source, scope)
-    // Simplified - would need actual import logic
-    this.emit(OpCode.LOAD_UNDEFINED)
+    this.emit(OpCode.DYNAMIC_IMPORT)
   }
 
   private compileTaggedTemplateExpression(node: any, scope: Scope): void {

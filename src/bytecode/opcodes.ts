@@ -115,6 +115,7 @@ export enum OpCode {
   EXPORT_ALL,     // export * from 'module'
   EXPORT_NAMED,   // export named bindings
   IMPORT_BINDINGS, // import declarations
+  DYNAMIC_IMPORT,  // dynamic import()
 
   // Exception handling
   THROW,

@@ -1030,6 +1030,43 @@ export class VM {
         break
       }
 
+      case OpCode.DYNAMIC_IMPORT: {
+        // Dynamic import() - returns a Promise
+        const moduleName = this.pop()
+        const globalScope = this.currentScope.global()
+
+        // Get the imported module
+        const module = globalScope.find(IMPORT + moduleName)
+
+        // Create a Promise that resolves with the module
+        const importPromise = new Promise((resolve, reject) => {
+          try {
+            let value: any
+            if (module) {
+              const result = module.get()
+              if (result) {
+                if (typeof result === 'function') {
+                  value = result()
+                } else if (typeof result === 'object') {
+                  value = result
+                }
+              }
+            }
+
+            if (!value || typeof value !== 'object') {
+              reject(new TypeError(`Failed to resolve module specifier "${moduleName}"`))
+            } else {
+              resolve(value)
+            }
+          } catch (err) {
+            reject(err)
+          }
+        })
+
+        this.push(importPromise)
+        break
+      }
+
       // ===== Exception handling =====
       case OpCode.THROW: {
         const error = this.pop()
@@ -2042,6 +2079,43 @@ export class VM {
           const importValue = name === '*' ? Object.assign({}, value) : value[name]
           this.currentScope.var(spec.local.name, importValue)
         }
+        break
+      }
+
+      case OpCode.DYNAMIC_IMPORT: {
+        // Dynamic import() - returns a Promise
+        const moduleName = this.pop()
+        const globalScope = this.currentScope.global()
+
+        // Get the imported module
+        const module = globalScope.find(IMPORT + moduleName)
+
+        // Create a Promise that resolves with the module
+        const importPromise = new Promise((resolve, reject) => {
+          try {
+            let value: any
+            if (module) {
+              const result = module.get()
+              if (result) {
+                if (typeof result === 'function') {
+                  value = result()
+                } else if (typeof result === 'object') {
+                  value = result
+                }
+              }
+            }
+
+            if (!value || typeof value !== 'object') {
+              reject(new TypeError(`Failed to resolve module specifier "${moduleName}"`))
+            } else {
+              resolve(value)
+            }
+          } catch (err) {
+            reject(err)
+          }
+        })
+
+        this.push(importPromise)
         break
       }
 
