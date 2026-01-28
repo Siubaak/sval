@@ -4,11 +4,7 @@ import { EXPORTS, IMPORT } from './share/const.ts'
 import Scope from './scope/index.ts'
 import PkgJson from '../package.json' with { type: 'json' }
 
-import { runAsync } from './share/async.ts'
-import { hoist as hoistAsync } from './evaluate/helper.ts'
-import { hoist } from './evaluate_n/helper.ts'
-import evaluateAsync from './evaluate/index.ts'
-import evaluate from './evaluate_n/index.ts'
+import { Compiler, VM } from './bytecode/index.ts'
 
 export interface SvalOptions {
   ecmaVer?: Options['ecmaVersion']
@@ -83,19 +79,49 @@ class Sval {
   run(code: string | Node) {
     const ast = typeof code === 'string' ? this.parse(code) : code
     const scope = this.scope
-    // check if top-level await supports
-    if (this.options.sourceType === 'module' && (
-      this.options.ecmaVersion === 'latest'
-      || this.options.ecmaVersion >= 13
-    )) {
-      runAsync((function* () {
-        yield* hoistAsync(ast as Program, scope)
-        yield* evaluateAsync(ast, scope)
-      })())
+
+    // Compile AST to bytecode
+    const compiler = new Compiler()
+    const bytecode = compiler.compile(ast, scope)
+
+    // Check if code actually uses top-level await
+    const hasTopLevelAwait = this.options.sourceType === 'module' &&
+      (this.options.ecmaVersion === 'latest' || this.options.ecmaVersion >= 13) &&
+      this.detectAwaitExpression(ast)
+
+    if (hasTopLevelAwait) {
+      // Return promise for async execution
+      const vm = new VM(scope, true)
+      return vm.executeAsync(bytecode)
     } else {
-      hoist(ast as Program, scope)
-      evaluate(ast, scope)
+      // Execute synchronously
+      const vm = new VM(scope, false)
+      return vm.execute(bytecode)
     }
+  }
+
+  private detectAwaitExpression(node: any): boolean {
+    if (!node || typeof node !== 'object') return false
+    if (node.type === 'AwaitExpression') return true
+
+    // Don't recurse into function bodies - await inside functions is not top-level await
+    if (node.type === 'FunctionDeclaration' || node.type === 'FunctionExpression' ||
+        node.type === 'ArrowFunctionExpression') {
+      return false
+    }
+
+    for (const key in node) {
+      if (key === 'type' || key === 'start' || key === 'end' || key === 'loc' || key === 'range') continue
+      const value = node[key]
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          if (this.detectAwaitExpression(item)) return true
+        }
+      } else if (this.detectAwaitExpression(value)) {
+        return true
+      }
+    }
+    return false
   }
 }
 

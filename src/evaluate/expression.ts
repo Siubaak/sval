@@ -568,7 +568,20 @@ export function* SpreadElement(node: acorn.SpreadElement, scope: Scope, options:
 }
 
 export function* ChainExpression(node: acorn.ChainExpression, scope: Scope) {
-  return yield* evaluate(node.expression, scope)
+  try {
+    return yield* evaluate(node.expression, scope)
+  } catch (err) {
+    // If we get a TypeError about reading properties of null/undefined,
+    // it means an optional chaining operation short-circuited and we tried
+    // to continue the chain. Return undefined instead of throwing.
+    if (err instanceof TypeError &&
+        (err.message.includes('Cannot read property') ||
+         err.message.includes('Cannot read properties of null') ||
+         err.message.includes('Cannot read properties of undefined'))) {
+      return undefined
+    }
+    throw err
+  }
 }
 
 export function* ImportExpression(node: acorn.ImportExpression, scope: Scope) {

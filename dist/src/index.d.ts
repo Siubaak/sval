@@ -12,6 +12,7 @@ declare class Sval {
     constructor(options?: SvalOptions);
     import(nameOrModules: string | Record<string, any>, mod?: any): void;
     parse(code: string, parser?: (code: string, options: Options) => Node): Node;
-    run(code: string | Node): void;
+    run(code: string | Node): any;
+    private detectAwaitExpression;
 }
 export default Sval;
