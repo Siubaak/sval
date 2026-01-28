@@ -1154,6 +1154,9 @@ export class VM {
               return { value: undefined, done: true }
             }
           }
+        } else if (iterable && typeof iterable[Symbol.asyncIterator] === 'function') {
+          // Use the async iterator (for async generators in for-await-of)
+          iterator = iterable[Symbol.asyncIterator]()
         } else if (iterable && typeof iterable[Symbol.iterator] === 'function') {
           // Use the built-in iterator
           iterator = iterable[Symbol.iterator]()
@@ -2206,6 +2209,9 @@ export class VM {
               return { value: undefined, done: true }
             }
           }
+        } else if (iterable && typeof iterable[Symbol.asyncIterator] === 'function') {
+          // Use the async iterator (for async generators in for-await-of)
+          iterator = iterable[Symbol.asyncIterator]()
         } else if (iterable && typeof iterable[Symbol.iterator] === 'function') {
           // Use the built-in iterator
           iterator = iterable[Symbol.iterator]()
@@ -2229,7 +2235,7 @@ export class VM {
 
       case OpCode.ITERATOR_NEXT: {
         const iterator = this.pop()
-        const result = iterator.next()
+        const result = await iterator.next()
         this.push(result)
         break
       }
@@ -3295,13 +3301,16 @@ export class VM {
 
     const asyncGeneratorObject = {
       next: async (value?: any) => {
-        // Queue this call if there's already a next() in progress
-        if (pendingNext) {
-          await pendingNext
-        }
+        // Capture the previous pending promise before creating the new one
+        const previousPending = pendingNext
 
         // Create a promise for this next() call
         const currentNext = (async () => {
+        // Wait for the previous operation to complete
+        if (previousPending) {
+          await previousPending
+        }
+
         // Create VM for execution
         const vm = new VM(scope, true)
 
@@ -3414,12 +3423,15 @@ export class VM {
       },
 
       return: async (value?: any) => {
-        // Queue this call if there's already a next() in progress
-        if (pendingNext) {
-          await pendingNext
-        }
+        // Capture the previous pending promise before creating the new one
+        const previousPending = pendingNext
 
         const currentOp = (async () => {
+          // Wait for the previous operation to complete
+          if (previousPending) {
+            await previousPending
+          }
+
           if (generatorState) {
             generatorState.done = true
           }
@@ -3427,16 +3439,26 @@ export class VM {
         })()
 
         pendingNext = currentOp
-        return await currentOp
+        try {
+          return await currentOp
+        } finally {
+          // Clear pending when this call completes
+          if (pendingNext === currentOp) {
+            pendingNext = null
+          }
+        }
       },
 
       throw: async (error: any) => {
-        // Queue this call if there's already a next() in progress
-        if (pendingNext) {
-          await pendingNext
-        }
+        // Capture the previous pending promise before creating the new one
+        const previousPending = pendingNext
 
         const currentOp = (async () => {
+          // Wait for the previous operation to complete
+          if (previousPending) {
+            await previousPending
+          }
+
           if (generatorState) {
             generatorState.done = true
           }
@@ -3444,7 +3466,14 @@ export class VM {
         })()
 
         pendingNext = currentOp
-        return await currentOp
+        try {
+          return await currentOp
+        } finally {
+          // Clear pending when this call completes
+          if (pendingNext === currentOp) {
+            pendingNext = null
+          }
+        }
       },
 
       [Symbol.asyncIterator]: function() {

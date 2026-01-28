@@ -407,6 +407,11 @@ export class Compiler {
         this.emit(OpCode.DUP) // Keep new value for prefix
       }
       this.emit(OpCode.STORE_VAR, node.argument.name)
+      // STORE_VAR peeks the value, so for postfix we need to pop the new value
+      // leaving only the old value on the stack as the expression result
+      if (!node.prefix) {
+        this.emit(OpCode.POP)
+      }
     } else if (node.argument.type === 'MemberExpression') {
       // obj.prop++ or obj[prop]++
       // Strategy: GET current value, compute new value, then use ROT4 to arrange stack for SET
@@ -1666,7 +1671,6 @@ export class Compiler {
     // Get next value from iterator
     this.emit(OpCode.LOAD_VAR, '__iterator__')
     this.emit(OpCode.ITERATOR_NEXT) // Pushes {value, done}
-    this.emit(OpCode.DUP)
     this.emit(OpCode.DECLARE_VAR, '__iterResult__')
 
     // Check if done
