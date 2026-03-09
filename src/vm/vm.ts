@@ -291,7 +291,8 @@ export function* vmExec(
           break
         }
         case Op.SPREAD_OBJECT: {
-          assign(peek(), pop())
+          const src = pop()
+          assign(peek(), src)
           break
         }
 
