@@ -24,6 +24,8 @@ export const NOINIT = createSymbol('noinit')
 
 export const DEADZONE = createSymbol('deadzone')
 
+export const OPTCHAIN = createSymbol('optchain') // optional chain short-circuit
+
 export const IMPORT = createSymbol('import')
 
 export const EXPORTS = createSymbol('exports')

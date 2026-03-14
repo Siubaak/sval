@@ -1,5 +1,5 @@
 import { define, freeze, getGetter, getSetter, createSymbol, assign, getDptor, callSuper, WINDOW } from '../share/util.ts'
-import { SUPER, NOCTOR, AWAIT, CLSCTOR, NEWTARGET, SUPERCALL, PRIVATE, IMPORT } from '../share/const.ts'
+import { SUPER, NOCTOR, AWAIT, CLSCTOR, NEWTARGET, SUPERCALL, PRIVATE, IMPORT, OPTCHAIN } from '../share/const.ts'
 import { pattern, createFunc, createClass } from './helper.ts'
 import { Variable, Prop } from '../scope/variable.ts'
 import { Identifier } from './identifier.ts'
@@ -258,6 +258,9 @@ export function* MemberExpression(
     object = yield* evaluate(node.object, scope)
   }
 
+  // propagate optional chain short-circuit
+  if (object === OPTCHAIN) return OPTCHAIN
+
   if (getObj) return object
 
   let key: string
@@ -295,13 +298,13 @@ export function* MemberExpression(
       const thisObject = scope.find('this').get()
       // if it's optional chaining, check if this ref is null or undefined, so use ==
       if (node.optional && thisObject == null) {
-        return undefined
+        return OPTCHAIN
       }
       return getter.call(thisObject)
     } else {
       // if it's optional chaining, check if object is null or undefined, so use ==
       if (node.optional && object == null) {
-        return undefined
+        return OPTCHAIN
       }
       return object[key]
     }
@@ -321,9 +324,12 @@ export function* CallExpression(node: acorn.CallExpression, scope: Scope) {
   if (node.callee.type === 'MemberExpression') {
     object = yield* MemberExpression(node.callee, scope, { getObj: true })
 
+    // propagate optional chain short-circuit
+    if (object === OPTCHAIN) return OPTCHAIN
+
     // if it's optional chaining, check if object is null or undefined, so use ==
     if (node.callee.optional && object == null) {
-      return undefined
+      return OPTCHAIN
     }
 
     // get key
@@ -355,7 +361,7 @@ export function* CallExpression(node: acorn.CallExpression, scope: Scope) {
 
     // if it's optional chaining, check if function is null or undefined, so use ==
     if (node.optional && func == null) {
-      return undefined
+      return OPTCHAIN
     }
 
     if (typeof func !== 'function') {
@@ -367,9 +373,12 @@ export function* CallExpression(node: acorn.CallExpression, scope: Scope) {
     object = scope.find('this').get()
     func = yield* evaluate(node.callee, scope)
 
+    // propagate optional chain short-circuit
+    if (func === OPTCHAIN) return OPTCHAIN
+
     // if it's optional chaining, check if function is null or undefined, so use ==
     if (node.optional && func == null) {
-      return undefined
+      return OPTCHAIN
     }
 
     if (typeof func !== 'function' || node.callee.type !== 'Super' && CLSCTOR in func) {
@@ -568,7 +577,8 @@ export function* SpreadElement(node: acorn.SpreadElement, scope: Scope, options:
 }
 
 export function* ChainExpression(node: acorn.ChainExpression, scope: Scope) {
-  return yield* evaluate(node.expression, scope)
+  const result = yield* evaluate(node.expression, scope)
+  return result === OPTCHAIN ? undefined : result
 }
 
 export function* ImportExpression(node: acorn.ImportExpression, scope: Scope) {

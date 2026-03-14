@@ -445,6 +445,26 @@ describe('testing src/expression.ts', () => {
     expect(interpreter.exports.funcnone).toBeUndefined()
   })
 
+  // https://github.com/Siubaak/sval/issues/130
+  it('should propagate optional chain short-circuit through subsequent member access', () => {
+    const interpreter = new Sval()
+    interpreter.run(`
+      var user = undefined
+      var config = null
+      var obj = { foo: { bar: { baz: 42 } } }
+
+      exports.undefinedChain = user?.profile.name
+      exports.nullChain = config?.database.host
+      exports.deepChain = user?.a.b.c.d
+      exports.hasValue = obj.foo?.bar.baz
+    `)
+
+    expect(interpreter.exports.undefinedChain).toBeUndefined()
+    expect(interpreter.exports.nullChain).toBeUndefined()
+    expect(interpreter.exports.deepChain).toBeUndefined()
+    expect(interpreter.exports.hasValue).toBe(42)
+  })
+
   it('should support dynamic import', () => {
     return new Promise((done) => {
       const interpreter = new Sval({ sourceType: 'module' })
