@@ -37,6 +37,40 @@ describe('testing statement', () => {
     expect(interpreter.exports.a).toEqual(10)
   })
 
+  it('should switch with default before matching case run normally', () => {
+    const interpreter = new Sval()
+    interpreter.run(`
+      const variant = "secondary"
+      switch (variant) {
+        case "primary":
+        default:
+          exports.a = "primary"
+          break
+        case "secondary":
+          exports.a = "secondary"
+          break
+      }
+    `)
+    expect(interpreter.exports.a).toEqual("secondary")
+  })
+
+  it('should switch fall through from default when no case matches', () => {
+    const interpreter = new Sval()
+    interpreter.run(`
+      switch ("none") {
+        case "a":
+          exports.a = "a"
+          break
+        default:
+          exports.a = "default"
+        case "b":
+          exports.a = "default+b"
+          break
+      }
+    `)
+    expect(interpreter.exports.a).toEqual("default+b")
+  })
+
   it('should for-in statement run normally', () => {
     const interpreter = new Sval()
     interpreter.run(`
