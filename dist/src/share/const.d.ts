@@ -18,5 +18,6 @@ export declare const NEWTARGET: string;
 export declare const PRIVATE: string;
 export declare const NOINIT: string;
 export declare const DEADZONE: string;
+export declare const OPTCHAIN: string;
 export declare const IMPORT: string;
 export declare const EXPORTS: string;
