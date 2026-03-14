@@ -146,20 +146,40 @@ export function* IfStatement(node: acorn.IfStatement, scope: Scope, options: Lab
 
 export function* SwitchStatement(node: acorn.SwitchStatement, scope: Scope, options: LabelOptions = {}) {
   const discriminant = yield* evaluate(node.discriminant, scope)
+
+  // Per ECMAScript spec, first check all case clauses for a match,
+  // then fall back to default only if no case matched
   let matched = false
+  let defaultIndex = -1
   for (let i = 0; i < node.cases.length; i++) {
     const eachCase = node.cases[i]
-    if (
+    if (!eachCase.test) {
+      defaultIndex = i
+    } else if (
       !matched
-      && (
-        !eachCase.test  // default
-        || (yield* evaluate(eachCase.test, scope)) === discriminant
-      )
+      && (yield* evaluate(eachCase.test, scope)) === discriminant
     ) {
       matched = true
+      defaultIndex = -1 // a case matched, ignore default
     }
     if (matched) {
       const result = yield* SwitchCase(eachCase, scope)
+      if (result === BREAK) {
+        if (result.LABEL === options.label) {
+          break
+        }
+        return result
+      }
+      if (result === CONTINUE || result === RETURN) {
+        return result
+      }
+    }
+  }
+
+  // No case matched, fall through from default if present
+  if (!matched && defaultIndex !== -1) {
+    for (let i = defaultIndex; i < node.cases.length; i++) {
+      const result = yield* SwitchCase(node.cases[i], scope)
       if (result === BREAK) {
         if (result.LABEL === options.label) {
           break
