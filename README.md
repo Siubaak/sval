@@ -1,9 +1,9 @@
 # Sval &middot; [![npm](https://img.shields.io/npm/v/sval.svg?style=flat-square)](https://www.npmjs.com/package/sval) [![coveralls](https://img.shields.io/coveralls/github/Siubaak/sval.svg?style=flat-square)](https://coveralls.io/github/Siubaak/sval) [![gh-actions](https://img.shields.io/github/actions/workflow/status/Siubaak/sval/coverage.yml?style=flat-square)](https://github.com/Siubaak/sval/actions/workflows/coverage.yml) [![prs-welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://makeapullrequest.com)
 
-A JavaScript interpreter writen in JavaScript, based on parser [Acorn](https://github.com/acornjs/acorn).
+A JavaScript interpreter written in JavaScript, based on parser [Acorn](https://github.com/acornjs/acorn).
 
 - **Running on ES5, supporting ES latest features**
-- **Both invasived and sandbox modes available**
+- **Both invasive and sandbox modes available**
 
 It's useful to evaluate the code of higher ECMAScript editions, or for the environment with disabled `eval`, `setTimeout` and `new Function`.
 
@@ -58,15 +58,15 @@ Sval constructor has three options: **ecmaVer**, **sourceType** and **sandBox**.
 
 - **ecmaVer** is the ECMAScript edition of the code. Currently, 3, 5, 6(2015), 7(2016), 8(2017), 9(2018), 10(2019), 11(2020), 12(2021), 13(2022), 14(2023), 15(2024) and "latest" are supported, and the default edition is "latest".
 
-- **sourceType** is ethier "script" or "module", which is to declare how Sval handle the code. The "script" means the code will be treated as a normal script, while the "module" means the code will be treated as an ES module with global strict mode and parsing of import and export declarations. The default type is "script".
+- **sourceType** is either "script" or "module", which is to declare how Sval handle the code. The "script" means the code will be treated as a normal script, while the "module" means the code will be treated as an ES module with global strict mode and parsing of import and export declarations. The default type is "script".
 
-- **sandBox** is true for sandbox mode or false for invasived mode. Sandbox mode will run code in an isolated sandbox and won't pollute your global scope. Invasived mode allows you run code in the same global scope of your current environment. The default setting is true.
+- **sandBox** is true for sandbox mode or false for invasive mode. Sandbox mode will run code in an isolated sandbox and won't pollute your global scope. Invasive mode allows you run code in the same global scope of your current environment. The default setting is true.
 
 Sval instance has two main methods: **parse** and **run**.
 
-- **parse** is to parse the code with internal [Acorn](https://github.com/acornjs/acorn) or custom parser, to get the corresponding AST, like `parse(code: string)` or `parse(code: string, parser: (code: string, options: SvalOptions) => estree.Node`.
+- **parse** is to parse the code with internal [Acorn](https://github.com/acornjs/acorn) or custom parser, to get the corresponding AST, like `parse(code: string)` or `parse(code: string, parser: (code: string, options: SvalOptions) => estree.Node)`.
 
-- **run** is to evaluate the code inputed, expecting a string as argument like `run(code: string)`, or an AST followed ESTree Spec as argument like `run(ast: estree.Node)`.
+- **run** is to evaluate the code inputted, expecting a string as argument like `run(code: string)`, or an AST followed ESTree Spec as argument like `run(ast: estree.Node)`.
 
 Besides, Sval instance also has one method, **import**, and one object, **exports**, for modularization.
 
@@ -78,7 +78,7 @@ Besides, Sval instance also has one method, **import**, and one object, **export
 
 - **exports** is to get what you exported from runs, merged if several runs have exports. Also, this object has different behaviors for different `sourceType`.
 
-  For "script", this object will be automatically declared as global variables in Sval instance scope, and the code can just simple mount properties on it for export.
+  For "script", this object will be automatically declared as global variables in Sval instance scope, and the code can just simply mount properties on it for export.
 
   For "module", this object will not be automatically declared as global variables in Sval instance scope, and the code needs to use export declarations for export.
 
@@ -141,7 +141,7 @@ console.log(moduleInterpreter.exports.mod) // Get 'AllKindsOfStuffs'
 
 ## Related
 
-- [sval-rhino-gs](https://github.com/Patrick-ring-motive/sval-rhino-gs) 
+- [sval-rhino-gs](https://github.com/Patrick-ring-motive/sval-rhino-gs)
 
 ## License
 
