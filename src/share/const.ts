@@ -29,3 +29,5 @@ export const OPTCHAIN = createSymbol('optchain') // optional chain short-circuit
 export const IMPORT = createSymbol('import')
 
 export const EXPORTS = createSymbol('exports')
+
+export const STRICT = createSymbol('strict')

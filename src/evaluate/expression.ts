@@ -1,5 +1,5 @@
 import { define, freeze, getGetter, getSetter, createSymbol, assign, getDptor, callSuper, WINDOW } from '../share/util.ts'
-import { SUPER, NOCTOR, AWAIT, CLSCTOR, NEWTARGET, SUPERCALL, PRIVATE, IMPORT, OPTCHAIN } from '../share/const.ts'
+import { SUPER, NOCTOR, AWAIT, CLSCTOR, NEWTARGET, SUPERCALL, PRIVATE, IMPORT, OPTCHAIN, STRICT } from '../share/const.ts'
 import { pattern, createFunc, createClass } from './helper.ts'
 import { Variable, Prop } from '../scope/variable.ts'
 import { Identifier } from './identifier.ts'
@@ -192,6 +192,10 @@ export function* AssignmentExpression(node: acorn.AssignmentExpression, scope: S
   if (left.type === 'Identifier') {
     variable = yield* Identifier(left, scope, { getVar: true, throwErr: false })
     if (!variable) {
+      const strictMode = scope.find(STRICT)
+      if (strictMode && strictMode.get()) {
+        throw new ReferenceError(`${left.name} is not defined`)
+      }
       const win = scope.global().find('window').get()
       variable = new Prop(win, left.name)
     }

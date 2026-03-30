@@ -1,6 +1,6 @@
 import { getOwnNames, createSandBox, globalObj, assign } from './share/util.ts'
 import { parse, Options, Node, Program } from 'acorn'
-import { EXPORTS, IMPORT } from './share/const.ts'
+import { EXPORTS, IMPORT, STRICT } from './share/const.ts'
 import Scope from './scope/index.ts'
 import PkgJson from '../package.json' with { type: 'json' }
 
@@ -57,6 +57,10 @@ class Sval {
     }
 
     this.scope.const(sourceType === 'module' ? EXPORTS : 'exports', this.exports = {})
+
+    if (sourceType === 'module') {
+      this.scope.const(STRICT, true)
+    }
   }
 
   import(nameOrModules: string | Record<string, any>, mod?: any) {
