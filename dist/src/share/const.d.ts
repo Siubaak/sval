@@ -21,3 +21,4 @@ export declare const DEADZONE: string;
 export declare const OPTCHAIN: string;
 export declare const IMPORT: string;
 export declare const EXPORTS: string;
+export declare const STRICT: string;
