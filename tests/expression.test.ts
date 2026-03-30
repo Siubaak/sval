@@ -497,4 +497,18 @@ describe('testing src/expression.ts', () => {
       `)
     })
   })
+
+  it('should throw ReferenceError when assigning to undeclared variable in module mode', () => {
+    const interpreter = new Sval({ ecmaVer: 11, sandBox: true, sourceType: 'module' })
+    interpreter.run(`
+      let sawAssignmentError = false;
+      try {
+        a = "TEST VALUE";
+      } catch (e) {
+        sawAssignmentError = e instanceof ReferenceError;
+      }
+      export { sawAssignmentError };
+    `)
+    expect(interpreter.exports.sawAssignmentError).toBe(true)
+  })
 })
