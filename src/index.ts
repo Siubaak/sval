@@ -46,12 +46,14 @@ class Sval {
       this.scope.let('globalThis', win)
       this.scope.let('window', win)
       this.scope.let('self', win)
-      this.scope.let('this', win)
+      // ES modules have undefined as the top-level this (strict mode)
+      this.scope.let('this', sourceType === 'module' ? undefined : win)
     } else {
       this.scope.let('globalThis', globalObj)
       this.scope.let('window', globalObj)
       this.scope.let('self', globalObj)
-      this.scope.let('this', globalObj)
+      // ES modules have undefined as the top-level this (strict mode)
+      this.scope.let('this', sourceType === 'module' ? undefined : globalObj)
     }
 
     this.scope.const(sourceType === 'module' ? EXPORTS : 'exports', this.exports = {})
