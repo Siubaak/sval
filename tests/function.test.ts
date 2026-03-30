@@ -332,7 +332,16 @@ describe('testing function', () => {
     `)
   })
 
-  it('should serialize functions with toString', () => {  
+  it('should treat function this as undefined in module sourceType (strict mode)', () => {
+    const interpreter = new Sval({ ecmaVer: 11, sandBox: true, sourceType: 'module' })
+    interpreter.run(`
+      var isStrict = (function () { return !this; })();
+      export { isStrict };
+    `)
+    expect(interpreter.exports.isStrict).toBe(true)
+  })
+
+  it('should serialize functions with toString', () => {
     const interpreter = new Sval()
     interpreter.import({ expect })
     const parsedCode = interpreter.parse(`
