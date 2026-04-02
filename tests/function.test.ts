@@ -341,6 +341,23 @@ describe('testing function', () => {
     expect(interpreter.exports.isStrict).toBe(true)
   })
 
+  it('should treat function this as undefined when use strict directive at script level', () => {
+    const interpreter = new Sval({ ecmaVer: 11, sandBox: true, sourceType: 'script' })
+    interpreter.run(`
+      'use strict';
+      exports.isStrict = (function () { return !this; })();
+    `)
+    expect(interpreter.exports.isStrict).toBe(true)
+  })
+
+  it('should treat function this as undefined when use strict directive in function body', () => {
+    const interpreter = new Sval({ ecmaVer: 11, sandBox: true, sourceType: 'script' })
+    interpreter.run(`
+      exports.isStrict = (function () { 'use strict'; return !this; })();
+    `)
+    expect(interpreter.exports.isStrict).toBe(true)
+  })
+
   it('should serialize functions with toString', () => {
     const interpreter = new Sval()
     interpreter.import({ expect })

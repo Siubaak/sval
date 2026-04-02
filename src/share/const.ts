@@ -31,3 +31,5 @@ export const IMPORT = createSymbol('import')
 export const EXPORTS = createSymbol('exports')
 
 export const STRICT = createSymbol('strict')
+
+export const STRICT_FN = createSymbol('strict-fn')

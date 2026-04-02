@@ -1,4 +1,4 @@
-import { RETURN, SUPER, NOCTOR, CLSCTOR, NEWTARGET, SUPERCALL } from '../share/const.ts'
+import { RETURN, SUPER, NOCTOR, CLSCTOR, NEWTARGET, SUPERCALL, STRICT, STRICT_FN } from '../share/const.ts'
 import { VariableDeclaration, ClassBody, PropertyDefinition } from './declaration.ts'
 import { define, assign, inherits, callSuper } from '../share/util.ts'
 import { runAsync, runAsyncOptions } from '../share/async.ts'
@@ -140,8 +140,16 @@ export function createFunc(
 
   const { superClass, construct } = options
   const params = node.params
+  const hasOwnUseStrict = node.body.type === 'BlockStatement'
+    && node.body.body.length > 0
+    && (node.body.body[0] as acorn.ExpressionStatement & { directive?: string }).directive === 'use strict'
+  const enclosingStrict = !!(scope.find(STRICT)?.get())
+  const isFuncStrict = hasOwnUseStrict || enclosingStrict
   const tmpFunc = function* (...args: any[]) {
     const subScope: Scope = new Scope(scope, true)
+    if (hasOwnUseStrict && !enclosingStrict) {
+      subScope.const(STRICT, true)
+    }
     if (node.type !== 'ArrowFunctionExpression') {
       subScope.let('this', this)
       subScope.let('arguments', arguments)
@@ -236,6 +244,10 @@ export function createFunc(
     value: params.length,
     configurable: true
   })
+
+  if (isFuncStrict) {
+    define(func, STRICT_FN, { value: true })
+  }
 
   const source = node.loc?.source
   if (source) {
