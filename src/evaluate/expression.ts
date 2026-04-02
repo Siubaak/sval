@@ -1,5 +1,5 @@
 import { define, freeze, getGetter, getSetter, createSymbol, assign, getDptor, callSuper, WINDOW } from '../share/util.ts'
-import { SUPER, NOCTOR, AWAIT, CLSCTOR, NEWTARGET, SUPERCALL, PRIVATE, IMPORT, OPTCHAIN, STRICT } from '../share/const.ts'
+import { SUPER, NOCTOR, AWAIT, CLSCTOR, NEWTARGET, SUPERCALL, PRIVATE, IMPORT, OPTCHAIN, STRICT, STRICT_FN } from '../share/const.ts'
 import { pattern, createFunc, createClass } from './helper.ts'
 import { Variable, Prop } from '../scope/variable.ts'
 import { Identifier } from './identifier.ts'
@@ -374,7 +374,6 @@ export function* CallExpression(node: acorn.CallExpression, scope: Scope) {
       throw new TypeError(`Class constructor ${key} cannot be invoked without 'new'`)
     }
   } else {
-    object = scope.find('this').get()
     func = yield* evaluate(node.callee, scope)
 
     // propagate optional chain short-circuit
@@ -401,6 +400,14 @@ export function* CallExpression(node: acorn.CallExpression, scope: Scope) {
       } else {
         throw new TypeError(`Class constructor ${name} cannot be invoked without 'new'`)
       }
+    }
+
+    // In strict mode, non-method calls pass undefined as 'this' (no global coercion)
+    if (node.callee.type === 'Super') {
+      object = scope.find('this').get()
+    } else {
+      const isStrictCall = !!(scope.find(STRICT)?.get()) || !!(func && func[STRICT_FN])
+      object = isStrictCall ? undefined : scope.find('this').get()
     }
   }
 
