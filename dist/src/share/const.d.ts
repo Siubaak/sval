@@ -22,3 +22,4 @@ export declare const OPTCHAIN: string;
 export declare const IMPORT: string;
 export declare const EXPORTS: string;
 export declare const STRICT: string;
+export declare const STRICT_FN: string;
