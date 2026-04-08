@@ -8,6 +8,18 @@ import Scope from '../scope/index.ts'
 import evaluate from './index.ts'
 import * as acorn from 'acorn'
 
+function getCalleeName(node: acorn.AnyNode): string {
+  if (node.type === 'Identifier') return (node as acorn.Identifier).name
+  if (node.type === 'MemberExpression') {
+    const mem = node as acorn.MemberExpression
+    const obj = getCalleeName(mem.object as acorn.AnyNode)
+    if (mem.computed) return obj ? `${obj}[...]` : '[...]'
+    const prop = (mem.property as acorn.Identifier).name
+    return obj ? `${obj}.${prop}` : prop
+  }
+  return ''
+}
+
 export function* ThisExpression(node: acorn.ThisExpression, scope: Scope) {
   const superCall = scope.find(SUPERCALL)
   if (superCall && superCall.get() !== true) {
@@ -371,9 +383,17 @@ export function* CallExpression(node: acorn.CallExpression, scope: Scope) {
     }
 
     if (typeof func !== 'function') {
-      throw new TypeError(`${key} is not a function`)
+      const objPath = getCalleeName(node.callee.object as acorn.AnyNode)
+      const calleePath = node.callee.computed
+        ? (objPath ? `${objPath}[${key}]` : String(key))
+        : (objPath ? `${objPath}.${key}` : key)
+      throw new TypeError(`${calleePath} is not a function`)
     } else if (CLSCTOR in func) {
-      throw new TypeError(`Class constructor ${key} cannot be invoked without 'new'`)
+      const objPath = getCalleeName(node.callee.object as acorn.AnyNode)
+      const calleePath = node.callee.computed
+        ? (objPath ? `${objPath}[${key}]` : String(key))
+        : (objPath ? `${objPath}.${key}` : key)
+      throw new TypeError(`Class constructor ${calleePath} cannot be invoked without 'new'`)
     }
   } else {
     func = yield* evaluate(node.callee, scope)

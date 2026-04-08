@@ -530,4 +530,47 @@ describe('testing src/expression.ts', () => {
     `)
     expect(interpreter.exports.sawAssignmentError).toBe(true)
   })
+
+  // https://github.com/Siubaak/sval/issues/143
+  it('should include full property path in TypeError for non-function member calls', () => {
+    const interpreter = new Sval()
+    let error: TypeError | null = null
+    try {
+      interpreter.run(`
+        const foo = {}
+        foo.bar()
+      `)
+    } catch (e) {
+      error = e as TypeError
+    }
+    expect(error).toBeInstanceOf(TypeError)
+    expect(error!.message).toBe('foo.bar is not a function')
+  })
+
+  it('should include nested property path in TypeError for non-function member calls', () => {
+    const interpreter = new Sval()
+    let error: TypeError | null = null
+    try {
+      interpreter.run(`
+        const foo = { bar: { baz: 42 } }
+        foo.bar.baz()
+      `)
+    } catch (e) {
+      error = e as TypeError
+    }
+    expect(error).toBeInstanceOf(TypeError)
+    expect(error!.message).toBe('foo.bar.baz is not a function')
+  })
+
+  it('should include identifier in SyntaxError for unexpected identifier', () => {
+    const interpreter = new Sval()
+    let error: SyntaxError | null = null
+    try {
+      interpreter.parse('async fetch("/url");')
+    } catch (e) {
+      error = e as SyntaxError
+    }
+    expect(error).toBeInstanceOf(SyntaxError)
+    expect(error!.message).toBe("Unexpected identifier 'fetch'")
+  })
 })

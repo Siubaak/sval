@@ -1,5 +1,5 @@
 import { getOwnNames, createSandBox, globalObj, assign } from './share/util.ts'
-import { parse, Options, Node, Program } from 'acorn'
+import { parse, tokenizer, tokTypes, Options, Node, Program } from 'acorn'
 import { EXPORTS, IMPORT, STRICT } from './share/const.ts'
 import Scope from './scope/index.ts'
 import PkgJson from '../package.json' with { type: 'json' }
@@ -9,6 +9,27 @@ import { hoist as hoistAsync } from './evaluate/helper.ts'
 import { hoist } from './evaluate_n/helper.ts'
 import evaluateAsync from './evaluate/index.ts'
 import evaluate from './evaluate_n/index.ts'
+
+function improveSyntaxErrorMessage(code: string, pos: number, original: string): string {
+  if (!original.startsWith('Unexpected token')) return original
+  try {
+    const t = tokenizer(code, { ecmaVersion: 'latest' })
+    const tokens: Array<{ label: string, value: string, start: number }> = []
+    let tok: ReturnType<ReturnType<typeof tokenizer>['getToken']>
+    while ((tok = t.getToken()) && tok.type !== tokTypes.eof) {
+      tokens.push({ label: tok.type.label, value: tok.value as string, start: tok.start })
+      if (tok.start > pos) break
+    }
+    const idx = tokens.findIndex(t => t.start === pos)
+    if (idx >= 0 && tokens[idx].label === 'name') {
+      return `Unexpected identifier '${tokens[idx].value}'`
+    }
+    if (idx >= 2 && tokens[idx - 1].label === 'name' && tokens[idx - 2].label === 'name') {
+      return `Unexpected identifier '${tokens[idx - 1].value}'`
+    }
+  } catch (_) {}
+  return original
+}
 
 export interface SvalOptions {
   ecmaVer?: Options['ecmaVersion']
@@ -83,7 +104,18 @@ class Sval {
     if (typeof parser === 'function') {
       return parser(code, this.options)
     }
-    return parse(code, this.options)
+    try {
+      return parse(code, this.options)
+    } catch (e) {
+      if (e instanceof SyntaxError && typeof code === 'string') {
+        const pos = (e as any).pos
+        if (typeof pos === 'number') {
+          const message = improveSyntaxErrorMessage(code, pos, e.message)
+          if (message !== e.message) throw new SyntaxError(message)
+        }
+      }
+      throw e
+    }
   }
 
   run(code: string | Node) {
