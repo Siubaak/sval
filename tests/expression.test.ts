@@ -191,6 +191,25 @@ describe('testing src/expression.ts', () => {
     expect(interpreter.exports.g).toBeInstanceOf(TypeError)
   })
 
+  it('should parse sparse array literals normally', () => {
+    const interpreter = new Sval()
+
+    interpreter.run(`
+      exports.a = [, 1]
+      exports.b = [1, , 2]
+      exports.c = [1, , , 2]
+      exports.d = [,]
+    `)
+
+    expect(interpreter.exports.a).toEqual([, 1])
+    expect(0 in interpreter.exports.a).toBe(false)
+    expect(interpreter.exports.b).toEqual([1, , 2])
+    expect(1 in interpreter.exports.b).toBe(false)
+    expect(interpreter.exports.c).toEqual([1, , , 2])
+    expect(interpreter.exports.d).toEqual([,])
+    expect(interpreter.exports.d.length).toBe(1)
+  })
+
   it('should parse regular expression normally', () => {
     const interpreter = new Sval()
     interpreter.import({ expect })
