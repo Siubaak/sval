@@ -22,7 +22,9 @@ export function* ArrayExpression(node: acorn.ArrayExpression, scope: Scope) {
   let results: any[] = []
   for (let i = 0; i < node.elements.length; i++) {
     const item = node.elements[i]
-    if (item.type === 'SpreadElement') {
+    if (item === null) {
+      results.length++
+    } else if (item.type === 'SpreadElement') {
       results = results.concat(yield* SpreadElement(item, scope))
     } else {
       results.push(yield* evaluate(item, scope))
