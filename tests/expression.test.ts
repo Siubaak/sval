@@ -530,4 +530,45 @@ describe('testing src/expression.ts', () => {
     `)
     expect(interpreter.exports.sawAssignmentError).toBe(true)
   })
+
+  it('should include full property path in TypeError for non-function member calls (issue #143)', () => {
+    // simple member expression: foo.bar is not a function
+    const interp1 = new Sval()
+    interp1.run(`
+      const foo = { bar: 42 }
+      try {
+        foo.bar()
+      } catch (e) {
+        exports.err = e
+      }
+    `)
+    expect(interp1.exports.err).toBeInstanceOf(TypeError)
+    expect(interp1.exports.err.message).toBe('foo.bar is not a function')
+
+    // nested member expression: foo.bar.baz is not a function
+    const interp2 = new Sval()
+    interp2.run(`
+      const foo = { bar: { baz: 42 } }
+      try {
+        foo.bar.baz()
+      } catch (e) {
+        exports.err = e
+      }
+    `)
+    expect(interp2.exports.err).toBeInstanceOf(TypeError)
+    expect(interp2.exports.err.message).toBe('foo.bar.baz is not a function')
+
+    // computed member expression: foo[0] is not a function
+    const interp3 = new Sval()
+    interp3.run(`
+      const foo = [42]
+      try {
+        foo[0]()
+      } catch (e) {
+        exports.err = e
+      }
+    `)
+    expect(interp3.exports.err).toBeInstanceOf(TypeError)
+    expect(interp3.exports.err.message).toBe('foo[0] is not a function')
+  })
 })

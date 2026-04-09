@@ -323,6 +323,32 @@ export function* ConditionalExpression(node: acorn.ConditionalExpression, scope:
     : (yield* evaluate(node.alternate, scope))
 }
 
+function getCalleeDesc(node: acorn.Expression | acorn.Super): string {
+  if (node.type === 'Identifier') {
+    return (node as acorn.Identifier).name
+  } else if (node.type === 'MemberExpression') {
+    const memberNode = node as acorn.MemberExpression
+    const objDesc = getCalleeDesc(memberNode.object)
+    if (!memberNode.computed) {
+      if (memberNode.property.type === 'PrivateIdentifier') {
+        return `${objDesc}.#${(memberNode.property as acorn.PrivateIdentifier).name}`
+      }
+      return `${objDesc}.${(memberNode.property as acorn.Identifier).name}`
+    }
+    const prop = memberNode.property as acorn.Expression
+    if (prop.type === 'Literal') {
+      return `${objDesc}[${(prop as acorn.Literal).raw}]`
+    }
+    if (prop.type === 'Identifier') {
+      return `${objDesc}[${(prop as acorn.Identifier).name}]`
+    }
+    return objDesc
+  } else if (node.type === 'Super') {
+    return 'super'
+  }
+  return '(intermediate value)'
+}
+
 export function* CallExpression(node: acorn.CallExpression, scope: Scope) {
   let func: any
   let object: any
@@ -371,9 +397,11 @@ export function* CallExpression(node: acorn.CallExpression, scope: Scope) {
     }
 
     if (typeof func !== 'function') {
-      throw new TypeError(`${key} is not a function`)
+      const calleeDesc = getCalleeDesc(node.callee as acorn.MemberExpression)
+      throw new TypeError(`${calleeDesc} is not a function`)
     } else if (CLSCTOR in func) {
-      throw new TypeError(`Class constructor ${key} cannot be invoked without 'new'`)
+      const calleeDesc = getCalleeDesc(node.callee as acorn.MemberExpression)
+      throw new TypeError(`Class constructor ${calleeDesc} cannot be invoked without 'new'`)
     }
   } else {
     func = yield* evaluate(node.callee, scope)
