@@ -571,4 +571,39 @@ describe('testing src/expression.ts', () => {
     expect(interp3.exports.err).toBeInstanceOf(TypeError)
     expect(interp3.exports.err.message).toBe('foo[0] is not a function')
   })
+
+  it('should include identifier name in SyntaxError for invalid async usage (issue #143)', () => {
+    // async followed by identifier that is not a valid async arrow → Unexpected identifier 'name'
+    const sval1 = new Sval()
+    let err1: any
+    try {
+      sval1.run("async fetch('/url')")
+    } catch (e) {
+      err1 = e
+    }
+    expect(err1).toBeInstanceOf(SyntaxError)
+    expect(err1.message).toBe("Unexpected identifier 'fetch'")
+
+    // async followed by bare identifier (no call, just end of input)
+    const sval2 = new Sval()
+    let err2: any
+    try {
+      sval2.run('async foo')
+    } catch (e) {
+      err2 = e
+    }
+    expect(err2).toBeInstanceOf(SyntaxError)
+    expect(err2.message).toBe("Unexpected identifier 'foo'")
+
+    // two identifiers in a row (not async-specific)
+    const sval3 = new Sval()
+    let err3: any
+    try {
+      sval3.run('foo bar')
+    } catch (e) {
+      err3 = e
+    }
+    expect(err3).toBeInstanceOf(SyntaxError)
+    expect(err3.message).toBe("Unexpected identifier 'bar'")
+  })
 })
