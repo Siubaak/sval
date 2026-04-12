@@ -18,6 +18,33 @@ export interface SvalOptions {
 
 const latestVer = 15
 
+function improveSyntaxError(err: SyntaxError & { pos?: number }, code: string): SyntaxError {
+  if (typeof err.pos !== 'number' || !err.message.startsWith('Unexpected token')) return err
+  const pos = err.pos
+  const ch = pos < code.length ? code[pos] : undefined
+
+  let ident: string | null = null
+
+  if (ch !== undefined && /[a-zA-Z_$]/.test(ch)) {
+    // error position is at the start of an identifier
+    const m = code.slice(pos).match(/^[a-zA-Z_$][a-zA-Z0-9_$]*/)
+    if (m) ident = m[0]
+  } else if (ch === undefined || ch === '(') {
+    // end of input or '(' — look backwards for a preceding identifier
+    let end = pos
+    while (end > 0 && /\s/.test(code[end - 1])) end--
+    if (end > 0 && /[a-zA-Z0-9_$]/.test(code[end - 1])) {
+      let start = end
+      while (start > 0 && /[a-zA-Z0-9_$]/.test(code[start - 1])) start--
+      const candidate = code.slice(start, end)
+      if (/^[a-zA-Z_$]/.test(candidate)) ident = candidate
+    }
+  }
+
+  if (ident) return new SyntaxError(`Unexpected identifier '${ident}'`)
+  return err
+}
+
 class Sval {
   static version: string = PkgJson.version
 
@@ -83,7 +110,11 @@ class Sval {
     if (typeof parser === 'function') {
       return parser(code, this.options)
     }
-    return parse(code, this.options)
+    try {
+      return parse(code, this.options)
+    } catch (err) {
+      throw improveSyntaxError(err as SyntaxError & { pos?: number }, code)
+    }
   }
 
   run(code: string | Node) {
