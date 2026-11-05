@@ -218,9 +218,9 @@ export function* TryStatement(node: acorn.TryStatement, scope: Scope, options: L
       if (param) {
         if (param.type === 'Identifier') {
           const name = param.name
-          subScope.var(name, err)
+          subScope.catch(name, err)
         } else {
-          yield* pattern(param, scope, { feed: err })
+          yield* pattern(param, subScope, { kind: 'let', feed: err })
         }
       }
       result = yield* CatchClause(node.handler, subScope)

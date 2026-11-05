@@ -34,6 +34,12 @@ export default class Scope {
   private withContext: object = create(null)
 
   /**
+   * Name of the simple catch parameter bound in this scope (catch clause scope only)
+   * @private
+   */
+  private catchParam: string = null
+
+  /**
    * Create a simulated scope
    * @param parent the parent scope along the scope chain (default: null)
    * @param isolated true for function scope or false for block scope (default: false)
@@ -95,6 +101,13 @@ export default class Scope {
 
     // Find the closest function scope
     while (scope.parent && !scope.isolated) {
+      if (scope.catchParam === name) {
+        // Annex B.3.4: `var e = ...` inside `catch (e)` assigns to the catch parameter
+        if (value !== NOINIT) {
+          scope.context[name].set(value)
+        }
+        return
+      }
       scope = scope.parent
     }
 
@@ -117,6 +130,16 @@ export default class Scope {
         define(win, name, { value, writable: true, enumerable: true })
       }
     }
+  }
+
+  /**
+   * Declare a simple catch clause parameter in the catch block scope
+   * @param name parameter identifier name
+   * @param value caught value
+   */
+  catch(name: string, value: any) {
+    this.context[name] = new Var('let', value)
+    this.catchParam = name
   }
 
   /**
