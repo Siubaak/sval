@@ -33,3 +33,5 @@ export const EXPORTS = createSymbol('exports')
 export const STRICT = createSymbol('strict')
 
 export const STRICT_FN = createSymbol('strict-fn')
+
+export const ASYNCGEN = createSymbol('asyncgen') // whether in an async generator

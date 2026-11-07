@@ -183,6 +183,25 @@ export function createSymbol(key: string) {
   return key + Math.random().toString(36).substring(2)
 }
 
+export function getIterator(obj: any) {
+  if (typeof Symbol === 'function' && Symbol.iterator) {
+    const method = obj == null ? undefined : obj[Symbol.iterator]
+    if (typeof method !== 'function') {
+      throw new TypeError(`${obj === null || obj === undefined ? obj : typeof obj} is not iterable`)
+    }
+    return method.call(obj)
+  }
+  // Fallback for environments without Symbol: iterate array-likes by index
+  let i = 0
+  return {
+    next() {
+      return i < obj.length
+        ? { value: obj[i++], done: false }
+        : { value: undefined, done: true }
+    }
+  }
+}
+
 export function getAsyncIterator(obj: any) {
   let iterator: any
   if (typeof Symbol === 'function') {

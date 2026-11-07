@@ -372,4 +372,71 @@ describe('testing function', () => {
     `, (code) => parse(code, { ecmaVersion: 'latest', locations: true, sourceFile: code }));
     interpreter.run(parsedCode)
   })
+
+  it('should expose Symbol.asyncIterator and await yield operands in async generator (issue #158)', async () => {
+    const interpreter = new Sval()
+    interpreter.run(`
+      async function* gen() {
+        yield Promise.resolve(42)
+        yield 43
+      }
+      exports.it = gen()
+      exports.gen = gen
+    `)
+    const it = interpreter.exports.it
+    expect(typeof it[Symbol.asyncIterator]).toBe('function')
+    expect(typeof it[Symbol.iterator]).toBe('undefined')
+    expect(it[Symbol.asyncIterator]()).toBe(it)
+    expect(await it.next()).toEqual({ value: 42, done: false })
+    expect(await it.next()).toEqual({ value: 43, done: false })
+    expect(await it.next()).toEqual({ value: undefined, done: true })
+
+    const res = []
+    for await (const x of interpreter.exports.gen()) res.push(x)
+    expect(res).toEqual([42, 43])
+  })
+
+  it('should throw a rejected yield operand into the async generator', async () => {
+    const interpreter = new Sval()
+    interpreter.run(`
+      async function* gen() {
+        try {
+          yield Promise.reject('boom')
+        } catch (e) {
+          yield 'caught ' + e
+        }
+        return Promise.resolve('end')
+      }
+      exports.it = gen()
+    `)
+    const it = interpreter.exports.it
+    expect(await it.next()).toEqual({ value: 'caught boom', done: false })
+    expect(await it.next()).toEqual({ value: 'end', done: true })
+  })
+
+  it('should delegate yield* in async generator to async and sync iterables', async () => {
+    const interpreter = new Sval()
+    interpreter.run(`
+      async function* inner() {
+        const got = yield 1
+        yield got
+        return 'inner done'
+      }
+      async function* outer() {
+        const r = yield* inner()
+        yield r
+        yield* [Promise.resolve(2), 3]
+      }
+      exports.run = async () => {
+        const res = []
+        for await (const x of outer()) res.push(x)
+        const it = outer()
+        await it.next()
+        res.push((await it.next('sent')).value)
+        return res
+      }
+    `)
+    expect(await interpreter.exports.run()).toEqual([1, undefined, 'inner done', 2, 3, 'sent'])
+  })
 })
+

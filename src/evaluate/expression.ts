@@ -1,5 +1,5 @@
-import { define, freeze, getGetter, getSetter, createSymbol, assign, getDptor, callSuper, WINDOW } from '../share/util.ts'
-import { SUPER, NOCTOR, AWAIT, CLSCTOR, NEWTARGET, SUPERCALL, PRIVATE, IMPORT, OPTCHAIN, STRICT, STRICT_FN } from '../share/const.ts'
+import { define, freeze, getGetter, getSetter, createSymbol, assign, getDptor, callSuper, getIterator, WINDOW } from '../share/util.ts'
+import { SUPER, NOCTOR, AWAIT, CLSCTOR, NEWTARGET, SUPERCALL, PRIVATE, IMPORT, OPTCHAIN, STRICT, STRICT_FN, ASYNCGEN } from '../share/const.ts'
 import { pattern, createFunc, createClass } from './helper.ts'
 import { Variable, Prop } from '../scope/variable.ts'
 import { Identifier } from './identifier.ts'
@@ -205,7 +205,8 @@ export function* AssignmentExpression(node: acorn.AssignmentExpression, scope: S
     variable = yield* MemberExpression(left, scope, { getVar: true })
   } else {
     const value = yield* evaluate(node.right, scope)
-    return yield* pattern(left, scope, { feed: value })
+    yield* pattern(left, scope, { feed: value })
+    return value // a destructuring assignment evaluates to its right-hand side
   }
 
   const value = yield* evaluate(node.right, scope)
@@ -649,7 +650,65 @@ export function* ImportExpression(node: acorn.ImportExpression, scope: Scope) {
 /*<remove>*/
 export function* YieldExpression(node: acorn.YieldExpression, scope: Scope): any {
   const res = yield* evaluate(node.argument, scope)
-  return node.delegate ? yield* res : yield res
+  const asyncGen = scope.find(ASYNCGEN)
+  if (!asyncGen || !asyncGen.get()) {
+    return node.delegate ? yield* res : yield res
+  }
+  if (node.delegate) {
+    return yield* asyncYieldDelegate(res)
+  }
+  // yield in an async generator awaits its operand
+  AWAIT.RES = res
+  return yield (yield AWAIT)
+}
+
+function* asyncYieldDelegate(obj: any): any {
+  let iterator: any
+  let isSync = false
+  const asyncMethod = obj != null && typeof Symbol === 'function' && Symbol.asyncIterator
+    ? obj[Symbol.asyncIterator] : undefined
+  if (typeof asyncMethod === 'function') {
+    iterator = asyncMethod.call(obj)
+  } else {
+    iterator = getIterator(obj)
+    isSync = true
+  }
+  let input: any
+  let throwing = false
+  while (true) {
+    let ret: any
+    if (throwing) {
+      if (typeof iterator.throw !== 'function') {
+        if (typeof iterator.return === 'function') {
+          AWAIT.RES = iterator.return()
+          yield AWAIT
+        }
+        throw new TypeError('The iterator does not provide a \'throw\' method')
+      }
+      ret = iterator.throw(input)
+    } else {
+      ret = iterator.next(input)
+    }
+    AWAIT.RES = ret
+    ret = yield AWAIT
+    if (ret === null || typeof ret !== 'object') {
+      throw new TypeError(`Iterator result ${ret} is not an object`)
+    }
+    let value = ret.value
+    if (isSync) {
+      // values of a sync iterator are awaited, like an async-from-sync iterator
+      AWAIT.RES = value
+      value = yield AWAIT
+    }
+    if (ret.done) return value
+    try {
+      input = yield value
+      throwing = false
+    } catch (err) {
+      input = err
+      throwing = true
+    }
+  }
 }
 
 export function* AwaitExpression(node: acorn.AwaitExpression, scope: Scope): any {

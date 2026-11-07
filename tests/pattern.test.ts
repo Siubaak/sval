@@ -100,4 +100,41 @@ describe('testing pattern', () => {
     expect(interpreter.exports.e).toEqual([2, 3])
     expect(interpreter.exports.d).toBe(1)
   })
+
+  it('should destructure arrays through the iterator protocol (issue #157)', () => {
+    const interpreter = new Sval()
+    interpreter.run(`
+      const [a, b] = new Set([1, 2])
+      const [x, ...rest] = new Set([1, 2])
+      const [[k, v]] = new Map([['key', 'val']])
+      function* gen() { yield 1; yield 2; yield 3 }
+      const [, second, ...others] = gen()
+      const [c, d = 'dflt'] = 'c'
+      let p, q
+      const assigned = ([p, q] = new Set([5, 6]))
+      exports.r = [a, b, x, rest, k, v, second, others, c, d, p, q, assigned instanceof Set]
+    `)
+    expect(interpreter.exports.r).toEqual([1, 2, 1, [2], 'key', 'val', 2, [3], 'c', 'dflt', 5, 6, true])
+  })
+
+  it('should close an unfinished iterator after array destructuring', () => {
+    const interpreter = new Sval()
+    interpreter.run(`
+      const log = []
+      function* gen() {
+        try { yield 1; yield 2; yield 3 } finally { log.push('closed') }
+      }
+      const [a] = gen()
+      const [...all] = gen()
+      exports.r = [a, all, log]
+    `)
+    // The first is closed early; the second runs to completion (finally runs once each)
+    expect(interpreter.exports.r).toEqual([1, [1, 2, 3], ['closed', 'closed']])
+  })
+
+  it('should throw when array destructuring a non-iterable', () => {
+    const interpreter = new Sval()
+    expect(() => interpreter.run('const [a] = {}')).toThrow(TypeError)
+    expect(() => interpreter.run('const [b] = undefined')).toThrow(TypeError)
+  })
 })

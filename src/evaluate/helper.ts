@@ -1,4 +1,4 @@
-import { RETURN, SUPER, NOCTOR, CLSCTOR, NEWTARGET, SUPERCALL, STRICT, STRICT_FN } from '../share/const.ts'
+import { RETURN, SUPER, NOCTOR, CLSCTOR, NEWTARGET, SUPERCALL, STRICT, STRICT_FN, ASYNCGEN, AWAIT } from '../share/const.ts'
 import { VariableDeclaration, ClassBody, PropertyDefinition } from './declaration.ts'
 import { define, assign, inherits, callSuper } from '../share/util.ts'
 import { runAsync, runAsyncOptions } from '../share/async.ts'
@@ -145,10 +145,14 @@ export function createFunc(
     && (node.body.body[0] as acorn.ExpressionStatement & { directive?: string }).directive === 'use strict'
   const enclosingStrict = !!(scope.find(STRICT)?.get())
   const isFuncStrict = hasOwnUseStrict || enclosingStrict
-  const tmpFunc = function* (...args: any[]) {
+  const tmpFunc = function* (...args: any[]): IterableIterator<any> {
     const subScope: Scope = new Scope(scope, true)
     if (hasOwnUseStrict && !enclosingStrict) {
       subScope.const(STRICT, true)
+    }
+    if (node.generator) {
+      // let yield expressions know whether they are in an async generator
+      subScope.const(ASYNCGEN, !!node.async)
     }
     if (node.type !== 'ArrowFunctionExpression') {
       subScope.let('this', this)
@@ -189,7 +193,15 @@ export function createFunc(
     }
 
     if (result === RETURN) {
-      return result.RES
+      result = result.RES
+      /*<remove>*/
+      if (node.async && node.generator) {
+        // the operand of return in an async generator is awaited
+        AWAIT.RES = result
+        result = yield AWAIT
+      }
+      /*</remove>*/
+      return result
     } else if (new.target) {
       return subScope.find('this').get()
     }
@@ -216,8 +228,8 @@ export function createFunc(
         throw: (err?: any) => run({ err }),
         return: (ret?: any) => run({ ret })
       }
-      if (typeof Symbol === 'function') {
-        (asyncIterator as any)[Symbol.iterator] = function () { return this }
+      if (typeof Symbol === 'function' && Symbol.asyncIterator) {
+        (asyncIterator as any)[Symbol.asyncIterator] = function () { return this }
       }
       return asyncIterator
     }

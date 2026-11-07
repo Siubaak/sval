@@ -1,7 +1,7 @@
 import { NOINIT, DEADZONE } from '../share/const.ts'
 import { VarKind } from '../scope/variable.ts'
 import { Identifier } from './identifier.ts'
-import { assign } from '../share/util.ts'
+import { assign, getIterator } from '../share/util.ts'
 import { pattern } from './helper.ts'
 import Scope from '../scope/index.ts'
 import evaluate from './index.ts'
@@ -56,37 +56,75 @@ export function* ObjectPattern(node: acorn.ObjectPattern, scope: Scope, options:
 }
 
 export function* ArrayPattern(node: acorn.ArrayPattern, scope: Scope, options: PatternOptions = {}) {
-  const { kind, hoist = false, onlyBlock = false, feed = [] } = options
-  const result = []
-  for (let i = 0; i < node.elements.length; i++) {
-    const element = node.elements[i]
-    if (!element) continue // for the case: let [ , x] = [1, 2]
-    if (hoist) {
-      if (onlyBlock || kind === 'var') {
+  const { kind, hoist = false, onlyBlock = false, feed } = options
+  if (hoist) {
+    if (onlyBlock || kind === 'var') {
+      for (let i = 0; i < node.elements.length; i++) {
+        const element = node.elements[i]
+        if (!element) continue // for the case: let [ , x] = [1, 2]
         if (element.type === 'Identifier') {
           scope[kind](element.name, onlyBlock ? DEADZONE : kind === 'var' ? NOINIT : undefined)
         } else {
           yield* pattern(element, scope, { kind, hoist, onlyBlock })
         }
       }
-    } else if (element.type === 'Identifier') {
-      if (kind) {
-        // If kind isn't undefined, it's a declaration
-        scope[kind](element.name, feed[i])
-      } else {
-        // If kind is undefined, it's a statement
-        const variable = yield* Identifier(element, scope, { getVar: true })
-        variable.set(feed[i])
-        result.push(variable.get())
-      }
-    } else if (element.type === 'RestElement') {
-      yield* RestElement(element, scope, { kind, feed: feed.slice(i) })
-    } else {
-      yield* pattern(element, scope, { kind, feed: feed[i] })
     }
+    return
   }
-  if (result.length) {
-    return result
+
+  // Array destructuring consumes the right-hand side through its iterator
+  const iterator = getIterator(feed)
+  let done = false
+  const step = () => {
+    if (done) return undefined
+    let ret: IteratorResult<any>
+    try {
+      ret = iterator.next()
+    } catch (err) {
+      done = true // a throwing iterator is not closed
+      throw err
+    }
+    if (ret.done) {
+      done = true
+      return undefined
+    }
+    return ret.value
+  }
+  try {
+    for (let i = 0; i < node.elements.length; i++) {
+      const element = node.elements[i]
+      if (!element) {
+        step() // for the case: let [ , x] = [1, 2]
+      } else if (element.type === 'RestElement') {
+        const rest = []
+        while (!done) {
+          const value = step()
+          if (!done) rest.push(value)
+        }
+        yield* RestElement(element, scope, { kind, feed: rest })
+      } else if (element.type === 'Identifier') {
+        const value = step()
+        if (kind) {
+          // If kind isn't undefined, it's a declaration
+          scope[kind](element.name, value)
+        } else {
+          // If kind is undefined, it's a statement
+          const variable = yield* Identifier(element, scope, { getVar: true })
+          variable.set(value)
+        }
+      } else {
+        yield* pattern(element, scope, { kind, feed: step() })
+      }
+    }
+  } catch (err) {
+    if (!done && typeof iterator.return === 'function') {
+      done = true
+      try { iterator.return() } catch (e) { /* the original error wins */ }
+    }
+    throw err
+  }
+  if (!done && typeof iterator.return === 'function') {
+    iterator.return()
   }
 }
 
