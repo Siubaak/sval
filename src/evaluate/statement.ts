@@ -208,11 +208,16 @@ export function* ThrowStatement(node: acorn.ThrowStatement, scope: Scope) {
 
 export function* TryStatement(node: acorn.TryStatement, scope: Scope, options: LabelOptions = {}) {
   let result
+  // stays false only when a generator is closed by return() while paused in try or catch
+  let settled = false
 
   try {
-    result = yield* BlockStatement(node.block, scope)
-  } catch (err) {
-    if (node.handler) {
+    try {
+      result = yield* BlockStatement(node.block, scope)
+    } catch (err) {
+      if (!node.handler) {
+        throw err
+      }
       const subScope = new Scope(scope)
       const param = node.handler.param
       if (param) {
@@ -224,12 +229,31 @@ export function* TryStatement(node: acorn.TryStatement, scope: Scope, options: L
         }
       }
       result = yield* CatchClause(node.handler, subScope)
-    } else {
-      throw err
     }
+    settled = true
+  } catch (err) {
+    settled = true
+    throw err
   } finally {
     if (node.finalizer) {
-      result = yield* BlockStatement(node.finalizer, scope)
+      // RETURN, BREAK and CONTINUE are shared, so code in the finalizer can overwrite
+      // the value or label of the pending completion
+      const returnValue = RETURN.RES
+      const breakLabel = BREAK.LABEL
+      const continueLabel = CONTINUE.LABEL
+      const finalResult = yield* BlockStatement(node.finalizer, scope)
+      if (settled && (finalResult === BREAK || finalResult === CONTINUE || finalResult === RETURN)) {
+        // an abrupt finalizer replaces the completion of try and catch, including an error
+        if (finalResult === BREAK && finalResult.LABEL && finalResult.LABEL === options.label) {
+          // only labeled break to current try statement doesn't bubble up the result
+          return
+        }
+        return finalResult
+      }
+      // a finalizer that completes normally keeps the completion of try and catch
+      RETURN.RES = returnValue
+      BREAK.LABEL = breakLabel
+      CONTINUE.LABEL = continueLabel
     }
   }
 

@@ -306,6 +306,209 @@ describe('testing statement', () => {
     expect(interpreter.exports.d).toBe(4)
   })
 
+  it('should try statement keep return, break and continue when finally completes normally', () => {
+    const interpreter = new Sval()
+    interpreter.run(`
+      function a() {
+        try {
+          return 1
+        } finally {}
+        return 2
+      }
+      exports.a = a()
+
+      function b() {
+        try {
+          throw 0
+        } catch {
+          return 1
+        } finally {}
+        return 2
+      }
+      exports.b = b()
+
+      exports.c = []
+      for (let i = 0; i < 5; i++) {
+        try {
+          if (i === 2) break
+        } finally {
+          exports.c.push('finally')
+        }
+        exports.c.push(i)
+      }
+
+      exports.d = []
+      for (let i = 0; i < 3; i++) {
+        try {
+          if (i === 1) continue
+        } finally {}
+        exports.d.push(i)
+      }
+
+      exports.e = 0
+      while (exports.e < 10) {
+        try {
+          exports.e++
+          break
+        } finally {}
+      }
+    `)
+    expect(interpreter.exports.a).toBe(1)
+    expect(interpreter.exports.b).toBe(1)
+    expect(interpreter.exports.c).toEqual(['finally', 0, 'finally', 1, 'finally'])
+    expect(interpreter.exports.d).toEqual([0, 2])
+    expect(interpreter.exports.e).toBe(1)
+  })
+
+  it('should try statement let an abrupt finally override an error', () => {
+    const interpreter = new Sval()
+    interpreter.run(`
+      function a() {
+        try {
+          throw 1
+        } finally {
+          return 2
+        }
+      }
+      exports.a = a()
+
+      function b() {
+        try {
+          throw 1
+        } catch {
+          throw 3
+        } finally {
+          return 2
+        }
+      }
+      exports.b = b()
+
+      function c() {
+        for (;;) {
+          try {
+            throw 1
+          } finally {
+            break
+          }
+        }
+        return 2
+      }
+      exports.c = c()
+
+      function d() {
+        try {
+          return 1
+        } finally {
+          throw 2
+        }
+      }
+      try {
+        d()
+      } catch (err) {
+        exports.d = err
+      }
+    `)
+    expect(interpreter.exports.a).toBe(2)
+    expect(interpreter.exports.b).toBe(2)
+    expect(interpreter.exports.c).toBe(2)
+    expect(interpreter.exports.d).toBe(2)
+  })
+
+  it('should try statement keep return value and labels when finally runs other code', () => {
+    const interpreter = new Sval()
+    interpreter.run(`
+      function cleanup() {
+        return 'cleanup'
+      }
+
+      function a() {
+        try {
+          return 1
+        } finally {
+          cleanup()
+        }
+      }
+      exports.a = a()
+
+      function b() {
+        try {
+          return 1
+        } finally {
+          [2].map(x => x)
+        }
+      }
+      exports.b = b()
+
+      exports.c = 0
+      outer: for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+          try {
+            break outer
+          } finally {
+            for (;;) break
+          }
+          exports.c++
+        }
+        exports.c += 10
+      }
+
+      exports.d = 0
+      outer: for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+          try {
+            continue outer
+          } finally {
+            for (let k = 0; k < 2; k++) continue
+          }
+          exports.d++
+        }
+        exports.d += 10
+      }
+    `)
+    expect(interpreter.exports.a).toBe(1)
+    expect(interpreter.exports.b).toBe(1)
+    expect(interpreter.exports.c).toBe(0)
+    expect(interpreter.exports.d).toBe(0)
+  })
+
+  it('should try statement keep completion across finally in generator function', () => {
+    const interpreter = new Sval()
+    interpreter.run(`
+      function* a() {
+        try {
+          yield 1
+          return 2
+        } finally {
+          yield 3
+        }
+        yield 4
+      }
+      const iterA = a()
+      exports.a = [iterA.next(), iterA.next(), iterA.next()]
+
+      let cleaned = 0
+      function* b() {
+        try {
+          yield 1
+          yield 2
+        } finally {
+          cleaned++
+        }
+      }
+      const iterB = b()
+      iterB.next()
+      exports.b = iterB.return(9)
+      exports.cleaned = cleaned
+    `)
+    expect(interpreter.exports.a).toEqual([
+      { value: 1, done: false },
+      { value: 3, done: false },
+      { value: 2, done: true },
+    ])
+    expect(interpreter.exports.b).toEqual({ value: 9, done: true })
+    expect(interpreter.exports.cleaned).toBe(1)
+  })
+
   it('should with statement run normally', () => {
     const interpreter = new Sval({ ecmaVer: 10 })
     interpreter.run(`
@@ -1968,6 +2171,45 @@ describe('testing statement', () => {
           }
           const result = test()
           expect(result).toBe(42)
+          done()
+        }
+        run()
+      `)
+    })
+  })
+
+  it('should try statement keep return across finally with await in async function', () => {
+    return new Promise((done) => {
+      const interpreter = new Sval()
+      interpreter.import({ expect, done })
+      interpreter.run(`
+        async function other() {
+          await null
+          return 5
+        }
+        async function a() {
+          try {
+            await null
+            return 1
+          } finally {
+            await other()
+          }
+          return 2
+        }
+        async function b() {
+          try {
+            throw 0
+          } catch {
+            return 1
+          } finally {
+            await null
+          }
+          return 2
+        }
+        async function run() {
+          const [resultA, resultB] = await Promise.all([a(), b(), other()])
+          expect(resultA).toBe(1)
+          expect(resultB).toBe(1)
           done()
         }
         run()
