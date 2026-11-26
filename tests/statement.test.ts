@@ -632,6 +632,37 @@ describe('testing statement', () => {
     expect(interpreter.exports.message).toBe('Not Found')
   })
 
+  it('should scope catch clause parameter to the catch block (issue #156)', () => {
+    const cases: [string, any][] = [
+      [`let got; try { throw new Error('x') } catch (e) { got = String(e) }
+        const e = 5
+        exports.r = [got, e]`, ['Error: x', 5]],
+      [`let e = 1; let got; try { throw new Error('x') } catch (e) { got = e.message }
+        exports.r = [got, e]`, ['x', 1]],
+      [`function f() { let got; try { throw 1 } catch (e) { got = e } let e = 2; return [got, e] }
+        exports.r = f()`, [1, 2]],
+      [`let got; try { throw { m: 'x' } } catch ({ m }) { got = m }
+        const m = 5
+        exports.r = [got, m]`, ['x', 5]],
+      [`{ let e = 'outer', got
+          try { throw new Error('x') } catch (e) { got = e.message }
+          exports.r = [got, e] }`, ['x', 'outer']],
+      [`{ const e = 'outer'; let got
+          try { throw new Error('x') } catch (e) { got = e.message }
+          exports.r = [got, e] }`, ['x', 'outer']],
+      [`let got; try { throw 1 } catch (e) { e = 2; got = e }
+        exports.r = [got, typeof e]`, [2, 'undefined']],
+      // Annex B.3.4: var redeclaring a simple catch parameter assigns to the parameter
+      [`function f() { let got; try { throw 1 } catch (e) { var e = 2; got = e } return [got, e] }
+        exports.r = f()`, [2, undefined]],
+    ]
+    for (const [code, expected] of cases) {
+      const interpreter = new Sval({ ecmaVer: 'latest', sandBox: true })
+      interpreter.run(code)
+      expect(interpreter.exports.r).toEqual(expected)
+    }
+  })
+
   it('should try statement with array pattern destructuring in catch run normally', () => {
     const interpreter = new Sval({ ecmaVer: 10 })
     interpreter.run(`
