@@ -183,6 +183,19 @@ export function createSymbol(key: string) {
   return key + Math.random().toString(36).substring(2)
 }
 
+export function toPropertyKey(key: any): any {
+  // primitives convert without side effects, so only objects are converted eagerly,
+  // which guarantees their toString / valueOf / Symbol.toPrimitive run exactly once
+  if (key !== null && (typeof key === 'object' || typeof key === 'function')) {
+    const holder: any = {}
+    holder[key] = 0
+    const keys: any[] = typeof Object.getOwnPropertySymbols === 'function'
+      ? Object.getOwnPropertySymbols(holder) : []
+    return keys.length ? keys[0] : Object.keys(holder)[0]
+  }
+  return key
+}
+
 export function getIterator(obj: any) {
   if (typeof Symbol === 'function' && Symbol.iterator) {
     const method = obj == null ? undefined : obj[Symbol.iterator]

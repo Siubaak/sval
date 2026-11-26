@@ -27,13 +27,21 @@ export class Var implements Variable {
   }
 }
 
+const hasReflect = typeof Reflect === 'object' && Reflect !== null
+
 export class Prop implements Variable {
   private readonly object: any
   private readonly property: string
+  private readonly strict: boolean
 
-  constructor(object: any, property: string) {
+  /**
+   * @param strict whether the reference comes from strict mode code,
+   * where failed assignments and deletions throw instead of failing silently
+   */
+  constructor(object: any, property: string, strict: boolean = true) {
     this.object = object
     this.property = property
+    this.strict = strict
   }
 
   get() {
@@ -41,11 +49,22 @@ export class Prop implements Variable {
   }
 
   set(value: any) {
-    this.object[this.property] = value
+    const object = this.object
+    if (this.strict || object === null || object === undefined || !hasReflect) {
+      object[this.property] = value
+    } else {
+      // non-strict [[Set]] failures are silent; setter errors still propagate
+      Reflect.set(Object(object), this.property, value, object)
+    }
     return true
   }
 
   del() {
-    return delete this.object[this.property]
+    const object = this.object
+    if (this.strict || object === null || object === undefined || !hasReflect) {
+      return delete object[this.property]
+    }
+    // non-strict delete of a non-configurable property evaluates to false
+    return Reflect.deleteProperty(Object(object), this.property)
   }
 }

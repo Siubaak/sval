@@ -116,26 +116,29 @@ describe('testing declaration', () => {
       expect('a' in window).toBeTruthy()
 
       expect(window.a).toBe(1)
-      let err1
-      try {
-        delete window.a
-      } catch (ex1) {
-        err1 = ex1
-      }
-
-      expect(err1).toBeInstanceOf(TypeError)
+      // a var binding is non-configurable: delete fails, silently in non-strict code
+      expect(delete window.a).toBe(false)
       expect(window.a).toBe(1)
 
       expect('a' in this).toBeTruthy()
-      let err2
       expect(this.a).toBe(1)
-      try {
-        delete this.a
-      } catch (ex2) {
-        err2 = ex2
-      }
+      expect(delete this.a).toBe(false)
+      expect(this.a).toBe(1)
+    `)
 
-      expect(err2).toBeInstanceOf(TypeError)
+    const strictInterpreter = new Sval()
+    strictInterpreter.import({ expect })
+    strictInterpreter.run(`
+      'use strict'
+      var b = 1
+      let err
+      try {
+        delete window.b
+      } catch (ex) {
+        err = ex
+      }
+      expect(err).toBeInstanceOf(TypeError)
+      expect(window.b).toBe(1)
     `)
   })
 

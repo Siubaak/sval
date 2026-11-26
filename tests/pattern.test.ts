@@ -137,4 +137,44 @@ describe('testing pattern', () => {
     expect(() => interpreter.run('const [a] = {}')).toThrow(TypeError)
     expect(() => interpreter.run('const [b] = undefined')).toThrow(TypeError)
   })
+
+  it('should not evaluate destructuring defaults while hoisting (issue #161)', () => {
+    const s1 = new Sval()
+    s1.run('let count = 0; { const { a = ++count } = {}; const [b = ++count] = []; } exports.count = count')
+    expect(s1.exports.count).toBe(2)
+
+    const s2 = new Sval()
+    s2.run('let x = 1; const { b = x } = {}; const [c = x] = []; exports.r = [b, c]')
+    expect(s2.exports.r).toEqual([1, 1])
+  })
+
+  it('should destructure into member expression targets (issue #160)', () => {
+    const interpreter = new Sval()
+    interpreter.run(`
+      const o = { a: 1, b: 2 };
+      [o.a, o.b] = [o.b, o.a];
+      const t = {};
+      ({ x: t.x, y: t['y'] = 'dflt', ...t.rest } = { x: 1, z: 3 });
+      [t.d = 5, ...t.arr] = [undefined, 1, 2];
+      let v;
+      [v = 4] = [];
+      ({ v2: globalThis.__svalTest160 } = { v2: 'g' });
+      exports.r = [o, t, v, globalThis.__svalTest160]
+    `)
+    expect(interpreter.exports.r).toEqual([
+      { a: 2, b: 1 },
+      { x: 1, y: 'dflt', rest: { z: 3 }, d: 5, arr: [1, 2] },
+      4,
+      'g'
+    ])
+    delete (globalThis as any).__svalTest160
+  })
+
+  it('should throw when object destructuring null or undefined', () => {
+    const interpreter = new Sval()
+    expect(() => interpreter.run('const { a } = null')).toThrow(TypeError)
+    expect(() => interpreter.run('const { b } = undefined')).toThrow(TypeError)
+    interpreter.run(`const { length } = 'abc'; const { 0: first, 'x-y': xy } = { 0: 'f', 'x-y': 'xy' }; exports.r = [length, first, xy]`)
+    expect(interpreter.exports.r).toEqual([3, 'f', 'xy'])
+  })
 })

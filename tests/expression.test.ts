@@ -606,4 +606,113 @@ describe('testing src/expression.ts', () => {
     expect(err3).toBeInstanceOf(SyntaxError)
     expect(err3.message).toBe("Unexpected identifier 'bar'")
   })
+
+  it('should read the target of a compound assignment before its right-hand side (issue #159)', () => {
+    const interpreter = new Sval()
+    interpreter.run(`
+      let x = 1
+      x += (x = 5)
+      const a = [1]
+      a[0] -= (a[0] = 10)
+      let calls = 0
+      let y = 1
+      y ||= ++calls
+      let z = null
+      z ??= 7
+      let w = 0
+      w &&= ++calls
+      const o = { get v() { return 3 }, set v(n) {} }
+      exports.r = [x, a[0], calls, y, z, w, (o.v = 9), (x *= 2)]
+    `)
+    expect(interpreter.exports.r).toEqual([6, -9, 0, 1, 7, 0, 9, 12])
+  })
+
+  it('should coerce the operand of ++ and -- with ToNumeric and read it once (issue #167)', () => {
+    const interpreter = new Sval()
+    interpreter.run(`
+      let a = '5'; a++
+      let b; const oldB = b++
+      let s = '5'; const oldS = s--
+      let gets = 0
+      const obj = { get p() { gets++; return 1 }, set p(v) {} }
+      const pre = ++obj.p
+      let c = 1n; c++
+      let d = 1n; const oldD = d--
+      exports.res = [a, oldB, oldS, s, gets, pre, c, d, oldD]
+    `)
+    expect(interpreter.exports.res).toEqual([6, NaN, 5, 4, 1, 2, BigInt(2), BigInt(0), BigInt(1)])
+  })
+
+  it('should access properties without walking the prototype chain (issue #163)', () => {
+    const interpreter = new Sval()
+    interpreter.run(`
+      let n = 0
+      const k = { toString() { n++; return 'a' } }
+      const v1 = ({ a: 1 })[k]
+      const o = { a: 1 }
+      o[k] += 1
+      const log = []
+      const p = new Proxy({ a: 1 }, {
+        get(t, k, r) { log.push('get'); return Reflect.get(t, k, r) },
+        getOwnPropertyDescriptor(t, k) { log.push('gopd'); return Reflect.getOwnPropertyDescriptor(t, k) },
+        getPrototypeOf(t) { log.push('getPrototypeOf'); return Reflect.getPrototypeOf(t) }
+      })
+      p.a
+      let m = 0
+      const nil = null
+      nil?.[m++]
+      exports.r = [v1, o.a, n, log, m]
+    `)
+    expect(interpreter.exports.r).toEqual([1, 2, 2, ['get'], 0])
+  })
+
+  it('should fail silently on read-only assignment and delete in non-strict mode (issue #164)', () => {
+    const interpreter = new Sval()
+    interpreter.run(`
+      var o = Object.freeze({ p: 1 })
+      o.p = 5
+      'str'.x = 1
+      exports.p = o.p
+      exports.del = delete o.p
+      exports.delOk = delete ({ q: 1 }).q
+      const setterErr = { set x(v) { throw new RangeError('setter') } }
+      try { setterErr.x = 1 } catch (e) { exports.setterErr = e instanceof RangeError }
+    `)
+    expect(interpreter.exports).toEqual({ p: 1, del: false, delOk: true, setterErr: true })
+
+    const strict = new Sval()
+    expect(() => strict.run(`'use strict'; Object.freeze({ p: 1 }).p = 5`)).toThrow(TypeError)
+    expect(() => strict.run(`'use strict'; delete Object.freeze({ p: 1 }).p`)).toThrow(TypeError)
+    const klass = new Sval()
+    expect(() => klass.run(`new (class { constructor() { Object.freeze(this).p = 5 } })()`)).toThrow(TypeError)
+  })
+
+  it('should bind this for member expression tagged templates (issue #165)', () => {
+    const interpreter = new Sval()
+    interpreter.run(`
+      const o = {
+        x: 2,
+        tag(strings, v) { return this.x + strings[0] + v }
+      }
+      const key = 'tag'
+      exports.r = [o.tag\`hi\${1}\`, o[key]\`yo\${3}\`]
+    `)
+    expect(interpreter.exports.r).toEqual(['2hi1', '2yo3'])
+  })
+
+  it('should support super property access in object literal methods (issue #166)', () => {
+    const interpreter = new Sval()
+    interpreter.run(`
+      const proto = { hi() { return 'p' + this.n }, get g() { return 'pg' } }
+      const obj = {
+        __proto__: proto,
+        n: 1,
+        hi() { return super.hi() + 'o' },
+        get x() { return super.hi() + super.g },
+        arrow() { return (() => super.hi())() }
+      }
+      exports.result = [obj.hi(), obj.x, obj.arrow()]
+    `)
+    expect(interpreter.exports.result).toEqual(['p1o', 'p1pg', 'p1'])
+  })
 })

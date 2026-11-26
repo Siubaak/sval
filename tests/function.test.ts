@@ -438,5 +438,17 @@ describe('testing function', () => {
     `)
     expect(await interpreter.exports.run()).toEqual([1, undefined, 'inner done', 2, 3, 'sent'])
   })
-})
 
+  it('should count only parameters before the first default or rest parameter in length (issue #162)', () => {
+    const interpreter = new Sval()
+    interpreter.run(`
+      function restFn(a, ...rest) {}
+      function defaultFn(a, b = 1, c) {}
+      const arrowFn = (a, ...r) => 0
+      async function asyncFn(a, { b }, [c] = []) {}
+      function* genFn() {}
+      exports.lengths = [restFn.length, defaultFn.length, arrowFn.length, asyncFn.length, genFn.length]
+    `)
+    expect(interpreter.exports.lengths).toEqual([1, 1, 1, 2, 0])
+  })
+})

@@ -1,6 +1,6 @@
 import { RETURN, SUPER, NOCTOR, CLSCTOR, NEWTARGET, SUPERCALL, STRICT, STRICT_FN, ASYNCGEN, AWAIT } from '../share/const.ts'
 import { VariableDeclaration, ClassBody, PropertyDefinition } from './declaration.ts'
-import { define, assign, inherits, callSuper } from '../share/util.ts'
+import { define, assign, inherits, callSuper, getProto } from '../share/util.ts'
 import { runAsync, runAsyncOptions } from '../share/async.ts'
 import { Identifier } from '../evaluate_n/identifier.ts'
 import { BlockStatement } from './statement.ts'
@@ -126,6 +126,7 @@ export function* pattern(node: acorn.Pattern, scope: Scope, options: PatternOpti
 export interface CtorOptions {
   construct?: (object: any) => Generator | void
   superClass?: (...args: any[]) => any
+  homeObject?: any // the object literal owning a method, for super property access
 }
 
 import { createFunc as createAnotherFunc } from /*<replace by:='../evaluate/helper.ts'>*/'../evaluate_n/helper.ts'/*</replace>*/
@@ -138,7 +139,7 @@ export function createFunc(
     return createAnotherFunc(node, scope, options)
   }
 
-  const { superClass, construct } = options
+  const { superClass, construct, homeObject } = options
   const params = node.params
   const hasOwnUseStrict = node.body.type === 'BlockStatement'
     && node.body.body.length > 0
@@ -161,6 +162,9 @@ export function createFunc(
       if (superClass) {
         subScope.const(SUPER, superClass)
         if (construct) subScope.let(SUPERCALL, construct)
+      } else if (homeObject) {
+        // super in an object literal method refers to the home object's prototype
+        subScope.const(SUPER, { get prototype() { return getProto(homeObject) } })
       } else if (construct) {
         yield* construct(this) as Generator
       }
@@ -252,8 +256,17 @@ export function createFunc(
       || '',
     configurable: true
   })
+  // only parameters before the first default or rest parameter are counted
+  let length = 0
+  while (
+    length < params.length
+    && params[length].type !== 'AssignmentPattern'
+    && params[length].type !== 'RestElement'
+  ) {
+    length++
+  }
   define(func, 'length', {
-    value: params.length,
+    value: length,
     configurable: true
   })
 
@@ -276,6 +289,13 @@ export function* createClass(
   node: acorn.ClassDeclaration | acorn.ClassExpression,
   scope: Scope,
 ) {
+  const strict = scope.find(STRICT)
+  if (!strict || !strict.get()) {
+    // all parts of a class are strict mode code
+    scope = new Scope(scope)
+    scope.const(STRICT, true)
+  }
+
   const superClass = yield* evaluate(node.superClass, scope)
 
   const methodBody = node.body.body
